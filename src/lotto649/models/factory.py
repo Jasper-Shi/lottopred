@@ -15,9 +15,9 @@ def build_models(cfg: dict):
     )
     v2 = V2StatisticalModel()
     v3 = V3BoostingModel(
-        training_draws=cfg["features"].get("v3_training_draws", 420),
-        stride=cfg["features"].get("v3_stride", 8),
-        min_history=cfg["features"].get("v3_min_history", 350),
+        training_draws=cfg["features"].get("v3_training_draws", 280),
+        stride=cfg["features"].get("v3_stride", 14),
+        min_history=cfg["features"].get("v3_min_history", 300),
     )
     base = {
         "random": RandomBaseline(),
@@ -34,11 +34,11 @@ def build_models(cfg: dict):
         (base["ema_gap"], 0.20),
         (base["logistic"], 0.45),
     ])
+    # V4 intentionally stays compact: one V1 state signal plus V2 and V3.
     base["v4_ensemble"] = V4EnsembleModel([
-        (base["ema_gap"], 0.15),
-        (base["logistic"], 0.20),
-        (base["v2_statistical"], 0.30),
-        (base["v3_boosting"], 0.35),
+        (base["ema_gap"], 0.20),
+        (base["v2_statistical"], 0.35),
+        (base["v3_boosting"], 0.45),
     ])
     requested = cfg["backtest"].get("models", list(base))
     unknown = set(requested) - set(base)
