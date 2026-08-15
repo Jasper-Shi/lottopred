@@ -1,30 +1,33 @@
 project:
   timezone: America/Toronto
-  model_version: v1.0.0
+  seed: 649
 
 data:
-  history_url: https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print
-  recent_url: https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print
-  processed_csv: data/processed/draws.csv
+  history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
+  recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
+  processed_csv: "data/processed/draws.csv"
 
 backtest:
-  development_end: '2014-12-31'
-  validation_start: '2015-01-01'
-  validation_end: '2019-12-31'
-  blind_start: '2020-01-01'
-  blind_end: '2025-12-31'
-  minimum_training_draws: 250
+  min_history_draws: 300
+  test_start: "2020-01-01"
+  test_end: "2025-12-31"
+  top_k: [6, 12, 18]
   models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble]
 
-prediction:
-  top_k: [6, 12, 18]
-  snapshot_dir: predictions
-  evaluation_dir: evaluations
-  report_dir: reports
-  refuse_overwrite: true
+features:
+  recent_windows: [10, 25, 50, 100, 250]
+  ema_half_life: 35
+  logistic_training_draws: 480
+  min_logistic_samples: 300
 
-notification:
+prediction:
+  candidate_pool_size: 12
+  final_size: 6
+  combination_trials: 5000
+
+notifications:
   enabled: true
-  final_hits_threshold: 4
-  top12_hits_threshold: 5
-  subject_prefix: '[LOTTO649]'
+  min_final_hits: 4
+  min_top12_hits: 5
+  performance_alert_min_draws: 100
+  performance_alert_z: 2.58
