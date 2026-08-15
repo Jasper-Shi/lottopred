@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 import pytest
 
 from lotto649.data import parse_wclc_recent_html, parse_lottonet_year_html, merge_draws
@@ -19,23 +19,23 @@ def test_parse_wclc_recent_draw():
 
 
 def test_parse_lottonet_bridge_uses_last_seven_before_bonus():
-    html = """
-    <html><body>
-    <h2>Saturday December 28th 2024</h2>
-    <p>Jackpot CA$5,000,000</p>
-    <ul><li>8</li><li>16</li><li>18</li><li>23</li><li>34</li><li>36</li><li>12</li></ul>
-    <p>Bonus</p>
-    <h2>Wednesday December 25th 2024</h2>
-    <p>Jackpot CA$5,000,000</p>
-    <ul><li>5</li><li>6</li><li>14</li><li>16</li><li>18</li><li>44</li><li>19</li></ul>
-    <p>Bonus</p>
-    """
-    draws = parse_lottonet_year_html(html)
-    assert draws[0].draw_date == date(2024, 12, 25)
-    assert draws[0].numbers == (5, 6, 14, 16, 18, 44)
-    assert draws[0].bonus == 19
-    assert draws[1].numbers == (8, 16, 18, 23, 34, 36)
-    assert draws[1].bonus == 12
+    # The production parser deliberately refuses implausibly tiny annual pages,
+    # so the fixture contains ten draw blocks while we assert the first one.
+    start = date(2024, 12, 1)
+    blocks = []
+    for i in range(10):
+        d = start + timedelta(days=i)
+        blocks.append(
+            f"<h2>{d.strftime('%A %B')} {d.day}th {d.year}</h2>"
+            "<p>Jackpot CA$5,000,000</p>"
+            "<ul><li>8</li><li>16</li><li>18</li><li>23</li><li>34</li><li>36</li><li>12</li></ul>"
+            "<p>Bonus</p>"
+        )
+    draws = parse_lottonet_year_html("<html><body>" + "".join(blocks) + "</body></html>")
+    assert len(draws) == 10
+    assert draws[0].draw_date == date(2024, 12, 1)
+    assert draws[0].numbers == (8, 16, 18, 23, 34, 36)
+    assert draws[0].bonus == 12
 
 
 def test_merge_refuses_conflicting_sources():
