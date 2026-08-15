@@ -1,0 +1,1 @@
+Trigger Gmail smoke test after SMTP secrets configuration.
