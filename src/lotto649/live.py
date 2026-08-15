@@ -5,7 +5,8 @@ from pathlib import Path
 import json
 
 from .config import resolve_path
-from .data import refresh_with_sources, save_draws, load_draws
+from .data import save_draws, load_draws
+from .data_sources import refresh_with_sources
 from .domain import Draw, Prediction
 from .evaluation import evaluate_prediction
 from .models.factory import build_models
