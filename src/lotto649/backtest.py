@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import math
 import pandas as pd
 
 from .domain import Prediction
@@ -52,12 +53,25 @@ def run_backtest(draws, cfg, start: date, end: date, output_dir: Path | None = N
     return frame
 
 
+def _topk_expectation(k: int) -> tuple[float, float]:
+    # X ~ Hypergeometric(N=49, K=k selected candidates, n=6 winning balls)
+    n, N, K = 6, 49, k
+    mean = n * K / N
+    var = n * (K / N) * (1 - K / N) * ((N - n) / (N - 1))
+    return mean, var
+
+
+def _two_sided_normal_p(z: float) -> float:
+    return math.erfc(abs(z) / math.sqrt(2.0))
+
+
 def summarize(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return frame
     agg = frame.groupby("model_name").agg(
         draws=("final_6_hits", "size"),
         avg_final_hits=("final_6_hits", "mean"),
+        avg_top6_hits=("top_6_hits", "mean"),
         avg_top12_hits=("top_12_hits", "mean"),
         avg_top18_hits=("top_18_hits", "mean"),
         avg_brier=("brier_score", "mean"),
@@ -67,16 +81,20 @@ def summarize(frame: pd.DataFrame) -> pd.DataFrame:
         hit_4plus=("final_6_hits", lambda s: float((s >= 4).mean())),
     ).reset_index()
 
-    # Empirical random row is useful as a sanity check, but model claims should
-    # be compared to exact combinatorial expectations rather than a lucky or
-    # unlucky single random/tied ranking realization.
-    theoretical_top6 = 6 * 6 / 49
-    theoretical_top12 = 6 * 12 / 49
-    theoretical_top18 = 6 * 18 / 49
+    means_vars = {k: _topk_expectation(k) for k in (6, 12, 18)}
     random_row = agg[agg.model_name == "random"]
-    empirical_random = float(random_row.avg_final_hits.iloc[0]) if len(random_row) else theoretical_top6
+    empirical_random = float(random_row.avg_final_hits.iloc[0]) if len(random_row) else means_vars[6][0]
     agg["final_hit_lift_vs_empirical_random"] = agg.avg_final_hits - empirical_random
-    agg["final_hit_lift_vs_theory"] = agg.avg_final_hits - theoretical_top6
-    agg["top12_lift_vs_theory"] = agg.avg_top12_hits - theoretical_top12
-    agg["top18_lift_vs_theory"] = agg.avg_top18_hits - theoretical_top18
-    return agg.sort_values(["avg_final_hits", "avg_top12_hits"], ascending=False)
+    agg["final_hit_lift_vs_theory"] = agg.avg_final_hits - means_vars[6][0]
+    agg["top6_lift_vs_theory"] = agg.avg_top6_hits - means_vars[6][0]
+    agg["top12_lift_vs_theory"] = agg.avg_top12_hits - means_vars[12][0]
+    agg["top18_lift_vs_theory"] = agg.avg_top18_hits - means_vars[18][0]
+
+    for k, col in ((6, "avg_top6_hits"), (12, "avg_top12_hits"), (18, "avg_top18_hits")):
+        mean, var = means_vars[k]
+        se = (var / agg["draws"]) ** 0.5
+        z = (agg[col] - mean) / se
+        agg[f"top{k}_z_vs_theory"] = z
+        agg[f"top{k}_p_vs_theory"] = z.map(_two_sided_normal_p)
+
+    return agg.sort_values(["avg_top6_hits", "avg_top12_hits"], ascending=False)
