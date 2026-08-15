@@ -25,6 +25,8 @@ class LogisticNumberModel(ProbabilityModel):
         self.training_draws = training_draws
         self.min_samples = min_samples
         self.stride = stride
+        self._cache_key = None
+        self._cache_value = None
 
     def _training_frame(self, history: list[Draw]) -> tuple[pd.DataFrame, np.ndarray]:
         start = max(80, len(history) - self.training_draws)
@@ -41,13 +43,20 @@ class LogisticNumberModel(ProbabilityModel):
         return allf[FEATURES], allf["y"].to_numpy()
 
     def predict(self, history: list[Draw], target_date: date) -> dict[int, float]:
+        key = (len(history), history[-1].draw_date if history else None, target_date)
+        if self._cache_key == key and self._cache_value is not None:
+            return dict(self._cache_value)
         if len(history) < self.min_samples:
-            return {n: 6 / 49 for n in range(1, 50)}
-        X, y = self._training_frame(history)
-        if len(X) == 0 or len(np.unique(y)) < 2:
-            return {n: 6 / 49 for n in range(1, 50)}
-        model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=500, C=0.25))
-        model.fit(X, y)
-        current = number_feature_frame(history, target_date.weekday())
-        probs = model.predict_proba(current[FEATURES])[:, 1]
-        return normalize_expected_six({int(n): float(p) for n, p in zip(current.number, probs)})
+            result = {n: 6 / 49 for n in range(1, 50)}
+        else:
+            X, y = self._training_frame(history)
+            if len(X) == 0 or len(np.unique(y)) < 2:
+                result = {n: 6 / 49 for n in range(1, 50)}
+            else:
+                model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=500, C=0.25))
+                model.fit(X, y)
+                current = number_feature_frame(history, target_date.weekday())
+                probs = model.predict_proba(current[FEATURES])[:, 1]
+                result = normalize_expected_six({int(n): float(p) for n, p in zip(current.number, probs)})
+        self._cache_key, self._cache_value = key, dict(result)
+        return result
