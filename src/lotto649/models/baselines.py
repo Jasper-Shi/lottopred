@@ -12,7 +12,19 @@ class RandomBaseline(ProbabilityModel):
     name = "random"
 
     def predict(self, history: list[Draw], target_date: date) -> dict[int, float]:
-        return {n: BASE_P for n in range(1, 50)}
+        """Fair prior with deterministic microscopic jitter for random tie-breaking.
+
+        The previous equal-probability implementation was statistically fair at
+        the probability level but rank_numbers() broke ties by number, so the
+        reported Top-K sets were always low-number sets. A target-date seed gives
+        a reproducible random ordering while changing probability calibration by
+        a numerically negligible amount. Claims still use exact combinatorial
+        expectations, not this finite shadow realization.
+        """
+        seed = 649_000_000 + target_date.toordinal()
+        rng = np.random.default_rng(seed)
+        jitter = rng.uniform(-1e-9, 1e-9, size=49)
+        return normalize_expected_six({n: BASE_P + float(jitter[n - 1]) for n in range(1, 50)})
 
 
 class LongFrequencyModel(ProbabilityModel):

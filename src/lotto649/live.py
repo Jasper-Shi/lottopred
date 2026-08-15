@@ -65,8 +65,13 @@ def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
     version = cfg["project"].get("model_version", "v1.0.0")
     target = next_draw_date(draws[-1].draw_date)
     paths = []
-    for model in build_models(cfg).values():
+    requested = cfg.get("live", {}).get("models")
+    for model in build_models(cfg, requested=requested).values():
         pred = make_prediction(model, draws, target, cfg, version)
+        if model.name in cfg.get("live", {}).get("shadow_models", []):
+            pred.metadata["role"] = "shadow"
+        else:
+            pred.metadata["role"] = "primary"
         path = root / "predictions" / f"{target.isoformat()}__{model.name}__{version}.json"
         if path.exists():
             continue

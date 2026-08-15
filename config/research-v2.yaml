@@ -1,6 +1,6 @@
 project:
   timezone: America/Toronto
-  model_version: v1.0.0
+  model_version: research-v2
   seed: 649
 
 data:
@@ -9,18 +9,12 @@ data:
   bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
   bridge_start_year: 2024
   processed_csv: "data/processed/draws.csv"
-
 backtest:
   min_history_draws: 300
   test_start: "2020-01-01"
   test_end: "2025-12-31"
   top_k: [6, 12, 18]
-  models: [random, ema_gap, v2_statistical, v3_boosting, v4_ensemble]
-
-live:
-  models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble, v3_boosting]
-  shadow_models: [v3_boosting]
-
+  models: [random, ema_gap, v2_statistical]
 features:
   recent_windows: [10, 25, 50, 100, 250]
   ema_half_life: 35
@@ -29,13 +23,11 @@ features:
   v3_training_draws: 280
   v3_stride: 14
   v3_min_history: 300
-
 prediction:
   candidate_pool_size: 12
   final_size: 6
-
 notifications:
-  enabled: true
+  enabled: false
   min_final_hits: 4
   min_top12_hits: 5
   performance_alert_min_draws: 100
