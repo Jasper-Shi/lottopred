@@ -1,0 +1,52 @@
+name: lotto649-live-cycle
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Day after Wed/Sat draws. 15:15 UTC is late morning in Toronto.
+    - cron: '15 15 * * 4,0'
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'config.yaml'
+      - 'pyproject.toml'
+      - '.github/workflows/live.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: lotto649-live
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - name: Run live evaluation and next-draw prediction
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: lotto649 live
+      - name: Commit official data, immutable predictions and evaluations
+        run: |
+          git config user.name "lotto649-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/processed predictions evaluations reports || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: record lotto649 live cycle"
+            git push
+          fi

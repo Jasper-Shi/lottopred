@@ -1,0 +1,40 @@
+name: integration-smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/lotto649/data.py'
+      - 'src/lotto649/live.py'
+      - 'src/lotto649/models/**'
+      - 'config.yaml'
+      - '.github/workflows/integration.yml'
+
+jobs:
+  source-and-model-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - name: Build data from live sources
+        run: lotto649 bootstrap
+      - name: Verify latest official draw and dataset size
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          df = pd.read_csv('data/processed/draws.csv')
+          assert len(df) > 4000, len(df)
+          assert df['draw_date'].is_unique
+          print(df.tail(5).to_string(index=False))
+          PY
+      - name: Walk-forward model smoke test
+        run: lotto649 backtest --start 2025-01-01 --end 2025-01-08
+      - name: Generate live next-draw snapshots without email credentials
+        run: lotto649 live
+      - name: Verify snapshots exist
+        run: test "$(find predictions -name '*.json' | wc -l)" -ge 6
