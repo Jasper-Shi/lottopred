@@ -1,0 +1,30 @@
+project:
+  timezone: America/Toronto
+  model_version: v1.0.0
+
+data:
+  history_url: https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print
+  recent_url: https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print
+  processed_csv: data/processed/draws.csv
+
+backtest:
+  development_end: '2014-12-31'
+  validation_start: '2015-01-01'
+  validation_end: '2019-12-31'
+  blind_start: '2020-01-01'
+  blind_end: '2025-12-31'
+  minimum_training_draws: 250
+  models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble]
+
+prediction:
+  top_k: [6, 12, 18]
+  snapshot_dir: predictions
+  evaluation_dir: evaluations
+  report_dir: reports
+  refuse_overwrite: true
+
+notification:
+  enabled: true
+  final_hits_threshold: 4
+  top12_hits_threshold: 5
+  subject_prefix: '[LOTTO649]'
