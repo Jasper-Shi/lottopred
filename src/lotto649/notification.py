@@ -11,17 +11,36 @@ def should_alert(ev: dict, cfg: dict) -> bool:
 
 
 def send_email(subject: str, body: str) -> bool:
-    required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "EMAIL_FROM", "EMAIL_TO"]
-    if not all(os.getenv(k) for k in required):
+    """Send through Gmail-compatible SMTP with only two required secrets.
+
+    Required:
+      SMTP_USERNAME: Gmail address
+      SMTP_PASSWORD: Google App Password
+
+    Optional overrides:
+      SMTP_HOST (default smtp.gmail.com)
+      SMTP_PORT (default 587)
+      EMAIL_FROM (default SMTP_USERNAME)
+      EMAIL_TO (default SMTP_USERNAME)
+    """
+    username = os.getenv("SMTP_USERNAME")
+    password = os.getenv("SMTP_PASSWORD")
+    if not username or not password:
         return False
+
+    host = os.getenv("SMTP_HOST") or "smtp.gmail.com"
+    port = int(os.getenv("SMTP_PORT") or "587")
+    sender = os.getenv("EMAIL_FROM") or username
+    recipient = os.getenv("EMAIL_TO") or username
+
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = os.environ["EMAIL_FROM"]
-    msg["To"] = os.environ["EMAIL_TO"]
+    msg["From"] = sender
+    msg["To"] = recipient
     msg.set_content(body)
-    with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.environ["SMTP_PORT"]), timeout=30) as smtp:
+    with smtplib.SMTP(host, port, timeout=30) as smtp:
         smtp.starttls()
-        smtp.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
+        smtp.login(username, password)
         smtp.send_message(msg)
     return True
 

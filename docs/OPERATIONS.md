@@ -10,35 +10,33 @@ No local computer needs to stay running.
 ## GitHub Actions workflows
 
 - `test.yml` — runs unit tests on pushes and pull requests.
-- `backtest.yml` — manually builds the dataset and runs the configured historical blind walk-forward benchmark.
-- `live.yml` — runs Thursday/Sunday, evaluates due predictions, generates the next draw predictions and commits the audit trail.
+- `integration.yml` — verifies real result sources, a short walk-forward run and live snapshot generation.
+- `backtest.yml` — runs the configured historical blind walk-forward benchmark when model code reaches `main`, and can also be run manually.
+- `live.yml` — runs after model deployment and every Thursday/Sunday, evaluates due predictions, generates the next-draw predictions and commits the audit trail.
 
 The live workflow has `contents: write` permission because snapshots/results are committed back to the repository.
 
-## First deployment checklist
-
-1. Merge the V1 implementation to `main` after tests pass.
-2. Confirm repository Actions are enabled.
-3. Manually run `lotto649-backtest` once and inspect the report artifact.
-4. Manually run `lotto649-live-cycle` once.
-5. Confirm `data/processed/draws.csv` is created and a next-draw JSON exists under `predictions/`.
-6. Add email secrets.
-7. Trigger the live workflow manually once more to verify SMTP configuration.
-
 ## Gmail email setup
 
-The application uses Gmail SMTP with STARTTLS. Do **not** put credentials in source code or `.env` committed to Git.
+The application uses Gmail SMTP with STARTTLS. Do **not** put credentials in source code or commit them to Git.
 
-Required repository secrets:
+Only two GitHub repository secrets are required:
 
 ```text
-SMTP_HOST        smtp.gmail.com
-SMTP_PORT        587
 SMTP_USERNAME    your Gmail address
 SMTP_PASSWORD    your Google App Password
-EMAIL_FROM       your Gmail address
-EMAIL_TO         notification destination
 ```
+
+With only those two values configured, the system automatically uses:
+
+```text
+SMTP_HOST = smtp.gmail.com
+SMTP_PORT = 587
+EMAIL_FROM = SMTP_USERNAME
+EMAIL_TO = SMTP_USERNAME
+```
+
+So alerts are sent from your Gmail account back to the same inbox. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` remain optional GitHub Secrets if you ever want to override those defaults or send alerts to another address.
 
 For `SMTP_PASSWORD`, use a Google **App Password**, not the account's normal sign-in password. Google App Password availability normally requires 2-Step Verification on the Google account.
 
