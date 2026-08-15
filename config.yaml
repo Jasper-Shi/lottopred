@@ -15,16 +15,16 @@ backtest:
   test_start: "2020-01-01"
   test_end: "2025-12-31"
   top_k: [6, 12, 18]
-  models: [random, ema_gap, logistic, ensemble, v2_statistical, v3_boosting, v4_ensemble]
+  models: [random, ema_gap, v2_statistical, v3_boosting, v4_ensemble]
 
 features:
   recent_windows: [10, 25, 50, 100, 250]
   ema_half_life: 35
   logistic_training_draws: 480
   min_logistic_samples: 300
-  v3_training_draws: 420
-  v3_stride: 8
-  v3_min_history: 350
+  v3_training_draws: 280
+  v3_stride: 14
+  v3_min_history: 300
 
 prediction:
   candidate_pool_size: 12
