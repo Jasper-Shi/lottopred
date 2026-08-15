@@ -17,6 +17,10 @@ backtest:
   top_k: [6, 12, 18]
   models: [random, ema_gap, v2_statistical, v3_boosting, v4_ensemble]
 
+live:
+  models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble, v3_boosting]
+  shadow_models: [v3_boosting]
+
 features:
   recent_windows: [10, 25, 50, 100, 250]
   ema_half_life: 35
