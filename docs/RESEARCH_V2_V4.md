@@ -22,16 +22,15 @@ V2 uses a deliberately weak fixed linear score. Coefficients were chosen before 
 
 V3 uses the same leakage-safe feature engine but learns nonlinear interactions using `HistGradientBoostingClassifier`. It trains on a rolling historical window using strided snapshots to limit compute and model complexity. Output probabilities are shrunk toward the fair 6/49 prior.
 
-## V4 — diversified ensemble
+## V4 — compact diversified ensemble
 
-V4 combines four signal families rather than adding another large feature search:
+V4 combines three signal families rather than adding another large feature search:
 
-- V1 EMA/gap
-- V1 regularized logistic
+- V1 EMA/gap state signal
 - V2 conservative statistical score
 - V3 regularized nonlinear boosting
 
-Weights are frozen before the 2020–2025 blind benchmark.
+The compact design avoids duplicating expensive training and reduces the risk that one large model dominates the ensemble. Weights are frozen before reading the V2–V4 2020–2025 blind result.
 
 ## Evaluation
 
