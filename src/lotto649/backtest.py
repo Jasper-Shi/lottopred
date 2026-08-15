@@ -66,7 +66,17 @@ def summarize(frame: pd.DataFrame) -> pd.DataFrame:
         hit_3plus=("final_6_hits", lambda s: float((s >= 3).mean())),
         hit_4plus=("final_6_hits", lambda s: float((s >= 4).mean())),
     ).reset_index()
+
+    # Empirical random row is useful as a sanity check, but model claims should
+    # be compared to exact combinatorial expectations rather than a lucky or
+    # unlucky single random/tied ranking realization.
+    theoretical_top6 = 6 * 6 / 49
+    theoretical_top12 = 6 * 12 / 49
+    theoretical_top18 = 6 * 18 / 49
     random_row = agg[agg.model_name == "random"]
-    baseline = float(random_row.avg_final_hits.iloc[0]) if len(random_row) else 36 / 49
-    agg["final_hit_lift_vs_random"] = agg.avg_final_hits - baseline
+    empirical_random = float(random_row.avg_final_hits.iloc[0]) if len(random_row) else theoretical_top6
+    agg["final_hit_lift_vs_empirical_random"] = agg.avg_final_hits - empirical_random
+    agg["final_hit_lift_vs_theory"] = agg.avg_final_hits - theoretical_top6
+    agg["top12_lift_vs_theory"] = agg.avg_top12_hits - theoretical_top12
+    agg["top18_lift_vs_theory"] = agg.avg_top18_hits - theoretical_top18
     return agg.sort_values(["avg_final_hits", "avg_top12_hits"], ascending=False)
