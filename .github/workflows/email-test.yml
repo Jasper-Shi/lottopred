@@ -1,0 +1,39 @@
+name: gmail-alert-smoke-test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'email-test-trigger.txt'
+
+jobs:
+  email-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - name: Send Gmail configuration test
+        env:
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          python - <<'PY'
+          from lotto649.notification import send_email
+          ok = send_email(
+              'LOTTO 6/49 alert system is ready',
+              'Gmail SMTP configuration succeeded. Future configured model-hit alerts will be sent automatically.'
+          )
+          if not ok:
+              raise SystemExit('Required SMTP_USERNAME/SMTP_PASSWORD GitHub Secrets are missing')
+          print('Email smoke test sent successfully')
+          PY
