@@ -2,6 +2,13 @@ name: lotto649-backtest
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'config.yaml'
+      - 'pyproject.toml'
+      - '.github/workflows/backtest.yml'
 
 jobs:
   backtest:
