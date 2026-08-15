@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+import warnings
+
+import requests
 
 from .data import (
     fetch_bridge_years,
@@ -34,8 +37,6 @@ def reconcile_by_era(
     cutoff_archive = [d for d in archive if d.draw_date.year < bridge_start_year]
     bridge_window = [d for d in bridge if d.draw_date.year >= bridge_start_year]
 
-    # This comparison is the important live integrity check. If the third-party
-    # bridge disagrees with current official WCLC results, do not proceed.
     recent_by_date = {d.draw_date: d for d in recent}
     for d in bridge_window:
         official = recent_by_date.get(d.draw_date)
@@ -47,7 +48,6 @@ def reconcile_by_era(
 
     selected = merge_draws(cutoff_archive, bridge_window, recent)
 
-    # Existing snapshots/data must never silently override a refreshed source.
     selected_by_date = {d.draw_date: d for d in selected}
     for d in existing:
         refreshed = selected_by_date.get(d.draw_date)
@@ -65,10 +65,21 @@ def reconcile_by_era(
 def refresh_with_sources(existing: list[Draw], cfg: dict) -> list[Draw]:
     bridge_start_year = int(cfg["data"].get("bridge_start_year", 2024))
     archive = fetch_wclc_archive(cfg["data"]["history_url"])
-    bridge = fetch_bridge_years(
-        cfg["data"]["bridge_year_url"],
-        bridge_start_year,
-        datetime.now().year,
-    )
+
+    # lotto.net is only a bridge for the lagging WCLC archive, not the source of
+    # truth for today's result. A transient bridge outage must not prevent a live
+    # cycle when the committed chronology is already continuous and the official
+    # WCLC recent page is available. If committed data is insufficient, the final
+    # continuity check still fails rather than silently inventing missing draws.
+    try:
+        bridge = fetch_bridge_years(
+            cfg["data"]["bridge_year_url"],
+            bridge_start_year,
+            datetime.now().year,
+        )
+    except (requests.RequestException, TimeoutError) as exc:
+        warnings.warn(f"Bridge source unavailable; continuing with committed/WCLC data: {exc}")
+        bridge = []
+
     recent = fetch_wclc_recent_draws(cfg["data"]["recent_url"])
     return reconcile_by_era(existing, archive, bridge, recent, bridge_start_year)
