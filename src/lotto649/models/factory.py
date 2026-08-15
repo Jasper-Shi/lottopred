@@ -8,7 +8,7 @@ from .v3_boosting import V3BoostingModel
 from .v4_ensemble import V4EnsembleModel
 
 
-def build_models(cfg: dict):
+def build_models(cfg: dict, requested: list[str] | None = None):
     logistic = LogisticNumberModel(
         training_draws=cfg["features"].get("logistic_training_draws", 480),
         min_samples=cfg["features"].get("min_logistic_samples", 300),
@@ -34,13 +34,12 @@ def build_models(cfg: dict):
         (base["ema_gap"], 0.20),
         (base["logistic"], 0.45),
     ])
-    # V4 intentionally stays compact: one V1 state signal plus V2 and V3.
     base["v4_ensemble"] = V4EnsembleModel([
         (base["ema_gap"], 0.20),
         (base["v2_statistical"], 0.35),
         (base["v3_boosting"], 0.45),
     ])
-    requested = cfg["backtest"].get("models", list(base))
+    requested = requested if requested is not None else cfg["backtest"].get("models", list(base))
     unknown = set(requested) - set(base)
     if unknown:
         raise ValueError(f"Unknown models requested: {sorted(unknown)}")
