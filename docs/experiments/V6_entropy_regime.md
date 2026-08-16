@@ -197,7 +197,10 @@ theory; deterministic `random v1.0.0`; all V1 production models
 rejected `v5_pair_affinity v5.0.0`; and `v6_entropy_regime v6.0.0`. Their
 already-frozen same-fold summaries may be reused from
 [`v5_pair_affinity_v5.0.0_historical.json`](../../reports/v5_pair_affinity_v5.0.0_historical.json)
-rather than refitted. V2 and V4 are contextual references only through
+rather than refitted. Its frozen raw SHA-256 is
+`b86391ada265d96f94e789f4962812d32771385702e2efa2285cb9ef96d5d6bb`;
+identity, dataset, lane, model-version, and eligible-count mismatches must stop
+the V6 run before any candidate scoring. V2 and V4 are contextual references only through
 [`V2_V4_RESULTS.md`](../V2_V4_RESULTS.md); they are not refitted or represented
 as identical-target comparisons. Comparisons do not select weights or variants
 and do not change operational roles.
@@ -248,7 +251,11 @@ historical score is generated:
 9. reports record experiment/model/version, exact command, seed, config and code
    commit, both data identities, hashes, all comparisons, eligible/excluded
    counts, and control results;
-10. no existing file in `predictions/` or `evaluations/` is changed or regenerated.
+10. the runner verifies both registered data boundaries from their committed Git
+    blobs, requires a completely clean worktree plus the canonical committed
+    research config, and refuses to overwrite an existing historical report;
+11. the research config disables the live path, and no existing file in
+    `predictions/` or `evaluations/` is changed or regenerated.
 
 Any chronology, leakage, probability, source-prefix, control, or audit failure
 archives the run with no performance claim; it is not repaired under the same
@@ -289,9 +296,11 @@ confirmatory evidence and activation is never automatic.
 
 ## Prospective cohort and fixed decision
 
-At registration, `cohort_start` and `freeze_commit` are null and status is
-`not_activated`. Only a future reviewed PR may add exact `v6.0.0` as shadow and
-set a future start. No known or late target may be backfilled. Eligibility must
+At registration, `cohort_start`, `freeze_commit`, `activation_commit`, and
+`outcomes_known_at_activation` are null and status is `not_activated`. Only a
+future reviewed PR may add exact `v6.0.0` as shadow, verify every outcome known
+at activation, and set a strictly later start. No known or late target may be
+backfilled. Eligibility must
 use immutable, original snapshots committed before `00:00 America/Toronto` on
 their target date, with exact model/version/role, strictly prior
 `history_through`, verified digest/first commit/generated time/source/evaluation,

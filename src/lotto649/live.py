@@ -12,7 +12,13 @@ from .evaluation import evaluate_prediction
 from .models.factory import build_models
 from .notification import should_alert, send_hit_alert
 from .predictor import make_prediction
+from .research_protocol import draw_digest, snapshot_digest
 from .storage import save_prediction, save_evaluation
+
+
+def _require_live_enabled(cfg: dict) -> None:
+    if cfg.get("live", {}).get("enabled", True) is False:
+        raise RuntimeError("live execution is disabled by this configuration")
 
 
 def next_draw_date(after: date) -> date:
@@ -32,6 +38,7 @@ def refresh_data(cfg: dict) -> list[Draw]:
 
 
 def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
+    _require_live_enabled(cfg)
     root = Path(cfg["_root"])
     actual_by_date = {d.draw_date.isoformat(): d for d in draws}
     completed = []
@@ -53,6 +60,15 @@ def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
             final_combination=payload["final_combination"], metadata=payload.get("metadata", {}),
         )
         ev = evaluate_prediction(pred, actual)
+        ev.update(
+            {
+                "prediction_snapshot_digest": snapshot_digest(payload),
+                "prediction_snapshot_path": path.relative_to(root).as_posix(),
+                "actual_draw_digest": draw_digest(actual),
+                "verified_data_draw_count": len(draws),
+                "verified_data_history_through": draws[-1].draw_date.isoformat(),
+            }
+        )
         if cfg["notifications"].get("enabled", True) and should_alert(ev, cfg):
             ev["email_sent"] = send_hit_alert(ev)
         save_evaluation(root, ev)
@@ -61,6 +77,7 @@ def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
 
 
 def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
+    _require_live_enabled(cfg)
     root = Path(cfg["_root"])
     version = cfg["project"].get("model_version", "v1.0.0")
     target = next_draw_date(draws[-1].draw_date)
@@ -80,6 +97,7 @@ def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
 
 
 def run_live_cycle(cfg: dict) -> dict:
+    _require_live_enabled(cfg)
     draws = refresh_data(cfg)
     evaluations = evaluate_due_predictions(cfg, draws)
     predictions = generate_next_predictions(cfg, draws)

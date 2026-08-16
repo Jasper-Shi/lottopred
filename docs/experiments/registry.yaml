@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 
 experiments:
   - id: V5_pair_affinity
@@ -70,6 +70,8 @@ experiments:
       minimum_eligible_draws: 104
       commit_deadline: before_target_local_date
       freeze_commit: null
+      activation_commit: null
+      outcomes_known_at_activation: null
       cohort_start: null
 
   - id: V6_fixed_boundary_js_regime
@@ -132,6 +134,7 @@ experiments:
       historical_primary_gate_lane: consumed_diagnostic
       proper_score_max_delta_vs_fair: 1.0e-9
       reference_report: reports/v5_pair_affinity_v5.0.0_historical.json
+      reference_report_sha256: b86391ada265d96f94e789f4962812d32771385702e2efa2285cb9ef96d5d6bb
 
     negative_controls:
       - kind: whole_draw_date_permutation
@@ -143,4 +146,6 @@ experiments:
       minimum_eligible_draws: 208
       commit_deadline: before_target_local_date
       freeze_commit: null
+      activation_commit: null
+      outcomes_known_at_activation: null
       cohort_start: null
