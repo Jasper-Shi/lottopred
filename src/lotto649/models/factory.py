@@ -7,6 +7,7 @@ from .v2_statistical import V2StatisticalModel
 from .v3_boosting import V3BoostingModel
 from .v4_ensemble import V4EnsembleModel
 from .v5_pair_affinity import V5PairAffinityModel
+from .v6_entropy_regime import V6EntropyRegimeModel
 
 
 def build_models(cfg: dict, requested: list[str] | None = None):
@@ -29,6 +30,7 @@ def build_models(cfg: dict, requested: list[str] | None = None):
         "v2_statistical": v2,
         "v3_boosting": v3,
         "v5_pair_affinity": V5PairAffinityModel(),
+        "v6_entropy_regime": V6EntropyRegimeModel(),
     }
     base["ensemble"] = EnsembleModel([
         (base["long_frequency"], 0.15),
