@@ -17,6 +17,7 @@ in `V2_V4_RESULTS.md`.
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
+| V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -75,6 +76,39 @@ evaluation rebinding and recomputation, fixed prospective checkpoints, and a
 single immutable formal-look record. V1 remains production and V3 remains
 shadow. The next research attempt must be a new bounded pre-registration and
 new model version; do not retune or reopen rejected `v5.0.0` or `v6.0.0`.
+
+## V7 research checkpoint
+
+The next bounded attempt is
+[`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md),
+version `v7.0.0`. It tests whether, after the documented 2019-05-15 RNG
+transition, a label's strictly prior six-main versus bonus-role counts contain a
+stable role-assignment signal. The frozen seed-649 negative control keeps every
+draw's date and seven-number set but reassigns only its historical bonus role.
+
+The candidate, control, diagnostic runner, and deterministic offline tests were
+frozen at implementation commit
+`180cd045e7797b95db4226f7d79d66d6ee9a5965`. After push, full local checks, and
+green PR CI, the sole diagnostic ran from a clean matching tree over exactly the
+consumed 621 targets in 2020–2025. It completed without audit warning and made
+the registered **Reject / not activated** decision.
+
+Aggregate Top-12 lift was `+0.013704`, but its exact/Holm p-value was
+`0.372657` and its 95% bootstrap interval was `[-0.065201, +0.094219]`.
+The fixed 2020–2022 half had negative lift; aggregate and both-half Brier and
+log-loss deltas were worse than fair; and the global role audit was null at
+`p=0.570743`. The candidate control behaved as null in the aggregate and both
+halves, and the audit was clear. The complete outcome is in the
+[V7 decision record](experiments/V7_main_bonus_role_bias_results.md) and
+[generated report](../reports/v7_main_bonus_role_bias_v7.0.0_historical.md).
+
+The permanent one-shot claim remains at
+`reports/v7_main_bonus_role_bias_v7.0.0_historical.claim` with SHA-256
+`1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290`;
+it must never be deleted to retry the experiment. V7 remains absent from
+`config.yaml`, and its research config keeps `live.enabled: false` with empty
+primary and shadow lists. V1 remains production, V3 remains shadow, and existing
+prediction/evaluation snapshots are unchanged.
 
 ## How the implemented system runs
 

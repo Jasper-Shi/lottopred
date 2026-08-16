@@ -17,6 +17,7 @@ from lotto649.research_protocol import (
     GitFileEvidence,
     CohortAssessment,
     FormalLookRecord,
+    NegativeControlSpec,
     OutcomeBoundary,
     ProspectiveCohortSpec,
     VerifiedOutcomeBoundary,
@@ -28,6 +29,7 @@ from lotto649.research_protocol import (
     file_sha256,
     load_experiment_registry,
     permute_draw_outcomes,
+    reassign_bonus_roles_within_draws,
     snapshot_digest,
     validated_registered_draw_prefix,
     walk_forward_folds,
@@ -158,6 +160,90 @@ def test_v6_registry_preserves_frozen_variant_and_rejected_result():
         ),
     }
     assert registration.negative_controls[0].kind == "whole_draw_date_permutation"
+    assert registration.negative_controls[0].seed == 649
+    assert registration.prospective.status == "not_activated"
+    assert registration.prospective.minimum_eligible_draws == 208
+    assert (ROOT / registration.registration_file).is_file()
+    assert file_sha256(ROOT / registration.parameters["reference_report"]) == (
+        registration.parameters["reference_report_sha256"]
+    )
+
+
+def test_v7_registry_preserves_frozen_variant_and_rejected_result():
+    registry = load_experiment_registry(REGISTRY_PATH)
+    registration = registry.get("V7_post_rng_main_bonus_role_bias")
+
+    assert registration.status == "closed_rejected"
+    assert registration.family == "draw_role_exchangeability"
+    assert registration.model_name == "v7_main_bonus_role_bias"
+    assert registration.model_version == "v7.0.0"
+    assert registration.primary_metric == "top12_hits_lift_vs_theory"
+    assert registration.multiplicity_family == "draw_role_exchangeability"
+    assert registration.variant_index == 1
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.implementation_commit == (
+        "180cd045e7797b95db4226f7d79d66d6ee9a5965"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    for result_path in (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+    ):
+        assert (ROOT / result_path).is_file()
+    assert file_sha256(ROOT / registration.result.report_json) == (
+        "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+    )
+    assert file_sha256(ROOT / registration.result.report_markdown) == (
+        "e944c33494712c932c826b84d288a7239911e5d34eecb113cc6dffe639dec3f4"
+    )
+    report = json.loads(
+        (ROOT / registration.result.report_json).read_text(encoding="utf-8")
+    )
+    assert report["code_commit"] == registration.result.implementation_commit
+    assert report["historical_decision"] == {
+        "all_gates_passed": False,
+        "decision": "reject",
+        "gates": {
+            "aggregate_bootstrap_lower_above_zero": False,
+            "aggregate_holm_adjusted_p_at_most_0_05": False,
+            "audit_clear": True,
+            "global_role_audit_p_at_most_0_05": False,
+            "negative_control_null_aggregate_and_halves": True,
+            "positive_aggregate_primary_lift": True,
+            "positive_primary_lift_in_both_fixed_halves": False,
+            "proper_scores_within_fair_tolerance_aggregate_and_halves": False,
+        },
+        "historical_primary_signal_supported": False,
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "shadow_activation": "not_activated",
+    }
+    assert report["audit_warnings"] == []
+    claim_path = ROOT / "reports/v7_main_bonus_role_bias_v7.0.0_historical.claim"
+    assert claim_path.is_file()
+    assert file_sha256(claim_path) == (
+        "1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290"
+    )
+    assert registration.parameters["post_rng_start_date"] == "2019-05-15"
+    assert registration.parameters["active_minimum_post_rng_prior_draws"] == 104
+    assert registration.parameters["main_role_pseudocount"] == 3.0
+    assert registration.parameters["bonus_role_pseudocount"] == 0.5
+    assert registration.parameters["revealed_target_bonus_audit"] == (
+        "global_role_audit_only"
+    )
+    assert registration.parameters["bisection_iterations"] == 256
+    assert registration.parameters["historical_target_count"] == 621
+    assert registration.parameters["historical_fair_fallback_target_count"] == 39
+    assert registration.parameters["historical_active_target_count"] == 582
+    assert registration.parameters["first_historical_active_target"] == "2020-05-20"
+    assert registration.parameters["stability_half_1_target_count"] == 307
+    assert registration.parameters["stability_half_2_target_count"] == 314
+    assert registration.parameters["prospective_exact_eligible_evaluated_draws"] == 208
+    assert registration.negative_controls[0].kind == (
+        "within_draw_bonus_reassignment"
+    )
     assert registration.negative_controls[0].seed == 649
     assert registration.prospective.status == "not_activated"
     assert registration.prospective.minimum_eligible_draws == 208
@@ -309,6 +395,123 @@ def test_whole_draw_negative_control_is_deterministic_and_preserves_outcomes():
     )
     assert draws_fingerprint(first) == draws_fingerprint(second)
     assert draws_fingerprint(first) != draws_fingerprint(draws)
+
+
+def test_bonus_role_control_matches_frozen_literal_oracle_at_rng_boundary():
+    draws = [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 22), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    transformed = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    assert transformed == [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 13, 14), 12),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 20, 21), 19),
+        Draw(date(2019, 5, 22), (22, 24, 25, 26, 27, 28), 23),
+    ]
+
+
+def test_bonus_role_control_is_seed_deterministic_and_seed_sensitive():
+    draws = [
+        Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 18), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 22), (15, 16, 17, 18, 19, 20), 21),
+    ]
+
+    first = reassign_bonus_roles_within_draws(draws, seed=649)
+    second = reassign_bonus_roles_within_draws(draws, seed=649)
+    alternate = reassign_bonus_roles_within_draws(draws, seed=650)
+
+    assert first == second
+    assert first != alternate
+
+
+def test_bonus_role_control_preserves_precutoff_draws_without_consuming_rng():
+    precutoff = [
+        Draw(date(2019, 5, 8), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 11), (8, 9, 10, 11, 12, 13), 14),
+    ]
+    active = [
+        Draw(date(2019, 5, 15), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 18), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    full = reassign_bonus_roles_within_draws([*precutoff, *active], seed=649)
+    active_only = reassign_bonus_roles_within_draws(active, seed=649)
+
+    assert full[: len(precutoff)] == precutoff
+    assert full[len(precutoff) :] == active_only
+
+
+def test_bonus_role_control_is_stable_when_future_draws_are_appended():
+    draws = [
+        Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 18), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 22), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 25), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    short = reassign_bonus_roles_within_draws(draws[:2], seed=649)
+    long = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    assert long[:2] == short
+
+
+def test_bonus_role_control_preserves_each_date_and_seven_ball_set():
+    draws = [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 19, 20), 21),
+    ]
+
+    transformed = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    for original, reassigned in zip(draws, transformed, strict=True):
+        assert reassigned.draw_date == original.draw_date
+        assert reassigned.bonus is not None
+        assert original.bonus is not None
+        assert set((*reassigned.numbers, reassigned.bonus)) == set(
+            (*original.numbers, original.bonus)
+        )
+        assert reassigned.numbers == tuple(sorted(reassigned.numbers))
+        assert reassigned.bonus not in reassigned.numbers
+
+
+def test_bonus_role_control_fails_closed_when_a_post_rng_bonus_is_missing():
+    draws = [Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6))]
+
+    with pytest.raises(ValueError, match="requires a bonus number"):
+        reassign_bonus_roles_within_draws(draws, seed=649)
+
+
+def test_bonus_role_control_rejects_negative_seed():
+    with pytest.raises(ValueError, match="seed must be non-negative"):
+        reassign_bonus_roles_within_draws(synthetic_draws(), seed=-1)
+
+
+@pytest.mark.parametrize("failure", ["unordered", "duplicate"])
+def test_bonus_role_control_rejects_nonunique_chronology(failure):
+    draws = synthetic_draws(3)
+    if failure == "unordered":
+        invalid = [draws[1], draws[0], draws[2]]
+    else:
+        invalid = [
+            draws[0],
+            Draw(draws[0].draw_date, (2, 10, 18, 26, 34, 42), 1),
+            draws[2],
+        ]
+
+    with pytest.raises(ValueError, match="chronological order|dates must be unique"):
+        reassign_bonus_roles_within_draws(invalid, seed=649)
+
+
+def test_negative_control_spec_still_rejects_unregistered_control_kind():
+    with pytest.raises(ValueError, match="unsupported negative control"):
+        NegativeControlSpec(kind="shuffle_individual_balls", seed=649)
 
 
 def test_promotion_minimum_cannot_be_weakened():
@@ -487,10 +690,21 @@ def test_activated_cohort_cannot_be_reset_with_dataclass_replace():
         )
 
 
-def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(tmp_path):
+@pytest.mark.parametrize(
+    "experiment_id",
+    [
+        "V5_pair_affinity",
+        "V6_fixed_boundary_js_regime",
+        "V7_post_rng_main_bonus_role_bias",
+    ],
+)
+def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
+    tmp_path,
+    experiment_id,
+):
     payload = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     rejected = next(
-        item for item in payload["experiments"] if item["id"] == "V5_pair_affinity"
+        item for item in payload["experiments"] if item["id"] == experiment_id
     )
     rejected["status"] = "registered"
     rejected.pop("result")
@@ -501,12 +715,23 @@ def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(tmp_pat
         load_experiment_registry(path)
 
 
-def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(tmp_path):
+@pytest.mark.parametrize(
+    "experiment_id",
+    [
+        "V5_pair_affinity",
+        "V6_fixed_boundary_js_regime",
+        "V7_post_rng_main_bonus_role_bias",
+    ],
+)
+def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(
+    tmp_path,
+    experiment_id,
+):
     payload = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     payload["experiments"] = [
         item
         for item in payload["experiments"]
-        if item["id"] != "V5_pair_affinity"
+        if item["id"] != experiment_id
     ]
     path = tmp_path / "registry.yaml"
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")

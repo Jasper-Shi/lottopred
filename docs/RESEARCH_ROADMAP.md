@@ -98,6 +98,7 @@ independent record.
 | Pair/co-occurrence | Shrunk pair counts, recency-weighted graph degree, conditional partner scores | 1,176 pairs create a severe multiple-testing burden; require shrinkage and permuted-draw controls |
 | Transition/Markov | Prior-draw-to-next-number transitions, multi-lag transition decay, state-conditional inclusion | V2 already used a shrunk previous-draw transition feature; avoid relabeling the same hypothesis |
 | Entropy/regime | Rolling inclusion entropy, dispersion, drift/change-point indicators, calibration sharpness | Regime boundaries must be learned from prior data only; change-point hindsight leaks |
+| Draw-role exchangeability | Post-RNG, strictly lagged main-versus-bonus conditional role odds | Mechanism boundary must be externally justified; preserve seven-number sets and randomize only within-draw roles |
 | Periodicity/frequency domain | Pre-specified spectral power or phase from each number's binary history | Many frequencies invite p-hacking; choose bands before validation and compare to phase-randomized controls |
 | Structural set features | Odd/even, high/low, range, adjacency, repeats, sorted gaps, sum-bin probabilities | These describe combinations, not near-hits; score exact probabilistic consequences and avoid folklore constraints |
 | Calendar effects | Weekday/month interactions with strong hierarchical shrinkage | V2 already tested weak calendar signals; control for schedule/format changes and multiple categories |
@@ -124,6 +125,7 @@ must remain in the ledger rather than being deleted.
 |---|---|---|---|---|---|
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
+| [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -160,6 +162,39 @@ V6 is rejected, was not activated, and has no prospective cohort or live role.
 V1 remains production and V3 remains shadow. Any change inspired by these
 results requires a new version, pre-registration, freeze, and prospective cohort;
 it cannot relabel any observed V6 result as blind or confirmatory.
+
+V7 registered one externally bounded post-RNG mechanism probe before any V7
+score existed. Starting at the documented 2019-05-15 RNG transition, it compares
+each label's strictly prior six-main-role count with its bonus-role count using
+one frozen seven-role Dirichlet-half smoothing rule and a deterministic
+sum-to-six probability mapping. Its negative control preserves each observed
+seven-number set and date while reassigning only the historical bonus role. The
+unscored primary-source rationale is in
+[`V7_mechanical_bias_basis.md`](research/V7_mechanical_bias_basis.md), and the
+complete frozen formula is in
+[`V7_main_bonus_role_bias.md`](experiments/V7_main_bonus_role_bias.md).
+
+V7 has no development or legacy-validation score: pre-RNG history is not the
+registered mechanism, and 2019 supplies only strictly lagged feature burn-in.
+Its one applicable historical diagnostic is all 621 targets from 2020-01-01
+through 2025-12-31, with fixed 2020–2022 and 2023–2025 stability halves. That
+interval is already consumed and can only reject the candidate or support a
+separate reviewed shadow-activation decision; it can never confirm prediction.
+No V7 historical run had occurred at registration. The implementation was then
+frozen at `180cd045e7797b95db4226f7d79d66d6ee9a5965`, pushed, tested in CI, and
+run exactly once from a clean matching tree. The aggregate Top-12 lift was
+`+0.013704`, but Holm-adjusted `p=0.372657` and the 95% bootstrap interval
+`[-0.065201, +0.094219]` did not support it. The 2020–2022 half was negative,
+proper scores were worse than fair in the aggregate and both halves, and the
+global role audit was null (`p=0.570743`). The registered control behaved as a
+null and the audit was clear, so this is a valid negative result, not a pipeline
+failure. See the [V7 decision record](experiments/V7_main_bonus_role_bias_results.md).
+
+V7 is rejected, was never activated, and has no prospective cohort or live
+role. Its previously registered 208-draw plan remains an unstarted record, not
+permission to reopen `v7.0.0`. Any follow-up inspired by these results requires
+a genuinely new hypothesis/version and pre-registration; the observed V7
+history is consumed for it. V1 remains production and V3 remains shadow.
 
 ## Validation protocol
 

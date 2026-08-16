@@ -13,6 +13,7 @@ from .live import run_live_cycle
 from .research_diagnostics import (
     run_registered_v5_diagnostics,
     run_registered_v6_diagnostics,
+    run_registered_v7_diagnostics,
 )
 
 
@@ -34,6 +35,11 @@ def main():
         help="Run the frozen V6 historical diagnostic and negative control",
     )
     research_v6.add_argument("--code-commit", required=True)
+    research_v7 = sub.add_parser(
+        "research-v7",
+        help="Run the frozen V7 historical diagnostic and role negative control",
+    )
+    research_v7.add_argument("--code-commit", required=True)
     args = p.parse_args()
     cfg = load_config(args.config)
     csv_path = resolve_path(cfg, cfg["data"]["processed_csv"])
@@ -62,6 +68,13 @@ def main():
         print(json.dumps({key: value for key, value in result.items() if key != "report"}, indent=2))
     elif args.cmd == "research-v6":
         result = run_registered_v6_diagnostics(
+            cfg,
+            code_commit=args.code_commit,
+            output_dir=Path(cfg["_root"]) / "reports",
+        )
+        print(json.dumps({key: value for key, value in result.items() if key != "report"}, indent=2))
+    elif args.cmd == "research-v7":
+        result = run_registered_v7_diagnostics(
             cfg,
             code_commit=args.code_commit,
             output_dir=Path(cfg["_root"]) / "reports",

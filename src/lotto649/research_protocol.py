@@ -13,6 +13,7 @@ import subprocess
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import numpy as np
 import yaml
 
 from .domain import Draw, Prediction
@@ -69,7 +70,10 @@ class NegativeControlSpec:
     seed: int
 
     def __post_init__(self) -> None:
-        if self.kind != "whole_draw_date_permutation":
+        if self.kind not in {
+            "whole_draw_date_permutation",
+            "within_draw_bonus_reassignment",
+        }:
             raise ValueError(f"unsupported negative control: {self.kind}")
         if self.seed < 0:
             raise ValueError("negative-control seed must be non-negative")
@@ -230,6 +234,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     ),
     "V6_fixed_boundary_js_regime": (
         "74bda907c42243890ef74f59f3e626ca37204a2863bf18d5aadde738e4c7cc57"
+    ),
+    "V7_post_rng_main_bonus_role_bias": (
+        "ab4b52d1e288045eace433892530e8b612ae12d5afc8d5c9ad97fb63048bcb05"
     ),
 }
 
@@ -636,6 +643,36 @@ def permute_draw_outcomes(draws: Sequence[Draw], seed: int = 649) -> list[Draw]:
         Draw(target.draw_date, draws[source_index].numbers, draws[source_index].bonus)
         for target, source_index in zip(draws, order)
     ]
+
+
+def reassign_bonus_roles_within_draws(
+    draws: Sequence[Draw],
+    *,
+    seed: int = 649,
+    start_date: date = date(2019, 5, 15),
+) -> list[Draw]:
+    """Randomize main/bonus roles without changing any draw's seven balls."""
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    validate_draw_chronology(draws)
+    rng = np.random.default_rng(seed)
+    transformed: list[Draw] = []
+    for draw in draws:
+        if draw.draw_date < start_date:
+            transformed.append(draw)
+            continue
+        if draw.bonus is None:
+            raise ValueError("bonus-role reassignment requires a bonus number")
+        seven_numbers = sorted((*draw.numbers, draw.bonus))
+        bonus_index = int(rng.integers(0, 7))
+        pseudo_bonus = seven_numbers[bonus_index]
+        pseudo_main = tuple(
+            number
+            for index, number in enumerate(seven_numbers)
+            if index != bonus_index
+        )
+        transformed.append(Draw(draw.draw_date, pseudo_main, pseudo_bonus))
+    return transformed
 
 
 def draws_fingerprint(draws: Sequence[Draw]) -> str:
