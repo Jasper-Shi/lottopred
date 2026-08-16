@@ -79,7 +79,6 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
         registration.result.result_file,
     ):
         assert (ROOT / result_path).is_file()
-
     dataset_path = ROOT / registration.dataset_path
     draws = load_draws(dataset_path)
     prefix = validated_registered_draw_prefix(
@@ -95,21 +94,39 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
     assert draws[-1].draw_date >= registration.registration_history_through
 
 
-def test_v6_registration_freezes_one_entropy_regime_variant_before_scoring():
+def test_v6_registry_preserves_frozen_variant_and_rejected_result():
     registry = load_experiment_registry(REGISTRY_PATH)
     registration = registry.get(
         "V6_fixed_boundary_js_regime"
     )
 
     assert registry.schema_version == 2
-    assert registration.status == "registered"
+    assert registration.status == "closed_rejected"
     assert registration.family == "entropy_regime"
     assert registration.model_name == "v6_entropy_regime"
     assert registration.model_version == "v6.0.0"
     assert registration.primary_metric == "top12_hits_lift_vs_theory"
     assert registration.multiplicity_family == "entropy_regime"
     assert registration.variant_index == 1
-    assert registration.result is None
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.implementation_commit == (
+        "591b6173aa3a2e711d2c5e5e7f9cc3f8c7801bf6"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    for result_path in (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+    ):
+        assert (ROOT / result_path).is_file()
+    assert file_sha256(ROOT / registration.result.report_json) == (
+        "12400a4b5164b030225827d47a8024a1ec7aeaeb32fa64cd2fab0b46ff8d4c2a"
+    )
+    assert file_sha256(ROOT / registration.result.report_markdown) == (
+        "cd842403041a166a3996ab982a987a3871a7039aaf4d600f73b9c6e4dc4aec80"
+    )
     assert registration.registration_history_through == date(2026, 8, 12)
     assert registration.outcomes_known_through == date(2026, 8, 15)
     assert registration.parameters == {
@@ -147,6 +164,20 @@ def test_v6_registration_freezes_one_entropy_regime_variant_before_scoring():
     assert (ROOT / registration.registration_file).is_file()
     assert file_sha256(ROOT / registration.parameters["reference_report"]) == (
         registration.parameters["reference_report_sha256"]
+    )
+
+
+def _unsealed_v6_candidate():
+    closed = load_experiment_registry(REGISTRY_PATH).get(
+        "V6_fixed_boundary_js_regime"
+    )
+    return replace(
+        closed,
+        experiment_id="V6_protocol_fixture",
+        status="registered",
+        result=None,
+        _terminal_result_lock=None,
+        _cohort_activation_lock=None,
     )
 
 
@@ -380,7 +411,7 @@ def test_cohort_start_must_be_after_activation_known_outcomes():
 
 def test_prospective_shadow_accepts_only_continue_result_and_active_cohort():
     registry = load_experiment_registry(REGISTRY_PATH)
-    candidate = registry.get("V6_fixed_boundary_js_regime")
+    candidate = _unsealed_v6_candidate()
     rejected = registry.get("V5_pair_affinity").result
     assert rejected is not None
     activation_boundary = OutcomeBoundary(
@@ -518,7 +549,7 @@ def _active_registration(
     activation_boundary: OutcomeBoundary,
 ):
     registry = load_experiment_registry(REGISTRY_PATH)
-    registration = registry.get("V6_fixed_boundary_js_regime")
+    registration = _unsealed_v6_candidate()
     rejected = registry.get("V5_pair_affinity").result
     assert rejected is not None
     registration = replace(
@@ -1235,7 +1266,7 @@ def test_formal_look_requires_exact_ready_checkpoint_and_git_evidence(tmp_path):
     )
     ready = aggregate_prospective_cohort(registration, observations)
     report_path = repo / "reports" / "prospective" / (
-        "V6_fixed_boundary_js_regime__v6.0.0__formal_look.json"
+        f"{registration.experiment_id}__{registration.model_version}__formal_look.json"
     )
     report_path.parent.mkdir(parents=True)
     report_path.write_text(
@@ -1306,8 +1337,8 @@ def test_fixed_formal_look_cannot_choose_continue_shadow(tmp_path, monkeypatch):
         tuple(_cohort_assessment(target) for target in _scheduled_targets(208)),
     )
     relative_path = (
-        "reports/prospective/V6_fixed_boundary_js_regime__"
-        "v6.0.0__formal_look.json"
+        "reports/prospective/"
+        f"{registration.experiment_id}__{registration.model_version}__formal_look.json"
     )
     report_path = tmp_path / relative_path
     report_path.parent.mkdir(parents=True)

@@ -16,6 +16,7 @@ in `V2_V4_RESULTS.md`.
 | V3 boosting | Shadow | Creates immutable live snapshots and evaluations beside V1; it does not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
+| V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -51,12 +52,29 @@ negative control behaved as null. See the
 not in `config.yaml` or `live.models`; no V5 live snapshot exists. V1 production,
 V3 shadow behavior, and every committed prediction snapshot remain unchanged.
 
-`src/lotto649/research_protocol.py` provides registry/result validation,
-registered-prefix integrity checks, strict-prefix walk-forward folds, the
-deterministic negative-control transform, fingerprints, and conservative cohort
-eligibility checks. The next research step is a new, bounded pre-registration
-for a genuinely separate feature family. Do not alter `v5.0.0` in response to
-its observed results or open a shadow cohort for this rejected version.
+## V6 research checkpoint
+
+The second V5+ attempt, [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md),
+froze two adjacent 104-draw blocks, one global entropy gate, deterministic
+date-derived jitter, the same whole-draw negative control, and an exact 208-draw
+prospective decision before implementation or score inspection. The frozen
+implementation commit is `591b6173`.
+
+The one historical diagnostic is complete and **rejected / never activated**.
+Development, legacy-validation, and consumed 2020–2025 Top-12 lifts were
+`-0.001514`, `+0.117151`, and `+0.000822`. The sole historical gate lane had
+exact/Holm `p=0.498761` and a 95% bootstrap interval of
+`[-0.078083, +0.078116]`. V6 activated on 44 development targets but zero
+legacy or consumed targets; the isolated legacy lift therefore came from the
+registered outcome-independent fair jitter and cannot rescue the failed
+all-lane/consumed gates. All negative controls behaved as null and the audit was
+clear. See the [decision record](experiments/V6_entropy_regime_results.md).
+
+`src/lotto649/research_protocol.py` now provides fail-closed Git/data evidence,
+evaluation rebinding and recomputation, fixed prospective checkpoints, and a
+single immutable formal-look record. V1 remains production and V3 remains
+shadow. The next research attempt must be a new bounded pre-registration and
+new model version; do not retune or reopen rejected `v5.0.0` or `v6.0.0`.
 
 ## How the implemented system runs
 

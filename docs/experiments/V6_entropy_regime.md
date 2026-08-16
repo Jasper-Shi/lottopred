@@ -8,7 +8,7 @@
 | Model | `v6_entropy_regime` |
 | Version | `v6.0.0` |
 | Family / variant | `entropy_regime` / `1` |
-| Status | **PRE-REGISTERED; NO V6 SCORE RUN OR INSPECTED** |
+| Status | **CLOSED — REJECTED; NEVER ACTIVATED** |
 | Registration date | 2026-08-16 |
 | Protocol seed | `649` |
 | Live role | none; V1 stays production and V3 stays shadow |
@@ -22,6 +22,12 @@ immutable prospective cohort can provide confirmatory evidence
 
 Administrative status and commit fields may later be updated without changing
 any formula, constant, metric, control, comparison, or decision rule below.
+
+The one frozen historical diagnostic has now been completed without changing
+this specification. It failed the registered gates, so `v6.0.0` is rejected and
+remains unactivated. See the
+[decision record](V6_entropy_regime_results.md) and generated
+[historical report](../../reports/v6_entropy_regime_v6.0.0_historical.md).
 
 ## Hypothesis and independence boundary
 

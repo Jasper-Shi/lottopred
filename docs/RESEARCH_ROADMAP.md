@@ -123,7 +123,7 @@ must remain in the ledger rather than being deleted.
 | ID | Family | Version | Status | Historical result | Prospective cohort |
 |---|---|---|---|---|---|
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
-| [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Registered | Not run or inspected | Not activated |
+| [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -141,13 +141,25 @@ prediction, and never began a prospective cohort. Any follow-up must register a
 genuinely separate hypothesis/version before implementation; it may not tune
 this candidate against the now-consumed answers.
 
-V6 freezes one adjacent-block entropy/regime hypothesis before implementation:
+V6 froze one adjacent-block entropy/regime hypothesis before implementation:
 two fixed 104-draw blocks, one asymptotic gate, one directional probability
-mapping, and one Top-12 primary metric. Its diagnostic dataset remains the
-append-only 4,431-draw prefix through 2026-08-12, while the registry separately
-records that outcomes were already known through 2026-08-15 at registration.
-No V6 score has yet been generated or inspected. V1 remains production, V3
-remains shadow, and V6 has no live role.
+mapping, and one Top-12 primary metric. Its single labeled historical diagnostic
+used the append-only 4,431-draw prefix through 2026-08-12; the registry
+separately records that outcomes were already known through 2026-08-15 at
+registration. Every reported lane is consumed and non-confirmatory.
+
+The frozen `v6.0.0` gate failed. Development Top-12 lift was negative; the sole
+formal 2020-2025 historical gate had Holm-adjusted `p = 0.498761088` with a 95%
+bootstrap interval spanning zero; and development Brier and log-loss deltas
+exceeded the frozen fair-baseline tolerance. The whole-draw date-permutation
+control behaved as a null and the audit was clear, so this is a valid negative
+result rather than a pipeline failure. The full decision is in
+[`V6_entropy_regime_results.md`](experiments/V6_entropy_regime_results.md).
+
+V6 is rejected, was not activated, and has no prospective cohort or live role.
+V1 remains production and V3 remains shadow. Any change inspired by these
+results requires a new version, pre-registration, freeze, and prospective cohort;
+it cannot relabel any observed V6 result as blind or confirmatory.
 
 ## Validation protocol
 

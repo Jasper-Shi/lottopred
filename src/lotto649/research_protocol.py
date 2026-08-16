@@ -228,6 +228,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     "V5_pair_affinity": (
         "1b1e73bf090770d7ad9fff2d30cc0b93b2f51afa4308eb3294b5f15657592add"
     ),
+    "V6_fixed_boundary_js_regime": (
+        "74bda907c42243890ef74f59f3e626ca37204a2863bf18d5aadde738e4c7cc57"
+    ),
 }
 
 

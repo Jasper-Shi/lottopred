@@ -78,7 +78,7 @@ experiments:
     family: entropy_regime
     model_name: v6_entropy_regime
     model_version: v6.0.0
-    status: registered
+    status: closed_rejected
     registration_file: docs/experiments/V6_entropy_regime.md
     registered_on: 2026-08-16
     seed: 649
@@ -139,6 +139,16 @@ experiments:
     negative_controls:
       - kind: whole_draw_date_permutation
         seed: 649
+
+    result:
+      decision: reject
+      decided_on: 2026-08-16
+      implementation_commit: 591b6173aa3a2e711d2c5e5e7f9cc3f8c7801bf6
+      report_json: reports/v6_entropy_regime_v6.0.0_historical.json
+      report_markdown: reports/v6_entropy_regime_v6.0.0_historical.md
+      result_file: docs/experiments/V6_entropy_regime_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
 
     prospective:
       status: not_activated
