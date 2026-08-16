@@ -240,6 +240,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     "V7_post_rng_main_bonus_role_bias": (
         "ab4b52d1e288045eace433892530e8b612ae12d5afc8d5c9ad97fb63048bcb05"
     ),
+    "V8_fixed_recurrence_harmonic": (
+        "150b1243fc884926a22c63f9b707b96af808bfae39b228382cc0b852b0a1c2b5"
+    ),
 }
 
 

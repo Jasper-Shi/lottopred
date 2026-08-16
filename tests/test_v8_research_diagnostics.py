@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
@@ -15,7 +16,7 @@ from lotto649.research_diagnostics import (
     run_registered_v8_diagnostics,
     v8_historical_decision,
 )
-from lotto649.research_protocol import load_experiment_registry
+from lotto649.research_protocol import ExperimentRegistry, load_experiment_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -372,9 +373,27 @@ def _runner_environment(tmp_path: Path) -> _RunnerEnvironment:
     )
 
 
+def _unscored_v8_registry_fixture() -> ExperimentRegistry:
+    """Reconstruct the immutable pre-score V8 registry state for runner tests."""
+    registry = load_experiment_registry(
+        ROOT / "docs" / "experiments" / "registry.yaml"
+    )
+    closed = registry.get(V8_EXPERIMENT_ID)
+    fields = vars(closed).copy()
+    fields.update(status="registered", result=None, _terminal_result_lock=None)
+    unscored = SimpleNamespace(**fields)
+    return ExperimentRegistry(
+        schema_version=registry.schema_version,
+        experiments=tuple(
+            unscored if item.experiment_id == V8_EXPERIMENT_ID else item
+            for item in registry.experiments
+        ),
+    )
+
+
 def _install_runner_mocks(monkeypatch, environment: _RunnerEnvironment, mutate=None):
     calls = []
-    registry = load_experiment_registry(ROOT / "docs" / "experiments" / "registry.yaml")
+    registry = _unscored_v8_registry_fixture()
     monkeypatch.setattr(
         "lotto649.research_diagnostics._validate_v8_git_audit",
         lambda _root, _commit: None,
@@ -554,6 +573,34 @@ def test_v8_preflight_failure_occurs_before_claim_or_score(tmp_path, monkeypatch
     )
 
     with pytest.raises(RuntimeError, match="synthetic V8 preflight failure"):
+        run_registered_v8_diagnostics(
+            environment.cfg,
+            code_commit="8" * 40,
+            output_dir=environment.output_dir,
+        )
+
+    assert calls == []
+    assert not (environment.output_dir / f"{V8_REPORT_STEM}.claim").exists()
+    assert not (environment.output_dir / f"{V8_REPORT_STEM}.json").exists()
+    assert not (environment.output_dir / f"{V8_REPORT_STEM}.md").exists()
+
+
+def test_v8_runner_rejects_real_closed_registry_before_claim_or_score(
+    tmp_path,
+    monkeypatch,
+):
+    environment = _runner_environment(tmp_path)
+    calls = _install_runner_mocks(monkeypatch, environment)
+    closed_registry = load_experiment_registry(
+        ROOT / "docs" / "experiments" / "registry.yaml"
+    )
+    assert closed_registry.get(V8_EXPERIMENT_ID).status == "closed_rejected"
+    monkeypatch.setattr(
+        "lotto649.research_diagnostics.load_experiment_registry",
+        lambda _path: closed_registry,
+    )
+
+    with pytest.raises(RuntimeError, match="V8 registration provenance mismatch"):
         run_registered_v8_diagnostics(
             environment.cfg,
             code_commit="8" * 40,

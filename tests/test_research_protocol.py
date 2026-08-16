@@ -254,11 +254,11 @@ def test_v7_registry_preserves_frozen_variant_and_rejected_result():
     )
 
 
-def test_v8_registry_freezes_one_unscored_fixed_recurrence_harmonic():
+def test_v8_registry_preserves_frozen_variant_and_rejected_result():
     registry = load_experiment_registry(REGISTRY_PATH)
     registration = registry.get("V8_fixed_recurrence_harmonic")
 
-    assert registration.status == "registered"
+    assert registration.status == "closed_rejected"
     assert registration.family == "periodicity_frequency_domain"
     assert registration.model_name == "v8_spectral_phase"
     assert registration.model_version == "v8.0.0"
@@ -284,7 +284,53 @@ def test_v8_registry_freezes_one_unscored_fixed_recurrence_harmonic():
     )
     assert registration.outcomes_known_draw_count == 4432
     assert registration.outcomes_known_through == date(2026, 8, 15)
-    assert registration.result is None
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.decided_on == date(2026, 8, 16)
+    assert registration.result.implementation_commit == (
+        "c48ab2277f005a48bc4dc57f5a532b476ab900fa"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    for result_path in (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+    ):
+        assert (ROOT / result_path).is_file()
+    assert file_sha256(ROOT / registration.result.report_json) == (
+        "e9b51a5316811cbde2b06c36bb61ffffd04b283a4c886cb9ac213bb8fb7deed5"
+    )
+    assert file_sha256(ROOT / registration.result.report_markdown) == (
+        "9f39a94e5b1735176eafc6c0a14f3d712de96d703370ab505a5eb96ca5017667"
+    )
+    report = json.loads(
+        (ROOT / registration.result.report_json).read_text(encoding="utf-8")
+    )
+    assert report["code_commit"] == registration.result.implementation_commit
+    assert report["historical_decision"] == {
+        "all_gates_passed": False,
+        "decision": "reject",
+        "gates": {
+            "aggregate_bootstrap_lower_above_zero": False,
+            "aggregate_holm_adjusted_p_at_most_0_05": False,
+            "audit_clear": True,
+            "phase_control_null_aggregate_and_halves": True,
+            "positive_aggregate_primary_lift": False,
+            "positive_primary_lift_in_both_fixed_halves": False,
+            "proper_scores_within_fair_tolerance_aggregate_and_halves": False,
+            "row_control_null_and_candidate_outperforms_it": False,
+        },
+        "historical_primary_signal_supported": False,
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "shadow_activation": "not_activated",
+    }
+    assert report["audit_warnings"] == []
+    claim_path = ROOT / "reports/v8_spectral_phase_v8.0.0_historical.claim"
+    assert claim_path.is_file()
+    assert file_sha256(claim_path) == (
+        "6598a2f38462fe6274b9dfa6b6b8c51e6af367b551fd861ef8a582000d60c76d"
+    )
     assert registration.parameters == {
         "post_rng_start_date": "2019-05-15",
         "active_minimum_post_rng_prior_draws": 104,
@@ -976,6 +1022,7 @@ def test_activated_cohort_cannot_be_reset_with_dataclass_replace():
         "V5_pair_affinity",
         "V6_fixed_boundary_js_regime",
         "V7_post_rng_main_bonus_role_bias",
+        "V8_fixed_recurrence_harmonic",
     ],
 )
 def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
@@ -1001,6 +1048,7 @@ def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
         "V5_pair_affinity",
         "V6_fixed_boundary_js_regime",
         "V7_post_rng_main_bonus_role_bias",
+        "V8_fixed_recurrence_harmonic",
     ],
 )
 def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(

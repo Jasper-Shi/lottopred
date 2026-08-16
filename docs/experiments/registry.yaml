@@ -296,7 +296,7 @@ experiments:
     family: periodicity_frequency_domain
     model_name: v8_spectral_phase
     model_version: v8.0.0
-    status: registered
+    status: closed_rejected
     registration_file: docs/experiments/V8_fixed_recurrence_harmonic.md
     registered_on: 2026-08-16
     seed: 649
@@ -427,6 +427,16 @@ experiments:
         seed: 649
       - kind: per_number_spectral_phase_rotation
         seed: 649
+
+    result:
+      decision: reject
+      decided_on: 2026-08-16
+      implementation_commit: c48ab2277f005a48bc4dc57f5a532b476ab900fa
+      report_json: reports/v8_spectral_phase_v8.0.0_historical.json
+      report_markdown: reports/v8_spectral_phase_v8.0.0_historical.md
+      result_file: docs/experiments/V8_fixed_recurrence_harmonic_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
 
     prospective:
       status: not_activated
