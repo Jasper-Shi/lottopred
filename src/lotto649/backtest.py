@@ -10,6 +10,7 @@ from .domain import Prediction
 from .evaluation import evaluate_prediction
 from .models.factory import build_models
 from .optimizer import rank_numbers, select_combination
+from .research_protocol import walk_forward_folds
 
 
 def _prediction_at(model, history, target, cfg, version: str):
@@ -36,13 +37,14 @@ def _prediction_at(model, history, target, cfg, version: str):
 def run_backtest(draws, cfg, start: date, end: date, output_dir: Path | None = None) -> pd.DataFrame:
     models = build_models(cfg)
     min_hist = cfg["backtest"].get("min_history_draws", 300)
-    version = cfg["project"].get("model_version", "v1.0.0")
+    default_version = cfg["project"].get("model_version", "v1.0.0")
+    model_versions = cfg["backtest"].get("model_versions", {})
     rows = []
-    for idx, target in enumerate(draws):
-        if target.draw_date < start or target.draw_date > end or idx < min_hist:
-            continue
-        history = draws[:idx]
+    for fold in walk_forward_folds(draws, start, end, min_hist):
+        history = list(fold.history)
+        target = fold.target
         for model in models.values():
+            version = model_versions.get(model.name, default_version)
             pred = _prediction_at(model, history, target, cfg, version)
             rows.append(evaluate_prediction(pred, target))
     frame = pd.DataFrame(rows)

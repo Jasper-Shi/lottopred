@@ -1,0 +1,55 @@
+project:
+  timezone: America/Toronto
+  model_version: v5.0.0
+  seed: 649
+
+data:
+  history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
+  recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
+  bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
+  bridge_start_year: 2024
+  processed_csv: "data/processed/draws.csv"
+
+backtest:
+  min_history_draws: 300
+  test_start: "1982-01-01"
+  test_end: "2025-12-31"
+  top_k: [6, 12, 18]
+  models:
+    - random
+    - long_frequency
+    - recent_frequency
+    - ema_gap
+    - logistic
+    - ensemble
+    - v3_boosting
+    - v5_pair_affinity
+  model_versions:
+    random: v1.0.0
+    long_frequency: v1.0.0
+    recent_frequency: v1.0.0
+    ema_gap: v1.0.0
+    logistic: v1.0.0
+    ensemble: v1.0.0
+    v3_boosting: v1.0.0
+    v5_pair_affinity: v5.0.0
+
+features:
+  recent_windows: [10, 25, 50, 100, 250]
+  ema_half_life: 35
+  logistic_training_draws: 480
+  min_logistic_samples: 300
+  v3_training_draws: 280
+  v3_stride: 14
+  v3_min_history: 300
+
+prediction:
+  candidate_pool_size: 12
+  final_size: 6
+
+notifications:
+  enabled: false
+  min_final_hits: 4
+  min_top12_hits: 5
+  performance_alert_min_draws: 100
+  performance_alert_z: 2.58
