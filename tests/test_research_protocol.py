@@ -10,6 +10,7 @@ import subprocess
 import pytest
 import yaml
 
+from lotto649.config import load_config
 from lotto649.data import load_draws
 from lotto649.domain import Draw
 from lotto649.research_protocol import (
@@ -251,6 +252,265 @@ def test_v7_registry_preserves_frozen_variant_and_rejected_result():
     assert file_sha256(ROOT / registration.parameters["reference_report"]) == (
         registration.parameters["reference_report_sha256"]
     )
+
+
+def test_v8_registry_freezes_one_unscored_fixed_recurrence_harmonic():
+    registry = load_experiment_registry(REGISTRY_PATH)
+    registration = registry.get("V8_fixed_recurrence_harmonic")
+
+    assert registration.status == "registered"
+    assert registration.family == "periodicity_frequency_domain"
+    assert registration.model_name == "v8_spectral_phase"
+    assert registration.model_version == "v8.0.0"
+    assert registration.primary_metric == "top12_hits_lift_vs_theory"
+    assert registration.multiplicity_family == "periodicity_frequency_domain"
+    assert registration.variant_index == 1
+    assert registration.registered_on == date(2026, 8, 16)
+    assert registration.seed == 649
+    assert registration.dataset_path == "data/processed/draws.csv"
+    assert registration.dataset_source_commit == (
+        "39b99a9e0a6351b4143f81c9a95eb1639456a35d"
+    )
+    assert registration.dataset_sha256 == (
+        "95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf"
+    )
+    assert registration.dataset_draw_count == 4431
+    assert registration.registration_history_through == date(2026, 8, 12)
+    assert registration.outcomes_known_source_commit == (
+        "90177c80cfb070038d79508fb2e73305a297f516"
+    )
+    assert registration.outcomes_known_sha256 == (
+        "edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3"
+    )
+    assert registration.outcomes_known_draw_count == 4432
+    assert registration.outcomes_known_through == date(2026, 8, 15)
+    assert registration.result is None
+    assert registration.parameters == {
+        "post_rng_start_date": "2019-05-15",
+        "active_minimum_post_rng_prior_draws": 104,
+        "history_window": "expanding_post_rng",
+        "history_integrity": "exact_verified_source_blob_prefix",
+        "missing_or_disputed_draw_policy": "invalid_pipeline_archive",
+        "history_index_origin": "zero_based_2019_05_15_draw",
+        "time_axis": "draw_index_not_calendar_time",
+        "input_indicator": "six_main_membership_only",
+        "bonus_numbers": "excluded",
+        "fair_inclusion_probability": 0.12244897959183673,
+        "fixed_period_draws": 8.166666666666666,
+        "fixed_angular_frequency": "12*pi/49",
+        "coefficient_estimator": "raw_fourier_projection_2_over_D",
+        "coefficient_summation": "python_math_fsum_ascending_index",
+        "forecast_phase_index": "D",
+        "forecast_score": "a_cos_omega_D_plus_b_sin_omega_D",
+        "finite_prefix_orthogonalization": "none",
+        "training": "none",
+        "zscore": "none",
+        "signal_temperature": "none",
+        "regularization": "none",
+        "calibration": "none",
+        "combination_constraints": "none",
+        "ensemble_members": "none",
+        "fair_fallback": "exact_constant_6_over_49",
+        "all_zero_signal_behavior": "exact_constant_6_over_49",
+        "probability_link": "stable_sigmoid",
+        "intercept_constraint": "sum_probabilities_equals_6",
+        "intercept_solver": "deterministic_bisection",
+        "bisection_lower": "negative_64_minus_max_abs_score",
+        "bisection_upper": "positive_64_plus_max_abs_score",
+        "bisection_iterations": 256,
+        "bisection_requires_strict_bracket": True,
+        "bisection_equality_branch": "lower",
+        "bisection_early_exit": "prohibited",
+        "bisection_endpoint_clipping": "prohibited",
+        "probability_sum_absolute_tolerance": 1.0e-12,
+        "output_labels": "integers_1_through_49",
+        "ranking_tie_break": "probability_desc_number_asc",
+        "row_control_hash": "sha256",
+        "row_control_domain": (
+            "lotto649-v8-prefix-control-v1:649:{D}:{index}"
+        ),
+        "row_control_digest_bytes": 32,
+        "row_control_sort": "digest_bytes_ascending_then_index",
+        "row_control_identity_fallback": "rotate_left_one",
+        "row_control_scope": "each_strict_post_rng_prefix",
+        "row_control_target": "unchanged",
+        "phase_control_hash": "sha256",
+        "phase_control_domain": (
+            "lotto649-v8-phase-control-v1:649:{number}"
+        ),
+        "phase_control_bytes": "first_8",
+        "phase_control_endianness": "big",
+        "phase_control_denominator": 18446744073709551616,
+        "phase_control_score": "a_cos_theta_plus_phi_plus_b_sin_theta_plus_phi",
+        "historical_primary_gate_lane": "consumed_diagnostic",
+        "historical_target_start": "2020-01-01",
+        "historical_target_end": "2025-12-31",
+        "historical_target_count": 621,
+        "post_rng_burn_in_draw_count_through_2019": 65,
+        "historical_fair_fallback_target_count": 39,
+        "historical_active_target_count": 582,
+        "first_historical_active_target": "2020-05-20",
+        "historical_development_status": "not_applicable",
+        "historical_legacy_validation_status": "not_applicable",
+        "stability_half_1_start": "2020-01-01",
+        "stability_half_1_end": "2022-12-31",
+        "stability_half_1_target_count": 307,
+        "stability_half_2_start": "2023-01-01",
+        "stability_half_2_end": "2025-12-31",
+        "stability_half_2_target_count": 314,
+        "primary_exact_test": (
+            "hypergeometric_draw_level_convolution_upper_tail"
+        ),
+        "bootstrap_replicates": 10000,
+        "bootstrap_rng": "numpy.default_rng",
+        "bootstrap_seed": 649,
+        "bootstrap_interval": "two_sided_95_percentile_linear",
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "holm_method": "step_down_fwer",
+        "holm_family_size_at_registration": 1,
+        "control_null_rule": "raw_p_gt_0_05_or_ci_includes_zero",
+        "row_control_direct_comparison": (
+            "paired_candidate_minus_row_control_top12_hits"
+        ),
+        "row_control_direct_bootstrap_replicates": 10000,
+        "row_control_direct_bootstrap_rng": "numpy.default_rng",
+        "row_control_direct_bootstrap_seed": 649,
+        "row_control_direct_bootstrap_interval": (
+            "two_sided_95_percentile_linear"
+        ),
+        "row_control_direct_gate": (
+            "lower_endpoint_strictly_above_zero_aggregate_and_halves"
+        ),
+        "prospective_exact_eligible_evaluated_draws": 208,
+        "prospective_half_draws": 104,
+        "prospective_early_look": "prohibited",
+        "prospective_extension": "prohibited",
+        "prospective_history_integrity": (
+            "exact_snapshot_bound_source_blob_prefix"
+        ),
+        "reference_report": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.json"
+        ),
+        "reference_report_sha256": (
+            "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+        ),
+        "reference_claim": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.claim"
+        ),
+        "reference_claim_sha256": (
+            "1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290"
+        ),
+    }
+    assert [control.kind for control in registration.negative_controls] == [
+        "strict_prefix_whole_draw_permutation",
+        "per_number_spectral_phase_rotation",
+    ]
+    assert [control.seed for control in registration.negative_controls] == [649, 649]
+    assert registration.prospective.status == "not_activated"
+    assert registration.prospective.minimum_eligible_draws == 208
+    assert (ROOT / registration.registration_file).is_file()
+    assert file_sha256(ROOT / registration.parameters["reference_report"]) == (
+        registration.parameters["reference_report_sha256"]
+    )
+    assert file_sha256(ROOT / registration.parameters["reference_claim"]) == (
+        registration.parameters["reference_claim_sha256"]
+    )
+    draws = load_draws(ROOT / registration.dataset_path)
+    prefix = validated_registered_draw_prefix(
+        ROOT / registration.dataset_path,
+        draws,
+        expected_sha256=registration.dataset_sha256,
+        draw_count=registration.dataset_draw_count,
+        history_through=registration.registration_history_through,
+    )
+    assert len(prefix) == 4431
+    assert prefix[-1].draw_date == date(2026, 8, 12)
+
+    cfg = load_config(ROOT / "config" / "research-v8-fixed-spectral-phase.yaml")
+    assert cfg["project"] == {
+        "timezone": "America/Toronto",
+        "model_version": "v8.0.0",
+        "seed": 649,
+    }
+    assert cfg["backtest"] == {
+        "min_history_draws": 104,
+        "test_start": "2020-01-01",
+        "test_end": "2025-12-31",
+        "top_k": [6, 12, 18],
+        "models": ["v8_spectral_phase"],
+        "model_versions": {"v8_spectral_phase": "v8.0.0"},
+    }
+    assert cfg["research"] == {
+        "experiment_id": "V8_fixed_recurrence_harmonic",
+        "family": "periodicity_frequency_domain",
+        "variant_index": 1,
+        "post_rng_start_date": "2019-05-15",
+        "active_minimum_post_rng_prior_draws": 104,
+        "history_integrity": "exact_verified_source_blob_prefix",
+        "missing_or_disputed_draw_policy": "invalid_pipeline_archive",
+        "fair_inclusion_probability": 0.12244897959183673,
+        "fixed_period_draws": 8.166666666666666,
+        "fixed_angular_frequency": "12*pi/49",
+        "coefficient_estimator": "raw_fourier_projection_2_over_D",
+        "probability_link": "stable_sigmoid",
+        "bisection_iterations": 256,
+        "probability_sum_absolute_tolerance": 1.0e-12,
+        "historical_target_count": 621,
+        "post_rng_burn_in_draw_count_through_2019": 65,
+        "historical_fair_fallback_target_count": 39,
+        "historical_active_target_count": 582,
+        "first_historical_active_target": "2020-05-20",
+        "stability_halves": [
+            {
+                "start": "2020-01-01",
+                "end": "2022-12-31",
+                "target_count": 307,
+            },
+            {
+                "start": "2023-01-01",
+                "end": "2025-12-31",
+                "target_count": 314,
+            },
+        ],
+        "bootstrap_replicates": 10000,
+        "bootstrap_seed": 649,
+        "negative_controls": [
+            "strict_prefix_whole_draw_permutation",
+            "per_number_spectral_phase_rotation",
+        ],
+        "control_null_rule": "raw_p_gt_0_05_or_ci_includes_zero",
+        "row_control_direct_comparison": (
+            "paired_candidate_minus_row_control_top12_hits"
+        ),
+        "row_control_direct_bootstrap_replicates": 10000,
+        "row_control_direct_bootstrap_rng": "numpy.default_rng",
+        "row_control_direct_bootstrap_seed": 649,
+        "row_control_direct_bootstrap_interval": (
+            "two_sided_95_percentile_linear"
+        ),
+        "row_control_direct_gate": (
+            "lower_endpoint_strictly_above_zero_aggregate_and_halves"
+        ),
+        "prospective_exact_eligible_evaluated_draws": 208,
+        "prospective_half_draws": 104,
+        "prospective_history_integrity": (
+            "exact_snapshot_bound_source_blob_prefix"
+        ),
+        "reference_report": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.json"
+        ),
+        "reference_report_sha256": (
+            "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+        ),
+        "reference_claim": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.claim"
+        ),
+        "reference_claim_sha256": (
+            "1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290"
+        ),
+    }
+    assert cfg["live"] == {"enabled": False, "models": [], "shadow_models": []}
+    assert cfg["notifications"]["enabled"] is False
 
 
 def _unsealed_v6_candidate():
@@ -512,6 +772,26 @@ def test_bonus_role_control_rejects_nonunique_chronology(failure):
 def test_negative_control_spec_still_rejects_unregistered_control_kind():
     with pytest.raises(ValueError, match="unsupported negative control"):
         NegativeControlSpec(kind="shuffle_individual_balls", seed=649)
+
+
+def test_negative_control_spec_supports_per_number_spectral_phase_rotation():
+    control = NegativeControlSpec(
+        kind="per_number_spectral_phase_rotation",
+        seed=649,
+    )
+
+    assert control.kind == "per_number_spectral_phase_rotation"
+    assert control.seed == 649
+
+
+def test_negative_control_spec_supports_strict_prefix_whole_draw_permutation():
+    control = NegativeControlSpec(
+        kind="strict_prefix_whole_draw_permutation",
+        seed=649,
+    )
+
+    assert control.kind == "strict_prefix_whole_draw_permutation"
+    assert control.seed == 649
 
 
 def test_promotion_minimum_cannot_be_weakened():

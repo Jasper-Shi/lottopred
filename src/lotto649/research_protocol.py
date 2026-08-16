@@ -71,6 +71,8 @@ class NegativeControlSpec:
 
     def __post_init__(self) -> None:
         if self.kind not in {
+            "per_number_spectral_phase_rotation",
+            "strict_prefix_whole_draw_permutation",
             "whole_draw_date_permutation",
             "within_draw_bonus_reassignment",
         }:

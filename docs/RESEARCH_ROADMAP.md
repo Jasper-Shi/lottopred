@@ -126,6 +126,7 @@ must remain in the ledger rather than being deleted.
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
+| [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Registered — not implemented or scored | No result; fixed low-prior falsification test only | Not activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -195,6 +196,25 @@ role. Its previously registered 208-draw plan remains an unstarted record, not
 permission to reopen `v7.0.0`. Any follow-up inspired by these results requires
 a genuinely new hypothesis/version and pre-registration; the observed V7
 history is consumed for it. V1 remains production and V3 remains shadow.
+
+V8 registers one fixed-frequency, post-RNG falsification test before any V8
+implementation or score exists. It projects each label's strictly prior
+six-main membership indicator onto the sole frequency `12*pi/49`, chosen from
+the reciprocal fair inclusion probability rather than from a periodogram. The
+[primary-source basis](research/V8_fixed_spectral_basis.md) makes the limitation
+explicit: `49/6` is a geometric waiting-time mean, not an official or physical
+lottery cycle, and a fair IID process gives this frequency no privileged
+expected power.
+
+The [V8 registration](experiments/V8_fixed_recurrence_harmonic.md) freezes the
+raw expanding projection, one deterministic sum-to-six sigmoid map, all 621
+consumed 2020–2025 targets, two fixed stability halves, and two distinct
+controls. The strict-prefix whole-draw control preserves the six-of-49 row
+constraint while destroying temporal order; the per-label phase rotation is
+only a component stress test and is not presented as a row-preserving fair
+null. V8 is currently **registered / not implemented / not scored / not
+activated**. No V8 historical report or live snapshot exists, and V1 remains
+production while V3 remains shadow.
 
 ## Validation protocol
 

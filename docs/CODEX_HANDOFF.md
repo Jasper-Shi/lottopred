@@ -18,6 +18,7 @@ in `V2_V4_RESULTS.md`.
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
+| V8 fixed-recurrence harmonic | Registered only | `v8.0.0` has a frozen low-prior protocol but no implementation, score, report, live role, or prospective cohort. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -109,6 +110,33 @@ it must never be deleted to retry the experiment. V7 remains absent from
 `config.yaml`, and its research config keeps `live.enabled: false` with empty
 primary and shadow lists. V1 remains production, V3 remains shadow, and existing
 prediction/evaluation snapshots are unchanged.
+
+## V8 research checkpoint
+
+The next attempt is
+[`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md),
+version `v8.0.0`. It is **registered / not implemented / not scored / not
+activated**. Its [source note](research/V8_fixed_spectral_basis.md) records the
+weak prior honestly: `49/6` draws is the fair geometric waiting-time mean, not a
+mechanism-backed period, and the fixed `12*pi/49` harmonic is expected to be a
+negative falsification test under a fair IID process.
+
+The registration fixes a strict post-2019-05-15 expanding main-number history,
+the raw Fourier projection and target phase, a deterministic sum-to-six sigmoid
+mapping, and exactly 621 consumed 2020–2025 targets. Development and legacy
+scores are N/A rather than substitute discovery lanes. It also freezes two
+controls: a strict-prefix complete-row permutation that preserves each six-main
+plus bonus row, and a per-label phase rotation used only as a spectral-component
+stress test. Both must behave as null in the aggregate and both fixed halves.
+
+The dedicated config is
+`config/research-v8-fixed-spectral-phase.yaml`; it explicitly sets
+`live.enabled: false` with empty primary and shadow lists. Before any V8 score,
+the registration must be committed and reviewed, then a separate deterministic
+implementation commit must pass local checks and CI from a clean exact HEAD.
+Only then may the permanent one-shot claim be created immediately before the
+first score. V1 production, V3 shadow, `config.yaml`, workflows, and existing
+prediction/evaluation snapshots remain unchanged.
 
 ## How the implemented system runs
 

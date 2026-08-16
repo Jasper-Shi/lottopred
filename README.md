@@ -87,3 +87,5 @@ See:
 - `docs/experiments/V7_main_bonus_role_bias.md`
 - `docs/experiments/V7_main_bonus_role_bias_results.md`
 - `docs/research/V7_mechanical_bias_basis.md`
+- `docs/experiments/V8_fixed_recurrence_harmonic.md`
+- `docs/research/V8_fixed_spectral_basis.md`
