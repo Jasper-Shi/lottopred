@@ -1,6 +1,6 @@
 # Codex Handoff
 
-Last verified against `main` commit `39b99a9` on 2026-08-16.
+Last verified against `main` commit `90177c8` on 2026-08-16.
 
 ## Current state
 
@@ -15,7 +15,7 @@ in `V2_V4_RESULTS.md`.
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Shadow | Creates immutable live snapshots and evaluations beside V1; it does not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
-| V5 pair affinity | Registered only | `v5.0.0` is pre-registered but not implemented, evaluated, or activated. It is absent from backtest and live config. |
+| V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -24,7 +24,7 @@ ranking lift is interesting but not statistically convincing.
 
 ## V5 research checkpoint
 
-The first V5+ attempt is registered as
+The first V5+ attempt was registered as
 [`V5_pair_affinity`](experiments/V5_pair_affinity.md), with its structured row in
 [`docs/experiments/registry.yaml`](experiments/registry.yaml). The registration
 freezes one strongly shrunk, previous-draw-anchored pair-affinity formula, a
@@ -32,21 +32,31 @@ single primary Top-12 metric, bounded secondary metrics, a deterministic
 whole-draw date-permutation control, Holm family-wise correction, and the default
 minimum 104-draw prospective gate.
 
-The current status is **registered / not implemented / not evaluated / not
-activated**. No candidate score was inspected while defining it. Its recorded
-dataset is the 4,431-draw file through 2026-08-12 at source commit `39b99a9`, so
-all 2026 outcomes knowable before a future activation are consumed rather than
-prospective for this version. `config.yaml`, the model factory, V1 production,
-V3 shadow behavior, and all committed snapshots remain unchanged.
+The current status is **implemented / historical diagnostic complete / rejected
+/ never activated**. The exact model implementation was committed as `f51a3b5`
+before any candidate score was inspected. Its recorded dataset is the fixed
+4,431-draw prefix through 2026-08-12 at source commit `39b99a9`; later live
+appends cannot change that prefix or the registered negative control.
 
-`src/lotto649/research_protocol.py` provides the supporting registry validation,
-strict-prefix walk-forward folds, deterministic negative-control transform,
-fingerprints, and conservative cohort eligibility checks. The next research
-step is to implement the registered formula and its feature-specific invariance
-tests without changing the registration or reading candidate scores during
-implementation. Historical diagnostics must then be reported with their lane
-labels and both negative and positive results before any separate shadow
-activation review.
+The result did not establish stable signal. Primary Top-12 lifts for development,
+legacy validation, and consumed 2020-2025 were `+0.008056`, `-0.065542`, and
+`+0.024976`; exact one-sided p-values were `0.334025`, `0.936385`, and
+`0.272298`, and every 95% bootstrap interval included zero. Brier score and log
+loss were worse than the fair constant baseline in every lane. The seed-649
+negative control behaved as null. See the
+[decision record](experiments/V5_pair_affinity_results.md) and generated
+[historical report](../reports/v5_pair_affinity_v5.0.0_historical.md).
+
+`v5_pair_affinity` is requestable only from the dedicated research config. It is
+not in `config.yaml` or `live.models`; no V5 live snapshot exists. V1 production,
+V3 shadow behavior, and every committed prediction snapshot remain unchanged.
+
+`src/lotto649/research_protocol.py` provides registry/result validation,
+registered-prefix integrity checks, strict-prefix walk-forward folds, the
+deterministic negative-control transform, fingerprints, and conservative cohort
+eligibility checks. The next research step is a new, bounded pre-registration
+for a genuinely separate feature family. Do not alter `v5.0.0` in response to
+its observed results or open a shadow cohort for this rejected version.
 
 ## How the implemented system runs
 
@@ -83,22 +93,24 @@ Change version semantics deliberately rather than renaming committed snapshots.
 
 ## Current V3 forward checkpoint
 
-The first committed V3 shadow snapshot is
-`predictions/2026-08-15__v3_boosting__v1.0.0.json`:
+The newest committed V3 shadow snapshot is
+`predictions/2026-08-19__v3_boosting__v1.0.0.json`:
 
-- generated 2026-08-15 10:13:18 EDT (`America/Toronto`);
-- target draw 2026-08-15;
-- trained from 4,431 committed draws through 2026-08-12;
-- Top-6/final combination: `07 21 36 38 41 49` (ranking order is
-  `07 36 41 49 21 38`);
-- Top-12: `07 36 41 49 21 38 13 08 20 43 04 16`;
+- generated 2026-08-16 11:36:09 EDT (`America/Toronto`);
+- target draw 2026-08-19;
+- trained from 4,432 committed draws through 2026-08-15;
+- Top-6 ranking: `17 08 10 27 33 20`;
+- final combination: `08 10 17 20 27 33`;
+- Top-12: `17 08 10 27 33 20 03 22 49 15 30 39`;
 - metadata role: `shadow`.
 
-At this handoff checkpoint, the processed dataset still ends on 2026-08-12 and no
-evaluation for the 2026-08-15 target is committed. The scheduled live job will
-evaluate it only after a verified result appears in the reconciled dataset. To
-find the moving current checkpoint, inspect the newest V3 file under
-`predictions/` and its same-named file under `evaluations/`.
+That newest target is not yet evaluated. The preceding 2026-08-15 V3 snapshot
+has now been evaluated against verified main numbers `01 09 17 34 36 43`
+(bonus `24`): Top-6 `1`, Top-12 `2`, Top-18 `3`, final-combination hits `1`,
+mean actual rank `19.166667`, Brier `0.105576857`, and log loss `0.361421605`.
+The processed dataset now contains 4,432 draws through 2026-08-15. To find the
+moving current checkpoint, inspect the newest V3 file under `predictions/` and
+its same-named file under `evaluations/`.
 
 Prediction files are immutable. `generate_next_predictions` skips an already
 existing target/model/version path, and the storage layer rejects overwrites by
@@ -120,8 +132,10 @@ The active workflows are:
 - `research-v2-fast.yml` and `research-v2-v4.yml`: historical branch-specific
   research workflows retained for auditability.
 
-The latest checked live run after the bridge fallback fix succeeded on 2026-08-15
-([Actions run 31889275021](https://github.com/Jasper-Shi/lottopred/actions/runs/31889275021)).
+The latest scheduled live cycle succeeded on 2026-08-16
+([Actions run 31956059222](https://github.com/Jasper-Shi/lottopred/actions/runs/31956059222)).
+It committed `90177c8`, advanced verified history to 2026-08-15, created seven
+evaluations, and created seven next-draw snapshots for 2026-08-19.
 The Gmail alert smoke test also succeeded on 2026-08-15
 ([Actions run 31887288254](https://github.com/Jasper-Shi/lottopred/actions/runs/31887288254)).
 Secret values are not readable from the repository; the successful smoke run
@@ -160,6 +174,13 @@ A lotto.net `requests` failure or timeout is recoverable: the cycle warns and
 continues with committed data, the WCLC archive, and current WCLC results. This is
 safe only if the resulting chronology still passes validation.
 
+The 2026-08-16 scheduled run exercised that fallback: the lotto.net 2024 bridge
+timed out after 60 seconds, while committed/WCLC reconciliation still produced a
+valid 4,432-draw chronology and the run succeeded. This remains an operational
+warning, not a silent source substitution. GitHub also emitted its platform-level
+Node.js 20 deprecation warning for `actions/checkout@v4` and
+`actions/setup-python@v5`; it did not fail the job.
+
 The following conditions remain fatal by design:
 
 - WCLC archive/current request or parse failure;
@@ -173,19 +194,18 @@ Do not broaden the fallback to swallow those integrity failures.
 ## How Codex should continue
 
 1. Read root `AGENTS.md`, `MODEL_PROTOCOL.md`, `V2_V4_RESULTS.md`, and
-   `RESEARCH_ROADMAP.md` before proposing V5.
+   `RESEARCH_ROADMAP.md` before proposing any V5+ candidate.
 2. Pull current `main` and inspect the newest committed prediction/evaluation
    files before reporting live status.
 3. Keep V1 unchanged as the baseline and V3 labeled shadow while new hypotheses
    are developed.
-4. Keep the registered V5 pair-affinity specification immutable while implementing
-   it and its feature-specific invariance tests.
-5. Run leakage checks and the registered negative control before candidate
-   scoring, then report every historical lane as a labeled diagnostic; do not
-   call any 1982–2025 result untouched evidence for V5.
-6. Freeze code/config/version in Git, then use a separate reviewed PR to start V5
-   as a shadow model. Count forward evidence only from its own first eligible
-   pre-draw snapshot.
+4. Keep rejected `v5.0.0` immutable and retain its reports and registry row as a
+   negative result.
+5. Pre-register one genuinely separate hypothesis before implementing or
+   inspecting its scores; all currently observed outcomes are consumed for any
+   model changed in response to them.
+6. Start a future candidate as shadow only through a separate reviewed PR and
+   count evidence only from that exact version's first eligible pre-draw snapshot.
 7. Let normal live jobs continue during research. Never rewrite forward artifacts
    or mix research-only models into `live.models` without a reviewed promotion PR.
 8. Run `pytest -q` and `ruff check .`; run integration smoke checks for live/data

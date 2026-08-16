@@ -4,6 +4,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date
 import json
+from hashlib import sha256
 from math import comb, log
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ from .backtest import run_backtest
 from .config import resolve_path
 from .data import load_draws
 from .research_protocol import (
+    file_sha256,
     load_experiment_registry,
     permute_draw_outcomes,
     validated_registered_draw_prefix,
@@ -65,6 +67,33 @@ HISTORICAL_LANES = (
         "consumed historical diagnostic; never blind or confirmatory",
     ),
 )
+
+
+def _configuration_manifest(cfg: dict) -> dict[str, Any]:
+    effective = {
+        key: deepcopy(value)
+        for key, value in cfg.items()
+        if not str(key).startswith("_")
+    }
+    canonical = json.dumps(effective, sort_keys=True, separators=(",", ":")).encode()
+    config_path = cfg.get("_config_path")
+    if config_path is None:
+        source = "in-memory"
+        source_sha256 = sha256(canonical).hexdigest()
+    else:
+        path = Path(config_path)
+        root = Path(cfg["_root"])
+        try:
+            source = str(path.relative_to(root))
+        except ValueError:
+            source = str(path)
+        source_sha256 = file_sha256(path)
+    return {
+        "source": source,
+        "source_sha256": source_sha256,
+        "effective_sha256": sha256(canonical).hexdigest(),
+        "effective": effective,
+    }
 
 
 def single_draw_topk_pmf(k: int) -> np.ndarray:
@@ -241,6 +270,9 @@ def _render_markdown(payload: dict[str, Any]) -> str:
         f"- Experiment: `{payload['experiment_id']}` / `{payload['model_version']}`",
         f"- Frozen implementation commit: `{payload['code_commit']}`",
         f"- Dataset SHA-256: `{payload['dataset']['sha256']}`",
+        f"- Research config: `{payload['configuration']['source']}`",
+        f"- Research config SHA-256: `{payload['configuration']['source_sha256']}`",
+        f"- Effective config SHA-256: `{payload['configuration']['effective_sha256']}`",
         f"- Negative-control seed: `{payload['negative_control_seed']}`",
         "- Primary metric: mean Top-12 hits lift versus exact `72/49`",
         "",
@@ -352,6 +384,8 @@ def run_registered_v5_diagnostics(
             "lotto649 --config config/research-v5-pair-affinity.yaml "
             f"research-v5 --code-commit {code_commit}"
         ),
+        "comparison_models": list(REQUIRED_COMPARISON_MODELS),
+        "configuration": _configuration_manifest(cfg),
         "dataset": {
             "path": registration.dataset_path,
             "source_commit": registration.dataset_source_commit,
@@ -360,6 +394,7 @@ def run_registered_v5_diagnostics(
             "history_through": registration.registration_history_through.isoformat(),
         },
         "negative_control_seed": registration.seed,
+        "registered_parameters": dict(registration.parameters),
         "multiplicity_family": registration.multiplicity_family,
         "multiplicity_family_size": family_size,
         "lanes": lane_payloads,

@@ -38,12 +38,25 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
     registry = load_experiment_registry(REGISTRY_PATH)
     registration = registry.get("V5_pair_affinity")
 
-    assert registration.status == "registered"
+    assert registration.status == "closed_rejected"
     assert registration.model_name == "v5_pair_affinity"
     assert registration.model_version == "v5.0.0"
     assert registration.primary_metric == "top12_hits_lift_vs_theory"
     assert registration.prospective.status == "not_activated"
     assert registration.prospective.minimum_eligible_draws == 104
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.implementation_commit == (
+        "f51a3b59e857f6c3a5d9c0502a0c30e71d15d3b4"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    for result_path in (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+    ):
+        assert (ROOT / result_path).is_file()
 
     dataset_path = ROOT / registration.dataset_path
     draws = load_draws(dataset_path)
@@ -188,7 +201,12 @@ def _active_registration():
         freeze_commit="a" * 40,
         cohort_start=date(2027, 1, 6),
     )
-    return replace(registration, status="prospective_shadow", prospective=active)
+    return replace(
+        registration,
+        status="prospective_shadow",
+        prospective=active,
+        result=None,
+    )
 
 
 def _snapshot() -> dict:

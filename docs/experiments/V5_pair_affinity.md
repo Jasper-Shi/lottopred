@@ -8,12 +8,19 @@
 | Candidate | `v5_pair_affinity` |
 | Model version | `v5.0.0` |
 | Feature family | pair/co-occurrence |
-| Registration | **REGISTERED** |
-| Candidate implementation | **NOT IMPLEMENTED** |
-| Candidate evaluation | **NOT EVALUATED** |
-| Prospective cohort | **NOT ACTIVATED** |
+| Registration | **REGISTERED — SPECIFICATION FROZEN** |
+| Candidate implementation | **IMPLEMENTED — `f51a3b59e857f6c3a5d9c0502a0c30e71d15d3b4`** |
+| Candidate evaluation | **HISTORICAL DIAGNOSTIC COMPLETE — REJECT** |
+| Prospective cohort | **NOT ACTIVATED; VERSION CLOSED** |
 | Registration date | 2026-08-16 |
 | Protocol seed | `649` |
+
+The status cells above are an administrative post-registration update. They do
+not alter the hypothesis, formula, metrics, controls, or gates frozen below.
+The complete outcome is recorded in
+[V5_pair_affinity_results.md](V5_pair_affinity_results.md) and the generated
+[JSON](../../reports/v5_pair_affinity_v5.0.0_historical.json) and
+[Markdown](../../reports/v5_pair_affinity_v5.0.0_historical.md) reports.
 
 This document freezes one outcome-blind candidate before any candidate score is
 generated or inspected. The candidate's null or negative result is a successful
@@ -299,12 +306,18 @@ record every attempt and correct for multiple comparisons
 
 ## Prospective cohort and stopping rule
 
-No cohort start date or freeze commit is registered today. The registry status is
-`registered` and the cohort status is `not_activated`. A start date and immutable
-freeze commit may be set only by a future reviewed freeze/live-activation commit
-that implements this exact `v5.0.0` specification as a `shadow` model. No target
-before that activation can be included retrospectively
+No cohort start date or freeze commit was registered. The original protocol
+allowed one to be set only by a future reviewed freeze/live-activation commit
+that implemented this exact `v5.0.0` specification as a `shadow` model. No target
+before such an activation could have been included retrospectively
 ([start a prospective cohort](../RESEARCH_ROADMAP.md#6-start-a-prospective-shadow-cohort)).
+
+The historical diagnostic subsequently failed to establish the registered
+signal and degraded both proper scores relative to the fair constant baseline.
+The registry status is now `closed_rejected`; the cohort remains
+`not_activated`, and no start date or freeze commit will be assigned to
+`v5.0.0`. The prospective rules below are preserved as the originally frozen
+gate, not as an active or planned cohort.
 
 After activation, a target is eligible only when all of these conditions hold:
 

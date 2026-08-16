@@ -1,11 +1,14 @@
 from datetime import date, timedelta
 from hashlib import sha256
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from lotto649.config import load_config
 from lotto649.domain import Draw
 from lotto649.evaluation import binary_log_loss, brier_score
 from lotto649.research_diagnostics import (
@@ -13,6 +16,8 @@ from lotto649.research_diagnostics import (
     FAIR_EXPECTATIONS,
     FAIR_P,
     REQUIRED_COMPARISON_MODELS,
+    _configuration_manifest,
+    _render_markdown,
     bootstrap_mean_lift_interval,
     exact_topk_upper_tail,
     fair_constant_scores,
@@ -20,6 +25,10 @@ from lotto649.research_diagnostics import (
     run_registered_v5_diagnostics,
     single_draw_topk_pmf,
 )
+from lotto649.research_protocol import load_experiment_registry
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_top12_hypergeometric_pmf_is_normalized_with_registered_mean():
@@ -101,6 +110,26 @@ def test_primary_summary_keeps_registered_exact_test_and_all_secondary_metrics()
     assert "top18_lift_vs_theory" in summary
     assert "brier_delta_vs_fair" in summary
     assert "log_loss_delta_vs_fair" in summary
+
+
+def test_committed_report_manifest_matches_frozen_configuration_and_registry():
+    report = json.loads(
+        (ROOT / "reports" / "v5_pair_affinity_v5.0.0_historical.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    cfg = load_config(ROOT / "config" / "research-v5-pair-affinity.yaml")
+    registration = load_experiment_registry(
+        ROOT / "docs" / "experiments" / "registry.yaml"
+    ).get("V5_pair_affinity")
+
+    assert report["configuration"] == _configuration_manifest(cfg)
+    assert report["registered_parameters"] == dict(registration.parameters)
+    assert report["comparison_models"] == list(REQUIRED_COMPARISON_MODELS)
+    assert report["code_commit"] == registration.result.implementation_commit
+    assert (
+        ROOT / "reports" / "v5_pair_affinity_v5.0.0_historical.md"
+    ).read_text(encoding="utf-8") == _render_markdown(report)
 
 
 def test_registered_diagnostics_freeze_normal_and_control_to_dataset_prefix(
@@ -185,7 +214,7 @@ def test_registered_diagnostics_freeze_normal_and_control_to_dataset_prefix(
         "lotto649.research_diagnostics._render_markdown", lambda _payload: "synthetic\n"
     )
 
-    run_registered_v5_diagnostics(
+    result = run_registered_v5_diagnostics(
         cfg,
         code_commit="b" * 40,
         output_dir=tmp_path / "reports",
@@ -193,3 +222,11 @@ def test_registered_diagnostics_freeze_normal_and_control_to_dataset_prefix(
 
     assert calls[::2] == [tuple(draws[:4])] * 3
     assert calls[1::2] == [control_draws] * 3
+    assert result["report"]["comparison_models"] == list(REQUIRED_COMPARISON_MODELS)
+    assert result["report"]["configuration"]["source"] == "in-memory"
+    assert result["report"]["configuration"]["effective"] == {
+        key: value for key, value in cfg.items() if not key.startswith("_")
+    }
+    assert result["report"]["registered_parameters"] == {
+        "minimum_history_draws": 1
+    }
