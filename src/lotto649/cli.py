@@ -14,6 +14,7 @@ from .research_diagnostics import (
     run_registered_v5_diagnostics,
     run_registered_v6_diagnostics,
     run_registered_v7_diagnostics,
+    run_registered_v8_diagnostics,
 )
 
 
@@ -40,6 +41,11 @@ def main():
         help="Run the frozen V7 historical diagnostic and role negative control",
     )
     research_v7.add_argument("--code-commit", required=True)
+    research_v8 = sub.add_parser(
+        "research-v8",
+        help="Run the frozen V8 historical diagnostic and spectral controls",
+    )
+    research_v8.add_argument("--code-commit", required=True)
     args = p.parse_args()
     cfg = load_config(args.config)
     csv_path = resolve_path(cfg, cfg["data"]["processed_csv"])
@@ -75,6 +81,13 @@ def main():
         print(json.dumps({key: value for key, value in result.items() if key != "report"}, indent=2))
     elif args.cmd == "research-v7":
         result = run_registered_v7_diagnostics(
+            cfg,
+            code_commit=args.code_commit,
+            output_dir=Path(cfg["_root"]) / "reports",
+        )
+        print(json.dumps({key: value for key, value in result.items() if key != "report"}, indent=2))
+    elif args.cmd == "research-v8":
+        result = run_registered_v8_diagnostics(
             cfg,
             code_commit=args.code_commit,
             output_dir=Path(cfg["_root"]) / "reports",

@@ -18,6 +18,7 @@ import yaml
 from .backtest import run_backtest
 from .config import resolve_path
 from .data import load_draws
+from .models.factory import build_models
 from .models.v6_entropy_regime import analyze_entropy_regime
 from .research_protocol import (
     OutcomeBoundary,
@@ -229,6 +230,36 @@ V7_REPORT_STEM = "v7_main_bonus_role_bias_v7.0.0_historical"
 V7_HALF_RANGES = (
     ("2020_2022", date(2020, 1, 1), date(2022, 12, 31), 307),
     ("2023_2025", date(2023, 1, 1), date(2025, 12, 31), 314),
+)
+
+V8_EXPERIMENT_ID = "V8_fixed_recurrence_harmonic"
+V8_CANDIDATE_NAME = "v8_spectral_phase"
+V8_ROW_CONTROL_NAME = "v8_spectral_phase_row_control"
+V8_PHASE_CONTROL_NAME = "v8_spectral_phase_rotation_control"
+V8_MODEL_VERSION = "v8.0.0"
+V8_REFERENCE_EXPERIMENT_ID = V7_EXPERIMENT_ID
+V8_REGISTRATION_COMMIT = "dff1aecdffb6607d95a7653be87adcd13fb26231"
+V8_RESEARCH_CONFIG_PATH = Path("config/research-v8-fixed-spectral-phase.yaml")
+V8_TARGET_START = date(2020, 1, 1)
+V8_TARGET_END = date(2025, 12, 31)
+V8_RNG_START = date(2019, 5, 15)
+V8_ACTIVE_MINIMUM = 104
+V8_REPORT_STEM = "v8_spectral_phase_v8.0.0_historical"
+V8_HALF_RANGES = (
+    ("2020_2022", date(2020, 1, 1), date(2022, 12, 31), 307),
+    ("2023_2025", date(2023, 1, 1), date(2025, 12, 31), 314),
+)
+V8_REFERENCE_MODEL_VERSIONS = (
+    ("random", "v1.0.0"),
+    ("long_frequency", "v1.0.0"),
+    ("recent_frequency", "v1.0.0"),
+    ("ema_gap", "v1.0.0"),
+    ("logistic", "v1.0.0"),
+    ("ensemble", "v1.0.0"),
+    ("v3_boosting", "v1.0.0"),
+    ("v5_pair_affinity", "v5.0.0"),
+    ("v6_entropy_regime", "v6.0.0"),
+    ("v7_main_bonus_role_bias", "v7.0.0"),
 )
 V7_EXPECTED_PARAMETERS = {
     "post_rng_start_date": "2019-05-15",
@@ -2555,6 +2586,1451 @@ def run_registered_v7_diagnostics(
     ) + "\n"
     markdown_text = _render_v7_markdown(payload)
     _publish_v7_report_pair(
+        json_path=json_path,
+        markdown_path=markdown_path,
+        json_temporary_path=json_temporary_path,
+        markdown_temporary_path=markdown_temporary_path,
+        json_text=json_text,
+        markdown_text=markdown_text,
+    )
+    return {
+        "json_path": str(json_path),
+        "markdown_path": str(markdown_path),
+        "claim_path": str(claim_path),
+        "report": payload,
+    }
+
+
+def paired_top12_lift_interval(
+    candidate_frame: pd.DataFrame,
+    row_control_frame: pd.DataFrame,
+    *,
+    resamples: int = 10_000,
+    seed: int = 649,
+    chunk_size: int = 256,
+) -> dict[str, Any]:
+    """Bootstrap registered paired candidate-minus-row-control Top-12 hits."""
+    if resamples < 1 or chunk_size < 1:
+        raise ValueError("resamples and chunk_size must be positive")
+    required = {"target_draw_date", "top_12_hits"}
+    if not required.issubset(candidate_frame) or not required.issubset(
+        row_control_frame
+    ):
+        raise RuntimeError("paired V8 frames are missing required columns")
+    if len(candidate_frame) != len(row_control_frame):
+        raise RuntimeError("paired V8 frame row count mismatch")
+    if candidate_frame.empty:
+        raise RuntimeError("paired V8 frames must not be empty")
+
+    candidate_dates = list(candidate_frame["target_draw_date"])
+    control_dates = list(row_control_frame["target_draw_date"])
+    if not all(type(value) is str for value in (*candidate_dates, *control_dates)):
+        raise RuntimeError("paired V8 frames require ISO target-date strings")
+    try:
+        parsed_candidate_dates = [date.fromisoformat(value) for value in candidate_dates]
+        parsed_control_dates = [date.fromisoformat(value) for value in control_dates]
+    except ValueError as exc:
+        raise RuntimeError("paired V8 frames require ISO target-date strings") from exc
+    if len(set(candidate_dates)) != len(candidate_dates) or len(set(control_dates)) != len(
+        control_dates
+    ):
+        raise RuntimeError("paired V8 frames require unique target dates")
+    if candidate_dates != control_dates:
+        raise RuntimeError("paired V8 frames require identical ordered target dates")
+    if (
+        parsed_candidate_dates != sorted(parsed_candidate_dates)
+        or parsed_control_dates != sorted(parsed_control_dates)
+    ):
+        raise RuntimeError("paired V8 frames require ascending target dates")
+
+    try:
+        candidate_hits = np.asarray(
+            [_v7_exact_integer(value) for value in candidate_frame["top_12_hits"]],
+            dtype=np.int64,
+        )
+        control_hits = np.asarray(
+            [_v7_exact_integer(value) for value in row_control_frame["top_12_hits"]],
+            dtype=np.int64,
+        )
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("paired V8 Top-12 hits must be exact integers") from exc
+    if np.any(candidate_hits < 0) or np.any(candidate_hits > 6):
+        raise RuntimeError("paired V8 Top-12 hits must be between zero and six")
+    if np.any(control_hits < 0) or np.any(control_hits > 6):
+        raise RuntimeError("paired V8 Top-12 hits must be between zero and six")
+
+    differences = candidate_hits - control_hits
+    rng = np.random.default_rng(seed)
+    means = np.empty(resamples, dtype=float)
+    for start in range(0, resamples, chunk_size):
+        stop = min(start + chunk_size, resamples)
+        indices = rng.integers(
+            0,
+            len(differences),
+            size=(stop - start, len(differences)),
+        )
+        means[start:stop] = differences[indices].mean(axis=1)
+    lower, upper = np.quantile(means, [0.025, 0.975], method="linear")
+    return {
+        "draws": len(differences),
+        "mean_candidate_minus_row_control_top12_hits": float(differences.mean()),
+        "bootstrap_95_ci": [float(lower), float(upper)],
+        "bootstrap_resamples": resamples,
+        "bootstrap_seed": seed,
+        "bootstrap_rng": "numpy.default_rng",
+        "bootstrap_interval": "two_sided_95_percentile_linear",
+    }
+
+
+def v8_historical_decision(
+    payload: dict[str, Any],
+    *,
+    proper_score_tolerance: float,
+) -> tuple[dict[str, Any], list[str]]:
+    """Apply the complete frozen V8 historical gate without rescue metrics."""
+    candidate = payload["candidate"]
+    candidate_summaries = [
+        candidate,
+        *(half["candidate"] for half in payload["stability_halves"]),
+    ]
+    row_controls = [payload["row_control"], *payload["row_control_halves"]]
+    phase_controls = [payload["phase_control"], *payload["phase_control_halves"]]
+    paired = [
+        payload["paired_candidate_minus_row_control"],
+        *payload["paired_candidate_minus_row_control_halves"],
+    ]
+    warnings = list(payload.get("audit_warnings", ()))
+    warnings.extend(
+        f"row_control_non_null:{index}"
+        for index, summary in enumerate(row_controls)
+        if not summary["behaves_as_null"]
+    )
+    warnings.extend(
+        f"phase_control_non_null:{index}"
+        for index, summary in enumerate(phase_controls)
+        if not summary["behaves_as_null"]
+    )
+    gates = {
+        "positive_aggregate_primary_lift": (
+            candidate["primary_top12_lift_vs_theory"] > 0.0
+        ),
+        "aggregate_holm_adjusted_p_at_most_0_05": (
+            candidate["primary_holm_adjusted_p"] <= 0.05
+        ),
+        "aggregate_bootstrap_lower_above_zero": (
+            candidate["primary_bootstrap_95_ci"][0] > 0.0
+        ),
+        "positive_primary_lift_in_both_fixed_halves": all(
+            half["candidate"]["primary_top12_lift_vs_theory"] > 0.0
+            for half in payload["stability_halves"]
+        ),
+        "proper_scores_within_fair_tolerance_aggregate_and_halves": all(
+            summary["brier_delta_vs_fair"] <= proper_score_tolerance
+            and summary["log_loss_delta_vs_fair"] <= proper_score_tolerance
+            for summary in candidate_summaries
+        ),
+        "row_control_null_and_candidate_outperforms_it": (
+            all(summary["behaves_as_null"] for summary in row_controls)
+            and all(summary["bootstrap_95_ci"][0] > 0.0 for summary in paired)
+        ),
+        "phase_control_null_aggregate_and_halves": all(
+            summary["behaves_as_null"] for summary in phase_controls
+        ),
+        "audit_clear": not warnings,
+    }
+    all_pass = all(gates.values())
+    return (
+        {
+            "decision": (
+                "eligible_for_reviewed_shadow_activation" if all_pass else "reject"
+            ),
+            "historical_primary_signal_supported": all_pass,
+            "proper_score_max_delta_vs_fair": proper_score_tolerance,
+            "gates": gates,
+            "all_gates_passed": all_pass,
+            "shadow_activation": "not_activated",
+        },
+        warnings,
+    )
+
+
+def _validate_v8_git_audit(root: Path, code_commit: str) -> None:
+    head, worktree_status = _read_v6_git_audit_state(root)
+    if code_commit != head:
+        raise RuntimeError("V8 code_commit must equal the local Git HEAD")
+    if worktree_status:
+        raise RuntimeError("V8 worktree must be completely clean before scoring")
+    if code_commit == V8_REGISTRATION_COMMIT:
+        raise RuntimeError("V8 cannot score from its registration-only commit")
+    try:
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", V8_REGISTRATION_COMMIT, code_commit],
+            cwd=root,
+            check=False,
+            capture_output=True,
+        )
+        frozen_paths = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--name-only",
+                V8_REGISTRATION_COMMIT,
+                code_commit,
+                "--",
+                "config.yaml",
+                ".github/workflows",
+                "predictions",
+                "evaluations",
+                "config/research-v8-fixed-spectral-phase.yaml",
+                "docs/experiments/V8_fixed_recurrence_harmonic.md",
+                "docs/experiments/registry.yaml",
+                "docs/research/V8_fixed_spectral_basis.md",
+            ],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("unable to audit the V8 registration ancestry") from exc
+    if ancestor.returncode != 0:
+        raise RuntimeError("V8 implementation must descend from its registration commit")
+    if frozen_paths:
+        raise RuntimeError(
+            "V8 frozen registration or operational paths changed after registration"
+        )
+
+
+def _validated_v8_configuration_manifest(
+    root: Path,
+    cfg: dict,
+    code_commit: str,
+) -> dict[str, Any]:
+    config_value = cfg.get("_config_path")
+    if config_value is None:
+        raise RuntimeError("V8 scoring requires the canonical research config path")
+    expected_path = (root / V8_RESEARCH_CONFIG_PATH).resolve()
+    try:
+        actual_path = Path(config_value).resolve(strict=True)
+    except OSError as exc:
+        raise RuntimeError("V8 research config file is missing") from exc
+    if actual_path != expected_path:
+        raise RuntimeError("V8 scoring requires the canonical research config path")
+    disk_bytes = actual_path.read_bytes()
+    committed_bytes = _read_v6_committed_file_bytes(
+        root,
+        code_commit,
+        V8_RESEARCH_CONFIG_PATH,
+    )
+    if disk_bytes != committed_bytes:
+        raise RuntimeError("V8 research config differs from the committed Git blob")
+    try:
+        committed_config = yaml.safe_load(committed_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        raise RuntimeError("committed V8 research config is not valid UTF-8 YAML") from exc
+    effective = {
+        key: deepcopy(value)
+        for key, value in cfg.items()
+        if not str(key).startswith("_")
+    }
+    if committed_config != effective:
+        raise RuntimeError("loaded V8 config differs from the committed Git blob")
+    return _configuration_manifest(cfg)
+
+
+def _validate_v8_outcome_boundaries(root: Path, registration):
+    diagnostic_boundary = OutcomeBoundary(
+        source_commit=registration.dataset_source_commit,
+        sha256=registration.dataset_sha256,
+        draw_count=registration.dataset_draw_count,
+        history_through=registration.registration_history_through,
+    )
+    known_boundary = OutcomeBoundary(
+        source_commit=registration.outcomes_known_source_commit,
+        sha256=registration.outcomes_known_sha256,
+        draw_count=registration.outcomes_known_draw_count,
+        history_through=registration.outcomes_known_through,
+    )
+    evidence = VerifiedOutcomeBoundary.from_repository(
+        root,
+        known_boundary,
+        registration_boundary=diagnostic_boundary,
+    )
+    if evidence.path != registration.dataset_path:
+        raise RuntimeError("V8 outcome boundary path differs from the registration")
+    return evidence
+
+
+def _validate_v8_registration_and_config(cfg: dict, registration) -> None:
+    if (
+        registration.experiment_id != V8_EXPERIMENT_ID
+        or registration.family != "periodicity_frequency_domain"
+        or registration.model_name != V8_CANDIDATE_NAME
+        or registration.model_version != V8_MODEL_VERSION
+        or registration.multiplicity_family != "periodicity_frequency_domain"
+        or registration.variant_index != 1
+    ):
+        raise RuntimeError("V8 registration identity mismatch")
+    if (
+        registration.registration_file
+        != "docs/experiments/V8_fixed_recurrence_harmonic.md"
+        or registration.registered_on != date(2026, 8, 16)
+        or registration.status != "registered"
+        or registration.result is not None
+        or registration.primary_metric != "top12_hits_lift_vs_theory"
+        or registration.seed != 649
+    ):
+        raise RuntimeError("V8 registration provenance mismatch")
+
+    parameters = dict(registration.parameters)
+    required_parameters = {
+        "post_rng_start_date": "2019-05-15",
+        "active_minimum_post_rng_prior_draws": 104,
+        "history_window": "expanding_post_rng",
+        "history_integrity": "exact_verified_source_blob_prefix",
+        "missing_or_disputed_draw_policy": "invalid_pipeline_archive",
+        "history_index_origin": "zero_based_2019_05_15_draw",
+        "time_axis": "draw_index_not_calendar_time",
+        "input_indicator": "six_main_membership_only",
+        "bonus_numbers": "excluded",
+        "fair_inclusion_probability": 0.12244897959183673,
+        "fixed_period_draws": 8.166666666666666,
+        "fixed_angular_frequency": "12*pi/49",
+        "coefficient_estimator": "raw_fourier_projection_2_over_D",
+        "coefficient_summation": "python_math_fsum_ascending_index",
+        "forecast_phase_index": "D",
+        "forecast_score": "a_cos_omega_D_plus_b_sin_omega_D",
+        "finite_prefix_orthogonalization": "none",
+        "training": "none",
+        "zscore": "none",
+        "signal_temperature": "none",
+        "regularization": "none",
+        "calibration": "none",
+        "combination_constraints": "none",
+        "ensemble_members": "none",
+        "fair_fallback": "exact_constant_6_over_49",
+        "all_zero_signal_behavior": "exact_constant_6_over_49",
+        "probability_link": "stable_sigmoid",
+        "intercept_constraint": "sum_probabilities_equals_6",
+        "intercept_solver": "deterministic_bisection",
+        "bisection_lower": "negative_64_minus_max_abs_score",
+        "bisection_upper": "positive_64_plus_max_abs_score",
+        "bisection_iterations": 256,
+        "bisection_requires_strict_bracket": True,
+        "bisection_equality_branch": "lower",
+        "bisection_early_exit": "prohibited",
+        "bisection_endpoint_clipping": "prohibited",
+        "probability_sum_absolute_tolerance": 1.0e-12,
+        "output_labels": "integers_1_through_49",
+        "ranking_tie_break": "probability_desc_number_asc",
+        "row_control_hash": "sha256",
+        "row_control_domain": "lotto649-v8-prefix-control-v1:649:{D}:{index}",
+        "row_control_digest_bytes": 32,
+        "row_control_sort": "digest_bytes_ascending_then_index",
+        "row_control_identity_fallback": "rotate_left_one",
+        "row_control_scope": "each_strict_post_rng_prefix",
+        "row_control_target": "unchanged",
+        "phase_control_hash": "sha256",
+        "phase_control_domain": "lotto649-v8-phase-control-v1:649:{number}",
+        "phase_control_bytes": "first_8",
+        "phase_control_endianness": "big",
+        "phase_control_denominator": 18_446_744_073_709_551_616,
+        "phase_control_score": "a_cos_theta_plus_phi_plus_b_sin_theta_plus_phi",
+        "historical_primary_gate_lane": "consumed_diagnostic",
+        "historical_target_start": "2020-01-01",
+        "historical_target_end": "2025-12-31",
+        "historical_target_count": 621,
+        "post_rng_burn_in_draw_count_through_2019": 65,
+        "historical_fair_fallback_target_count": 39,
+        "historical_active_target_count": 582,
+        "first_historical_active_target": "2020-05-20",
+        "historical_development_status": "not_applicable",
+        "historical_legacy_validation_status": "not_applicable",
+        "stability_half_1_start": "2020-01-01",
+        "stability_half_1_end": "2022-12-31",
+        "stability_half_1_target_count": 307,
+        "stability_half_2_start": "2023-01-01",
+        "stability_half_2_end": "2025-12-31",
+        "stability_half_2_target_count": 314,
+        "primary_exact_test": "hypergeometric_draw_level_convolution_upper_tail",
+        "bootstrap_replicates": 10_000,
+        "bootstrap_rng": "numpy.default_rng",
+        "bootstrap_seed": 649,
+        "bootstrap_interval": "two_sided_95_percentile_linear",
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "holm_method": "step_down_fwer",
+        "holm_family_size_at_registration": 1,
+        "control_null_rule": "raw_p_gt_0_05_or_ci_includes_zero",
+        "row_control_direct_comparison": (
+            "paired_candidate_minus_row_control_top12_hits"
+        ),
+        "row_control_direct_bootstrap_replicates": 10_000,
+        "row_control_direct_bootstrap_rng": "numpy.default_rng",
+        "row_control_direct_bootstrap_seed": 649,
+        "row_control_direct_bootstrap_interval": (
+            "two_sided_95_percentile_linear"
+        ),
+        "row_control_direct_gate": (
+            "lower_endpoint_strictly_above_zero_aggregate_and_halves"
+        ),
+        "prospective_exact_eligible_evaluated_draws": 208,
+        "prospective_half_draws": 104,
+        "prospective_early_look": "prohibited",
+        "prospective_extension": "prohibited",
+        "prospective_history_integrity": "exact_snapshot_bound_source_blob_prefix",
+        "reference_report": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.json"
+        ),
+        "reference_report_sha256": (
+            "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+        ),
+        "reference_claim": (
+            "reports/v7_main_bonus_role_bias_v7.0.0_historical.claim"
+        ),
+        "reference_claim_sha256": (
+            "1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290"
+        ),
+    }
+    if parameters != required_parameters:
+        raise RuntimeError("V8 registered parameters differ from the frozen protocol")
+
+    if cfg.get("project") != {
+        "timezone": "America/Toronto",
+        "model_version": V8_MODEL_VERSION,
+        "seed": 649,
+    }:
+        raise RuntimeError("V8 project configuration differs from the registration")
+    if cfg.get("backtest") != {
+        "min_history_draws": 104,
+        "test_start": "2020-01-01",
+        "test_end": "2025-12-31",
+        "top_k": [6, 12, 18],
+        "models": [V8_CANDIDATE_NAME],
+        "model_versions": {V8_CANDIDATE_NAME: V8_MODEL_VERSION},
+    }:
+        raise RuntimeError("V8 backtest configuration differs from the registration")
+    research = cfg.get("research", {})
+    research_links = {
+        "experiment_id": registration.experiment_id,
+        "family": registration.family,
+        "variant_index": registration.variant_index,
+        "post_rng_start_date": parameters["post_rng_start_date"],
+        "active_minimum_post_rng_prior_draws": parameters[
+            "active_minimum_post_rng_prior_draws"
+        ],
+        "history_integrity": parameters["history_integrity"],
+        "missing_or_disputed_draw_policy": parameters[
+            "missing_or_disputed_draw_policy"
+        ],
+        "fair_inclusion_probability": parameters["fair_inclusion_probability"],
+        "fixed_period_draws": parameters["fixed_period_draws"],
+        "fixed_angular_frequency": parameters["fixed_angular_frequency"],
+        "coefficient_estimator": parameters["coefficient_estimator"],
+        "probability_link": parameters["probability_link"],
+        "bisection_iterations": parameters["bisection_iterations"],
+        "probability_sum_absolute_tolerance": parameters[
+            "probability_sum_absolute_tolerance"
+        ],
+        "historical_target_count": parameters["historical_target_count"],
+        "post_rng_burn_in_draw_count_through_2019": parameters[
+            "post_rng_burn_in_draw_count_through_2019"
+        ],
+        "historical_fair_fallback_target_count": parameters[
+            "historical_fair_fallback_target_count"
+        ],
+        "historical_active_target_count": parameters[
+            "historical_active_target_count"
+        ],
+        "first_historical_active_target": parameters[
+            "first_historical_active_target"
+        ],
+        "stability_halves": [
+            {
+                "start": parameters["stability_half_1_start"],
+                "end": parameters["stability_half_1_end"],
+                "target_count": parameters["stability_half_1_target_count"],
+            },
+            {
+                "start": parameters["stability_half_2_start"],
+                "end": parameters["stability_half_2_end"],
+                "target_count": parameters["stability_half_2_target_count"],
+            },
+        ],
+        "bootstrap_replicates": parameters["bootstrap_replicates"],
+        "bootstrap_seed": parameters["bootstrap_seed"],
+        "negative_controls": [control.kind for control in registration.negative_controls],
+        "control_null_rule": parameters["control_null_rule"],
+        "row_control_direct_comparison": parameters[
+            "row_control_direct_comparison"
+        ],
+        "row_control_direct_bootstrap_replicates": parameters[
+            "row_control_direct_bootstrap_replicates"
+        ],
+        "row_control_direct_bootstrap_rng": parameters[
+            "row_control_direct_bootstrap_rng"
+        ],
+        "row_control_direct_bootstrap_seed": parameters[
+            "row_control_direct_bootstrap_seed"
+        ],
+        "row_control_direct_bootstrap_interval": parameters[
+            "row_control_direct_bootstrap_interval"
+        ],
+        "row_control_direct_gate": parameters["row_control_direct_gate"],
+        "prospective_exact_eligible_evaluated_draws": parameters[
+            "prospective_exact_eligible_evaluated_draws"
+        ],
+        "prospective_half_draws": parameters["prospective_half_draws"],
+        "prospective_history_integrity": parameters[
+            "prospective_history_integrity"
+        ],
+        "reference_report": parameters["reference_report"],
+        "reference_report_sha256": parameters["reference_report_sha256"],
+        "reference_claim": parameters["reference_claim"],
+        "reference_claim_sha256": parameters["reference_claim_sha256"],
+    }
+    if research != research_links:
+        raise RuntimeError("V8 research configuration differs from the registration")
+    if cfg.get("data", {}).get("processed_csv") != registration.dataset_path:
+        raise RuntimeError("V8 configured dataset path differs from the registration")
+    if cfg.get("live") != {"enabled": False, "models": [], "shadow_models": []}:
+        raise RuntimeError("V8 research config must disable the live path")
+    if cfg.get("notifications", {}).get("enabled") is not False:
+        raise RuntimeError("V8 research config must disable notifications")
+    controls = tuple(registration.negative_controls)
+    if [(item.kind, item.seed) for item in controls] != [
+        ("strict_prefix_whole_draw_permutation", 649),
+        ("per_number_spectral_phase_rotation", 649),
+    ]:
+        raise RuntimeError("V8 controls differ from the frozen registration")
+    prospective = registration.prospective
+    if (
+        prospective.status != "not_activated"
+        or prospective.role != "shadow"
+        or prospective.minimum_eligible_draws != 208
+        or prospective.commit_deadline != "before_target_local_date"
+        or prospective.freeze_commit is not None
+        or prospective.activation_commit is not None
+        or prospective.outcomes_known_at_activation is not None
+        or prospective.cohort_start is not None
+    ):
+        raise RuntimeError("V8 prospective cohort differs from the registration")
+
+
+def _v8_reference_error(message: str) -> RuntimeError:
+    return RuntimeError(f"frozen V7 reference {message}")
+
+
+def _load_validated_v7_reference_for_v8(
+    root: Path,
+    code_commit: str,
+    registration,
+    reference_registration,
+) -> tuple[dict[str, Any], Path, str, Path, str, list[dict[str, Any]]]:
+    parameters = registration.parameters
+    if reference_registration.experiment_id != V8_REFERENCE_EXPERIMENT_ID:
+        raise _v8_reference_error("registry experiment identity mismatch")
+    if (
+        reference_registration.model_name != "v7_main_bonus_role_bias"
+        or reference_registration.model_version != "v7.0.0"
+        or reference_registration.status != "closed_rejected"
+        or reference_registration.result is None
+        or reference_registration.result.decision != "reject"
+    ):
+        raise _v8_reference_error("registry result identity mismatch")
+    if parameters["reference_report"] != reference_registration.result.report_json:
+        raise _v8_reference_error("path differs from the V7 result registration")
+    if _registered_dataset_identity(reference_registration) != (
+        _registered_dataset_identity(registration)
+    ):
+        raise _v8_reference_error("registration dataset differs from V8")
+
+    report_path = resolve_path({"_root": root}, parameters["reference_report"])
+    claim_path = resolve_path({"_root": root}, parameters["reference_claim"])
+    for path, label in ((report_path, "report"), (claim_path, "claim")):
+        if not path.is_file():
+            raise _v8_reference_error(f"{label} file is missing")
+        try:
+            relative = path.resolve(strict=True).relative_to(root.resolve(strict=True))
+        except (OSError, ValueError) as exc:
+            raise _v8_reference_error(f"{label} must be inside the repository") from exc
+        committed = _read_v6_committed_file_bytes(root, code_commit, relative)
+        if path.read_bytes() != committed:
+            raise _v8_reference_error(f"{label} differs from the committed Git blob")
+
+    report_sha256 = file_sha256(report_path)
+    claim_sha256 = file_sha256(claim_path)
+    if report_sha256 != parameters["reference_report_sha256"]:
+        raise RuntimeError("V7 reference report fingerprint mismatch")
+    if claim_sha256 != parameters["reference_claim_sha256"]:
+        raise RuntimeError("V7 reference claim fingerprint mismatch")
+    try:
+        payload = json.loads(report_path.read_text(encoding="utf-8"))
+        claim = json.loads(claim_path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise _v8_reference_error("report/claim is not valid UTF-8 JSON") from exc
+    expected_identity = {
+        "schema_version": 3,
+        "experiment_id": V7_EXPERIMENT_ID,
+        "model_name": "v7_main_bonus_role_bias",
+        "model_version": "v7.0.0",
+        "code_commit": reference_registration.result.implementation_commit,
+        "status": "historical_diagnostic_complete",
+    }
+    if not isinstance(payload, dict):
+        raise _v8_reference_error("report root must be an object")
+    for field, expected in expected_identity.items():
+        if payload.get(field) != expected:
+            raise _v8_reference_error(f"{field} mismatch")
+    if claim != {
+        "code_commit": reference_registration.result.implementation_commit,
+        "experiment_id": V7_EXPERIMENT_ID,
+        "model_version": "v7.0.0",
+        "status": "historical_diagnostic_claimed",
+    }:
+        raise _v8_reference_error("claim content mismatch")
+    if payload.get("data_boundaries") != {
+        "historical_diagnostic_prefix": _registered_dataset_identity(registration),
+        "outcomes_known_at_registration": _known_outcomes_identity(registration),
+    }:
+        raise _v8_reference_error("data-boundary identity mismatch")
+    if payload.get("historical_lane") != {
+        "name": "consumed_diagnostic",
+        "dates": {"start": "2020-01-01", "end": "2025-12-31"},
+        "target_count": 621,
+        "development_status": "not_applicable",
+        "legacy_validation_status": "not_applicable",
+    }:
+        raise _v8_reference_error("historical lane mismatch")
+    if payload.get("one_shot_claim", {}).get("path") != parameters["reference_claim"]:
+        raise _v8_reference_error("report claim path mismatch")
+    if payload.get("one_shot_claim", {}).get("sha256") != claim_sha256:
+        raise _v8_reference_error("report claim fingerprint mismatch")
+    comparisons = payload.get("comparisons")
+    if not isinstance(comparisons, list) or len(comparisons) != len(
+        V8_REFERENCE_MODEL_VERSIONS
+    ):
+        raise _v8_reference_error("comparison set mismatch")
+    for summary, (model_name, model_version) in zip(
+        comparisons,
+        V8_REFERENCE_MODEL_VERSIONS,
+    ):
+        _validate_v7_reference_summary(
+            summary,
+            expected_name=model_name,
+            expected_version=model_version,
+        )
+    if payload.get("candidate") != comparisons[-1]:
+        raise _v8_reference_error("candidate summary mismatch")
+    return (
+        payload,
+        report_path,
+        report_sha256,
+        claim_path,
+        claim_sha256,
+        deepcopy(comparisons),
+    )
+
+
+def _v8_preflight_targets(draws, minimum_history: int) -> tuple[list, dict[str, Any]]:
+    folds = list(
+        walk_forward_folds(draws, V8_TARGET_START, V8_TARGET_END, minimum_history)
+    )
+    if len(folds) != 621:
+        raise RuntimeError("V8 historical target count must remain exactly 621")
+    target_dates = [fold.target.draw_date for fold in folds]
+    half_counts = [
+        sum(start <= target_date <= end for target_date in target_dates)
+        for _name, start, end, _count in V8_HALF_RANGES
+    ]
+    if half_counts != [307, 314]:
+        raise RuntimeError("V8 stability-half counts must remain exactly 307 and 314")
+
+    source_indices = {draw.draw_date: index for index, draw in enumerate(draws)}
+    if len(source_indices) != len(draws):
+        raise RuntimeError("V8 canonical source dates must be unique")
+    active_flags = []
+    for fold in folds:
+        target_index = source_indices.get(fold.target.draw_date)
+        if target_index is None or tuple(fold.history) != tuple(draws[:target_index]):
+            raise RuntimeError("V8 fold is not an exact target-truncated source prefix")
+        if not fold.history or fold.history[-1].draw_date >= fold.target.draw_date:
+            raise RuntimeError("V8 fold chronology is invalid")
+        post_rng = [
+            draw
+            for draw in fold.history
+            if V8_RNG_START <= draw.draw_date < fold.target.draw_date
+        ]
+        if post_rng and post_rng[0].draw_date != V8_RNG_START:
+            raise RuntimeError("V8 post-RNG history is missing its registered origin")
+        active_flags.append(len(post_rng) >= V8_ACTIVE_MINIMUM)
+    post_rng_source = [
+        draw
+        for draw in draws
+        if V8_RNG_START <= draw.draw_date <= V8_TARGET_END
+    ]
+    if (
+        not post_rng_source
+        or post_rng_source[0].draw_date != V8_RNG_START
+        or any(draw.bonus is None for draw in post_rng_source)
+    ):
+        raise RuntimeError("V8 post-RNG canonical source prefix is incomplete")
+    active_dates = [
+        target_date
+        for target_date, active in zip(target_dates, active_flags)
+        if active
+    ]
+    fallback_count = active_flags.count(False)
+    if (
+        fallback_count != 39
+        or len(active_dates) != 582
+        or not active_dates
+        or active_dates[0] != date(2020, 5, 20)
+    ):
+        raise RuntimeError(
+            "V8 activation counts must remain 39 fallback, 582 active, "
+            "first active 2020-05-20"
+        )
+    return folds, {
+        "eligible_targets": len(folds),
+        "fair_fallback_targets": fallback_count,
+        "active_targets": len(active_dates),
+        "first_active_target": active_dates[0].isoformat(),
+        "excluded_targets": 0,
+    }
+
+
+def _validate_v8_factory_configuration(cfg: dict) -> None:
+    expected_names = (
+        V8_CANDIDATE_NAME,
+        V8_ROW_CONTROL_NAME,
+        V8_PHASE_CONTROL_NAME,
+    )
+    try:
+        models = build_models(cfg, requested=list(expected_names))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("V8 frozen model factory preflight failed") from exc
+    if tuple(models) != expected_names or any(
+        models[name].name != name for name in expected_names
+    ):
+        raise RuntimeError("V8 frozen model factory identity mismatch")
+
+
+def _validate_v8_frame(
+    frame: pd.DataFrame,
+    *,
+    model_name: str,
+    expected_targets,
+) -> None:
+    required_columns = {
+        "target_draw_date",
+        "model_name",
+        "model_version",
+        "actual",
+        "bonus",
+        "final_6_hits",
+        "top_6_hits",
+        "top_12_hits",
+        "top_18_hits",
+        "brier_score",
+        "log_loss",
+        "mean_actual_rank",
+    }
+    missing = required_columns - set(frame.columns)
+    if missing:
+        raise RuntimeError(f"V8 backtest missing columns: {sorted(missing)}")
+    if len(frame) != len(expected_targets):
+        raise RuntimeError("V8 backtest row count mismatch")
+    if set(frame["model_name"]) != {model_name}:
+        raise RuntimeError("V8 backtest model identity mismatch")
+    if set(frame["model_version"]) != {V8_MODEL_VERSION}:
+        raise RuntimeError("V8 backtest model version mismatch")
+    expected_dates = [target.draw_date.isoformat() for target in expected_targets]
+    actual_dates = list(frame["target_draw_date"])
+    if not all(type(value) is str for value in actual_dates):
+        raise RuntimeError("V8 backtest target dates must be ISO strings")
+    if actual_dates != expected_dates or len(set(actual_dates)) != len(actual_dates):
+        raise RuntimeError("V8 backtest target dates mismatch")
+    for row, target in zip(frame.to_dict("records"), expected_targets):
+        try:
+            actual = tuple(_v7_exact_integer(number) for number in row["actual"])
+            bonus = _v7_exact_integer(row["bonus"])
+        except TypeError as exc:
+            raise RuntimeError(
+                "V8 backtest target outcome must use exact integers"
+            ) from exc
+        if actual != target.numbers or bonus != target.bonus:
+            raise RuntimeError("V8 backtest target outcome mismatch")
+    hit_columns = ["final_6_hits", "top_6_hits", "top_12_hits", "top_18_hits"]
+    try:
+        hits = np.asarray(
+            [
+                [_v7_exact_integer(value) for value in row]
+                for row in frame[hit_columns].itertuples(index=False, name=None)
+            ],
+            dtype=np.int64,
+        )
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("V8 hit counts must be finite integers") from exc
+    if (
+        np.any(hits < 0)
+        or np.any(hits > 6)
+        or np.any(hits[:, 1] > hits[:, 2])
+        or np.any(hits[:, 2] > hits[:, 3])
+        or np.any(hits[:, 0] > hits[:, 2])
+    ):
+        raise RuntimeError("V8 hit counts violate registered nesting or bounds")
+    try:
+        scores = np.asarray(
+            [
+                [_v7_exact_real(value) for value in row]
+                for row in frame[["brier_score", "log_loss"]].itertuples(
+                    index=False, name=None
+                )
+            ],
+            dtype=float,
+        )
+        ranks = np.asarray(
+            [_v7_exact_real(value) for value in frame["mean_actual_rank"]],
+            dtype=float,
+        )
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("V8 score columns must be finite and bounded") from exc
+    if (
+        not np.isfinite(scores).all()
+        or np.any(scores[:, 0] < 0.0)
+        or np.any(scores[:, 0] > 1.0)
+        or np.any(scores[:, 1] < 0.0)
+        or np.any(scores[:, 1] > MAX_BINARY_LOG_LOSS)
+        or not np.isfinite(ranks).all()
+        or np.any(ranks < 3.5)
+        or np.any(ranks > 46.5)
+    ):
+        raise RuntimeError("V8 score columns must be finite and bounded")
+
+
+def _v8_summary(
+    frame: pd.DataFrame,
+    model_name: str,
+    *,
+    holm_family_size: int | None,
+    bootstrap_resamples: int,
+    bootstrap_seed: int,
+) -> dict[str, Any]:
+    return _v7_summary(
+        frame,
+        model_name,
+        holm_family_size=holm_family_size,
+        bootstrap_resamples=bootstrap_resamples,
+        bootstrap_seed=bootstrap_seed,
+    )
+
+
+def _v8_control_null(summary: dict[str, Any]) -> dict[str, Any]:
+    return _v7_control_null(summary)
+
+
+def _v8_half_frame(frame: pd.DataFrame, start: date, end: date) -> pd.DataFrame:
+    return _v7_half_frame(frame, start, end)
+
+
+def _render_v8_markdown(payload: dict[str, Any]) -> str:
+    decision = payload["historical_decision"]
+    lines = [
+        "# V8 Fixed-Recurrence Harmonic Historical Diagnostic",
+        "",
+        "Status: consumed historical diagnostic only. It is not blind,",
+        "confirmatory, prospective, or an automatic shadow/production promotion.",
+        "",
+        f"- Experiment: `{payload['experiment_id']}` / `{payload['model_version']}`",
+        f"- Frozen implementation commit: `{payload['code_commit']}`",
+        f"- Exact command: `{payload['command']}`",
+        f"- Permanent one-shot claim: `{payload['one_shot_claim']['path']}`",
+        f"- Claim SHA-256: `{payload['one_shot_claim']['sha256']}`",
+        f"- Research config SHA-256: `{payload['configuration']['source_sha256']}`",
+        f"- V7 reference SHA-256: `{payload['reference_provenance']['report_sha256']}`",
+        f"- V7 claim SHA-256: `{payload['reference_provenance']['claim_sha256']}`",
+        "- Applicable prediction lane: 2020-01-01 through 2025-12-31 only",
+        "- Development and legacy-validation lanes: not applicable and not scored",
+        "",
+        "## Registered prediction and control results",
+        "",
+        "| Scope | Model | Draws | Top-12 | Lift | Raw p | Holm p | 95% CI | Brier delta | Log-loss delta |",
+        "|---|---|---:|---:|---:|---:|---:|---|---:|---:|",
+    ]
+    rows = [
+        ("aggregate", payload["candidate"]),
+        ("aggregate row control", payload["row_control"]),
+        ("aggregate phase control", payload["phase_control"]),
+    ]
+    for half in payload["stability_halves"]:
+        rows.extend(
+            [
+                (half["name"], half["candidate"]),
+                (f"{half['name']} row control", half["row_control"]),
+                (f"{half['name']} phase control", half["phase_control"]),
+            ]
+        )
+    for scope, summary in rows:
+        ci = summary["primary_bootstrap_95_ci"]
+        holm = summary["primary_holm_adjusted_p"]
+        lines.append(
+            "| {scope} | {model} | {draws} | {top12:.6f} | {lift:+.6f} | "
+            "{raw:.6g} | {holm} | [{lower:+.6f}, {upper:+.6f}] | "
+            "{brier:+.6g} | {logloss:+.6g} |".format(
+                scope=scope,
+                model=summary["model_name"],
+                draws=summary["draws"],
+                top12=summary["avg_top12_hits"],
+                lift=summary["primary_top12_lift_vs_theory"],
+                raw=summary["primary_exact_one_sided_p"],
+                holm=f"{holm:.6g}" if holm is not None else "n/a",
+                lower=ci[0],
+                upper=ci[1],
+                brier=summary["brier_delta_vs_fair"],
+                logloss=summary["log_loss_delta_vs_fair"],
+            )
+        )
+    activation = payload["activation"]
+    lines.extend(
+        [
+            "",
+            "## Paired candidate-minus-row-control intervals",
+            "",
+            "| Scope | Draws | Mean difference | Paired 95% CI |",
+            "|---|---:|---:|---|",
+        ]
+    )
+    paired_rows = [
+        ("aggregate", payload["paired_candidate_minus_row_control"]),
+        *[
+            (half["name"], half["paired_candidate_minus_row_control"])
+            for half in payload["stability_halves"]
+        ],
+    ]
+    for scope, paired in paired_rows:
+        ci = paired["bootstrap_95_ci"]
+        lines.append(
+            f"| {scope} | {paired['draws']} | "
+            f"{paired['mean_candidate_minus_row_control_top12_hits']:+.6f} | "
+            f"[{ci[0]:+.6f}, {ci[1]:+.6f}] |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Registered integrity and historical decision",
+            "",
+            f"- Targets: `{activation['eligible_targets']}`; fair fallback: "
+            f"`{activation['fair_fallback_targets']}`; active: "
+            f"`{activation['active_targets']}`; first active: "
+            f"`{activation['first_active_target']}`; exclusions: "
+            f"`{activation['excluded_targets']}`",
+            f"- Decision: **{decision['decision']}**",
+            "- Prospective status: **not_activated**",
+            "",
+        ]
+    )
+    for gate, passed in decision["gates"].items():
+        lines.append(f"- `{gate}`: {'pass' if passed else 'fail'}")
+    lines.extend(
+        [
+            "",
+            "The JSON companion retains all aggregate/half candidate and control",
+            "metrics, the three paired intervals, frozen comparison summaries,",
+            "data/config/code/reference/claim identities, warnings, and the",
+            "prospective boundary. V1 remains production and V3 remains shadow.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _claim_v8_historical_attempt(claim_path: Path, code_commit: str) -> None:
+    claim_text = json.dumps(
+        {
+            "code_commit": code_commit,
+            "experiment_id": V8_EXPERIMENT_ID,
+            "model_version": V8_MODEL_VERSION,
+            "status": "historical_diagnostic_claimed",
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ) + "\n"
+    try:
+        _write_v7_exclusive_text(claim_path, claim_text)
+        _fsync_v8_directory(claim_path.parent)
+    except FileExistsError as exc:
+        raise RuntimeError(
+            "V8 historical one-shot claim already exists; refusing to score"
+        ) from exc
+    except OSError as exc:
+        raise RuntimeError(
+            "unable to create the durable V8 historical one-shot claim"
+        ) from exc
+
+
+def _fsync_v8_directory(directory: Path) -> None:
+    descriptor = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _publish_v8_report_pair(
+    *,
+    json_path: Path,
+    markdown_path: Path,
+    json_temporary_path: Path,
+    markdown_temporary_path: Path,
+    json_text: str,
+    markdown_text: str,
+) -> None:
+    staged: list[Path] = []
+    try:
+        _write_v7_exclusive_text(json_temporary_path, json_text)
+        staged.append(json_temporary_path)
+        _write_v7_exclusive_text(markdown_temporary_path, markdown_text)
+        staged.append(markdown_temporary_path)
+    except OSError as exc:
+        for path in reversed(staged):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+        raise RuntimeError(
+            "unable to stage the complete V8 report pair; claim retained"
+        ) from exc
+
+    published: list[Path] = []
+    try:
+        os.link(json_temporary_path, json_path)
+        published.append(json_path)
+        os.link(markdown_temporary_path, markdown_path)
+        published.append(markdown_path)
+        _fsync_v8_directory(json_path.parent)
+    except OSError as exc:
+        rollback_failures: list[OSError] = []
+        for path in reversed(published):
+            try:
+                path.unlink()
+            except OSError as rollback_exc:
+                rollback_failures.append(rollback_exc)
+        if not rollback_failures:
+            try:
+                _fsync_v8_directory(json_path.parent)
+            except OSError as rollback_exc:
+                rollback_failures.append(rollback_exc)
+        if rollback_failures:
+            raise RuntimeError(
+                "V8 partial report publication rollback failed; permanent claim "
+                "and publication evidence retained for Archive"
+            ) from exc
+        cleanup_failures: list[OSError] = []
+        for path in (json_temporary_path, markdown_temporary_path):
+            try:
+                path.unlink()
+            except OSError as cleanup_exc:
+                cleanup_failures.append(cleanup_exc)
+        if cleanup_failures:
+            raise RuntimeError(
+                "V8 partial publication was rolled back but staging cleanup "
+                "failed; permanent claim and staging evidence retained"
+            ) from exc
+        raise RuntimeError(
+            "unable to publish the complete V8 report pair; claim retained"
+        ) from exc
+    try:
+        json_temporary_path.unlink()
+        markdown_temporary_path.unlink()
+        _fsync_v8_directory(json_path.parent)
+    except OSError as exc:
+        rollback_failures: list[OSError] = []
+        for path in reversed(published):
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                continue
+            except OSError as rollback_exc:
+                rollback_failures.append(rollback_exc)
+        if not rollback_failures:
+            try:
+                _fsync_v8_directory(json_path.parent)
+            except OSError as rollback_exc:
+                rollback_failures.append(rollback_exc)
+        if rollback_failures:
+            raise RuntimeError(
+                "V8 staging cleanup failed and final report rollback failed; "
+                "permanent claim and publication evidence retained for Archive"
+            ) from exc
+        raise RuntimeError(
+            "V8 staging cleanup failed; final report pair was rolled back and "
+            "the permanent claim remains consumed for Archive"
+        ) from exc
+
+
+def run_registered_v8_diagnostics(
+    cfg: dict,
+    *,
+    code_commit: str,
+    output_dir: Path,
+) -> dict[str, Any]:
+    """Run the single frozen V8 diagnostic after every audit preflight passes."""
+    _require_full_git_sha(code_commit, "code_commit")
+    root = Path(cfg["_root"])
+    canonical_output_dir = (root / "reports").resolve()
+    if output_dir.resolve() != canonical_output_dir:
+        raise RuntimeError("V8 output must be the canonical repository reports directory")
+    output_dir = canonical_output_dir
+    json_path = output_dir / f"{V8_REPORT_STEM}.json"
+    markdown_path = output_dir / f"{V8_REPORT_STEM}.md"
+    claim_path = output_dir / f"{V8_REPORT_STEM}.claim"
+    json_temporary_path = output_dir / f".{V8_REPORT_STEM}.json.tmp"
+    markdown_temporary_path = output_dir / f".{V8_REPORT_STEM}.md.tmp"
+    if claim_path.exists():
+        raise RuntimeError(
+            "V8 historical one-shot claim already exists; refusing to score"
+        )
+    if json_temporary_path.exists() or markdown_temporary_path.exists():
+        raise RuntimeError("V8 historical temporary report exists; refusing to score")
+    if json_path.exists() or markdown_path.exists():
+        raise RuntimeError("V8 historical report already exists; refusing to overwrite")
+
+    _validate_v8_git_audit(root, code_commit)
+    configuration_manifest = _validated_v8_configuration_manifest(
+        root,
+        cfg,
+        code_commit,
+    )
+    registry = load_experiment_registry(root / "docs" / "experiments" / "registry.yaml")
+    registration = registry.get(V8_EXPERIMENT_ID)
+    reference_registration = registry.get(V8_REFERENCE_EXPERIMENT_ID)
+    _validate_v8_registration_and_config(cfg, registration)
+    outcome_evidence = _validate_v8_outcome_boundaries(root, registration)
+
+    dataset_path = resolve_path(cfg, cfg["data"]["processed_csv"])
+    draws = load_draws(dataset_path)
+    registered_draws = validated_registered_draw_prefix(
+        dataset_path,
+        draws,
+        expected_sha256=registration.dataset_sha256,
+        draw_count=registration.dataset_draw_count,
+        history_through=registration.registration_history_through,
+    )
+    (
+        reference,
+        reference_path,
+        reference_sha256,
+        reference_claim_path,
+        reference_claim_sha256,
+        reference_comparisons,
+    ) = _load_validated_v7_reference_for_v8(
+        root,
+        code_commit,
+        registration,
+        reference_registration,
+    )
+    minimum_history = int(cfg["backtest"]["min_history_draws"])
+    folds, activation = _v8_preflight_targets(registered_draws, minimum_history)
+    expected_targets = [fold.target for fold in folds]
+    family_size = sum(
+        experiment.multiplicity_family == registration.multiplicity_family
+        for experiment in registry.experiments
+    )
+    if family_size != 1:
+        raise RuntimeError("V8 multiplicity family must contain exactly one variant")
+    _validate_v8_factory_configuration(cfg)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _claim_v8_historical_attempt(claim_path, code_commit)
+    claim_sha256 = file_sha256(claim_path)
+
+    # No performance-scoring call is allowed above this line. All three models
+    # receive the same immutable canonical outcomes and target interval.
+    frames: dict[str, pd.DataFrame] = {}
+    for model_name in (
+        V8_CANDIDATE_NAME,
+        V8_ROW_CONTROL_NAME,
+        V8_PHASE_CONTROL_NAME,
+    ):
+        model_cfg = deepcopy(cfg)
+        model_cfg["backtest"]["models"] = [model_name]
+        model_cfg["backtest"]["model_versions"] = {
+            model_name: V8_MODEL_VERSION
+        }
+        frame = run_backtest(
+            registered_draws,
+            model_cfg,
+            V8_TARGET_START,
+            V8_TARGET_END,
+        )
+        _validate_v8_frame(
+            frame,
+            model_name=model_name,
+            expected_targets=expected_targets,
+        )
+        frames[model_name] = frame
+
+    identity_columns = ["target_draw_date", "actual", "bonus"]
+    candidate_identity = frames[V8_CANDIDATE_NAME][identity_columns]
+    for control_name in (V8_ROW_CONTROL_NAME, V8_PHASE_CONTROL_NAME):
+        if not candidate_identity.equals(frames[control_name][identity_columns]):
+            raise RuntimeError("V8 candidate/control target identities differ")
+
+    bootstrap_resamples = registration.parameters["bootstrap_replicates"]
+    bootstrap_seed = registration.parameters["bootstrap_seed"]
+    candidate = _v8_summary(
+        frames[V8_CANDIDATE_NAME],
+        V8_CANDIDATE_NAME,
+        holm_family_size=family_size,
+        bootstrap_resamples=bootstrap_resamples,
+        bootstrap_seed=bootstrap_seed,
+    )
+    row_control = _v8_control_null(
+        _v8_summary(
+            frames[V8_ROW_CONTROL_NAME],
+            V8_ROW_CONTROL_NAME,
+            holm_family_size=None,
+            bootstrap_resamples=bootstrap_resamples,
+            bootstrap_seed=bootstrap_seed,
+        )
+    )
+    phase_control = _v8_control_null(
+        _v8_summary(
+            frames[V8_PHASE_CONTROL_NAME],
+            V8_PHASE_CONTROL_NAME,
+            holm_family_size=None,
+            bootstrap_resamples=bootstrap_resamples,
+            bootstrap_seed=bootstrap_seed,
+        )
+    )
+    paired_resamples = registration.parameters[
+        "row_control_direct_bootstrap_replicates"
+    ]
+    paired_seed = registration.parameters["row_control_direct_bootstrap_seed"]
+    paired_aggregate = paired_top12_lift_interval(
+        frames[V8_CANDIDATE_NAME],
+        frames[V8_ROW_CONTROL_NAME],
+        resamples=paired_resamples,
+        seed=paired_seed,
+    )
+
+    stability_halves = []
+    row_control_halves = []
+    phase_control_halves = []
+    paired_halves = []
+    for name, start, end, expected_count in V8_HALF_RANGES:
+        candidate_half_frame = _v8_half_frame(frames[V8_CANDIDATE_NAME], start, end)
+        row_half_frame = _v8_half_frame(frames[V8_ROW_CONTROL_NAME], start, end)
+        phase_half_frame = _v8_half_frame(frames[V8_PHASE_CONTROL_NAME], start, end)
+        if {len(candidate_half_frame), len(row_half_frame), len(phase_half_frame)} != {
+            expected_count
+        }:
+            raise RuntimeError(f"V8 {name} target count mismatch after scoring")
+        candidate_half = _v8_summary(
+            candidate_half_frame,
+            V8_CANDIDATE_NAME,
+            holm_family_size=None,
+            bootstrap_resamples=bootstrap_resamples,
+            bootstrap_seed=bootstrap_seed,
+        )
+        row_half = _v8_control_null(
+            _v8_summary(
+                row_half_frame,
+                V8_ROW_CONTROL_NAME,
+                holm_family_size=None,
+                bootstrap_resamples=bootstrap_resamples,
+                bootstrap_seed=bootstrap_seed,
+            )
+        )
+        phase_half = _v8_control_null(
+            _v8_summary(
+                phase_half_frame,
+                V8_PHASE_CONTROL_NAME,
+                holm_family_size=None,
+                bootstrap_resamples=bootstrap_resamples,
+                bootstrap_seed=bootstrap_seed,
+            )
+        )
+        paired_half = paired_top12_lift_interval(
+            candidate_half_frame,
+            row_half_frame,
+            resamples=paired_resamples,
+            seed=paired_seed,
+        )
+        half_dates = [
+            target.draw_date
+            for target in expected_targets
+            if start <= target.draw_date <= end
+        ]
+        active_count = sum(
+            target_date >= date(2020, 5, 20) for target_date in half_dates
+        )
+        row_control_halves.append(deepcopy(row_half))
+        phase_control_halves.append(deepcopy(phase_half))
+        paired_halves.append(deepcopy(paired_half))
+        stability_halves.append(
+            {
+                "name": name,
+                "dates": {"start": start.isoformat(), "end": end.isoformat()},
+                "target_count": expected_count,
+                "activation": {
+                    "fair_fallback_targets": expected_count - active_count,
+                    "active_targets": active_count,
+                },
+                "candidate": candidate_half,
+                "row_control": row_half,
+                "phase_control": phase_half,
+                "paired_candidate_minus_row_control": paired_half,
+            }
+        )
+
+    decision_input = {
+        "candidate": candidate,
+        "stability_halves": stability_halves,
+        "row_control": row_control,
+        "row_control_halves": row_control_halves,
+        "phase_control": phase_control,
+        "phase_control_halves": phase_control_halves,
+        "paired_candidate_minus_row_control": paired_aggregate,
+        "paired_candidate_minus_row_control_halves": paired_halves,
+        "audit_warnings": [],
+    }
+    historical_decision, audit_warnings = v8_historical_decision(
+        decision_input,
+        proper_score_tolerance=registration.parameters[
+            "proper_score_max_delta_vs_fair"
+        ],
+    )
+    prospective = registration.prospective
+    payload = {
+        "schema_version": 4,
+        "experiment_id": registration.experiment_id,
+        "model_name": registration.model_name,
+        "model_version": registration.model_version,
+        "status": "historical_diagnostic_complete",
+        "evidence_warning": (
+            "The sole prediction lane is consumed historical diagnostic evidence; "
+            "it is not blind, confirmatory, or prospective."
+        ),
+        "code_commit": code_commit,
+        "registration_commit": V8_REGISTRATION_COMMIT,
+        "command": (
+            "lotto649 --config config/research-v8-fixed-spectral-phase.yaml "
+            f"research-v8 --code-commit {code_commit}"
+        ),
+        "one_shot_claim": {
+            "path": str(claim_path.relative_to(root)),
+            "sha256": claim_sha256,
+            "created_before_first_score": True,
+            "retention": "permanent_on_success_or_failure",
+        },
+        "configuration": configuration_manifest,
+        "data_boundaries": {
+            "historical_diagnostic_prefix": _registered_dataset_identity(registration),
+            "outcomes_known_at_registration": _known_outcomes_identity(registration),
+        },
+        "data_boundary_verification": {
+            "git_verified": True,
+            "registration_prefix_preserved": (
+                outcome_evidence.registration_prefix_preserved
+            ),
+            "known_outcomes_draws_fingerprint": outcome_evidence.draws_fingerprint,
+            "every_fold_exact_target_truncated_prefix": True,
+        },
+        "reference_provenance": {
+            "path": str(reference_path.relative_to(root)),
+            "report_sha256": reference_sha256,
+            "claim_path": str(reference_claim_path.relative_to(root)),
+            "claim_sha256": reference_claim_sha256,
+            "schema_version": reference["schema_version"],
+            "experiment_id": reference["experiment_id"],
+            "model_name": reference["model_name"],
+            "model_version": reference["model_version"],
+            "implementation_commit": reference["code_commit"],
+            "dataset": deepcopy(
+                reference["data_boundaries"]["historical_diagnostic_prefix"]
+            ),
+            "lane": "consumed_diagnostic",
+            "target_count": 621,
+            "reused_models": [
+                name for name, _version in V8_REFERENCE_MODEL_VERSIONS
+            ],
+            "policy": "frozen consumed-lane summaries reused; no comparison refit",
+        },
+        "registered_parameters": dict(registration.parameters),
+        "model_versions": {
+            V8_CANDIDATE_NAME: V8_MODEL_VERSION,
+            V8_ROW_CONTROL_NAME: V8_MODEL_VERSION,
+            V8_PHASE_CONTROL_NAME: V8_MODEL_VERSION,
+        },
+        "multiplicity_family": registration.multiplicity_family,
+        "multiplicity_family_size": family_size,
+        "comparison_models": [
+            *(name for name, _version in V8_REFERENCE_MODEL_VERSIONS),
+            V8_CANDIDATE_NAME,
+        ],
+        "historical_lane": {
+            "name": "consumed_diagnostic",
+            "dates": {"start": "2020-01-01", "end": "2025-12-31"},
+            "target_count": 621,
+            "target_dates": [target.draw_date.isoformat() for target in expected_targets],
+            "development_status": "not_applicable",
+            "legacy_validation_status": "not_applicable",
+        },
+        "activation": activation,
+        "candidate": candidate,
+        "negative_control_specs": [
+            {
+                "model_name": V8_ROW_CONTROL_NAME,
+                "kind": registration.negative_controls[0].kind,
+                "seed": registration.negative_controls[0].seed,
+                "scope": "each strict post-RNG prediction-history prefix",
+                "target": "unchanged",
+            },
+            {
+                "model_name": V8_PHASE_CONTROL_NAME,
+                "kind": registration.negative_controls[1].kind,
+                "seed": registration.negative_controls[1].seed,
+                "scope": "per-number coefficients inside each strict prefix",
+                "target": "unchanged",
+            },
+        ],
+        "row_control": row_control,
+        "phase_control": phase_control,
+        "paired_candidate_minus_row_control": paired_aggregate,
+        "stability_halves": stability_halves,
+        "row_control_halves": row_control_halves,
+        "phase_control_halves": phase_control_halves,
+        "paired_candidate_minus_row_control_halves": paired_halves,
+        "comparisons": [*reference_comparisons, deepcopy(candidate)],
+        "historical_decision": historical_decision,
+        "audit_warnings": audit_warnings,
+        "live_roles": {
+            "v1": "production_baseline_unchanged",
+            "v3": "shadow_unchanged",
+            "v8": "none_not_activated",
+        },
+        "prospective_cohort": {
+            "status": prospective.status,
+            "role": prospective.role,
+            "minimum_eligible_draws": prospective.minimum_eligible_draws,
+            "fixed_half_draws": registration.parameters["prospective_half_draws"],
+            "history_integrity": registration.parameters[
+                "prospective_history_integrity"
+            ],
+            "commit_deadline": prospective.commit_deadline,
+            "freeze_commit": prospective.freeze_commit,
+            "activation_commit": prospective.activation_commit,
+            "outcomes_known_at_activation": None,
+            "cohort_start": None,
+            "early_look": "prohibited",
+            "extension": "prohibited",
+        },
+    }
+    json_text = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    markdown_text = _render_v8_markdown(payload)
+    _publish_v8_report_pair(
         json_path=json_path,
         markdown_path=markdown_path,
         json_temporary_path=json_temporary_path,

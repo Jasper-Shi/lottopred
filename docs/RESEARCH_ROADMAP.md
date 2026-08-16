@@ -126,7 +126,7 @@ must remain in the ledger rather than being deleted.
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
-| [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Registered — not implemented or scored | No result; fixed low-prior falsification test only | Not activated |
+| [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Implemented — not scored | No result; fixed low-prior falsification test only | Not activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -212,9 +212,13 @@ consumed 2020–2025 targets, two fixed stability halves, and two distinct
 controls. The strict-prefix whole-draw control preserves the six-of-49 row
 constraint while destroying temporal order; the per-label phase rotation is
 only a component stress test and is not presented as a row-preserving fair
-null. V8 is currently **registered / not implemented / not scored / not
-activated**. No V8 historical report or live snapshot exists, and V1 remains
-production while V3 remains shadow.
+null. V8 is currently **registered / implemented / not scored / not activated**.
+The implementation supplies the frozen candidate, both controls, strict config
+factory gate, one-shot offline runner, permanent-claim publication protocol, and
+deterministic synthetic tests. It must be committed, pushed, and pass PR CI from
+a clean exact HEAD before its sole historical run. No V8 claim, historical
+report, or live snapshot exists, and V1 remains production while V3 remains
+shadow.
 
 ## Validation protocol
 

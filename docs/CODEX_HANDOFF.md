@@ -18,7 +18,7 @@ in `V2_V4_RESULTS.md`.
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
-| V8 fixed-recurrence harmonic | Registered only | `v8.0.0` has a frozen low-prior protocol but no implementation, score, report, live role, or prospective cohort. |
+| V8 fixed-recurrence harmonic | Implemented, unscored | `v8.0.0` now has a deterministic candidate, two controls, and a one-shot diagnostic runner, but no score, claim, report, live role, or prospective cohort. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -115,7 +115,7 @@ prediction/evaluation snapshots are unchanged.
 
 The next attempt is
 [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md),
-version `v8.0.0`. It is **registered / not implemented / not scored / not
+version `v8.0.0`. It is **registered / implemented / not scored / not
 activated**. Its [source note](research/V8_fixed_spectral_basis.md) records the
 weak prior honestly: `49/6` draws is the fair geometric waiting-time mean, not a
 mechanism-backed period, and the fixed `12*pi/49` harmonic is expected to be a
@@ -131,11 +131,22 @@ stress test. Both must behave as null in the aggregate and both fixed halves.
 
 The dedicated config is
 `config/research-v8-fixed-spectral-phase.yaml`; it explicitly sets
-`live.enabled: false` with empty primary and shadow lists. Before any V8 score,
-the registration must be committed and reviewed, then a separate deterministic
-implementation commit must pass local checks and CI from a clean exact HEAD.
-Only then may the permanent one-shot claim be created immediately before the
-first score. V1 production, V3 shadow, `config.yaml`, workflows, and existing
+`live.enabled: false` with empty primary and shadow lists. The candidate and both
+controls are implemented in `src/lotto649/models/v8_spectral_phase.py`; the
+factory accepts them only with the exact frozen research config and never adds
+them to the default-all or live paths. `lotto649 research-v8 --code-commit SHA`
+now provides the offline diagnostic runner, but it has not been executed.
+
+The runner verifies the clean implementation commit, canonical committed config,
+registered/known data blobs, exact 621 target folds, and the frozen V7 report and
+claim before it creates V8's permanent claim. It then uses the same backtest and
+scoring path for the candidate and both controls, including the registered paired
+bootstrap and eight gates. Claim and report directory entries are fsynced; caught
+partial publication or cleanup failures roll back visible final reports where
+possible and retain the claim/evidence for Archive. Local implementation checks
+currently pass, but the implementation must first be committed, pushed, and pass
+PR CI from a clean exact HEAD. Only then may the one registered run begin. V1
+production, V3 shadow, `config.yaml`, workflows, and existing
 prediction/evaluation snapshots remain unchanged.
 
 ## How the implemented system runs
