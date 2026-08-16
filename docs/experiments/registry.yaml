@@ -1,0 +1,57 @@
+schema_version: 1
+
+experiments:
+  - id: V5_pair_affinity
+    family: pair_cooccurrence
+    model_name: v5_pair_affinity
+    model_version: v5.0.0
+    status: registered
+    registration_file: docs/experiments/V5_pair_affinity.md
+    registered_on: 2026-08-16
+    seed: 649
+    primary_metric: top12_hits_lift_vs_theory
+    multiplicity_family: v5_pair_cooccurrence
+    variant_index: 1
+
+    registration_dataset:
+      path: data/processed/draws.csv
+      source_commit: 39b99a9e0a6351b4143f81c9a95eb1639456a35d
+      sha256: 95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf
+      draw_count: 4431
+      history_through: 2026-08-12
+
+    historical_partitions:
+      development:
+        start: 1982-01-01
+        end: 2014-12-31
+      legacy_validation:
+        start: 2015-01-01
+        end: 2019-12-31
+      consumed_diagnostic:
+        start: 2020-01-01
+        end: 2025-12-31
+
+    parameters:
+      minimum_history_draws: 300
+      history_window: expanding
+      anchor_draw_lag: 1
+      pair_prior_strength_draws: 250
+      marginal_prior_probability: 0.12244897959183673
+      conditional_pair_prior_probability: 0.10416666666666667
+      signal_temperature: 0.10
+      zscore_population_epsilon: 1.0e-9
+      combination_constraints: none
+      calibration: none
+      ensemble_members: none
+
+    negative_controls:
+      - kind: whole_draw_date_permutation
+        seed: 649
+
+    prospective:
+      status: not_activated
+      role: shadow
+      minimum_eligible_draws: 104
+      commit_deadline: before_target_local_date
+      freeze_commit: null
+      cohort_start: null

@@ -112,6 +112,26 @@ Recommended order:
 4. consider a compact ensemble only after multiple distinct families show stable
    standalone evidence.
 
+## Active experiment registry
+
+The structured registry is [`docs/experiments/registry.yaml`](experiments/registry.yaml).
+It is the attempt ledger for V5+ and is validated by
+`src/lotto649/research_protocol.py`. A registration records an attempt before
+any candidate score is inspected; later negative, invalid, and positive outcomes
+must remain in the ledger rather than being deleted.
+
+| ID | Family | Version | Status | Historical result | Prospective cohort |
+|---|---|---|---|---|---|
+| [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Registered; not implemented | Not evaluated | Not activated |
+
+The V5 registration dataset contains 4,431 committed draws through 2026-08-12
+with SHA-256
+`95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf`.
+Those observed 2026 draws are already consumed for `v5.0.0`; none can count as
+prospective evidence. The model is not in `config.yaml`, no V5 prediction exists,
+and its cohort start remains unset. Activation requires a separate reviewed
+freeze/live PR after implementation and labeled historical diagnostics.
+
 ## Validation protocol
 
 Every serious candidate must satisfy all of the following:
