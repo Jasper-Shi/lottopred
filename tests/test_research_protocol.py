@@ -167,6 +167,45 @@ def test_v6_registry_preserves_frozen_variant_and_rejected_result():
     )
 
 
+def test_v7_registry_freezes_one_unscored_post_rng_role_variant():
+    registry = load_experiment_registry(REGISTRY_PATH)
+    registration = registry.get("V7_post_rng_main_bonus_role_bias")
+
+    assert registration.status == "registered"
+    assert registration.family == "draw_role_exchangeability"
+    assert registration.model_name == "v7_main_bonus_role_bias"
+    assert registration.model_version == "v7.0.0"
+    assert registration.primary_metric == "top12_hits_lift_vs_theory"
+    assert registration.multiplicity_family == "draw_role_exchangeability"
+    assert registration.variant_index == 1
+    assert registration.result is None
+    assert registration.parameters["post_rng_start_date"] == "2019-05-15"
+    assert registration.parameters["active_minimum_post_rng_prior_draws"] == 104
+    assert registration.parameters["main_role_pseudocount"] == 3.0
+    assert registration.parameters["bonus_role_pseudocount"] == 0.5
+    assert registration.parameters["revealed_target_bonus_audit"] == (
+        "global_role_audit_only"
+    )
+    assert registration.parameters["bisection_iterations"] == 256
+    assert registration.parameters["historical_target_count"] == 621
+    assert registration.parameters["historical_fair_fallback_target_count"] == 39
+    assert registration.parameters["historical_active_target_count"] == 582
+    assert registration.parameters["first_historical_active_target"] == "2020-05-20"
+    assert registration.parameters["stability_half_1_target_count"] == 307
+    assert registration.parameters["stability_half_2_target_count"] == 314
+    assert registration.parameters["prospective_exact_eligible_evaluated_draws"] == 208
+    assert registration.negative_controls[0].kind == (
+        "within_draw_bonus_reassignment"
+    )
+    assert registration.negative_controls[0].seed == 649
+    assert registration.prospective.status == "not_activated"
+    assert registration.prospective.minimum_eligible_draws == 208
+    assert (ROOT / registration.registration_file).is_file()
+    assert file_sha256(ROOT / registration.parameters["reference_report"]) == (
+        registration.parameters["reference_report_sha256"]
+    )
+
+
 def _unsealed_v6_candidate():
     closed = load_experiment_registry(REGISTRY_PATH).get(
         "V6_fixed_boundary_js_regime"

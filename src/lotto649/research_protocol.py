@@ -69,7 +69,10 @@ class NegativeControlSpec:
     seed: int
 
     def __post_init__(self) -> None:
-        if self.kind != "whole_draw_date_permutation":
+        if self.kind not in {
+            "whole_draw_date_permutation",
+            "within_draw_bonus_reassignment",
+        }:
             raise ValueError(f"unsupported negative control: {self.kind}")
         if self.seed < 0:
             raise ValueError("negative-control seed must be non-negative")

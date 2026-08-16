@@ -1,0 +1,77 @@
+project:
+  timezone: America/Toronto
+  model_version: v7.0.0
+  seed: 649
+
+data:
+  history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
+  recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
+  bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
+  bridge_start_year: 2024
+  processed_csv: "data/processed/draws.csv"
+
+backtest:
+  min_history_draws: 300
+  test_start: "2020-01-01"
+  test_end: "2025-12-31"
+  top_k: [6, 12, 18]
+  models:
+    - v7_main_bonus_role_bias
+  model_versions:
+    v7_main_bonus_role_bias: v7.0.0
+
+research:
+  experiment_id: V7_post_rng_main_bonus_role_bias
+  family: draw_role_exchangeability
+  variant_index: 1
+  post_rng_start_date: "2019-05-15"
+  active_minimum_post_rng_prior_draws: 104
+  main_role_pseudocount: 3.0
+  bonus_role_pseudocount: 0.5
+  revealed_target_bonus_audit: global_role_audit_only
+  probability_sum_absolute_tolerance: 1.0e-12
+  bisection_iterations: 256
+  historical_target_count: 621
+  post_rng_burn_in_draw_count_through_2019: 65
+  historical_fair_fallback_target_count: 39
+  historical_active_target_count: 582
+  first_historical_active_target: "2020-05-20"
+  stability_halves:
+    - start: "2020-01-01"
+      end: "2022-12-31"
+      target_count: 307
+    - start: "2023-01-01"
+      end: "2025-12-31"
+      target_count: 314
+  bootstrap_replicates: 10000
+  global_role_audit_randomizations: 10000
+  negative_control: within_draw_bonus_reassignment
+  prospective_exact_eligible_evaluated_draws: 208
+  prospective_half_draws: 104
+  reference_report: reports/v6_entropy_regime_v6.0.0_historical.json
+  reference_report_sha256: 12400a4b5164b030225827d47a8024a1ec7aeaeb32fa64cd2fab0b46ff8d4c2a
+
+features:
+  recent_windows: [10, 25, 50, 100, 250]
+  ema_half_life: 35
+  logistic_training_draws: 480
+  min_logistic_samples: 300
+  v3_training_draws: 280
+  v3_stride: 14
+  v3_min_history: 300
+
+prediction:
+  candidate_pool_size: 12
+  final_size: 6
+
+live:
+  enabled: false
+  models: []
+  shadow_models: []
+
+notifications:
+  enabled: false
+  min_final_hits: 4
+  min_top12_hits: 5
+  performance_alert_min_draws: 100
+  performance_alert_z: 2.58
