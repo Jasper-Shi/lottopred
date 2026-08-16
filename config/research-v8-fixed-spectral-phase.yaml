@@ -1,0 +1,93 @@
+project:
+  timezone: America/Toronto
+  model_version: v8.0.0
+  seed: 649
+
+data:
+  history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
+  recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
+  bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
+  bridge_start_year: 2024
+  processed_csv: "data/processed/draws.csv"
+
+backtest:
+  min_history_draws: 104
+  test_start: "2020-01-01"
+  test_end: "2025-12-31"
+  top_k: [6, 12, 18]
+  models:
+    - v8_spectral_phase
+  model_versions:
+    v8_spectral_phase: v8.0.0
+
+research:
+  experiment_id: V8_fixed_recurrence_harmonic
+  family: periodicity_frequency_domain
+  variant_index: 1
+  post_rng_start_date: "2019-05-15"
+  active_minimum_post_rng_prior_draws: 104
+  history_integrity: exact_verified_source_blob_prefix
+  missing_or_disputed_draw_policy: invalid_pipeline_archive
+  fair_inclusion_probability: 0.12244897959183673
+  fixed_period_draws: 8.166666666666666
+  fixed_angular_frequency: 12*pi/49
+  coefficient_estimator: raw_fourier_projection_2_over_D
+  probability_link: stable_sigmoid
+  bisection_iterations: 256
+  probability_sum_absolute_tolerance: 1.0e-12
+  historical_target_count: 621
+  post_rng_burn_in_draw_count_through_2019: 65
+  historical_fair_fallback_target_count: 39
+  historical_active_target_count: 582
+  first_historical_active_target: "2020-05-20"
+  stability_halves:
+    - start: "2020-01-01"
+      end: "2022-12-31"
+      target_count: 307
+    - start: "2023-01-01"
+      end: "2025-12-31"
+      target_count: 314
+  bootstrap_replicates: 10000
+  bootstrap_seed: 649
+  negative_controls:
+    - strict_prefix_whole_draw_permutation
+    - per_number_spectral_phase_rotation
+  control_null_rule: raw_p_gt_0_05_or_ci_includes_zero
+  row_control_direct_comparison: paired_candidate_minus_row_control_top12_hits
+  row_control_direct_bootstrap_replicates: 10000
+  row_control_direct_bootstrap_rng: numpy.default_rng
+  row_control_direct_bootstrap_seed: 649
+  row_control_direct_bootstrap_interval: two_sided_95_percentile_linear
+  row_control_direct_gate: lower_endpoint_strictly_above_zero_aggregate_and_halves
+  prospective_exact_eligible_evaluated_draws: 208
+  prospective_half_draws: 104
+  prospective_history_integrity: exact_snapshot_bound_source_blob_prefix
+  reference_report: reports/v7_main_bonus_role_bias_v7.0.0_historical.json
+  reference_report_sha256: 242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121
+  reference_claim: reports/v7_main_bonus_role_bias_v7.0.0_historical.claim
+  reference_claim_sha256: 1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290
+
+features:
+  recent_windows: [10, 25, 50, 100, 250]
+  ema_half_life: 35
+  logistic_training_draws: 480
+  min_logistic_samples: 300
+  v3_training_draws: 280
+  v3_stride: 14
+  v3_min_history: 300
+
+prediction:
+  candidate_pool_size: 12
+  final_size: 6
+
+live:
+  enabled: false
+  models: []
+  shadow_models: []
+
+notifications:
+  enabled: false
+  min_final_hits: 4
+  min_top12_hits: 5
+  performance_alert_min_draws: 100
+  performance_alert_z: 2.58

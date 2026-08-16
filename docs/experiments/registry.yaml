@@ -291,3 +291,159 @@ experiments:
       activation_commit: null
       outcomes_known_at_activation: null
       cohort_start: null
+
+  - id: V8_fixed_recurrence_harmonic
+    family: periodicity_frequency_domain
+    model_name: v8_spectral_phase
+    model_version: v8.0.0
+    status: closed_rejected
+    registration_file: docs/experiments/V8_fixed_recurrence_harmonic.md
+    registered_on: 2026-08-16
+    seed: 649
+    primary_metric: top12_hits_lift_vs_theory
+    multiplicity_family: periodicity_frequency_domain
+    variant_index: 1
+
+    registration_dataset:
+      path: data/processed/draws.csv
+      source_commit: 39b99a9e0a6351b4143f81c9a95eb1639456a35d
+      sha256: 95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf
+      draw_count: 4431
+      history_through: 2026-08-12
+
+    outcomes_known_at_registration:
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
+    historical_partitions:
+      development:
+        start: 1982-01-01
+        end: 2014-12-31
+      legacy_validation:
+        start: 2015-01-01
+        end: 2019-12-31
+      consumed_diagnostic:
+        start: 2020-01-01
+        end: 2025-12-31
+
+    parameters:
+      post_rng_start_date: "2019-05-15"
+      active_minimum_post_rng_prior_draws: 104
+      history_window: expanding_post_rng
+      history_integrity: exact_verified_source_blob_prefix
+      missing_or_disputed_draw_policy: invalid_pipeline_archive
+      history_index_origin: zero_based_2019_05_15_draw
+      time_axis: draw_index_not_calendar_time
+      input_indicator: six_main_membership_only
+      bonus_numbers: excluded
+      fair_inclusion_probability: 0.12244897959183673
+      fixed_period_draws: 8.166666666666666
+      fixed_angular_frequency: 12*pi/49
+      coefficient_estimator: raw_fourier_projection_2_over_D
+      coefficient_summation: python_math_fsum_ascending_index
+      forecast_phase_index: D
+      forecast_score: a_cos_omega_D_plus_b_sin_omega_D
+      finite_prefix_orthogonalization: none
+      training: none
+      zscore: none
+      signal_temperature: none
+      regularization: none
+      calibration: none
+      combination_constraints: none
+      ensemble_members: none
+      fair_fallback: exact_constant_6_over_49
+      all_zero_signal_behavior: exact_constant_6_over_49
+      probability_link: stable_sigmoid
+      intercept_constraint: sum_probabilities_equals_6
+      intercept_solver: deterministic_bisection
+      bisection_lower: negative_64_minus_max_abs_score
+      bisection_upper: positive_64_plus_max_abs_score
+      bisection_iterations: 256
+      bisection_requires_strict_bracket: true
+      bisection_equality_branch: lower
+      bisection_early_exit: prohibited
+      bisection_endpoint_clipping: prohibited
+      probability_sum_absolute_tolerance: 1.0e-12
+      output_labels: integers_1_through_49
+      ranking_tie_break: probability_desc_number_asc
+      row_control_hash: sha256
+      row_control_domain: "lotto649-v8-prefix-control-v1:649:{D}:{index}"
+      row_control_digest_bytes: 32
+      row_control_sort: digest_bytes_ascending_then_index
+      row_control_identity_fallback: rotate_left_one
+      row_control_scope: each_strict_post_rng_prefix
+      row_control_target: unchanged
+      phase_control_hash: sha256
+      phase_control_domain: "lotto649-v8-phase-control-v1:649:{number}"
+      phase_control_bytes: first_8
+      phase_control_endianness: big
+      phase_control_denominator: 18446744073709551616
+      phase_control_score: a_cos_theta_plus_phi_plus_b_sin_theta_plus_phi
+      historical_primary_gate_lane: consumed_diagnostic
+      historical_target_start: "2020-01-01"
+      historical_target_end: "2025-12-31"
+      historical_target_count: 621
+      post_rng_burn_in_draw_count_through_2019: 65
+      historical_fair_fallback_target_count: 39
+      historical_active_target_count: 582
+      first_historical_active_target: "2020-05-20"
+      historical_development_status: not_applicable
+      historical_legacy_validation_status: not_applicable
+      stability_half_1_start: "2020-01-01"
+      stability_half_1_end: "2022-12-31"
+      stability_half_1_target_count: 307
+      stability_half_2_start: "2023-01-01"
+      stability_half_2_end: "2025-12-31"
+      stability_half_2_target_count: 314
+      primary_exact_test: hypergeometric_draw_level_convolution_upper_tail
+      bootstrap_replicates: 10000
+      bootstrap_rng: numpy.default_rng
+      bootstrap_seed: 649
+      bootstrap_interval: two_sided_95_percentile_linear
+      proper_score_max_delta_vs_fair: 1.0e-9
+      holm_method: step_down_fwer
+      holm_family_size_at_registration: 1
+      control_null_rule: raw_p_gt_0_05_or_ci_includes_zero
+      row_control_direct_comparison: paired_candidate_minus_row_control_top12_hits
+      row_control_direct_bootstrap_replicates: 10000
+      row_control_direct_bootstrap_rng: numpy.default_rng
+      row_control_direct_bootstrap_seed: 649
+      row_control_direct_bootstrap_interval: two_sided_95_percentile_linear
+      row_control_direct_gate: lower_endpoint_strictly_above_zero_aggregate_and_halves
+      prospective_exact_eligible_evaluated_draws: 208
+      prospective_half_draws: 104
+      prospective_early_look: prohibited
+      prospective_extension: prohibited
+      prospective_history_integrity: exact_snapshot_bound_source_blob_prefix
+      reference_report: reports/v7_main_bonus_role_bias_v7.0.0_historical.json
+      reference_report_sha256: 242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121
+      reference_claim: reports/v7_main_bonus_role_bias_v7.0.0_historical.claim
+      reference_claim_sha256: 1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290
+
+    negative_controls:
+      - kind: strict_prefix_whole_draw_permutation
+        seed: 649
+      - kind: per_number_spectral_phase_rotation
+        seed: 649
+
+    result:
+      decision: reject
+      decided_on: 2026-08-16
+      implementation_commit: c48ab2277f005a48bc4dc57f5a532b476ab900fa
+      report_json: reports/v8_spectral_phase_v8.0.0_historical.json
+      report_markdown: reports/v8_spectral_phase_v8.0.0_historical.md
+      result_file: docs/experiments/V8_fixed_recurrence_harmonic_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
+
+    prospective:
+      status: not_activated
+      role: shadow
+      minimum_eligible_draws: 208
+      commit_deadline: before_target_local_date
+      freeze_commit: null
+      activation_commit: null
+      outcomes_known_at_activation: null
+      cohort_start: null

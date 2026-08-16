@@ -71,6 +71,8 @@ class NegativeControlSpec:
 
     def __post_init__(self) -> None:
         if self.kind not in {
+            "per_number_spectral_phase_rotation",
+            "strict_prefix_whole_draw_permutation",
             "whole_draw_date_permutation",
             "within_draw_bonus_reassignment",
         }:
@@ -237,6 +239,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     ),
     "V7_post_rng_main_bonus_role_bias": (
         "ab4b52d1e288045eace433892530e8b612ae12d5afc8d5c9ad97fb63048bcb05"
+    ),
+    "V8_fixed_recurrence_harmonic": (
+        "150b1243fc884926a22c63f9b707b96af808bfae39b228382cc0b852b0a1c2b5"
     ),
 }
 

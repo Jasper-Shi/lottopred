@@ -18,6 +18,7 @@ in `V2_V4_RESULTS.md`.
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
+| V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -109,6 +110,56 @@ it must never be deleted to retry the experiment. V7 remains absent from
 `config.yaml`, and its research config keeps `live.enabled: false` with empty
 primary and shadow lists. V1 remains production, V3 remains shadow, and existing
 prediction/evaluation snapshots are unchanged.
+
+## V8 research checkpoint
+
+The next attempt is
+[`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md),
+version `v8.0.0`. It is **implemented / historical diagnostic complete /
+rejected / never activated**. Its
+[source note](research/V8_fixed_spectral_basis.md) records the weak prior
+honestly: `49/6` draws is the fair geometric waiting-time mean, not a
+mechanism-backed period, and the fixed `12*pi/49` harmonic is expected to be a
+negative falsification test under a fair IID process.
+
+The registration fixes a strict post-2019-05-15 expanding main-number history,
+the raw Fourier projection and target phase, a deterministic sum-to-six sigmoid
+mapping, and exactly 621 consumed 2020–2025 targets. Development and legacy
+scores are N/A rather than substitute discovery lanes. It also freezes two
+controls: a strict-prefix complete-row permutation that preserves each six-main
+plus bonus row, and a per-label phase rotation used only as a spectral-component
+stress test. Both must behave as null in the aggregate and both fixed halves.
+
+The dedicated config is
+`config/research-v8-fixed-spectral-phase.yaml`; it explicitly sets
+`live.enabled: false` with empty primary and shadow lists. The candidate and both
+controls are implemented in `src/lotto649/models/v8_spectral_phase.py`; the
+factory accepts them only with the exact frozen research config and never adds
+them to the default-all or live paths. `lotto649 research-v8 --code-commit SHA`
+completed its sole historical run against frozen implementation commit
+`c48ab2277f005a48bc4dc57f5a532b476ab900fa`.
+
+Across the 621 consumed 2020–2025 targets, aggregate Top-12 lift was
+`-0.016891780866936212`, exact/Holm p was `0.6700938237435888`, and the 95%
+bootstrap interval was
+`[-0.08935554898287834, 0.05883285681422251]`. The first fixed half was
+negative, aggregate and first-half proper scores missed the fair tolerance, and
+candidate-minus-row-control point estimates were negative in the aggregate and
+both halves. The row and phase controls met their registered null rules, the
+audit was clear, and only `phase_control_null_aggregate_and_halves` and
+`audit_clear` passed. The registered conjunction therefore made the exact
+**Reject / `not_activated`** decision. See the
+[V8 decision record](experiments/V8_fixed_recurrence_harmonic_results.md) and
+[generated report](../reports/v8_spectral_phase_v8.0.0_historical.md).
+
+The permanent one-shot claim is
+`reports/v8_spectral_phase_v8.0.0_historical.claim` with SHA-256
+`6598a2f38462fe6274b9dfa6b6b8c51e6af367b551fd861ef8a582000d60c76d`.
+It must never be deleted or bypassed to rerun `v8.0.0`. The 2020–2025 result is
+consumed, non-blind, and non-confirmatory; any tuning or other response to it
+requires a new version, pre-registration, freeze, and genuinely new prospective
+cohort. V8 remains absent from `config.yaml`; V1 production, V3 shadow,
+workflows, and all existing prediction/evaluation snapshots remain unchanged.
 
 ## How the implemented system runs
 
@@ -251,8 +302,9 @@ Do not broaden the fallback to swallow those integrity failures.
    files before reporting live status.
 3. Keep V1 unchanged as the baseline and V3 labeled shadow while new hypotheses
    are developed.
-4. Keep rejected `v5.0.0` immutable and retain its reports and registry row as a
-   negative result.
+4. Keep rejected `v5.0.0` through `v8.0.0` immutable and retain every claim,
+   report, decision record, and registry row as a negative result. Never rerun
+   the same version or tune it against its consumed answers.
 5. Pre-register one genuinely separate hypothesis before implementing or
    inspecting its scores; all currently observed outcomes are consumed for any
    model changed in response to them.

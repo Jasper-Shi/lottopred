@@ -126,6 +126,7 @@ must remain in the ledger rather than being deleted.
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
+| [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Closed — reject | Negative aggregate Top-12 lift; six of eight frozen gates failed | Never activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -195,6 +196,52 @@ role. Its previously registered 208-draw plan remains an unstarted record, not
 permission to reopen `v7.0.0`. Any follow-up inspired by these results requires
 a genuinely new hypothesis/version and pre-registration; the observed V7
 history is consumed for it. V1 remains production and V3 remains shadow.
+
+V8 registered one fixed-frequency, post-RNG falsification test before any V8
+score existed. It projects each label's strictly prior
+six-main membership indicator onto the sole frequency `12*pi/49`, chosen from
+the reciprocal fair inclusion probability rather than from a periodogram. The
+[primary-source basis](research/V8_fixed_spectral_basis.md) makes the limitation
+explicit: `49/6` is a geometric waiting-time mean, not an official or physical
+lottery cycle, and a fair IID process gives this frequency no privileged
+expected power.
+
+The [V8 registration](experiments/V8_fixed_recurrence_harmonic.md) freezes the
+raw expanding projection, one deterministic sum-to-six sigmoid map, all 621
+consumed 2020–2025 targets, two fixed stability halves, and two distinct
+controls. The strict-prefix whole-draw control preserves the six-of-49 row
+constraint while destroying temporal order; the per-label phase rotation is
+only a component stress test and is not presented as a row-preserving fair
+null. V8 is now **implemented / historical diagnostic complete / rejected /
+never activated**.
+The frozen implementation commit is
+`c48ab2277f005a48bc4dc57f5a532b476ab900fa`. Its sole one-shot historical
+diagnostic then scored exactly the 621 already-consumed targets from 2020-01-01
+through 2025-12-31. Aggregate Top-12 lift was
+`-0.016891780866936212`, exact/Holm p was `0.6700938237435888`, and the 95%
+bootstrap interval was
+`[-0.08935554898287834, 0.05883285681422251]`. The first fixed half had
+negative primary lift, and aggregate plus first-half Brier/log-loss deltas
+exceeded the frozen fair tolerance.
+
+Both controls met their registered null definitions, but that did not support
+the candidate. Candidate-minus-row-control Top-12 point estimates were negative
+in the aggregate and both halves, and every paired interval had a negative lower
+endpoint. Of the eight jointly required gates, only the phase-control-null and
+audit-clear gates passed. The frozen conjunction therefore made the exact
+**Reject / `not_activated`** decision. The complete outcome is in the
+[V8 decision record](experiments/V8_fixed_recurrence_harmonic_results.md) and
+[generated report](../reports/v8_spectral_phase_v8.0.0_historical.md).
+
+The permanent claim at
+`reports/v8_spectral_phase_v8.0.0_historical.claim` has SHA-256
+`6598a2f38462fe6274b9dfa6b6b8c51e6af367b551fd861ef8a582000d60c76d`.
+It must remain permanently and prohibits another `v8.0.0` historical run. The
+2020–2025 lane is consumed, non-blind, and non-confirmatory. Any hypothesis,
+frequency, feature, parameter, control, metric, split, or gate changed in
+response needs a new version and pre-registration; every 2026+ outcome observed
+before that new freeze is also consumed for the changed candidate. V8 has no
+prospective cohort or live role. V1 remains production and V3 remains shadow.
 
 ## Validation protocol
 
