@@ -4,6 +4,7 @@ from hashlib import sha256
 import json
 import math
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
@@ -16,7 +17,7 @@ from lotto649.research_diagnostics import (
     run_registered_v7_diagnostics,
     v7_historical_decision,
 )
-from lotto649.research_protocol import load_experiment_registry
+from lotto649.research_protocol import ExperimentRegistry, load_experiment_registry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -373,6 +374,24 @@ class _Environment:
     output_dir: Path
 
 
+def _unscored_v7_registry_fixture() -> ExperimentRegistry:
+    """Reconstruct the immutable pre-score registry state for runner unit tests."""
+    registry = load_experiment_registry(
+        ROOT / "docs" / "experiments" / "registry.yaml"
+    )
+    closed = registry.get(V7_EXPERIMENT_ID)
+    fields = vars(closed).copy()
+    fields.update(status="registered", result=None, _terminal_result_lock=None)
+    unscored = SimpleNamespace(**fields)
+    return ExperimentRegistry(
+        schema_version=registry.schema_version,
+        experiments=tuple(
+            unscored if item.experiment_id == V7_EXPERIMENT_ID else item
+            for item in registry.experiments
+        ),
+    )
+
+
 def _environment(tmp_path: Path) -> _Environment:
     root = tmp_path / "repo"
     config_path = root / "config" / "research-v7-main-bonus-role-bias.yaml"
@@ -387,9 +406,7 @@ def _environment(tmp_path: Path) -> _Environment:
     reference_path.write_bytes(
         (ROOT / "reports" / "v6_entropy_regime_v6.0.0_historical.json").read_bytes()
     )
-    registry = load_experiment_registry(
-        ROOT / "docs" / "experiments" / "registry.yaml"
-    )
+    registry = _unscored_v7_registry_fixture()
     draws = _synthetic_registered_draws()
     return _Environment(
         root=root,

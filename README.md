@@ -85,4 +85,5 @@ See:
 - `docs/experiments/V5_pair_affinity_results.md`
 - `docs/experiments/V6_entropy_regime_results.md`
 - `docs/experiments/V7_main_bonus_role_bias.md`
+- `docs/experiments/V7_main_bonus_role_bias_results.md`
 - `docs/research/V7_mechanical_bias_basis.md`

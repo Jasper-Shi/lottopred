@@ -17,7 +17,7 @@ in `V2_V4_RESULTS.md`.
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
-| V7 main/bonus role bias | Implemented; unscored | `v7.0.0` is frozen on a feature branch with a dedicated within-draw role control. It has no live role and no historical result yet. |
+| V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -86,28 +86,29 @@ transition, a label's strictly prior six-main versus bonus-role counts contain a
 stable role-assignment signal. The frozen seed-649 negative control keeps every
 draw's date and seven-number set but reassigns only its historical bonus role.
 
-The candidate, control, diagnostic runner, and deterministic offline tests are
-implemented on `codex/v7-research-foundations`. No V7 historical prediction
-score or global role-audit statistic has been generated or inspected. Before the
-sole run, the implementation must be committed and pushed, CI must pass, and the
-runner requires the supplied full commit SHA to equal a completely clean local
-HEAD. It then permits only the consumed 621 targets in 2020–2025 and refuses to
-overwrite either report artifact.
+The candidate, control, diagnostic runner, and deterministic offline tests were
+frozen at implementation commit
+`180cd045e7797b95db4226f7d79d66d6ee9a5965`. After push, full local checks, and
+green PR CI, the sole diagnostic ran from a clean matching tree over exactly the
+consumed 621 targets in 2020–2025. It completed without audit warning and made
+the registered **Reject / not activated** decision.
 
-The runner creates the canonical `.claim` file exclusively after all preflights
-and before the first score. It is permanent on success or failure and must never
-be deleted to retry V7. JSON and Markdown use same-directory `.tmp` staging and
-are both staged before sequential publication; a caught partial publication is
-rolled back. A crash or other post-claim failure leaves the permanent claim and
-any staging or partial-publication evidence for an **Archive** decision. On
-success only the `.tmp` files are removed, and the report records the permanent
-claim's path and SHA-256.
+Aggregate Top-12 lift was `+0.013704`, but its exact/Holm p-value was
+`0.372657` and its 95% bootstrap interval was `[-0.065201, +0.094219]`.
+The fixed 2020–2022 half had negative lift; aggregate and both-half Brier and
+log-loss deltas were worse than fair; and the global role audit was null at
+`p=0.570743`. The candidate control behaved as null in the aggregate and both
+halves, and the audit was clear. The complete outcome is in the
+[V7 decision record](experiments/V7_main_bonus_role_bias_results.md) and
+[generated report](../reports/v7_main_bonus_role_bias_v7.0.0_historical.md).
 
-V7 remains absent from `config.yaml`; its research config has
-`live.enabled: false` with empty primary and shadow lists. Even complete
-historical passage
-would require a separate reviewed shadow-activation PR. V1 remains production,
-V3 remains shadow, and existing prediction/evaluation snapshots are unchanged.
+The permanent one-shot claim remains at
+`reports/v7_main_bonus_role_bias_v7.0.0_historical.claim` with SHA-256
+`1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290`;
+it must never be deleted to retry the experiment. V7 remains absent from
+`config.yaml`, and its research config keeps `live.enabled: false` with empty
+primary and shadow lists. V1 remains production, V3 remains shadow, and existing
+prediction/evaluation snapshots are unchanged.
 
 ## How the implemented system runs
 

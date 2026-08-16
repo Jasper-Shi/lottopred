@@ -235,6 +235,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     "V6_fixed_boundary_js_regime": (
         "74bda907c42243890ef74f59f3e626ca37204a2863bf18d5aadde738e4c7cc57"
     ),
+    "V7_post_rng_main_bonus_role_bias": (
+        "ab4b52d1e288045eace433892530e8b612ae12d5afc8d5c9ad97fb63048bcb05"
+    ),
 }
 
 

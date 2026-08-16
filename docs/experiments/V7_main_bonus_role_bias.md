@@ -8,7 +8,7 @@
 | Family / variant | `draw_role_exchangeability` / `1` |
 | Model | `v7_main_bonus_role_bias` |
 | Version | `v7.0.0` |
-| Status | **IMPLEMENTED AND FROZEN — NOT SCORED** |
+| Status | **CLOSED — REJECTED; NEVER ACTIVATED** |
 | Registration date | 2026-08-16 |
 | Protocol seed | `649` |
 | Live role | none; V1 stays production and V3 stays shadow |
@@ -21,13 +21,16 @@ separately in the unscored
 [mechanical-bias basis](../research/V7_mechanical_bias_basis.md).
 
 The deterministic candidate, dedicated control, diagnostic runner, and offline
-tests are now implemented on the V7 feature branch. No V7 historical score or
-role-audit statistic has been run or inspected. The implementation commit is the
-freeze boundary recorded by the diagnostic command and its future report; the
-runner refuses to score any different or dirty working tree.
+tests were frozen at implementation commit
+`180cd045e7797b95db4226f7d79d66d6ee9a5965`. After that commit was pushed, its
+PR checks passed, and the local tree was verified clean, the sole 2020–2025
+diagnostic was run exactly once. It failed the frozen historical conjunction and
+is **rejected / never activated**. No formula, constant, metric, control, or gate
+was changed after the result was inspected. See the
+[decision record](V7_main_bonus_role_bias_results.md).
 
-Immediately after every preflight passes and before the first scoring call, the
-runner exclusively creates
+After every preflight passed and before the first scoring call, the runner
+exclusively created
 `reports/v7_main_bonus_role_bias_v7.0.0_historical.claim`. That claim is a
 permanent one-shot audit artifact on both success and failure; it must never be
 deleted to permit a rerun. Complete JSON and Markdown are first written to
@@ -36,7 +39,8 @@ publication is rolled back; a crash or other failure after claiming retains the
 permanent claim plus any staging or partial-publication evidence, consumes the
 attempt, and requires **Archive** review rather than cleanup-and-rerun. A
 successful report records the permanent claim path and SHA-256 and removes only
-the staging files.
+the staging files. The retained claim SHA-256 is
+`1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290`.
 
 Historical results through 2025 are consumed diagnostics. They cannot establish
 a predictive lottery model or be called blind, confirmatory, validation, or

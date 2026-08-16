@@ -169,18 +169,63 @@ def test_v6_registry_preserves_frozen_variant_and_rejected_result():
     )
 
 
-def test_v7_registry_freezes_one_unscored_post_rng_role_variant():
+def test_v7_registry_preserves_frozen_variant_and_rejected_result():
     registry = load_experiment_registry(REGISTRY_PATH)
     registration = registry.get("V7_post_rng_main_bonus_role_bias")
 
-    assert registration.status == "registered"
+    assert registration.status == "closed_rejected"
     assert registration.family == "draw_role_exchangeability"
     assert registration.model_name == "v7_main_bonus_role_bias"
     assert registration.model_version == "v7.0.0"
     assert registration.primary_metric == "top12_hits_lift_vs_theory"
     assert registration.multiplicity_family == "draw_role_exchangeability"
     assert registration.variant_index == 1
-    assert registration.result is None
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.implementation_commit == (
+        "180cd045e7797b95db4226f7d79d66d6ee9a5965"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    for result_path in (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+    ):
+        assert (ROOT / result_path).is_file()
+    assert file_sha256(ROOT / registration.result.report_json) == (
+        "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+    )
+    assert file_sha256(ROOT / registration.result.report_markdown) == (
+        "e944c33494712c932c826b84d288a7239911e5d34eecb113cc6dffe639dec3f4"
+    )
+    report = json.loads(
+        (ROOT / registration.result.report_json).read_text(encoding="utf-8")
+    )
+    assert report["code_commit"] == registration.result.implementation_commit
+    assert report["historical_decision"] == {
+        "all_gates_passed": False,
+        "decision": "reject",
+        "gates": {
+            "aggregate_bootstrap_lower_above_zero": False,
+            "aggregate_holm_adjusted_p_at_most_0_05": False,
+            "audit_clear": True,
+            "global_role_audit_p_at_most_0_05": False,
+            "negative_control_null_aggregate_and_halves": True,
+            "positive_aggregate_primary_lift": True,
+            "positive_primary_lift_in_both_fixed_halves": False,
+            "proper_scores_within_fair_tolerance_aggregate_and_halves": False,
+        },
+        "historical_primary_signal_supported": False,
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "shadow_activation": "not_activated",
+    }
+    assert report["audit_warnings"] == []
+    claim_path = ROOT / "reports/v7_main_bonus_role_bias_v7.0.0_historical.claim"
+    assert claim_path.is_file()
+    assert file_sha256(claim_path) == (
+        "1443982f9b40ba5b460632211baa17b4aff7cb9cdcd48010c0a538f141344290"
+    )
     assert registration.parameters["post_rng_start_date"] == "2019-05-15"
     assert registration.parameters["active_minimum_post_rng_prior_draws"] == 104
     assert registration.parameters["main_role_pseudocount"] == 3.0
@@ -645,10 +690,21 @@ def test_activated_cohort_cannot_be_reset_with_dataclass_replace():
         )
 
 
-def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(tmp_path):
+@pytest.mark.parametrize(
+    "experiment_id",
+    [
+        "V5_pair_affinity",
+        "V6_fixed_boundary_js_regime",
+        "V7_post_rng_main_bonus_role_bias",
+    ],
+)
+def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
+    tmp_path,
+    experiment_id,
+):
     payload = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     rejected = next(
-        item for item in payload["experiments"] if item["id"] == "V5_pair_affinity"
+        item for item in payload["experiments"] if item["id"] == experiment_id
     )
     rejected["status"] = "registered"
     rejected.pop("result")
@@ -659,12 +715,23 @@ def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(tmp_pat
         load_experiment_registry(path)
 
 
-def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(tmp_path):
+@pytest.mark.parametrize(
+    "experiment_id",
+    [
+        "V5_pair_affinity",
+        "V6_fixed_boundary_js_regime",
+        "V7_post_rng_main_bonus_role_bias",
+    ],
+)
+def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(
+    tmp_path,
+    experiment_id,
+):
     payload = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
     payload["experiments"] = [
         item
         for item in payload["experiments"]
-        if item["id"] != "V5_pair_affinity"
+        if item["id"] != experiment_id
     ]
     path = tmp_path / "registry.yaml"
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")

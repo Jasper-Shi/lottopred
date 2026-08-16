@@ -164,7 +164,7 @@ experiments:
     family: draw_role_exchangeability
     model_name: v7_main_bonus_role_bias
     model_version: v7.0.0
-    status: registered
+    status: closed_rejected
     registration_file: docs/experiments/V7_main_bonus_role_bias.md
     registered_on: 2026-08-16
     seed: 649
@@ -271,6 +271,16 @@ experiments:
     negative_controls:
       - kind: within_draw_bonus_reassignment
         seed: 649
+
+    result:
+      decision: reject
+      decided_on: 2026-08-16
+      implementation_commit: 180cd045e7797b95db4226f7d79d66d6ee9a5965
+      report_json: reports/v7_main_bonus_role_bias_v7.0.0_historical.json
+      report_markdown: reports/v7_main_bonus_role_bias_v7.0.0_historical.md
+      result_file: docs/experiments/V7_main_bonus_role_bias_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
 
     prospective:
       status: not_activated
