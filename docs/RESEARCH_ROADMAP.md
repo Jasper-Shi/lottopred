@@ -122,15 +122,23 @@ must remain in the ledger rather than being deleted.
 
 | ID | Family | Version | Status | Historical result | Prospective cohort |
 |---|---|---|---|---|---|
-| [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Registered; not implemented | Not evaluated | Not activated |
+| [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
 `95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf`.
-Those observed 2026 draws are already consumed for `v5.0.0`; none can count as
-prospective evidence. The model is not in `config.yaml`, no V5 prediction exists,
-and its cohort start remains unset. Activation requires a separate reviewed
-freeze/live PR after implementation and labeled historical diagnostics.
+Those observed 2026 draws were already consumed for `v5.0.0`; none can count as
+prospective evidence. The frozen implementation and labeled historical
+diagnostic are complete. Across the three registered lanes, every primary 95%
+bootstrap interval included zero, every exact one-sided primary p-value exceeded
+`0.05`, and both proper scores were worse than the fair constant baseline. The
+seed-649 negative control behaved as null. The full outcome is in
+[`V5_pair_affinity_results.md`](experiments/V5_pair_affinity_results.md).
+
+The version is rejected, remains absent from `config.yaml`, produced no V5 live
+prediction, and never began a prospective cohort. Any follow-up must register a
+genuinely separate hypothesis/version before implementation; it may not tune
+this candidate against the now-consumed answers.
 
 ## Validation protocol
 

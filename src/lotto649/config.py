@@ -12,6 +12,7 @@ def load_config(path: str | Path | None = None) -> dict[str, Any]:
     with cfg_path.open("r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     cfg["_root"] = ROOT
+    cfg["_config_path"] = cfg_path.resolve()
     return cfg
 
 

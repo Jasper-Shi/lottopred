@@ -5,7 +5,7 @@ experiments:
     family: pair_cooccurrence
     model_name: v5_pair_affinity
     model_version: v5.0.0
-    status: registered
+    status: closed_rejected
     registration_file: docs/experiments/V5_pair_affinity.md
     registered_on: 2026-08-16
     seed: 649
@@ -47,6 +47,16 @@ experiments:
     negative_controls:
       - kind: whole_draw_date_permutation
         seed: 649
+
+    result:
+      decision: reject
+      decided_on: 2026-08-16
+      implementation_commit: f51a3b59e857f6c3a5d9c0502a0c30e71d15d3b4
+      report_json: reports/v5_pair_affinity_v5.0.0_historical.json
+      report_markdown: reports/v5_pair_affinity_v5.0.0_historical.md
+      result_file: docs/experiments/V5_pair_affinity_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
 
     prospective:
       status: not_activated

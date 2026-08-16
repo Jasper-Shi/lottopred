@@ -80,3 +80,6 @@ See:
 - `docs/ARCHITECTURE.md`
 - `docs/MODEL_PROTOCOL.md`
 - `docs/OPERATIONS.md`
+- `docs/RESEARCH_ROADMAP.md`
+- `docs/V2_V4_RESULTS.md`
+- `docs/experiments/V5_pair_affinity_results.md`

@@ -96,6 +96,33 @@ class ProspectiveCohortSpec:
 
 
 @dataclass(frozen=True)
+class ExperimentResult:
+    decision: str
+    decided_on: date
+    implementation_commit: str
+    report_json: str
+    report_markdown: str
+    result_file: str
+    historical_primary_signal_supported: bool
+    shadow_activation: str
+
+    def __post_init__(self) -> None:
+        if self.decision not in {"reject", "archive", "continue_shadow", "promote"}:
+            raise ValueError(f"unsupported experiment decision: {self.decision}")
+        if len(self.implementation_commit) != 40 or any(
+            character not in "0123456789abcdef"
+            for character in self.implementation_commit
+        ):
+            raise ValueError("implementation commit must be a full lowercase Git SHA")
+        if not self.report_json or not self.report_markdown or not self.result_file:
+            raise ValueError("experiment result paths must be recorded")
+        if self.shadow_activation not in {"not_activated", "active", "closed"}:
+            raise ValueError(
+                f"unsupported result shadow activation: {self.shadow_activation}"
+            )
+
+
+@dataclass(frozen=True)
 class ExperimentRegistration:
     experiment_id: str
     family: str
@@ -117,6 +144,7 @@ class ExperimentRegistration:
     negative_controls: tuple[NegativeControlSpec, ...]
     parameters: Mapping[str, Any]
     prospective: ProspectiveCohortSpec
+    result: ExperimentResult | None
 
     def __post_init__(self) -> None:
         if not self.experiment_id or not self.family:
@@ -145,6 +173,16 @@ class ExperimentRegistration:
             actual = self.partitions[name]
             if (actual.start, actual.end) != expected:
                 raise ValueError(f"{name} must remain fixed at {expected[0]} through {expected[1]}")
+        if self.status == "registered" and self.result is not None:
+            raise ValueError("a registered experiment cannot already have a result")
+        if self.status == "closed_rejected" and (
+            self.result is None or self.result.decision != "reject"
+        ):
+            raise ValueError("a closed_rejected experiment requires a reject result")
+        if self.result is not None and (
+            self.result.shadow_activation != self.prospective.status
+        ):
+            raise ValueError("result and prospective cohort statuses must agree")
 
 
 @dataclass(frozen=True)
@@ -196,6 +234,28 @@ def _parse_registration(raw: Mapping[str, Any]) -> ExperimentRegistration:
         ),
     )
 
+    result_raw = raw.get("result")
+    result = None
+    if result_raw is not None:
+        result_mapping = _as_mapping(result_raw, "result")
+        historical_primary_signal_supported = result_mapping.get(
+            "historical_primary_signal_supported"
+        )
+        if not isinstance(historical_primary_signal_supported, bool):
+            raise ValueError(
+                "result.historical_primary_signal_supported must be a boolean"
+            )
+        result = ExperimentResult(
+            decision=str(result_mapping.get("decision", "")),
+            decided_on=_as_date(result_mapping.get("decided_on"), "result.decided_on"),
+            implementation_commit=str(result_mapping.get("implementation_commit", "")),
+            report_json=str(result_mapping.get("report_json", "")),
+            report_markdown=str(result_mapping.get("report_markdown", "")),
+            result_file=str(result_mapping.get("result_file", "")),
+            historical_primary_signal_supported=historical_primary_signal_supported,
+            shadow_activation=str(result_mapping.get("shadow_activation", "")),
+        )
+
     return ExperimentRegistration(
         experiment_id=str(raw.get("id", "")),
         family=str(raw.get("family", "")),
@@ -217,6 +277,7 @@ def _parse_registration(raw: Mapping[str, Any]) -> ExperimentRegistration:
         negative_controls=controls,
         parameters=_as_mapping(raw.get("parameters"), "parameters"),
         prospective=prospective,
+        result=result,
     )
 
 
@@ -334,6 +395,57 @@ def file_sha256(path: str | Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _csv_prefix_sha256(path: str | Path, data_row_count: int) -> str:
+    """Hash the CSV header and exactly ``data_row_count`` physical data rows."""
+    if data_row_count < 1:
+        raise ValueError("registered CSV row count must be positive")
+
+    digest = sha256()
+    with Path(path).open("rb") as stream:
+        header = stream.readline()
+        if not header:
+            raise RuntimeError("registration dataset CSV is missing its header")
+        digest.update(header)
+        for _ in range(data_row_count):
+            row = stream.readline()
+            if not row:
+                raise RuntimeError("registration dataset prefix is truncated")
+            digest.update(row)
+    return digest.hexdigest()
+
+
+def validated_registered_draw_prefix(
+    path: str | Path,
+    draws: Sequence[Draw],
+    *,
+    expected_sha256: str,
+    draw_count: int,
+    history_through: date,
+) -> tuple[Draw, ...]:
+    """Return the immutable registered prefix after strict append-only checks.
+
+    The registered digest covers the raw CSV header and registered physical
+    rows, including their original line endings. Later rows may be appended,
+    but the registered bytes, chronology, and history boundary may not change.
+    """
+    if draw_count < 1:
+        raise ValueError("registered CSV row count must be positive")
+    try:
+        validate_draw_chronology(draws)
+    except ValueError as exc:
+        raise RuntimeError("current dataset is not a strict chronological append") from exc
+    if len(draws) < draw_count:
+        raise RuntimeError("registration dataset prefix is truncated")
+
+    prefix = tuple(draws[:draw_count])
+    if prefix[-1].draw_date != history_through:
+        raise RuntimeError("registration dataset history boundary mismatch")
+    actual_sha256 = _csv_prefix_sha256(path, draw_count)
+    if actual_sha256 != expected_sha256:
+        raise RuntimeError("registration dataset prefix fingerprint mismatch")
+    return prefix
 
 
 def snapshot_digest(payload: Mapping[str, Any]) -> str:
