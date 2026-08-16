@@ -1,21 +1,21 @@
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone
+from hashlib import sha256
 from pathlib import Path
-
-import pandas as pd
 
 import pytest
 
+from lotto649.data import load_draws
 from lotto649.domain import Draw
 from lotto649.research_protocol import (
     ProspectiveCohortSpec,
     assert_history_precedes_target,
     assess_prospective_snapshot,
     draws_fingerprint,
-    file_sha256,
     load_experiment_registry,
     permute_draw_outcomes,
     snapshot_digest,
+    validated_registered_draw_prefix,
     walk_forward_folds,
 )
 
@@ -46,13 +46,87 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
     assert registration.prospective.minimum_eligible_draws == 104
 
     dataset_path = ROOT / registration.dataset_path
-    current = pd.read_csv(dataset_path)
-    current_through = date.fromisoformat(str(current.iloc[-1]["draw_date"]))
-    if current_through == registration.registration_history_through:
-        assert file_sha256(dataset_path) == registration.dataset_sha256
-        assert len(current) == registration.dataset_draw_count
+    draws = load_draws(dataset_path)
+    prefix = validated_registered_draw_prefix(
+        dataset_path,
+        draws,
+        expected_sha256=registration.dataset_sha256,
+        draw_count=registration.dataset_draw_count,
+        history_through=registration.registration_history_through,
+    )
+
+    assert len(prefix) == registration.dataset_draw_count
+    assert prefix[-1].draw_date == registration.registration_history_through
+    assert draws[-1].draw_date >= registration.registration_history_through
+
+
+def _csv_bytes(draws: list[Draw]) -> bytes:
+    lines = ["draw_date,n1,n2,n3,n4,n5,n6,bonus\n"]
+    for draw in draws:
+        values = ",".join(str(number) for number in draw.numbers)
+        lines.append(f"{draw.draw_date.isoformat()},{values},{draw.bonus}\n")
+    return "".join(lines).encode()
+
+
+def test_registered_draw_prefix_allows_only_strict_appends(tmp_path):
+    draws = synthetic_draws(6)
+    registered_bytes = _csv_bytes(draws[:4])
+    dataset_path = tmp_path / "draws.csv"
+    dataset_path.write_bytes(registered_bytes + _csv_bytes(draws[4:]).split(b"\n", 1)[1])
+
+    prefix = validated_registered_draw_prefix(
+        dataset_path,
+        draws,
+        expected_sha256=sha256(registered_bytes).hexdigest(),
+        draw_count=4,
+        history_through=draws[3].draw_date,
+    )
+
+    assert prefix == tuple(draws[:4])
+
+
+@pytest.mark.parametrize("failure", ["truncated", "rewritten", "unordered"])
+def test_registered_draw_prefix_rejects_non_append_changes(tmp_path, failure):
+    draws = synthetic_draws(6)
+    registered_bytes = _csv_bytes(draws[:4])
+    expected_sha256 = sha256(registered_bytes).hexdigest()
+    dataset_path = tmp_path / "draws.csv"
+    candidate_draws = draws
+
+    if failure == "truncated":
+        dataset_path.write_bytes(_csv_bytes(draws[:3]))
+        candidate_draws = draws[:3]
+    elif failure == "rewritten":
+        rewritten = registered_bytes.replace(b",1,9,17,25,33,41,2\n", b",1,9,17,25,33,40,2\n")
+        dataset_path.write_bytes(rewritten + _csv_bytes(draws[4:]).split(b"\n", 1)[1])
     else:
-        assert current_through > registration.registration_history_through
+        dataset_path.write_bytes(registered_bytes + _csv_bytes(draws[4:]).split(b"\n", 1)[1])
+        candidate_draws = [*draws[:4], draws[5], draws[4]]
+
+    with pytest.raises((RuntimeError, ValueError)):
+        validated_registered_draw_prefix(
+            dataset_path,
+            candidate_draws,
+            expected_sha256=expected_sha256,
+            draw_count=4,
+            history_through=draws[3].draw_date,
+        )
+
+
+def test_registered_draw_prefix_rejects_wrong_history_boundary(tmp_path):
+    draws = synthetic_draws(5)
+    registered_bytes = _csv_bytes(draws[:4])
+    dataset_path = tmp_path / "draws.csv"
+    dataset_path.write_bytes(registered_bytes)
+
+    with pytest.raises(RuntimeError, match="history boundary mismatch"):
+        validated_registered_draw_prefix(
+            dataset_path,
+            draws[:4],
+            expected_sha256=sha256(registered_bytes).hexdigest(),
+            draw_count=4,
+            history_through=draws[2].draw_date,
+        )
 
 
 def test_leakage_guard_rejects_target_or_future_draws():

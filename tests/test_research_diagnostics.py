@@ -1,4 +1,6 @@
-from datetime import date
+from datetime import date, timedelta
+from hashlib import sha256
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -7,12 +9,15 @@ import pytest
 from lotto649.domain import Draw
 from lotto649.evaluation import binary_log_loss, brier_score
 from lotto649.research_diagnostics import (
+    CANDIDATE_NAME,
     FAIR_EXPECTATIONS,
     FAIR_P,
+    REQUIRED_COMPARISON_MODELS,
     bootstrap_mean_lift_interval,
     exact_topk_upper_tail,
     fair_constant_scores,
     registered_primary_summary,
+    run_registered_v5_diagnostics,
     single_draw_topk_pmf,
 )
 
@@ -96,3 +101,95 @@ def test_primary_summary_keeps_registered_exact_test_and_all_secondary_metrics()
     assert "top18_lift_vs_theory" in summary
     assert "brier_delta_vs_fair" in summary
     assert "log_loss_delta_vs_fair" in summary
+
+
+def test_registered_diagnostics_freeze_normal_and_control_to_dataset_prefix(
+    tmp_path, monkeypatch
+):
+    draws = [
+        Draw(
+            date(2014, 1, 1) + timedelta(days=index * 3),
+            tuple(sorted((((index * 7) + offset * 8) % 49) + 1 for offset in range(6))),
+            next(
+                number
+                for number in range(1, 50)
+                if number
+                not in tuple(
+                    sorted((((index * 7) + offset * 8) % 49) + 1 for offset in range(6))
+                )
+            ),
+        )
+        for index in range(6)
+    ]
+    header = "draw_date,n1,n2,n3,n4,n5,n6,bonus\n"
+    rows = [
+        f"{draw.draw_date.isoformat()},{','.join(map(str, draw.numbers))},{draw.bonus}\n"
+        for draw in draws
+    ]
+    registered_bytes = (header + "".join(rows[:4])).encode()
+    dataset_path = tmp_path / "draws.csv"
+    dataset_path.write_bytes((header + "".join(rows)).encode())
+
+    registration = SimpleNamespace(
+        experiment_id="V5_pair_affinity",
+        model_name=CANDIDATE_NAME,
+        model_version="v5.0.0",
+        dataset_path="draws.csv",
+        dataset_source_commit="a" * 40,
+        dataset_sha256=sha256(registered_bytes).hexdigest(),
+        dataset_draw_count=4,
+        registration_history_through=draws[3].draw_date,
+        multiplicity_family="v5_primary_family",
+        seed=649,
+        parameters={"minimum_history_draws": 1},
+    )
+    registry = SimpleNamespace(
+        experiments=(registration,),
+        get=lambda _experiment_id: registration,
+    )
+    cfg = {
+        "_root": str(tmp_path),
+        "data": {"processed_csv": str(dataset_path)},
+        "backtest": {
+            "models": list(REQUIRED_COMPARISON_MODELS),
+            "model_versions": {CANDIDATE_NAME: "v5.0.0"},
+        },
+    }
+    calls = []
+    control_draws = [
+        Draw(draw.draw_date, draws[3 - index].numbers, draws[3 - index].bonus)
+        for index, draw in enumerate(draws[:4])
+    ]
+
+    monkeypatch.setattr(
+        "lotto649.research_diagnostics.load_experiment_registry", lambda _path: registry
+    )
+    monkeypatch.setattr("lotto649.research_diagnostics.load_draws", lambda _path: draws)
+
+    def fake_permute(received_draws, *, seed):
+        assert received_draws == tuple(draws[:4])
+        assert seed == 649
+        return control_draws
+
+    def fake_backtest(received_draws, *_args):
+        calls.append(received_draws)
+        return pd.DataFrame()
+
+    monkeypatch.setattr("lotto649.research_diagnostics.permute_draw_outcomes", fake_permute)
+    monkeypatch.setattr("lotto649.research_diagnostics.run_backtest", fake_backtest)
+    monkeypatch.setattr(
+        "lotto649.research_diagnostics._lane_payload",
+        lambda *_args, **_kwargs: {"lane": "synthetic"},
+    )
+    monkeypatch.setattr(
+        "lotto649.research_diagnostics._render_markdown", lambda _payload: "synthetic\n"
+    )
+
+    run_registered_v5_diagnostics(
+        cfg,
+        code_commit="b" * 40,
+        output_dir=tmp_path / "reports",
+    )
+
+    assert calls[::2] == [tuple(draws[:4])] * 3
+    assert calls[1::2] == [control_draws] * 3

@@ -336,6 +336,57 @@ def file_sha256(path: str | Path) -> str:
     return digest.hexdigest()
 
 
+def _csv_prefix_sha256(path: str | Path, data_row_count: int) -> str:
+    """Hash the CSV header and exactly ``data_row_count`` physical data rows."""
+    if data_row_count < 1:
+        raise ValueError("registered CSV row count must be positive")
+
+    digest = sha256()
+    with Path(path).open("rb") as stream:
+        header = stream.readline()
+        if not header:
+            raise RuntimeError("registration dataset CSV is missing its header")
+        digest.update(header)
+        for _ in range(data_row_count):
+            row = stream.readline()
+            if not row:
+                raise RuntimeError("registration dataset prefix is truncated")
+            digest.update(row)
+    return digest.hexdigest()
+
+
+def validated_registered_draw_prefix(
+    path: str | Path,
+    draws: Sequence[Draw],
+    *,
+    expected_sha256: str,
+    draw_count: int,
+    history_through: date,
+) -> tuple[Draw, ...]:
+    """Return the immutable registered prefix after strict append-only checks.
+
+    The registered digest covers the raw CSV header and registered physical
+    rows, including their original line endings. Later rows may be appended,
+    but the registered bytes, chronology, and history boundary may not change.
+    """
+    if draw_count < 1:
+        raise ValueError("registered CSV row count must be positive")
+    try:
+        validate_draw_chronology(draws)
+    except ValueError as exc:
+        raise RuntimeError("current dataset is not a strict chronological append") from exc
+    if len(draws) < draw_count:
+        raise RuntimeError("registration dataset prefix is truncated")
+
+    prefix = tuple(draws[:draw_count])
+    if prefix[-1].draw_date != history_through:
+        raise RuntimeError("registration dataset history boundary mismatch")
+    actual_sha256 = _csv_prefix_sha256(path, draw_count)
+    if actual_sha256 != expected_sha256:
+        raise RuntimeError("registration dataset prefix fingerprint mismatch")
+    return prefix
+
+
 def snapshot_digest(payload: Mapping[str, Any]) -> str:
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return sha256(encoded).hexdigest()

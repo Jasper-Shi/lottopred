@@ -14,7 +14,11 @@ import pandas as pd
 from .backtest import run_backtest
 from .config import resolve_path
 from .data import load_draws
-from .research_protocol import file_sha256, load_experiment_registry, permute_draw_outcomes
+from .research_protocol import (
+    load_experiment_registry,
+    permute_draw_outcomes,
+    validated_registered_draw_prefix,
+)
 
 
 EXPERIMENT_ID = "V5_pair_affinity"
@@ -292,16 +296,14 @@ def run_registered_v5_diagnostics(
     registry = load_experiment_registry(root / "docs" / "experiments" / "registry.yaml")
     registration = registry.get(EXPERIMENT_ID)
     dataset_path = resolve_path(cfg, cfg["data"]["processed_csv"])
-    actual_sha256 = file_sha256(dataset_path)
-    if actual_sha256 != registration.dataset_sha256:
-        raise RuntimeError(
-            "registration dataset fingerprint mismatch; run from the frozen source commit"
-        )
     draws = load_draws(dataset_path)
-    if len(draws) != registration.dataset_draw_count:
-        raise RuntimeError("registration dataset draw count mismatch")
-    if draws[-1].draw_date != registration.registration_history_through:
-        raise RuntimeError("registration dataset history boundary mismatch")
+    registered_draws = validated_registered_draw_prefix(
+        dataset_path,
+        draws,
+        expected_sha256=registration.dataset_sha256,
+        draw_count=registration.dataset_draw_count,
+        history_through=registration.registration_history_through,
+    )
 
     configured_models = tuple(cfg["backtest"].get("models", []))
     if configured_models != REQUIRED_COMPARISON_MODELS:
@@ -314,16 +316,16 @@ def run_registered_v5_diagnostics(
         for item in registry.experiments
     )
     minimum_history = int(registration.parameters["minimum_history_draws"])
-    control_draws = permute_draw_outcomes(draws, seed=registration.seed)
+    control_draws = permute_draw_outcomes(registered_draws, seed=registration.seed)
     control_cfg = deepcopy(cfg)
     control_cfg["backtest"]["models"] = [CANDIDATE_NAME]
 
     lane_payloads = []
     for lane in HISTORICAL_LANES:
-        normal_frame = run_backtest(draws, cfg, lane.start, lane.end)
+        normal_frame = run_backtest(registered_draws, cfg, lane.start, lane.end)
         control_frame = run_backtest(control_draws, control_cfg, lane.start, lane.end)
         total_targets, eligible_targets = _eligible_target_count(
-            draws, lane, minimum_history
+            registered_draws, lane, minimum_history
         )
         lane_payloads.append(
             _lane_payload(
