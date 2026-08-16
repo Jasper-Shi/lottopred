@@ -1,6 +1,6 @@
 # Codex Handoff
 
-Last verified against `main` commit `7f9447f` on 2026-08-16.
+Last verified against `main` commit `39b99a9` on 2026-08-16.
 
 ## Current state
 
@@ -15,11 +15,38 @@ in `V2_V4_RESULTS.md`.
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Shadow | Creates immutable live snapshots and evaluations beside V1; it does not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
+| V5 pair affinity | Registered only | `v5.0.0` is pre-registered but not implemented, evaluated, or activated. It is absent from backtest and live config. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
+
+## V5 research checkpoint
+
+The first V5+ attempt is registered as
+[`V5_pair_affinity`](experiments/V5_pair_affinity.md), with its structured row in
+[`docs/experiments/registry.yaml`](experiments/registry.yaml). The registration
+freezes one strongly shrunk, previous-draw-anchored pair-affinity formula, a
+single primary Top-12 metric, bounded secondary metrics, a deterministic
+whole-draw date-permutation control, Holm family-wise correction, and the default
+minimum 104-draw prospective gate.
+
+The current status is **registered / not implemented / not evaluated / not
+activated**. No candidate score was inspected while defining it. Its recorded
+dataset is the 4,431-draw file through 2026-08-12 at source commit `39b99a9`, so
+all 2026 outcomes knowable before a future activation are consumed rather than
+prospective for this version. `config.yaml`, the model factory, V1 production,
+V3 shadow behavior, and all committed snapshots remain unchanged.
+
+`src/lotto649/research_protocol.py` provides the supporting registry validation,
+strict-prefix walk-forward folds, deterministic negative-control transform,
+fingerprints, and conservative cohort eligibility checks. The next research
+step is to implement the registered formula and its feature-specific invariance
+tests without changing the registration or reading candidate scores during
+implementation. Historical diagnostics must then be reported with their lane
+labels and both negative and positive results before any separate shadow
+activation review.
 
 ## How the implemented system runs
 
@@ -151,11 +178,14 @@ Do not broaden the fallback to swallow those integrity failures.
    files before reporting live status.
 3. Keep V1 unchanged as the baseline and V3 labeled shadow while new hypotheses
    are developed.
-4. Pre-register one bounded V5 hypothesis and its metrics before implementation.
-5. Use historical data only for development and labeled diagnostics; do not call
-   any 1982–2025 result untouched evidence for V5.
-6. Freeze code/config/version in Git, then start V5 as a shadow model. Count its
-   forward evidence only from its own first pre-draw snapshot.
+4. Keep the registered V5 pair-affinity specification immutable while implementing
+   it and its feature-specific invariance tests.
+5. Run leakage checks and the registered negative control before candidate
+   scoring, then report every historical lane as a labeled diagnostic; do not
+   call any 1982–2025 result untouched evidence for V5.
+6. Freeze code/config/version in Git, then use a separate reviewed PR to start V5
+   as a shadow model. Count forward evidence only from its own first eligible
+   pre-draw snapshot.
 7. Let normal live jobs continue during research. Never rewrite forward artifacts
    or mix research-only models into `live.models` without a reviewed promotion PR.
 8. Run `pytest -q` and `ruff check .`; run integration smoke checks for live/data
