@@ -20,6 +20,12 @@ experiments:
       draw_count: 4431
       history_through: 2026-08-12
 
+    outcomes_known_at_registration:
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
     historical_partitions:
       development:
         start: 1982-01-01
@@ -62,6 +68,79 @@ experiments:
       status: not_activated
       role: shadow
       minimum_eligible_draws: 104
+      commit_deadline: before_target_local_date
+      freeze_commit: null
+      cohort_start: null
+
+  - id: V6_fixed_boundary_js_regime
+    family: entropy_regime
+    model_name: v6_entropy_regime
+    model_version: v6.0.0
+    status: registered
+    registration_file: docs/experiments/V6_entropy_regime.md
+    registered_on: 2026-08-16
+    seed: 649
+    primary_metric: top12_hits_lift_vs_theory
+    multiplicity_family: entropy_regime
+    variant_index: 1
+
+    registration_dataset:
+      path: data/processed/draws.csv
+      source_commit: 39b99a9e0a6351b4143f81c9a95eb1639456a35d
+      sha256: 95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf
+      draw_count: 4431
+      history_through: 2026-08-12
+
+    outcomes_known_at_registration:
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
+    historical_partitions:
+      development:
+        start: 1982-01-01
+        end: 2014-12-31
+      legacy_validation:
+        start: 2015-01-01
+        end: 2019-12-31
+      consumed_diagnostic:
+        start: 2020-01-01
+        end: 2025-12-31
+
+    parameters:
+      minimum_history_draws: 300
+      feature_window_draws: 208
+      older_block_draws: 104
+      recent_block_draws: 104
+      main_numbers_per_draw: 6
+      finite_population_numerator: 48
+      finite_population_denominator: 43
+      chi_square_degrees_of_freedom: 48
+      gate_quantile: 0.99
+      regime_threshold: 73.68263852010577
+      threshold_operator: strictly_greater_than
+      zscore_population_epsilon: 1.0e-12
+      signal_temperature: 0.10
+      jitter_rng: numpy.default_rng
+      jitter_seed_base: 649000000
+      jitter_low: -1.0e-9
+      jitter_high: 1.0e-9
+      bonus_numbers: excluded
+      calibration: none
+      combination_constraints: none
+      historical_primary_gate_lane: consumed_diagnostic
+      proper_score_max_delta_vs_fair: 1.0e-9
+      reference_report: reports/v5_pair_affinity_v5.0.0_historical.json
+
+    negative_controls:
+      - kind: whole_draw_date_permutation
+        seed: 649
+
+    prospective:
+      status: not_activated
+      role: shadow
+      minimum_eligible_draws: 208
       commit_deadline: before_target_local_date
       freeze_commit: null
       cohort_start: null

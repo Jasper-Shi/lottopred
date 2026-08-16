@@ -140,6 +140,10 @@ class ExperimentRegistration:
     dataset_sha256: str
     dataset_draw_count: int
     registration_history_through: date
+    outcomes_known_through: date
+    outcomes_known_source_commit: str
+    outcomes_known_sha256: str
+    outcomes_known_draw_count: int
     partitions: Mapping[str, DateRange]
     negative_controls: tuple[NegativeControlSpec, ...]
     parameters: Mapping[str, Any]
@@ -163,8 +167,40 @@ class ExperimentRegistration:
             raise ValueError("dataset source commit must be a full lowercase Git SHA")
         if self.dataset_draw_count < 1:
             raise ValueError("registration dataset draw count must be positive")
+        if len(self.outcomes_known_source_commit) != 40 or any(
+            c not in "0123456789abcdef"
+            for c in self.outcomes_known_source_commit
+        ):
+            raise ValueError(
+                "known-outcomes source commit must be a full lowercase Git SHA"
+            )
+        if len(self.outcomes_known_sha256) != 64 or any(
+            c not in "0123456789abcdef" for c in self.outcomes_known_sha256
+        ):
+            raise ValueError(
+                "known-outcomes dataset fingerprint must be a lowercase SHA-256 digest"
+            )
+        if self.outcomes_known_draw_count < self.dataset_draw_count:
+            raise ValueError(
+                "known-outcomes draw count cannot precede the diagnostic prefix"
+            )
+        if self.outcomes_known_through < self.registration_history_through:
+            raise ValueError(
+                "known outcomes cannot end before the registered diagnostic prefix"
+            )
+        if self.outcomes_known_through > self.registered_on:
+            raise ValueError("known outcomes cannot extend beyond registration date")
+        if (
+            self.prospective.cohort_start is not None
+            and self.prospective.cohort_start <= self.outcomes_known_through
+        ):
+            raise ValueError(
+                "prospective cohort must start after all outcomes known at registration"
+            )
         if self.primary_metric != "top12_hits_lift_vs_theory":
-            raise ValueError("V5 primary metric must remain top12_hits_lift_vs_theory")
+            raise ValueError(
+                "registered primary metric must remain top12_hits_lift_vs_theory"
+            )
         if not self.negative_controls:
             raise ValueError("at least one negative control is required")
         if set(self.partitions) != set(EXPECTED_HISTORICAL_PARTITIONS):
@@ -219,6 +255,10 @@ def _parse_registration(raw: Mapping[str, Any]) -> ExperimentRegistration:
     )
 
     dataset = _as_mapping(raw.get("registration_dataset"), "registration_dataset")
+    known_outcomes = _as_mapping(
+        raw.get("outcomes_known_at_registration"),
+        "outcomes_known_at_registration",
+    )
     prospective_raw = _as_mapping(raw.get("prospective"), "prospective")
     cohort_start_raw = prospective_raw.get("cohort_start")
     prospective = ProspectiveCohortSpec(
@@ -273,6 +313,13 @@ def _parse_registration(raw: Mapping[str, Any]) -> ExperimentRegistration:
         dataset_sha256=str(dataset.get("sha256", "")),
         dataset_draw_count=int(dataset.get("draw_count", 0)),
         registration_history_through=_as_date(dataset.get("history_through"), "history_through"),
+        outcomes_known_through=_as_date(
+            known_outcomes.get("history_through"),
+            "outcomes_known_at_registration.history_through",
+        ),
+        outcomes_known_source_commit=str(known_outcomes.get("source_commit", "")),
+        outcomes_known_sha256=str(known_outcomes.get("sha256", "")),
+        outcomes_known_draw_count=int(known_outcomes.get("draw_count", 0)),
         partitions=partitions,
         negative_controls=controls,
         parameters=_as_mapping(raw.get("parameters"), "parameters"),

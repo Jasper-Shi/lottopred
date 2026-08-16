@@ -123,6 +123,7 @@ must remain in the ledger rather than being deleted.
 | ID | Family | Version | Status | Historical result | Prospective cohort |
 |---|---|---|---|---|---|
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
+| [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Registered | Not run or inspected | Not activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -139,6 +140,14 @@ The version is rejected, remains absent from `config.yaml`, produced no V5 live
 prediction, and never began a prospective cohort. Any follow-up must register a
 genuinely separate hypothesis/version before implementation; it may not tune
 this candidate against the now-consumed answers.
+
+V6 freezes one adjacent-block entropy/regime hypothesis before implementation:
+two fixed 104-draw blocks, one asymptotic gate, one directional probability
+mapping, and one Top-12 primary metric. Its diagnostic dataset remains the
+append-only 4,431-draw prefix through 2026-08-12, while the registry separately
+records that outcomes were already known through 2026-08-15 at registration.
+No V6 score has yet been generated or inspected. V1 remains production, V3
+remains shadow, and V6 has no live role.
 
 ## Validation protocol
 

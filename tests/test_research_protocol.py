@@ -42,6 +42,14 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
     assert registration.model_name == "v5_pair_affinity"
     assert registration.model_version == "v5.0.0"
     assert registration.primary_metric == "top12_hits_lift_vs_theory"
+    assert registration.outcomes_known_through == date(2026, 8, 15)
+    assert registration.outcomes_known_source_commit == (
+        "90177c80cfb070038d79508fb2e73305a297f516"
+    )
+    assert registration.outcomes_known_draw_count == 4432
+    assert registration.outcomes_known_sha256 == (
+        "edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3"
+    )
     assert registration.prospective.status == "not_activated"
     assert registration.prospective.minimum_eligible_draws == 104
     assert registration.result is not None
@@ -71,6 +79,75 @@ def test_committed_registry_is_fixed_and_matches_registration_dataset():
     assert len(prefix) == registration.dataset_draw_count
     assert prefix[-1].draw_date == registration.registration_history_through
     assert draws[-1].draw_date >= registration.registration_history_through
+
+
+def test_v6_registration_freezes_one_entropy_regime_variant_before_scoring():
+    registration = load_experiment_registry(REGISTRY_PATH).get(
+        "V6_fixed_boundary_js_regime"
+    )
+
+    assert registration.status == "registered"
+    assert registration.family == "entropy_regime"
+    assert registration.model_name == "v6_entropy_regime"
+    assert registration.model_version == "v6.0.0"
+    assert registration.primary_metric == "top12_hits_lift_vs_theory"
+    assert registration.multiplicity_family == "entropy_regime"
+    assert registration.variant_index == 1
+    assert registration.result is None
+    assert registration.registration_history_through == date(2026, 8, 12)
+    assert registration.outcomes_known_through == date(2026, 8, 15)
+    assert registration.parameters == {
+        "minimum_history_draws": 300,
+        "feature_window_draws": 208,
+        "older_block_draws": 104,
+        "recent_block_draws": 104,
+        "main_numbers_per_draw": 6,
+        "finite_population_numerator": 48,
+        "finite_population_denominator": 43,
+        "chi_square_degrees_of_freedom": 48,
+        "gate_quantile": 0.99,
+        "regime_threshold": 73.68263852010577,
+        "threshold_operator": "strictly_greater_than",
+        "zscore_population_epsilon": 1.0e-12,
+        "signal_temperature": 0.10,
+        "jitter_rng": "numpy.default_rng",
+        "jitter_seed_base": 649000000,
+        "jitter_low": -1.0e-9,
+        "jitter_high": 1.0e-9,
+        "bonus_numbers": "excluded",
+        "calibration": "none",
+        "combination_constraints": "none",
+        "historical_primary_gate_lane": "consumed_diagnostic",
+        "proper_score_max_delta_vs_fair": 1.0e-9,
+        "reference_report": "reports/v5_pair_affinity_v5.0.0_historical.json",
+    }
+    assert registration.negative_controls[0].kind == "whole_draw_date_permutation"
+    assert registration.negative_controls[0].seed == 649
+    assert registration.prospective.status == "not_activated"
+    assert registration.prospective.minimum_eligible_draws == 208
+    assert (ROOT / registration.registration_file).is_file()
+
+
+def test_known_outcome_boundary_cannot_hide_consumed_or_future_draws():
+    registration = load_experiment_registry(REGISTRY_PATH).get(
+        "V6_fixed_boundary_js_regime"
+    )
+
+    with pytest.raises(ValueError, match="cannot end before"):
+        replace(
+            registration,
+            outcomes_known_through=date(2026, 8, 11),
+        )
+    with pytest.raises(ValueError, match="cannot precede"):
+        replace(
+            registration,
+            outcomes_known_draw_count=4430,
+        )
+    with pytest.raises(ValueError, match="beyond registration"):
+        replace(
+            registration,
+            outcomes_known_through=date(2026, 8, 17),
+        )
 
 
 def _csv_bytes(draws: list[Draw]) -> bytes:
@@ -190,6 +267,24 @@ def test_promotion_minimum_cannot_be_weakened():
             commit_deadline="before_target_local_date",
             freeze_commit=None,
             cohort_start=None,
+        )
+
+
+def test_prospective_cohort_must_start_after_all_known_outcomes():
+    registration = load_experiment_registry(REGISTRY_PATH).get("V5_pair_affinity")
+    active = replace(
+        registration.prospective,
+        status="active",
+        freeze_commit="a" * 40,
+        cohort_start=registration.outcomes_known_through,
+    )
+
+    with pytest.raises(ValueError, match="after all outcomes known"):
+        replace(
+            registration,
+            status="prospective_shadow",
+            prospective=active,
+            result=None,
         )
 
 
