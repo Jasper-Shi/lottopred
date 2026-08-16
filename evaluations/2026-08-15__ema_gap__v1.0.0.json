@@ -1,0 +1,24 @@
+{
+  "actual": [
+    1,
+    9,
+    17,
+    34,
+    36,
+    43
+  ],
+  "bonus": 24,
+  "brier_score": 0.10737784801170105,
+  "final_6_hits": 1,
+  "log_loss": 0.3727257555882938,
+  "matched_final": [
+    9
+  ],
+  "mean_actual_rank": 24.833333333333332,
+  "model_name": "ema_gap",
+  "model_version": "v1.0.0",
+  "target_draw_date": "2026-08-15",
+  "top_12_hits": 1,
+  "top_18_hits": 2,
+  "top_6_hits": 1
+}

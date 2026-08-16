@@ -1,0 +1,24 @@
+{
+  "actual": [
+    1,
+    9,
+    17,
+    34,
+    36,
+    43
+  ],
+  "bonus": 24,
+  "brier_score": 0.106983601794428,
+  "final_6_hits": 1,
+  "log_loss": 0.3693666764975862,
+  "matched_final": [
+    9
+  ],
+  "mean_actual_rank": 20.333333333333332,
+  "model_name": "ensemble",
+  "model_version": "v1.0.0",
+  "target_draw_date": "2026-08-15",
+  "top_12_hits": 3,
+  "top_18_hits": 3,
+  "top_6_hits": 1
+}
