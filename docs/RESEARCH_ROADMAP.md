@@ -125,7 +125,7 @@ must remain in the ledger rather than being deleted.
 |---|---|---|---|---|---|
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
-| [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Registered; not scored | None; formulas and gates frozen before implementation | Not activated |
+| [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Implemented/frozen; not scored | None; formulas, implementation, and gates frozen before the sole run | Not activated |
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
@@ -181,6 +181,11 @@ through 2025-12-31, with fixed 2020–2022 and 2023–2025 stability halves. Tha
 interval is already consumed and can only reject the candidate or support a
 separate reviewed shadow-activation decision; it can never confirm prediction.
 No V7 historical run has occurred at registration.
+
+The exact candidate, seed-649 within-draw role control, fail-closed runner, and
+offline tests are now implemented without inspecting a V7 score. The next
+permitted step is to commit and push that implementation, pass CI from a clean
+tree, and then execute the registered historical diagnostic exactly once.
 
 The V7 prospective plan remains inactive. Historical passage of every frozen
 ranking, proper-score, stability, global role-audit, negative-control, and audit

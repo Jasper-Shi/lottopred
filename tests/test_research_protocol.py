@@ -17,6 +17,7 @@ from lotto649.research_protocol import (
     GitFileEvidence,
     CohortAssessment,
     FormalLookRecord,
+    NegativeControlSpec,
     OutcomeBoundary,
     ProspectiveCohortSpec,
     VerifiedOutcomeBoundary,
@@ -28,6 +29,7 @@ from lotto649.research_protocol import (
     file_sha256,
     load_experiment_registry,
     permute_draw_outcomes,
+    reassign_bonus_roles_within_draws,
     snapshot_digest,
     validated_registered_draw_prefix,
     walk_forward_folds,
@@ -348,6 +350,123 @@ def test_whole_draw_negative_control_is_deterministic_and_preserves_outcomes():
     )
     assert draws_fingerprint(first) == draws_fingerprint(second)
     assert draws_fingerprint(first) != draws_fingerprint(draws)
+
+
+def test_bonus_role_control_matches_frozen_literal_oracle_at_rng_boundary():
+    draws = [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 22), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    transformed = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    assert transformed == [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 13, 14), 12),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 20, 21), 19),
+        Draw(date(2019, 5, 22), (22, 24, 25, 26, 27, 28), 23),
+    ]
+
+
+def test_bonus_role_control_is_seed_deterministic_and_seed_sensitive():
+    draws = [
+        Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 18), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 22), (15, 16, 17, 18, 19, 20), 21),
+    ]
+
+    first = reassign_bonus_roles_within_draws(draws, seed=649)
+    second = reassign_bonus_roles_within_draws(draws, seed=649)
+    alternate = reassign_bonus_roles_within_draws(draws, seed=650)
+
+    assert first == second
+    assert first != alternate
+
+
+def test_bonus_role_control_preserves_precutoff_draws_without_consuming_rng():
+    precutoff = [
+        Draw(date(2019, 5, 8), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 11), (8, 9, 10, 11, 12, 13), 14),
+    ]
+    active = [
+        Draw(date(2019, 5, 15), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 18), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    full = reassign_bonus_roles_within_draws([*precutoff, *active], seed=649)
+    active_only = reassign_bonus_roles_within_draws(active, seed=649)
+
+    assert full[: len(precutoff)] == precutoff
+    assert full[len(precutoff) :] == active_only
+
+
+def test_bonus_role_control_is_stable_when_future_draws_are_appended():
+    draws = [
+        Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 18), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 22), (15, 16, 17, 18, 19, 20), 21),
+        Draw(date(2019, 5, 25), (22, 23, 24, 25, 26, 27), 28),
+    ]
+
+    short = reassign_bonus_roles_within_draws(draws[:2], seed=649)
+    long = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    assert long[:2] == short
+
+
+def test_bonus_role_control_preserves_each_date_and_seven_ball_set():
+    draws = [
+        Draw(date(2019, 5, 11), (1, 2, 3, 4, 5, 6), 7),
+        Draw(date(2019, 5, 15), (8, 9, 10, 11, 12, 13), 14),
+        Draw(date(2019, 5, 18), (15, 16, 17, 18, 19, 20), 21),
+    ]
+
+    transformed = reassign_bonus_roles_within_draws(draws, seed=649)
+
+    for original, reassigned in zip(draws, transformed, strict=True):
+        assert reassigned.draw_date == original.draw_date
+        assert reassigned.bonus is not None
+        assert original.bonus is not None
+        assert set((*reassigned.numbers, reassigned.bonus)) == set(
+            (*original.numbers, original.bonus)
+        )
+        assert reassigned.numbers == tuple(sorted(reassigned.numbers))
+        assert reassigned.bonus not in reassigned.numbers
+
+
+def test_bonus_role_control_fails_closed_when_a_post_rng_bonus_is_missing():
+    draws = [Draw(date(2019, 5, 15), (1, 2, 3, 4, 5, 6))]
+
+    with pytest.raises(ValueError, match="requires a bonus number"):
+        reassign_bonus_roles_within_draws(draws, seed=649)
+
+
+def test_bonus_role_control_rejects_negative_seed():
+    with pytest.raises(ValueError, match="seed must be non-negative"):
+        reassign_bonus_roles_within_draws(synthetic_draws(), seed=-1)
+
+
+@pytest.mark.parametrize("failure", ["unordered", "duplicate"])
+def test_bonus_role_control_rejects_nonunique_chronology(failure):
+    draws = synthetic_draws(3)
+    if failure == "unordered":
+        invalid = [draws[1], draws[0], draws[2]]
+    else:
+        invalid = [
+            draws[0],
+            Draw(draws[0].draw_date, (2, 10, 18, 26, 34, 42), 1),
+            draws[2],
+        ]
+
+    with pytest.raises(ValueError, match="chronological order|dates must be unique"):
+        reassign_bonus_roles_within_draws(invalid, seed=649)
+
+
+def test_negative_control_spec_still_rejects_unregistered_control_kind():
+    with pytest.raises(ValueError, match="unsupported negative control"):
+        NegativeControlSpec(kind="shuffle_individual_balls", seed=649)
 
 
 def test_promotion_minimum_cannot_be_weakened():

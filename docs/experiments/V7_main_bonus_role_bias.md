@@ -8,17 +8,35 @@
 | Family / variant | `draw_role_exchangeability` / `1` |
 | Model | `v7_main_bonus_role_bias` |
 | Version | `v7.0.0` |
-| Status | **REGISTERED — NOT IMPLEMENTED OR SCORED** |
+| Status | **IMPLEMENTED AND FROZEN — NOT SCORED** |
 | Registration date | 2026-08-16 |
 | Protocol seed | `649` |
 | Live role | none; V1 stays production and V3 stays shadow |
 
-This note freezes one bounded hypothesis before V7 implementation and before
-any V7 historical prediction score or role-audit statistic is produced. The
+This note froze one bounded hypothesis before V7 implementation and before any
+V7 historical prediction score or role-audit statistic was produced. The
 fair, exchangeable draw remains the default explanation, and a null or negative
 result is a successful research outcome. The primary-source rationale was fixed
 separately in the unscored
 [mechanical-bias basis](../research/V7_mechanical_bias_basis.md).
+
+The deterministic candidate, dedicated control, diagnostic runner, and offline
+tests are now implemented on the V7 feature branch. No V7 historical score or
+role-audit statistic has been run or inspected. The implementation commit is the
+freeze boundary recorded by the diagnostic command and its future report; the
+runner refuses to score any different or dirty working tree.
+
+Immediately after every preflight passes and before the first scoring call, the
+runner exclusively creates
+`reports/v7_main_bonus_role_bias_v7.0.0_historical.claim`. That claim is a
+permanent one-shot audit artifact on both success and failure; it must never be
+deleted to permit a rerun. Complete JSON and Markdown are first written to
+same-directory `.tmp` files and then published sequentially. A caught partial
+publication is rolled back; a crash or other failure after claiming retains the
+permanent claim plus any staging or partial-publication evidence, consumes the
+attempt, and requires **Archive** review rather than cleanup-and-rerun. A
+successful report records the permanent claim path and SHA-256 and removes only
+the staging files.
 
 Historical results through 2025 are consumed diagnostics. They cannot establish
 a predictive lottery model or be called blind, confirmatory, validation, or
@@ -358,8 +376,10 @@ following before the first V7 historical score exists:
     labels, or rescue metrics;
 12. the runner verifies both registered data boundaries and the V6 reference
     report from committed Git blobs, requires a completely clean worktree plus
-    canonical committed config, records exact command/config/code/data/report
-    identities, and refuses to overwrite an existing historical report;
+    canonical committed config, atomically acquires and permanently retains the
+    canonical one-shot claim before scoring, records exact
+    command/config/code/data/report/claim identities, and refuses to overwrite
+    an existing claim, staging file, or historical report;
 13. the research config disables live execution, contains no production or
     shadow model, and no existing file in `predictions/` or `evaluations/` is
     changed or regenerated.

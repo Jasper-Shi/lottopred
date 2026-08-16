@@ -8,6 +8,10 @@ from .v3_boosting import V3BoostingModel
 from .v4_ensemble import V4EnsembleModel
 from .v5_pair_affinity import V5PairAffinityModel
 from .v6_entropy_regime import V6EntropyRegimeModel
+from .v7_main_bonus_role_bias import (
+    V7MainBonusRoleBiasModel,
+    V7MainBonusRoleControlModel,
+)
 
 
 def build_models(cfg: dict, requested: list[str] | None = None):
@@ -31,6 +35,8 @@ def build_models(cfg: dict, requested: list[str] | None = None):
         "v3_boosting": v3,
         "v5_pair_affinity": V5PairAffinityModel(),
         "v6_entropy_regime": V6EntropyRegimeModel(),
+        "v7_main_bonus_role_bias": V7MainBonusRoleBiasModel(),
+        "v7_main_bonus_role_control": V7MainBonusRoleControlModel(),
     }
     base["ensemble"] = EnsembleModel([
         (base["long_frequency"], 0.15),

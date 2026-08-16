@@ -17,6 +17,7 @@ in `V2_V4_RESULTS.md`.
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
+| V7 main/bonus role bias | Implemented; unscored | `v7.0.0` is frozen on a feature branch with a dedicated within-draw role control. It has no live role and no historical result yet. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -75,6 +76,38 @@ evaluation rebinding and recomputation, fixed prospective checkpoints, and a
 single immutable formal-look record. V1 remains production and V3 remains
 shadow. The next research attempt must be a new bounded pre-registration and
 new model version; do not retune or reopen rejected `v5.0.0` or `v6.0.0`.
+
+## V7 research checkpoint
+
+The next bounded attempt is
+[`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md),
+version `v7.0.0`. It tests whether, after the documented 2019-05-15 RNG
+transition, a label's strictly prior six-main versus bonus-role counts contain a
+stable role-assignment signal. The frozen seed-649 negative control keeps every
+draw's date and seven-number set but reassigns only its historical bonus role.
+
+The candidate, control, diagnostic runner, and deterministic offline tests are
+implemented on `codex/v7-research-foundations`. No V7 historical prediction
+score or global role-audit statistic has been generated or inspected. Before the
+sole run, the implementation must be committed and pushed, CI must pass, and the
+runner requires the supplied full commit SHA to equal a completely clean local
+HEAD. It then permits only the consumed 621 targets in 2020–2025 and refuses to
+overwrite either report artifact.
+
+The runner creates the canonical `.claim` file exclusively after all preflights
+and before the first score. It is permanent on success or failure and must never
+be deleted to retry V7. JSON and Markdown use same-directory `.tmp` staging and
+are both staged before sequential publication; a caught partial publication is
+rolled back. A crash or other post-claim failure leaves the permanent claim and
+any staging or partial-publication evidence for an **Archive** decision. On
+success only the `.tmp` files are removed, and the report records the permanent
+claim's path and SHA-256.
+
+V7 remains absent from `config.yaml`; its research config has
+`live.enabled: false` with empty primary and shadow lists. Even complete
+historical passage
+would require a separate reviewed shadow-activation PR. V1 remains production,
+V3 remains shadow, and existing prediction/evaluation snapshots are unchanged.
 
 ## How the implemented system runs
 
