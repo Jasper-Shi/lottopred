@@ -1,0 +1,91 @@
+name: lotto649-prospective-cohort-monitor
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [lotto649-live-cycle]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  audit-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: lotto649-prospective-monitor
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -c requirements-live.lock -e .
+      - name: Inspect performance-blind V3 evidence count
+        id: inspect
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from lotto649.research_protocol import load_experiment_registry
+
+          root = Path.cwd()
+          registration = load_experiment_registry(
+              root / "docs" / "experiments" / "registry.yaml"
+          ).get("V3_frozen_shadow_cohort")
+          raw_count = len(
+              tuple(
+                  (root / "evaluations").glob(
+                      "*__v3_boosting__v3.0.0.json"
+                  )
+              )
+          )
+          minimum = registration.prospective.minimum_eligible_draws
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"cohort_status={registration.prospective.status}\n")
+              output.write(f"raw_count={raw_count}\n")
+              output.write(f"minimum={minimum}\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## V3 prospective evidence monitor\n\n")
+              summary.write(f"- Cohort status: `{registration.prospective.status}`\n")
+              summary.write(f"- Raw committed evaluations: `{raw_count}`\n")
+              summary.write(f"- Registered checkpoint: `{minimum}`\n")
+          if registration.prospective.status == "active" and raw_count == minimum - 1:
+              print("::notice title=V3 checkpoint approaching::207 raw evaluations are committed")
+          PY
+      - name: Run full immutable-evidence audit at or after the checkpoint
+        if: >-
+          steps.inspect.outputs.cohort_status == 'active' &&
+          fromJSON(steps.inspect.outputs.raw_count) >= fromJSON(steps.inspect.outputs.minimum)
+        shell: bash
+        run: |
+          audit_json="$RUNNER_TEMP/v3-prospective-audit.json"
+          lotto649 prospective-audit --experiment V3_frozen_shadow_cohort > "$audit_json"
+          cat "$audit_json"
+          python - "$audit_json" <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import sys
+
+          payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          status = payload["status"]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(f"- Verified audit status: `{status}`\n")
+              summary.write(
+                  f"- Eligible evaluated: `{payload['eligible_evaluated_count']}`\n"
+              )
+              summary.write(f"- Pending: `{payload['pending_count']}`\n")
+              summary.write(f"- Excluded: `{payload['excluded_count']}`\n")
+          if status == "ready":
+              print("::warning title=V3 FORMAL LOOK READY::Commit the registered claim before any further candidate evaluation")
+              raise SystemExit(2)
+          if status == "overdue":
+              print("::error title=V3 FORMAL LOOK OVERDUE::Archive; do not manufacture a retrospective look")
+              raise SystemExit(3)
+          PY

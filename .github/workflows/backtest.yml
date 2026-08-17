@@ -23,8 +23,8 @@ jobs:
       - run: pip install -e .
       - name: Build and validate historical data
         run: lotto649 bootstrap
-      - name: Run frozen blind walk-forward benchmark
-        run: lotto649 backtest
+      - name: Run consumed historical regression (not blind or confirmatory)
+        run: lotto649 backtest --models random ema_gap v2_statistical
       - uses: actions/upload-artifact@v4
         with:
           name: backtest-reports

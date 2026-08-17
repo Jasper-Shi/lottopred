@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+import math
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -8,6 +9,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from .base import ProbabilityModel, normalize_expected_six
 from ..domain import Draw
 from ..features import BASE_P
+from ..research_protocol import assert_history_precedes_target
 from ..research_features import rich_number_feature_frame
 
 FEATURES = [
@@ -17,6 +19,23 @@ FEATURES = [
     "sum_ma5_centered", "sum_ma20_centered", "sum_slope5", "target_weekday",
     "target_month_sin", "target_month_cos",
 ]
+
+
+def _require_probability_contract(probabilities: dict[int, float]) -> None:
+    if (
+        set(probabilities) != set(range(1, 50))
+        or any(
+            not math.isfinite(probability) or not 0.0 < probability < 1.0
+            for probability in probabilities.values()
+        )
+        or not math.isclose(
+            math.fsum(probabilities.values()),
+            6.0,
+            rel_tol=0.0,
+            abs_tol=1.0e-12,
+        )
+    ):
+        raise RuntimeError("V3 probability contract is violated")
 
 
 class V3BoostingModel(ProbabilityModel):
@@ -44,7 +63,8 @@ class V3BoostingModel(ProbabilityModel):
         return allf[FEATURES], allf["y"].to_numpy()
 
     def predict(self, history: list[Draw], target_date: date) -> dict[int, float]:
-        key = (len(history), history[-1].draw_date if history else None, target_date)
+        assert_history_precedes_target(history, target_date)
+        key = (tuple(history), target_date)
         if self._cache_key == key and self._cache_value is not None:
             return dict(self._cache_value)
         if len(history) < self.min_history:
@@ -67,5 +87,6 @@ class V3BoostingModel(ProbabilityModel):
                 learned = model.predict_proba(current[FEATURES])[:, 1]
                 probs = 0.72 * learned + 0.28 * BASE_P
                 result = normalize_expected_six({int(n): float(p) for n, p in zip(current.number, probs)})
+        _require_probability_contract(result)
         self._cache_key, self._cache_value = key, dict(result)
         return result

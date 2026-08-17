@@ -15,11 +15,20 @@ backtest:
   test_start: "2020-01-01"
   test_end: "2025-12-31"
   top_k: [6, 12, 18]
-  models: [random, ema_gap, v2_statistical, v3_boosting, v4_ensemble]
+  # Consumed-safe regression only. V3/V4 historical scores are preserved in
+  # committed reports and must not be recomputed for the new V3 cohort.
+  models: [random, ema_gap, v2_statistical]
 
 live:
   models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble, v3_boosting]
   shadow_models: [v3_boosting]
+  # The V3 v3.0.0 identity is dormant until its registry cohort is explicitly
+  # activated by a later reviewed release. While it remains registered and
+  # not_activated, live.py continues to emit the legacy v1.0.0 V3 snapshot.
+  model_versions:
+    v3_boosting: v3.0.0
+  model_version_experiments:
+    v3_boosting: V3_frozen_shadow_cohort
 
 features:
   recent_windows: [10, 25, 50, 100, 250]

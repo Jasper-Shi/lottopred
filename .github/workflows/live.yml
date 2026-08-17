@@ -10,6 +10,8 @@ on:
     paths:
       - 'src/**'
       - 'config.yaml'
+      - 'requirements-live.lock'
+      - 'docs/experiments/registry.yaml'
       - 'pyproject.toml'
       - '.github/workflows/live.yml'
 
@@ -31,7 +33,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --upgrade pip
-      - run: pip install -e .
+      - run: python -m pip install -c requirements-live.lock -e .
       - name: Run live evaluation and next-draw prediction
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}

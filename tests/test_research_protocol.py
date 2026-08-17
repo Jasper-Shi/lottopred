@@ -32,13 +32,197 @@ from lotto649.research_protocol import (
     permute_draw_outcomes,
     reassign_bonus_roles_within_draws,
     snapshot_digest,
+    validate_formal_attempt_payload,
     validated_registered_draw_prefix,
+    verify_frozen_paths,
     walk_forward_folds,
 )
 
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "docs" / "experiments" / "registry.yaml"
+
+
+def test_v3_live_runtime_lock_and_workflow_are_exactly_frozen():
+    lock_lines = tuple(
+        line
+        for line in (ROOT / "requirements-live.lock")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line and not line.startswith("#")
+    )
+
+    assert lock_lines == (
+        "beautifulsoup4==4.13.5",
+        "certifi==2025.11.12",
+        "charset-normalizer==3.4.4",
+        "idna==3.11",
+        "joblib==1.5.2",
+        "numpy==2.3.5",
+        "pandas==2.3.3",
+        "pypdf==6.16.1",
+        "python-dateutil==2.9.0.post0",
+        "pytz==2025.2",
+        "PyYAML==6.0.3",
+        "requests==2.32.5",
+        "scikit-learn==1.7.2",
+        "scipy==1.16.3",
+        "six==1.17.0",
+        "soupsieve==2.5",
+        "threadpoolctl==3.5.0",
+        "typing-extensions==4.15.0",
+        "tzdata==2025.2",
+        "urllib3==2.5.0",
+    )
+    workflow = (ROOT / ".github" / "workflows" / "live.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "python -m pip install -c requirements-live.lock -e ." in workflow
+    assert "'requirements-live.lock'" in workflow
+    assert "'docs/experiments/registry.yaml'" in workflow
+
+
+def test_v3_prospective_registration_freezes_identity_boundaries_and_one_look():
+    registration = load_experiment_registry(REGISTRY_PATH).get(
+        "V3_frozen_shadow_cohort"
+    )
+
+    assert registration.status == "registered"
+    assert registration.family == "frozen_boosting_prospective_replication"
+    assert (registration.model_name, registration.model_version) == (
+        "v3_boosting",
+        "v3.0.0",
+    )
+    assert registration.registered_on == date(2026, 8, 16)
+    assert registration.seed == 649
+    assert registration.dataset_source_commit == (
+        "39b99a9e0a6351b4143f81c9a95eb1639456a35d"
+    )
+    assert registration.dataset_sha256 == (
+        "95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf"
+    )
+    assert registration.dataset_draw_count == 4431
+    assert registration.registration_history_through == date(2026, 8, 12)
+    assert registration.outcomes_known_source_commit == (
+        "90177c80cfb070038d79508fb2e73305a297f516"
+    )
+    assert registration.outcomes_known_sha256 == (
+        "edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3"
+    )
+    assert registration.outcomes_known_draw_count == 4432
+    assert registration.outcomes_known_through == date(2026, 8, 15)
+    assert registration.prospective.status == "not_activated"
+    assert registration.prospective.role == "shadow"
+    assert registration.prospective.minimum_eligible_draws == 208
+    assert registration.result is None
+    assert [control.kind for control in registration.negative_controls] == [
+        "target_date_seeded_fair_random"
+    ]
+    assert [control.seed for control in registration.negative_controls] == [649]
+
+    parameters = registration.parameters
+    assert parameters["historical_performance_scoring"] == "prohibited"
+    assert parameters["all_v3_v1_snapshots"] == "excluded"
+    assert parameters["newest_known_excluded_snapshot_target"] == "2026-08-19"
+    assert (
+        parameters["minimum_history_draws"],
+        parameters["training_draws"],
+        parameters["training_stride"],
+    ) == (300, 280, 14)
+    assert parameters["features"] == [
+        "number_scaled",
+        "long_freq",
+        "freq_10",
+        "freq_25",
+        "freq_50",
+        "freq_100",
+        "freq_250",
+        "ema_12",
+        "ema_35",
+        "ema_90",
+        "gap",
+        "gap_ratio",
+        "in_prev",
+        "in_prev2",
+        "weekday_freq",
+        "month_freq",
+        "transition_freq",
+        "sum_prev_centered",
+        "sum_ma5_centered",
+        "sum_ma20_centered",
+        "sum_slope5",
+        "target_weekday",
+        "target_month_sin",
+        "target_month_cos",
+    ]
+    assert parameters["frozen_implementation_paths"] == [
+        ".github/workflows/live.yml",
+        ".github/workflows/prospective.yml",
+        "docs/experiments/V3_frozen_shadow_cohort.md",
+        "src/lotto649/models/v3_boosting.py",
+        "src/lotto649/models/baselines.py",
+        "src/lotto649/models/logistic.py",
+        "src/lotto649/models/ensemble.py",
+        "src/lotto649/research_features.py",
+        "src/lotto649/features.py",
+        "src/lotto649/models/base.py",
+        "src/lotto649/models/factory.py",
+        "src/lotto649/predictor.py",
+        "src/lotto649/optimizer.py",
+        "src/lotto649/live.py",
+        "src/lotto649/config.py",
+        "src/lotto649/storage.py",
+        "src/lotto649/domain.py",
+        "src/lotto649/evaluation.py",
+        "src/lotto649/research_protocol.py",
+        "src/lotto649/prospective.py",
+        "src/lotto649/cli.py",
+        "src/lotto649/data.py",
+        "src/lotto649/data_sources.py",
+        "config.yaml",
+        "pyproject.toml",
+        "requirements-live.lock",
+    ]
+    assert parameters["prospective_exact_eligible_evaluated_draws"] == 208
+    assert parameters["prospective_half_draws"] == 104
+    assert parameters["activation_anchor_commit_deadline"] == (
+        "before_cohort_start_toronto_date"
+    )
+    assert parameters["release_commit_deadline"] == (
+        "before_cohort_start_toronto_date"
+    )
+    assert parameters["live_python_implementation"] == "CPython"
+    assert parameters["live_python_major_minor"] == "3.12"
+    assert parameters["formal_look_claim"] == (
+        "reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.claim"
+    )
+    assert parameters["formal_look_attempt"] == (
+        "reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.attempt"
+    )
+    assert parameters["formal_look_prepublication_failure"] == (
+        "archive_and_never_rerun_same_version"
+    )
+    assert parameters["formal_look_publication_commit_point"] == (
+        "both_final_hardlinks_and_parent_directory_fsync"
+    )
+    assert parameters["formal_look_postpublication_cleanup_failure"] == (
+        "warning_does_not_invalidate_durable_result"
+    )
+    assert parameters["formal_gate_keys"] == [
+        "positive_aggregate_primary_lift",
+        "aggregate_adjusted_p_at_most_0_05",
+        "aggregate_bootstrap_lower_above_zero",
+        "positive_primary_lift_in_both_fixed_halves",
+        "proper_scores_within_fair_tolerance_aggregate_and_halves",
+        "candidate_top12_mean_strictly_above_v1_ensemble",
+        "random_control_null_aggregate_and_halves",
+        "audit_clear",
+    ]
+    assert (ROOT / registration.registration_file).is_file()
+    assert all(
+        (ROOT / path).is_file()
+        for path in parameters["frozen_implementation_paths"]
+    )
 
 
 def synthetic_draws(count: int = 12) -> list[Draw]:
@@ -840,6 +1024,16 @@ def test_negative_control_spec_supports_strict_prefix_whole_draw_permutation():
     assert control.seed == 649
 
 
+def test_negative_control_spec_supports_target_date_seeded_fair_random():
+    control = NegativeControlSpec(
+        kind="target_date_seeded_fair_random",
+        seed=649,
+    )
+
+    assert control.kind == "target_date_seeded_fair_random"
+    assert control.seed == 649
+
+
 def test_promotion_minimum_cannot_be_weakened():
     with pytest.raises(ValueError, match="at least 104"):
         ProspectiveCohortSpec(
@@ -1175,6 +1369,244 @@ def _commit(repo: Path, message: str, timestamp: str) -> str:
     return _git(repo, "rev-parse", "HEAD")
 
 
+def test_frozen_path_verifier_binds_snapshot_commit_to_exact_freeze_blobs(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    model_path = repo / "src" / "model.py"
+    config_path = repo / "config.yaml"
+    model_path.parent.mkdir()
+    model_path.write_text("FROZEN = 649\n", encoding="utf-8")
+    config_path.write_text("seed: 649\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    (repo / "activation.txt").write_text("active\n", encoding="utf-8")
+    activation = _commit(repo, "activation", "2027-01-02T12:00:00-05:00")
+    (repo / "snapshot.json").write_text("{}\n", encoding="utf-8")
+    snapshot = _commit(repo, "snapshot", "2027-01-03T12:00:00-05:00")
+
+    evidence = verify_frozen_paths(
+        repo,
+        freeze_commit=freeze,
+        evidence_commit=snapshot,
+        paths=("src/model.py", "config.yaml"),
+    )
+
+    assert evidence.freeze_commit == freeze
+    assert evidence.evidence_commit == snapshot
+    assert evidence.paths == ("config.yaml", "src/model.py")
+    assert evidence.path_sha256 == {
+        "config.yaml": sha256(b"seed: 649\n").hexdigest(),
+        "src/model.py": sha256(b"FROZEN = 649\n").hexdigest(),
+    }
+    assert evidence.manifest_sha256 == snapshot_digest(evidence.path_sha256)
+    assert activation != freeze
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("change", "changed after freeze"),
+        ("delete", "missing at evidence commit"),
+        ("add", "missing at freeze commit"),
+    ],
+)
+def test_frozen_path_verifier_fails_closed_on_drift_or_missing_blob(
+    tmp_path,
+    mutation,
+    message,
+):
+    repo = tmp_path / mutation
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    frozen_path = repo / "frozen.txt"
+    if mutation != "add":
+        frozen_path.write_text("original\n", encoding="utf-8")
+    (repo / "anchor.txt").write_text("freeze\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    if mutation == "change":
+        frozen_path.write_text("changed\n", encoding="utf-8")
+    elif mutation == "delete":
+        frozen_path.unlink()
+    else:
+        frozen_path.write_text("late\n", encoding="utf-8")
+    evidence_commit = _commit(repo, "evidence", "2027-01-02T12:00:00-05:00")
+
+    with pytest.raises(GitEvidenceError, match=message):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=freeze,
+            evidence_commit=evidence_commit,
+            paths=("frozen.txt",),
+        )
+
+
+def test_frozen_path_verifier_rejects_a_dirty_runtime_path(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    frozen_path = repo / "frozen.txt"
+    frozen_path.write_text("original\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    (repo / "anchor.txt").write_text("later\n", encoding="utf-8")
+    evidence_commit = _commit(repo, "later", "2027-01-02T12:00:00-05:00")
+    frozen_path.write_text("uncommitted runtime drift\n", encoding="utf-8")
+
+    with pytest.raises(GitEvidenceError, match="dirty frozen runtime path"):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=freeze,
+            evidence_commit=evidence_commit,
+            paths=("frozen.txt",),
+        )
+
+
+def test_frozen_path_verifier_rejects_committed_drift_that_was_reverted(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    frozen_path = repo / "frozen.txt"
+    frozen_path.write_text("original\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    frozen_path.write_text("transient drift\n", encoding="utf-8")
+    _commit(repo, "change frozen implementation", "2027-01-02T12:00:00-05:00")
+    frozen_path.write_text("original\n", encoding="utf-8")
+    evidence_commit = _commit(
+        repo,
+        "restore frozen implementation",
+        "2027-01-03T12:00:00-05:00",
+    )
+
+    with pytest.raises(GitEvidenceError, match="history changed after freeze"):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=freeze,
+            evidence_commit=evidence_commit,
+            paths=("frozen.txt",),
+        )
+
+
+def test_frozen_path_verifier_rejects_non_descendant_duplicates_and_unsafe_paths(
+    tmp_path,
+):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    (repo / "frozen.txt").write_text("original\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    (repo / "later.txt").write_text("later\n", encoding="utf-8")
+    evidence_commit = _commit(repo, "later", "2027-01-02T12:00:00-05:00")
+
+    with pytest.raises(GitEvidenceError, match="strict descendant"):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=evidence_commit,
+            evidence_commit=freeze,
+            paths=("frozen.txt",),
+        )
+    with pytest.raises(ValueError, match="unique"):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=freeze,
+            evidence_commit=evidence_commit,
+            paths=("frozen.txt", "frozen.txt"),
+        )
+    with pytest.raises(ValueError, match="repository-relative"):
+        verify_frozen_paths(
+            repo,
+            freeze_commit=freeze,
+            evidence_commit=evidence_commit,
+            paths=("../outside",),
+        )
+
+
+def test_prospective_assessment_requires_registered_frozen_path_evidence(tmp_path):
+    repo, path, snapshot, freeze, activation, snapshot_commit = (
+        _git_repo_with_immutable_snapshot(tmp_path)
+    )
+    boundary, activation_evidence = _snapshot_outcome_evidence(repo, freeze)
+    registration = _active_registration(freeze, activation, boundary)
+    registration = replace(
+        registration,
+        parameters={
+            **registration.parameters,
+            "frozen_implementation_paths": ["freeze.txt"],
+        },
+    )
+    snapshot_git = GitFileEvidence.from_repository(
+        repo,
+        path,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+    frozen_paths = verify_frozen_paths(
+        repo,
+        freeze_commit=freeze,
+        evidence_commit=snapshot_commit,
+        paths=("freeze.txt",),
+    )
+
+    missing = assess_prospective_snapshot(
+        registration,
+        snapshot,
+        snapshot_evidence=snapshot_git,
+        activation_boundary_evidence=activation_evidence,
+    )
+    verified = assess_prospective_snapshot(
+        registration,
+        snapshot,
+        snapshot_evidence=snapshot_git,
+        activation_boundary_evidence=activation_evidence,
+        snapshot_frozen_path_evidence=frozen_paths,
+    )
+
+    assert "missing_frozen_path_evidence" in missing.reasons
+    assert "missing_frozen_path_evidence" not in verified.reasons
+    assert "frozen_path_evidence_mismatch" not in verified.reasons
+
+
+def test_prospective_assessment_rejects_frozen_evidence_from_wrong_commit(tmp_path):
+    repo, path, snapshot, freeze, activation, _ = _git_repo_with_immutable_snapshot(
+        tmp_path
+    )
+    boundary, activation_evidence = _snapshot_outcome_evidence(repo, freeze)
+    registration = replace(
+        _active_registration(freeze, activation, boundary),
+        parameters={"frozen_implementation_paths": ["freeze.txt"]},
+    )
+    snapshot_git = GitFileEvidence.from_repository(
+        repo,
+        path,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+    wrong_commit_evidence = verify_frozen_paths(
+        repo,
+        freeze_commit=freeze,
+        evidence_commit=activation,
+        paths=("freeze.txt",),
+    )
+
+    assessment = assess_prospective_snapshot(
+        registration,
+        snapshot,
+        snapshot_evidence=snapshot_git,
+        activation_boundary_evidence=activation_evidence,
+        snapshot_frozen_path_evidence=wrong_commit_evidence,
+    )
+
+    assert "frozen_path_evidence_mismatch" in assessment.reasons
+
+
 def _git_repo_with_immutable_snapshot(
     tmp_path: Path,
     *,
@@ -1190,7 +1622,17 @@ def _git_repo_with_immutable_snapshot(
     (repo / "freeze.txt").write_text("frozen\n", encoding="utf-8")
     data_path = repo / "data" / "processed" / "draws.csv"
     data_path.parent.mkdir(parents=True)
-    data_path.write_bytes((ROOT / "data" / "processed" / "draws.csv").read_bytes())
+    registration = load_experiment_registry(REGISTRY_PATH).get(
+        "V6_fixed_boundary_js_regime"
+    )
+    current_rows = (
+        (ROOT / registration.dataset_path).read_bytes().splitlines(keepends=True)
+    )
+    registered_data = b"".join(
+        current_rows[: registration.dataset_draw_count + 1]
+    )
+    assert sha256(registered_data).hexdigest() == registration.dataset_sha256
+    data_path.write_bytes(registered_data)
     freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
     (repo / "activation.txt").write_text("active\n", encoding="utf-8")
     activation = _commit(repo, "activate", "2027-01-02T12:00:00-05:00")
@@ -1260,6 +1702,49 @@ def test_git_file_evidence_is_derived_from_one_immutable_commit(tmp_path):
     assert evidence.first_commit_at.tzinfo is not None
     assert evidence.canonical_digest == snapshot_digest(snapshot)
     assert evidence.raw_sha256 == sha256(path.read_bytes()).hexdigest()
+    assert evidence.commit_count == 1
+
+
+def test_git_file_evidence_does_not_follow_a_similar_different_path(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Protocol Test")
+    _git(repo, "config", "user.email", "protocol@example.invalid")
+    (repo / "freeze.txt").write_text("frozen\n", encoding="utf-8")
+    freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
+    (repo / "activation.txt").write_text("active\n", encoding="utf-8")
+    activation = _commit(repo, "activation", "2027-01-02T12:00:00-05:00")
+
+    predictions = repo / "predictions"
+    predictions.mkdir()
+    comparator = _snapshot()
+    comparator["model_name"] = "ensemble"
+    comparator["model_version"] = "v1.0.0"
+    comparator["metadata"]["role"] = "primary"
+    comparator_path = predictions / "2027-01-06__ensemble__v1.0.0.json"
+    comparator_path.write_text(json.dumps(comparator, indent=2), encoding="utf-8")
+    _commit(repo, "comparator snapshot", "2027-01-03T09:00:00-05:00")
+
+    candidate = _snapshot()
+    candidate["model_name"] = "v3_boosting"
+    candidate["model_version"] = "v3.0.0"
+    candidate_path = predictions / "2027-01-06__v3_boosting__v3.0.0.json"
+    candidate_path.write_text(json.dumps(candidate, indent=2), encoding="utf-8")
+    candidate_commit = _commit(
+        repo,
+        "candidate snapshot",
+        "2027-01-03T10:00:00-05:00",
+    )
+
+    evidence = GitFileEvidence.from_repository(
+        repo,
+        candidate_path,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+
+    assert evidence.first_commit_sha == candidate_commit
     assert evidence.commit_count == 1
 
 
@@ -1363,8 +1848,54 @@ def test_verified_outcome_boundary_rejects_rewritten_registration_prefix(tmp_pat
             registration_boundary=registration_boundary,
         )
 
+
+def test_verified_outcome_boundary_rejects_suspicious_append_only_gap(tmp_path):
+    repo, _, activation_boundary = _git_repo_with_outcome_boundaries(tmp_path)
+    draws = synthetic_draws(4)
+    gap_draw = Draw(
+        draws[-1].draw_date + timedelta(days=15),
+        (2, 10, 18, 26, 34, 42),
+        1,
+    )
+    data_path = repo / "data" / "processed" / "draws.csv"
+    gap_bytes = _csv_bytes([*draws, gap_draw])
+    data_path.write_bytes(gap_bytes)
+    gap_commit = _commit(
+        repo,
+        "append suspiciously delayed outcome",
+        "2027-01-03T12:00:00-05:00",
+    )
+    gap_boundary = OutcomeBoundary(
+        source_commit=gap_commit,
+        sha256=sha256(gap_bytes).hexdigest(),
+        draw_count=5,
+        history_through=gap_draw.draw_date,
+    )
+
+    with pytest.raises(GitEvidenceError, match="Suspicious historical gap"):
+        VerifiedOutcomeBoundary.from_repository(
+            repo,
+            gap_boundary,
+            registration_boundary=activation_boundary,
+        )
+
+
+def _scheduled_draw_dates(history_through: date, target: date) -> tuple[date, ...]:
+    dates = tuple(
+        history_through + timedelta(days=offset)
+        for offset in range(1, (target - history_through).days + 1)
+        if (history_through + timedelta(days=offset)).weekday() in {2, 5}
+    )
+    assert dates and dates[-1] == target
+    return dates
+
+
 def _evaluation(snapshot: dict, actual: Draw, snapshot_path: str) -> dict:
     probability = 6 / 49
+    history_through = date.fromisoformat(snapshot["metadata"]["history_through"])
+    verified_draw_count = snapshot["metadata"]["history_draws"] + len(
+        _scheduled_draw_dates(history_through, actual.draw_date)
+    )
     return {
         "target_draw_date": actual.draw_date.isoformat(),
         "model_name": snapshot["model_name"],
@@ -1385,7 +1916,7 @@ def _evaluation(snapshot: dict, actual: Draw, snapshot_path: str) -> dict:
         "prediction_snapshot_digest": snapshot_digest(snapshot),
         "prediction_snapshot_path": snapshot_path,
         "actual_draw_digest": draw_digest(actual),
-        "verified_data_draw_count": 4432,
+        "verified_data_draw_count": verified_draw_count,
         "verified_data_history_through": actual.draw_date.isoformat(),
     }
 
@@ -1402,9 +1933,23 @@ def _commit_evaluation(
     path.parent.mkdir()
     path.write_text(json.dumps(evaluation, indent=2), encoding="utf-8")
     data_path = repo / "data" / "processed" / "draws.csv"
-    values = ",".join(str(number) for number in actual.numbers)
-    row = f"{actual.draw_date.isoformat()},{values},{actual.bonus}\n".encode()
-    data_path.write_bytes(data_path.read_bytes() + row)
+    history_through = date.fromisoformat(
+        data_path.read_text(encoding="utf-8").splitlines()[-1].split(",", 1)[0]
+    )
+    appended_rows = []
+    for draw_date in _scheduled_draw_dates(history_through, actual.draw_date):
+        draw = (
+            actual
+            if draw_date == actual.draw_date
+            else Draw(draw_date, (2, 10, 18, 26, 34, 42), 1)
+        )
+        values = ",".join(str(number) for number in draw.numbers)
+        appended_rows.append(
+            f"{draw.draw_date.isoformat()},{values},{draw.bonus}\n"
+        )
+    data_path.write_bytes(
+        data_path.read_bytes() + "".join(appended_rows).encode("utf-8")
+    )
     commit = _commit(repo, "evaluation", timestamp)
     return path, commit
 
@@ -1443,6 +1988,13 @@ def test_active_cohort_accounts_for_pending_and_verified_evaluation(tmp_path):
         snapshot_commit,
         boundary,
     )
+    assert (
+        snapshot["metadata"]["history_draws"]
+        == snapshot_source_evidence.boundary.draw_count
+    )
+    assert snapshot["metadata"]["history_through"] == (
+        snapshot_source_evidence.boundary.history_through.isoformat()
+    )
     snapshot_evidence = GitFileEvidence.from_repository(
         repo,
         path,
@@ -1471,6 +2023,13 @@ def test_active_cohort_accounts_for_pending_and_verified_evaluation(tmp_path):
         evaluation_commit,
         snapshot_source_evidence.boundary,
     )
+    assert evaluation["verified_data_draw_count"] == (
+        evaluation_source_evidence.boundary.draw_count
+    )
+    assert (
+        evaluation_source_evidence.boundary.draw_count
+        > snapshot_source_evidence.boundary.draw_count
+    )
     evaluated = assess_prospective_snapshot(
         registration,
         snapshot,
@@ -1488,6 +2047,42 @@ def test_active_cohort_accounts_for_pending_and_verified_evaluation(tmp_path):
     assert not pending.evaluated_eligible
     assert evaluated.status == "eligible_evaluated"
     assert evaluated.evaluated_eligible
+
+
+def test_closed_cohort_rechecks_snapshot_source_evidence(tmp_path):
+    repo, path, snapshot, freeze, activation, _ = _git_repo_with_immutable_snapshot(
+        tmp_path
+    )
+    boundary, boundary_evidence = _snapshot_outcome_evidence(repo, freeze)
+    active = _active_registration(freeze, activation, boundary)
+    closed_cohort = replace(active.prospective, status="closed")
+    assert active.result is not None
+    closed = replace(
+        active,
+        status="closed_rejected",
+        prospective=closed_cohort,
+        result=replace(
+            active.result,
+            decision="reject",
+            shadow_activation="closed",
+        ),
+    )
+    snapshot_evidence = GitFileEvidence.from_repository(
+        repo,
+        path,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+
+    assessment = assess_prospective_snapshot(
+        closed,
+        snapshot,
+        snapshot_evidence=snapshot_evidence,
+        activation_boundary_evidence=boundary_evidence,
+    )
+
+    assert not assessment.eligible
+    assert "missing_snapshot_source_evidence" in assessment.reasons
 
 
 @pytest.mark.parametrize(
@@ -1746,6 +2341,19 @@ def test_cohort_aggregator_freezes_exact_208_draw_checkpoint_and_halves():
     assert aggregate.formal_look_count == 0
 
 
+def test_cohort_aggregator_rechecks_required_frozen_path_evidence():
+    registration = replace(
+        _aggregate_registration(),
+        parameters={"frozen_implementation_paths": ["src/model.py"]},
+    )
+
+    with pytest.raises(ValueError, match="invalid frozen-path evidence"):
+        aggregate_prospective_cohort(
+            registration,
+            (_cohort_assessment(date(2027, 1, 6)),),
+        )
+
+
 def test_cohort_aggregator_does_not_count_pending_and_marks_unlooked_overrun():
     registration = _aggregate_registration()
     targets = _scheduled_targets(210)
@@ -1873,6 +2481,186 @@ def test_formal_look_requires_exact_ready_checkpoint_and_git_evidence(tmp_path):
             registration,
             overdue.eligible_evaluated,
             formal_looks=(formal_look,),
+        )
+
+
+@pytest.mark.parametrize(
+    ("decision", "gates"),
+    [
+        (
+            "eligible_for_reviewed_promotion",
+            {"primary_signal": True, "audit_clear": True},
+        ),
+        ("reject", {"primary_signal": False, "audit_clear": True}),
+        ("archive", {"primary_signal": True, "audit_clear": False}),
+    ],
+)
+def test_registered_schema_one_formal_look_binds_claim_attempt_and_gate_outcome(
+    tmp_path,
+    decision,
+    gates,
+):
+    repo, _, _, freeze, activation, _ = _git_repo_with_immutable_snapshot(tmp_path)
+    boundary, _ = _snapshot_outcome_evidence(repo, freeze)
+    gate_keys = ("primary_signal", "audit_clear")
+    report_relative = "reports/prospective/formal.json"
+    markdown_relative = "reports/prospective/formal.md"
+    claim_relative = "reports/prospective/formal.claim"
+    attempt_relative = "reports/prospective/formal.attempt"
+    registration = replace(
+        _active_registration(freeze, activation, boundary),
+        parameters={
+            "formal_look_schema_version": 1,
+            "formal_look_json": report_relative,
+            "formal_look_markdown": markdown_relative,
+            "formal_look_claim": claim_relative,
+            "formal_look_attempt": attempt_relative,
+            "formal_gate_keys": gate_keys,
+            "formal_invalidity_gate_keys": ["audit_clear"],
+            "formal_invalidity_decision": "archive",
+            "formal_scientific_gate_failure_decision": "reject",
+            "formal_all_gates_pass_decision": "eligible_for_reviewed_promotion",
+        },
+    )
+    evaluation_path = repo / "audit" / "checkpoint-evaluation.json"
+    evaluation_path.parent.mkdir()
+    evaluation_path.write_text(json.dumps({"kind": "checkpoint"}), encoding="utf-8")
+    _commit(repo, "checkpoint evaluation", "2027-01-07T12:00:00-05:00")
+    evaluation_git = GitFileEvidence.from_repository(
+        repo,
+        evaluation_path,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+    ready = aggregate_prospective_cohort(
+        registration,
+        tuple(
+            _cohort_assessment(target, evaluation_git_evidence=evaluation_git)
+            for target in _scheduled_targets(208)
+        ),
+    )
+
+    claim_path = repo / claim_relative
+    claim_path.parent.mkdir(parents=True)
+    claim_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "experiment_id": registration.experiment_id,
+                "checkpoint_digest": ready.checkpoint_digest,
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    claim_commit = _commit(repo, "formal claim", "2027-01-08T12:00:00-05:00")
+    claim_sha256 = sha256(claim_path.read_bytes()).hexdigest()
+
+    attempt_path = repo / attempt_relative
+    attempt_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": "prospective_formal_look_attempt",
+                "experiment_id": registration.experiment_id,
+                "model_name": registration.model_name,
+                "model_version": registration.model_version,
+                "checkpoint_digest": ready.checkpoint_digest,
+                "eligible_evaluated_count": 208,
+                "formal_claim_path": claim_relative,
+                "formal_claim_sha256": claim_sha256,
+                "formal_claim_commit": claim_commit,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    report_path = repo / report_relative
+    markdown_path = repo / markdown_relative
+    markdown_path.write_text("# Frozen formal result\n", encoding="utf-8")
+    report_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "experiment_id": registration.experiment_id,
+                "model_name": registration.model_name,
+                "model_version": registration.model_version,
+                "checkpoint_digest": ready.checkpoint_digest,
+                "eligible_evaluated_count": 208,
+                "gate_outcome": decision,
+                "decision": decision,
+                "gates": gates,
+                "all_gates_passed": all(gates.values()),
+                "scopes": {},
+                "procedures": {},
+                "formal_claim_path": claim_relative,
+                "formal_claim_sha256": claim_sha256,
+                "formal_claim_commit": claim_commit,
+                "formal_attempt_path": attempt_relative,
+                "formal_attempt_sha256": sha256(attempt_path.read_bytes()).hexdigest(),
+                "formal_markdown_path": markdown_relative,
+                "formal_markdown_sha256": sha256(
+                    markdown_path.read_bytes()
+                ).hexdigest(),
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    report_commit = _commit(repo, "formal result", "2027-01-09T12:00:00-05:00")
+
+    record = FormalLookRecord.from_repository(
+        registration,
+        ready,
+        repo,
+        report_path,
+    )
+
+    assert record.decision == decision
+    assert record.record_commit == report_commit
+    assert aggregate_prospective_cohort(
+        registration,
+        ready.checkpoint,
+        formal_looks=(record,),
+    ).status == "formal_look_recorded"
+
+    attempt_raw = attempt_path.read_bytes()
+    claim_evidence = GitFileEvidence.from_repository(
+        repo,
+        claim_relative,
+        freeze_commit=freeze,
+        activation_commit=activation,
+    )
+    wrong_attempt = json.loads(attempt_raw)
+    wrong_attempt["model_version"] = "v3.forged"
+    with pytest.raises(GitEvidenceError, match="attempt identity"):
+        validate_formal_attempt_payload(
+            (json.dumps(wrong_attempt, indent=2, sort_keys=True) + "\n").encode(),
+            registration=registration,
+            ready_aggregate=ready,
+            claim_evidence=claim_evidence,
+        )
+
+    with pytest.raises(GitEvidenceError, match="attempt must be canonical JSON"):
+        validate_formal_attempt_payload(
+            json.dumps(json.loads(attempt_raw), sort_keys=True).encode(),
+            registration=registration,
+            ready_aggregate=ready,
+            claim_evidence=claim_evidence,
+        )
+
+    markdown_path.write_text("# Tampered result\n", encoding="utf-8")
+    with pytest.raises(
+        GitEvidenceError,
+        match="Markdown differs from committed Git state",
+    ):
+        FormalLookRecord.from_repository(
+            registration,
+            ready,
+            repo,
+            report_path,
         )
 
 

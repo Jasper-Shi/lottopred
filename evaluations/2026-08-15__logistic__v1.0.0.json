@@ -1,0 +1,24 @@
+{
+  "actual": [
+    1,
+    9,
+    17,
+    34,
+    36,
+    43
+  ],
+  "bonus": 24,
+  "brier_score": 0.10729899713305147,
+  "final_6_hits": 1,
+  "log_loss": 0.3720030459712499,
+  "matched_final": [
+    43
+  ],
+  "mean_actual_rank": 22.833333333333332,
+  "model_name": "logistic",
+  "model_version": "v1.0.0",
+  "target_draw_date": "2026-08-15",
+  "top_12_hits": 2,
+  "top_18_hits": 3,
+  "top_6_hits": 1
+}

@@ -10,10 +10,13 @@ A target draw may use only information available strictly before that draw. This
 |---|---|
 | 1982–2014 | development |
 | 2015–2019 | validation/model selection |
-| 2020–2025 | historical blind test |
-| 2026+ | live forward test |
+| 2020–2025 | consumed historical diagnostic period (formerly the V2–V4 blind test) |
+| 2026+ | model-specific prospective evidence only after that exact version is frozen |
 
-Once a blind-test result influences a model change, that period must no longer be described as untouched validation data for the changed model.
+The observed 2020–2025 outcomes are consumed for every V5+ attempt and must not
+be described as blind, confirmatory, or untouched validation evidence. Once any
+2026+ result influences a model change, that result is also consumed for the
+changed model; the changed version must start a new prospective cohort.
 
 ## Fair-lottery baselines
 
