@@ -32,8 +32,10 @@ jobs:
           assert df['draw_date'].is_unique
           print(df.tail(5).to_string(index=False))
           PY
-      - name: Walk-forward model smoke test
-        run: lotto649 backtest --start 2025-01-01 --end 2025-01-08
+      - name: Consumed walk-forward smoke test (V3 prospective cohort excluded)
+        run: >-
+          lotto649 backtest --start 2025-01-01 --end 2025-01-08
+          --models random ema_gap v2_statistical
       - name: Generate live next-draw snapshots without email credentials
         run: lotto649 live
       - name: Verify snapshots exist

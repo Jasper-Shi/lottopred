@@ -123,10 +123,48 @@ must remain in the ledger rather than being deleted.
 
 | ID | Family | Version | Status | Historical result | Prospective cohort |
 |---|---|---|---|---|---|
+| [`V3_frozen_shadow_cohort`](experiments/V3_frozen_shadow_cohort.md) | Frozen boosting prospective replication | `v3.0.0` | Registered; not activated | Existing V2--V4 evidence is consumed; no new historical scoring permitted | Fixed 208 eligible draws (104 + 104); awaits separate F/A/R release sequence |
 | [`V5_pair_affinity`](experiments/V5_pair_affinity.md) | Pair/co-occurrence | `v5.0.0` | Closed — reject | No significant Top-12 lift; proper scores worse than fair | Never activated |
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
 | [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Closed — reject | Negative aggregate Top-12 lift; six of eight frozen gates failed | Never activated |
+
+### V3 prospective freeze
+
+After V5--V8 produced valid negative results, the next evidence-generating step
+is not another historical pattern search. The project registered V3 with
+unchanged numerical behavior on valid strict-prefix inputs as
+`v3_boosting v3.0.0` for one clean prospective shadow cohort. Fail-closed
+chronology and a full-history cache key harden evidence handling without
+changing a valid uncached probability. Its
+[registration](experiments/V3_frozen_shadow_cohort.md) freezes the
+current 280-draw training span, stride 14, minimum 300-draw history, exact
+feature list, gradient-boosting parameters, seed 649, 0.72 learned/0.28 fair
+blend, runtime constraints, comparison set, and formal gates.
+
+This is a registration only. Prospective status is `not_activated`; the current
+stacked research branch freezes a dormant registry-gated version mapping but
+does not activate it or create a `v3.0.0` snapshot. Every existing V3 snapshot
+stamped `v1.0.0`, including the target
+2026-08-19 file, is permanently excluded from the new cohort. The required Git
+order is `F < A < R < S`: freeze, a later non-live activation anchor, a later
+reviewed release seal, then the first snapshot's one-time first-add commit.
+At `F`, config and live code contain a dormant registry-gated `v3.0.0` mapping;
+`R` changes only the registry to `active` and may not change any frozen path.
+
+The sole formal look is the earliest exactly 208 eligible evaluated snapshots,
+split positionally into 104 + 104. There is no early look and no extension.
+Primary evidence is Top-12 hit lift over exact fair theory, with an exact
+draw-level hypergeometric-convolution upper-tail test and a 10,000-replicate
+seed-649 complete-row linear-percentile bootstrap. Brier and log loss must not
+degrade versus fair in the aggregate or either half. V1 ensemble and the fixed
+target-date-seeded random control remain comparisons. Even if every gate passes,
+V1 remains production until a separate reviewed promotion PR.
+
+The V9 post-RNG seven-number-selection idea is
+[documented](research/V9_post_rng_seven_number_selection_basis.md) but deferred.
+It was not registered, implemented, or scored. If ever revived, it must be
+prospective-only; no historical V9 performance search is permitted.
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256

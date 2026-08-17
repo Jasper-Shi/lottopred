@@ -25,11 +25,21 @@ source .venv/bin/activate
 pip install -e '.[dev]'
 pytest -q
 lotto649 bootstrap
-lotto649 backtest
+lotto649 backtest --models random ema_gap v2_statistical
 lotto649 live
 ```
 
 `lotto649 bootstrap` requires internet access because it refreshes historical/current result sources.
+Historical backtest output is consumed diagnostic/regression evidence, not a
+new blind confirmation. The default config and automated regression workflows
+exclude V3 and V4; their committed historical results must not be recomputed
+for the new V3 cohort. After a separately reviewed activation, cohort
+progress can be audited without displaying interim performance via
+`lotto649 prospective-audit --experiment V3_frozen_shadow_cohort`.
+At the exact registered 208-row checkpoint only, the two-stage one-shot flow is
+`lotto649 prospective-claim --experiment V3_frozen_shadow_cohort`, commit that
+claim, then `lotto649 prospective-formal-look --experiment V3_frozen_shadow_cohort`.
+See `docs/OPERATIONS.md`; do not run either formal command early.
 
 ## Execution paths
 
@@ -88,4 +98,7 @@ See:
 - `docs/experiments/V7_main_bonus_role_bias_results.md`
 - `docs/research/V7_mechanical_bias_basis.md`
 - `docs/experiments/V8_fixed_recurrence_harmonic.md`
+- `docs/experiments/V8_fixed_recurrence_harmonic_results.md`
 - `docs/research/V8_fixed_spectral_basis.md`
+- `docs/experiments/V3_frozen_shadow_cohort.md`
+- `docs/research/V9_post_rng_seven_number_selection_basis.md`

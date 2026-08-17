@@ -73,6 +73,7 @@ class NegativeControlSpec:
         if self.kind not in {
             "per_number_spectral_phase_rotation",
             "strict_prefix_whole_draw_permutation",
+            "target_date_seeded_fair_random",
             "whole_draw_date_permutation",
             "within_draw_bonus_reassignment",
         }:
@@ -370,6 +371,17 @@ class ExperimentRegistration:
             )
         if not self.negative_controls:
             raise ValueError("at least one negative control is required")
+        frozen_paths = self.parameters.get("frozen_implementation_paths")
+        if frozen_paths is not None:
+            if not isinstance(frozen_paths, (list, tuple)) or not frozen_paths:
+                raise ValueError(
+                    "frozen_implementation_paths must be a non-empty sequence"
+                )
+            normalized_paths = tuple(
+                _validated_frozen_path(path) for path in frozen_paths
+            )
+            if len(normalized_paths) != len(set(normalized_paths)):
+                raise ValueError("frozen_implementation_paths must be unique")
         if set(self.partitions) != set(EXPECTED_HISTORICAL_PARTITIONS):
             raise ValueError("historical partitions must use the three registered evidence lanes")
         for name, expected in EXPECTED_HISTORICAL_PARTITIONS.items():
@@ -847,6 +859,139 @@ def _full_commit(repo: Path, value: str, field_name: str) -> str:
     return resolved
 
 
+_FROZEN_PATH_EVIDENCE_FACTORY_TOKEN = object()
+
+
+@dataclass(frozen=True, init=False)
+class FrozenPathEvidence:
+    """Exact Git-blob identity for a model's frozen implementation closure."""
+
+    repository: Path
+    freeze_commit: str
+    evidence_commit: str
+    paths: tuple[str, ...]
+    path_sha256: Mapping[str, str]
+    manifest_sha256: str
+    _factory_token: object = field(repr=False, compare=False)
+
+    def __init__(self) -> None:
+        raise TypeError("FrozenPathEvidence must be derived from Git blobs")
+
+    @classmethod
+    def _create(cls, **values: Any) -> FrozenPathEvidence:
+        instance = object.__new__(cls)
+        values["_factory_token"] = _FROZEN_PATH_EVIDENCE_FACTORY_TOKEN
+        for name, value in values.items():
+            object.__setattr__(instance, name, value)
+        return instance
+
+
+def _validated_frozen_path(value: object) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("frozen paths must be non-empty repository-relative strings")
+    candidate = Path(value)
+    if (
+        candidate.is_absolute()
+        or value != candidate.as_posix()
+        or value in {".", ".git"}
+        or ".." in candidate.parts
+        or candidate.parts[0] == ".git"
+    ):
+        raise ValueError("frozen paths must be safe repository-relative POSIX paths")
+    return value
+
+
+def _frozen_blob_at_commit(
+    repo: Path,
+    commit: str,
+    path: str,
+    boundary: str,
+) -> bytes:
+    entry = _git_output(repo, "ls-tree", commit, "--", path).strip()
+    if not entry:
+        raise GitEvidenceError(f"frozen path {path} is missing at {boundary} commit")
+    try:
+        metadata, listed_path = entry.split("\t", 1)
+        mode, object_type, _ = metadata.split(" ", 2)
+    except ValueError as exc:
+        raise GitEvidenceError("frozen path tree entry is malformed") from exc
+    if listed_path != path or object_type != "blob" or mode not in {"100644", "100755"}:
+        raise GitEvidenceError(f"frozen path {path} is not a regular file")
+    return _git_bytes(repo, "show", f"{commit}:{path}")
+
+
+def verify_frozen_paths(
+    repository: str | Path,
+    *,
+    freeze_commit: str,
+    evidence_commit: str,
+    paths: Sequence[str],
+) -> FrozenPathEvidence:
+    """Verify that every registered implementation file is byte-identical.
+
+    The comparison is between committed Git trees, not the mutable worktree.
+    An evidentiary snapshot may count only when its commit is a strict descendant
+    of the freeze and every registered regular-file blob is unchanged.
+    """
+    repo = Path(repository).resolve(strict=True)
+    top_level = Path(
+        _git_output(repo, "rev-parse", "--show-toplevel").strip()
+    ).resolve(strict=True)
+    if repo != top_level:
+        raise GitEvidenceError("repository must be the Git worktree top level")
+    _require_complete_repository(repo)
+
+    normalized = tuple(_validated_frozen_path(path) for path in paths)
+    if not normalized:
+        raise ValueError("at least one frozen path is required")
+    if len(normalized) != len(set(normalized)):
+        raise ValueError("frozen paths must be unique")
+    normalized = tuple(sorted(normalized))
+
+    dirty = _git_output(
+        repo,
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all",
+        "--",
+        *normalized,
+    ).strip()
+    if dirty:
+        raise GitEvidenceError("dirty frozen runtime path differs from committed Git")
+
+    freeze_sha = _full_commit(repo, freeze_commit, "freeze commit")
+    evidence_sha = _full_commit(repo, evidence_commit, "evidence commit")
+    if freeze_sha == evidence_sha or not _is_ancestor(repo, freeze_sha, evidence_sha):
+        raise GitEvidenceError("evidence commit must be a strict descendant of freeze")
+    path_digests: dict[str, str] = {}
+    for path in normalized:
+        frozen = _frozen_blob_at_commit(repo, freeze_sha, path, "freeze")
+        current = _frozen_blob_at_commit(repo, evidence_sha, path, "evidence")
+        if current != frozen:
+            raise GitEvidenceError(f"frozen path {path} changed after freeze")
+        path_digests[path] = sha256(frozen).hexdigest()
+
+    changed_commits = _git_output(
+        repo,
+        "rev-list",
+        "--full-history",
+        f"{freeze_sha}..{evidence_sha}",
+        "--",
+        *normalized,
+    ).splitlines()
+    if changed_commits:
+        raise GitEvidenceError("frozen implementation history changed after freeze")
+
+    return FrozenPathEvidence._create(
+        repository=repo,
+        freeze_commit=freeze_sha,
+        evidence_commit=evidence_sha,
+        paths=normalized,
+        path_sha256=path_digests,
+        manifest_sha256=snapshot_digest(path_digests),
+    )
+
+
 @dataclass(frozen=True, init=False)
 class GitFileEvidence:
     repository: Path
@@ -936,7 +1081,6 @@ class GitFileEvidence:
             for line in _git_output(
                 repo,
                 "log",
-                "--follow",
                 "--format=%H",
                 "--",
                 relative_path,
@@ -951,7 +1095,6 @@ class GitFileEvidence:
             for line in _git_output(
                 repo,
                 "log",
-                "--follow",
                 "--diff-filter=A",
                 "--format=%H",
                 "--",
@@ -1170,6 +1313,21 @@ class VerifiedOutcomeBoundary:
 _COHORT_ASSESSMENT_FACTORY_TOKEN = object()
 
 
+@dataclass(frozen=True)
+class ComparisonEvidence:
+    model_name: str
+    model_version: str
+    verified_at_commit: str
+    snapshot_path: str
+    snapshot_digest: str
+    snapshot_raw_sha256: str
+    snapshot_commit: str
+    evaluation_path: str | None = None
+    evaluation_digest: str | None = None
+    evaluation_raw_sha256: str | None = None
+    evaluation_commit: str | None = None
+
+
 @dataclass(frozen=True, init=False)
 class CohortAssessment:
     status: str
@@ -1181,6 +1339,14 @@ class CohortAssessment:
     evaluation_path: str | None = None
     snapshot_git_evidence: GitFileEvidence | None = field(default=None, repr=False)
     evaluation_git_evidence: GitFileEvidence | None = field(default=None, repr=False)
+    snapshot_frozen_path_evidence: FrozenPathEvidence | None = field(
+        default=None,
+        repr=False,
+    )
+    comparison_evidence: tuple[ComparisonEvidence, ...] = field(
+        default=(),
+        repr=False,
+    )
     _factory_token: object = field(repr=False, compare=False)
 
     def __init__(self) -> None:
@@ -1199,6 +1365,8 @@ class CohortAssessment:
         evaluation_path: str | None = None,
         snapshot_git_evidence: GitFileEvidence | None = None,
         evaluation_git_evidence: GitFileEvidence | None = None,
+        snapshot_frozen_path_evidence: FrozenPathEvidence | None = None,
+        comparison_evidence: tuple[ComparisonEvidence, ...] = (),
     ) -> CohortAssessment:
         instance = object.__new__(cls)
         values = {
@@ -1211,6 +1379,8 @@ class CohortAssessment:
             "evaluation_path": evaluation_path,
             "snapshot_git_evidence": snapshot_git_evidence,
             "evaluation_git_evidence": evaluation_git_evidence,
+            "snapshot_frozen_path_evidence": snapshot_frozen_path_evidence,
+            "comparison_evidence": comparison_evidence,
             "_factory_token": _COHORT_ASSESSMENT_FACTORY_TOKEN,
         }
         for name, value in values.items():
@@ -1231,6 +1401,186 @@ class CohortAssessment:
 
 
 _FORMAL_LOOK_FACTORY_TOKEN = object()
+
+
+def _verify_formal_markdown_evidence(
+    evidence: GitFileEvidence,
+    *,
+    registered_path: object,
+    payload_path: object,
+    payload_sha256: object,
+) -> None:
+    if (
+        not isinstance(registered_path, str)
+        or payload_path != registered_path
+        or not isinstance(payload_sha256, str)
+    ):
+        raise GitEvidenceError("formal-look Markdown identity mismatch")
+    try:
+        relative_path = _validated_frozen_path(registered_path)
+    except ValueError as exc:
+        raise GitEvidenceError("formal-look Markdown path is invalid") from exc
+    repository = evidence.repository
+    try:
+        absolute_path = (repository / relative_path).resolve(strict=True)
+        absolute_path.relative_to(repository)
+    except (OSError, ValueError) as exc:
+        raise GitEvidenceError("formal-look Markdown is unavailable") from exc
+    dirty = _git_output(
+        repository,
+        "status",
+        "--porcelain=v1",
+        "--untracked-files=all",
+        "--",
+        relative_path,
+    ).strip()
+    if dirty:
+        raise GitEvidenceError("formal-look Markdown differs from committed Git state")
+    commits = tuple(
+        line
+        for line in _git_output(
+            repository,
+            "log",
+            "--format=%H",
+            "--",
+            relative_path,
+        ).splitlines()
+        if line
+    )
+    additions = tuple(
+        line
+        for line in _git_output(
+            repository,
+            "log",
+            "--diff-filter=A",
+            "--format=%H",
+            "--",
+            relative_path,
+        ).splitlines()
+        if line
+    )
+    if commits != (evidence.first_commit_sha,) or additions != commits:
+        raise GitEvidenceError(
+            "formal-look Markdown must be first-added with the JSON report"
+        )
+    try:
+        current = absolute_path.read_bytes()
+        committed = _git_bytes(
+            repository,
+            "show",
+            f"{evidence.first_commit_sha}:{relative_path}",
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise GitEvidenceError("formal-look Markdown blob is unavailable") from exc
+    if current != committed or sha256(current).hexdigest() != payload_sha256:
+        raise GitEvidenceError("formal-look Markdown digest mismatch")
+
+
+def _require_exact_commit_paths(
+    repository: Path,
+    commit: str,
+    expected_paths: Sequence[str],
+    *,
+    evidence_name: str,
+) -> None:
+    parents = _git_output(
+        repository,
+        "rev-list",
+        "--parents",
+        "-n",
+        "1",
+        commit,
+    ).split()
+    if len(parents) != 2:
+        raise GitEvidenceError(f"{evidence_name} must use a non-merge commit")
+    changed = tuple(
+        sorted(
+            line
+            for line in _git_output(
+                repository,
+                "diff-tree",
+                "--no-commit-id",
+                "--name-only",
+                "-r",
+                commit,
+            ).splitlines()
+            if line
+        )
+    )
+    if changed != tuple(sorted(expected_paths)):
+        raise GitEvidenceError(
+            f"{evidence_name} commit contains an unexpected path set"
+        )
+
+
+def _registered_formal_gate_decision(
+    parameters: Mapping[str, Any],
+    gates: Mapping[str, bool],
+) -> str:
+    registered_gate_keys = parameters.get("formal_gate_keys")
+    invalidity_gate_keys = parameters.get("formal_invalidity_gate_keys")
+    if (
+        not isinstance(registered_gate_keys, Sequence)
+        or isinstance(registered_gate_keys, (str, bytes))
+        or not registered_gate_keys
+        or not all(isinstance(key, str) and key for key in registered_gate_keys)
+        or not isinstance(invalidity_gate_keys, Sequence)
+        or isinstance(invalidity_gate_keys, (str, bytes))
+        or not invalidity_gate_keys
+        or not all(isinstance(key, str) and key for key in invalidity_gate_keys)
+        or not set(invalidity_gate_keys).issubset(registered_gate_keys)
+        or parameters.get("formal_invalidity_decision") != "archive"
+        or parameters.get("formal_scientific_gate_failure_decision") != "reject"
+        or parameters.get("formal_all_gates_pass_decision")
+        != "eligible_for_reviewed_promotion"
+        or set(gates) != set(registered_gate_keys)
+        or any(type(value) is not bool for value in gates.values())
+    ):
+        raise GitEvidenceError("formal-look gates do not match registration")
+    if any(not gates[key] for key in invalidity_gate_keys):
+        return "archive"
+    if all(gates[key] for key in registered_gate_keys):
+        return "eligible_for_reviewed_promotion"
+    return "reject"
+
+
+def _canonical_formal_json_bytes(payload: Mapping[str, Any]) -> bytes:
+    return (
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    ).encode("utf-8")
+
+
+def validate_formal_attempt_payload(
+    raw: bytes,
+    *,
+    registration: ExperimentRegistration,
+    ready_aggregate: CohortAggregate,
+    claim_evidence: GitFileEvidence,
+) -> Mapping[str, Any]:
+    """Parse and bind the permanent attempt seal to its registered checkpoint."""
+    expected = {
+        "schema_version": 1,
+        "kind": "prospective_formal_look_attempt",
+        "experiment_id": registration.experiment_id,
+        "model_name": registration.model_name,
+        "model_version": registration.model_version,
+        "checkpoint_digest": ready_aggregate.checkpoint_digest,
+        "eligible_evaluated_count": registration.prospective.minimum_eligible_draws,
+        "formal_claim_path": claim_evidence.path,
+        "formal_claim_sha256": claim_evidence.raw_sha256,
+        "formal_claim_commit": claim_evidence.first_commit_sha,
+    }
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise GitEvidenceError("formal-look attempt must be canonical JSON") from exc
+    if not isinstance(payload, Mapping) or dict(payload) != expected:
+        raise GitEvidenceError(
+            "formal-look attempt identity does not match the registered checkpoint"
+        )
+    if raw != _canonical_formal_json_bytes(expected):
+        raise GitEvidenceError("formal-look attempt must be canonical JSON")
+    return payload
 
 
 @dataclass(frozen=True, init=False)
@@ -1275,10 +1625,17 @@ class FormalLookRecord:
             freeze_commit=cohort.freeze_commit,
             activation_commit=cohort.activation_commit,
         )
-        expected_path = (
-            f"reports/prospective/{registration.experiment_id}__"
-            f"{registration.model_version}__formal_look.json"
-        )
+        schema_version = registration.parameters.get("formal_look_schema_version")
+        registered_report_path = registration.parameters.get("formal_look_json")
+        if schema_version is None:
+            expected_path = (
+                f"reports/prospective/{registration.experiment_id}__"
+                f"{registration.model_version}__formal_look.json"
+            )
+        elif schema_version == 1 and isinstance(registered_report_path, str):
+            expected_path = registered_report_path
+        else:
+            raise GitEvidenceError("formal-look registered schema is invalid")
         if evidence.path != expected_path:
             raise GitEvidenceError("formal-look record path does not match the experiment")
         try:
@@ -1309,8 +1666,108 @@ class FormalLookRecord:
         if checkpoint_digest != ready_aggregate.checkpoint_digest:
             raise GitEvidenceError("formal-look checkpoint does not match ready aggregate")
         decision = payload.get("decision")
-        if decision not in {"reject", "archive", "promote"}:
-            raise GitEvidenceError("formal-look decision is invalid")
+        if schema_version is None:
+            if decision not in {"reject", "archive", "promote"}:
+                raise GitEvidenceError("formal-look decision is invalid")
+        else:
+            if payload.get("schema_version") != schema_version:
+                raise GitEvidenceError("formal-look schema version mismatch")
+            gate_outcome = payload.get("gate_outcome")
+            gates = payload.get("gates")
+            if not isinstance(gates, Mapping):
+                raise GitEvidenceError("formal-look gates do not match registration")
+            expected_decision = _registered_formal_gate_decision(
+                registration.parameters,
+                gates,
+            )
+            if decision != gate_outcome or decision != expected_decision:
+                raise GitEvidenceError("formal-look gate outcome is invalid")
+            all_gates_passed = payload.get("all_gates_passed")
+            if (
+                type(all_gates_passed) is not bool
+                or all_gates_passed != all(gates.values())
+            ):
+                raise GitEvidenceError("formal-look gate outcome is inconsistent")
+            if not isinstance(payload.get("scopes"), Mapping) or not isinstance(
+                payload.get("procedures"), Mapping
+            ):
+                raise GitEvidenceError("formal-look registered summaries are missing")
+            markdown_path = registration.parameters.get("formal_look_markdown")
+            _verify_formal_markdown_evidence(
+                evidence,
+                registered_path=markdown_path,
+                payload_path=payload.get("formal_markdown_path"),
+                payload_sha256=payload.get("formal_markdown_sha256"),
+            )
+
+            claim_path = registration.parameters.get("formal_look_claim")
+            attempt_path = registration.parameters.get("formal_look_attempt")
+            if not isinstance(claim_path, str) or not isinstance(attempt_path, str):
+                raise GitEvidenceError("formal-look evidence paths are not registered")
+            claim_evidence = GitFileEvidence.from_repository(
+                repository,
+                claim_path,
+                freeze_commit=cohort.freeze_commit,
+                activation_commit=cohort.activation_commit,
+            )
+            attempt_evidence = GitFileEvidence.from_repository(
+                repository,
+                attempt_path,
+                freeze_commit=cohort.freeze_commit,
+                activation_commit=cohort.activation_commit,
+            )
+            try:
+                attempt_raw = (
+                    attempt_evidence.repository / attempt_evidence.path
+                ).read_bytes()
+            except OSError as exc:
+                raise GitEvidenceError(
+                    "formal-look attempt evidence is unavailable"
+                ) from exc
+            validate_formal_attempt_payload(
+                attempt_raw,
+                registration=registration,
+                ready_aggregate=ready_aggregate,
+                claim_evidence=claim_evidence,
+            )
+            if (
+                payload.get("formal_claim_path") != claim_path
+                or payload.get("formal_claim_sha256") != claim_evidence.raw_sha256
+                or payload.get("formal_claim_commit")
+                != claim_evidence.first_commit_sha
+                or payload.get("formal_attempt_path") != attempt_path
+                or payload.get("formal_attempt_sha256")
+                != attempt_evidence.raw_sha256
+            ):
+                raise GitEvidenceError("formal-look evidence identity mismatch")
+            if (
+                claim_evidence.repository != evidence.repository
+                or attempt_evidence.repository != evidence.repository
+                or claim_evidence.first_commit_sha == evidence.first_commit_sha
+                or not _is_ancestor(
+                    evidence.repository,
+                    claim_evidence.first_commit_sha,
+                    evidence.first_commit_sha,
+                )
+                or attempt_evidence.first_commit_sha != evidence.first_commit_sha
+            ):
+                raise GitEvidenceError(
+                    "formal-look claim must precede the report and its attempt must "
+                    "be committed with the report"
+                )
+            _require_exact_commit_paths(
+                evidence.repository,
+                claim_evidence.first_commit_sha,
+                (claim_evidence.path,),
+                evidence_name="formal-look claim",
+            )
+            assert isinstance(markdown_path, str)
+            _require_exact_commit_paths(
+                evidence.repository,
+                evidence.first_commit_sha,
+                (evidence.path, attempt_evidence.path, markdown_path),
+                evidence_name="formal-look result",
+            )
         for observation in ready_aggregate.checkpoint:
             evaluation_git = observation.evaluation_git_evidence
             if evaluation_git is None:
@@ -1328,6 +1785,17 @@ class FormalLookRecord:
             ):
                 raise GitEvidenceError(
                     "formal-look report must strictly follow every checkpoint evaluation"
+                )
+            if schema_version is not None and (
+                evaluation_git.first_commit_sha == claim_evidence.first_commit_sha
+                or not _is_ancestor(
+                    evidence.repository,
+                    evaluation_git.first_commit_sha,
+                    claim_evidence.first_commit_sha,
+                )
+            ):
+                raise GitEvidenceError(
+                    "formal-look claim must strictly follow every checkpoint evaluation"
                 )
 
         instance = object.__new__(cls)
@@ -1501,6 +1969,7 @@ def assess_prospective_snapshot(
     snapshot_evidence: GitFileEvidence | None,
     activation_boundary_evidence: VerifiedOutcomeBoundary | None = None,
     snapshot_source_evidence: VerifiedOutcomeBoundary | None = None,
+    snapshot_frozen_path_evidence: FrozenPathEvidence | None = None,
     evaluation: Mapping[str, Any] | None = None,
     evaluation_evidence: GitFileEvidence | None = None,
     evaluation_source_evidence: VerifiedOutcomeBoundary | None = None,
@@ -1509,7 +1978,7 @@ def assess_prospective_snapshot(
     digest = snapshot_digest(snapshot)
     cohort = registration.prospective
 
-    if cohort.status != "active":
+    if cohort.status not in {"active", "closed"}:
         reasons.append("cohort_not_active")
     else:
         registration_boundary = OutcomeBoundary(
@@ -1591,7 +2060,33 @@ def assess_prospective_snapshot(
             if snapshot_evidence.first_commit_at.astimezone(TORONTO) >= deadline:
                 reasons.append("late_snapshot_commit")
 
-    if cohort.status == "active":
+    registered_frozen_paths = registration.parameters.get(
+        "frozen_implementation_paths"
+    )
+    if registered_frozen_paths is not None:
+        expected_frozen_paths = tuple(sorted(registered_frozen_paths))
+        frozen_evidence_valid = (
+            snapshot_frozen_path_evidence is not None
+            and snapshot_frozen_path_evidence._factory_token
+            is _FROZEN_PATH_EVIDENCE_FACTORY_TOKEN
+            and snapshot_frozen_path_evidence.paths == expected_frozen_paths
+            and snapshot_frozen_path_evidence.freeze_commit == cohort.freeze_commit
+            and snapshot_evidence is not None
+            and snapshot_frozen_path_evidence.evidence_commit
+            == snapshot_evidence.first_commit_sha
+            and snapshot_frozen_path_evidence.repository
+            == snapshot_evidence.repository
+            and snapshot_digest(snapshot_frozen_path_evidence.path_sha256)
+            == snapshot_frozen_path_evidence.manifest_sha256
+        )
+        if snapshot_frozen_path_evidence is None:
+            reasons.append("missing_frozen_path_evidence")
+        elif not frozen_evidence_valid:
+            reasons.append("frozen_path_evidence_mismatch")
+    elif snapshot_frozen_path_evidence is not None:
+        reasons.append("unregistered_frozen_path_evidence")
+
+    if cohort.status in {"active", "closed"}:
         if snapshot_source_evidence is None:
             reasons.append("missing_snapshot_source_evidence")
         else:
@@ -1810,6 +2305,7 @@ def assess_prospective_snapshot(
             evaluation_path=(evaluation_evidence.path if evaluation_evidence else None),
             snapshot_git_evidence=snapshot_evidence,
             evaluation_git_evidence=evaluation_evidence,
+            snapshot_frozen_path_evidence=snapshot_frozen_path_evidence,
         )
     status = "eligible_evaluated" if evaluation is not None else "eligible_pending"
     return CohortAssessment._create(
@@ -1822,6 +2318,7 @@ def assess_prospective_snapshot(
         evaluation_path=(evaluation_evidence.path if evaluation_evidence else None),
         snapshot_git_evidence=snapshot_evidence,
         evaluation_git_evidence=evaluation_evidence,
+        snapshot_frozen_path_evidence=snapshot_frozen_path_evidence,
     )
 
 
@@ -1925,6 +2422,32 @@ def aggregate_prospective_cohort(
                 != registration.prospective.activation_commit
             ):
                 raise ValueError("eligible observation has invalid snapshot Git evidence")
+            registered_frozen_paths = registration.parameters.get(
+                "frozen_implementation_paths"
+            )
+            if registered_frozen_paths is not None:
+                frozen_path_evidence = assessment.snapshot_frozen_path_evidence
+                if (
+                    frozen_path_evidence is None
+                    or frozen_path_evidence._factory_token
+                    is not _FROZEN_PATH_EVIDENCE_FACTORY_TOKEN
+                    or frozen_path_evidence.repository != snapshot_git.repository
+                    or frozen_path_evidence.freeze_commit
+                    != registration.prospective.freeze_commit
+                    or frozen_path_evidence.evidence_commit
+                    != snapshot_git.first_commit_sha
+                    or frozen_path_evidence.paths
+                    != tuple(sorted(registered_frozen_paths))
+                    or snapshot_digest(frozen_path_evidence.path_sha256)
+                    != frozen_path_evidence.manifest_sha256
+                ):
+                    raise ValueError(
+                        "eligible observation has invalid frozen-path evidence"
+                    )
+            elif assessment.snapshot_frozen_path_evidence is not None:
+                raise ValueError(
+                    "eligible observation has unregistered frozen-path evidence"
+                )
             if assessment.evaluated_eligible:
                 expected_evaluation_path = expected_snapshot_path.replace(
                     "predictions/",

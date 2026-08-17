@@ -1,6 +1,249 @@
 schema_version: 2
 
 experiments:
+  - id: V3_frozen_shadow_cohort
+    family: frozen_boosting_prospective_replication
+    model_name: v3_boosting
+    model_version: v3.0.0
+    status: registered
+    registration_file: docs/experiments/V3_frozen_shadow_cohort.md
+    registered_on: 2026-08-16
+    seed: 649
+    primary_metric: top12_hits_lift_vs_theory
+    multiplicity_family: v3_frozen_shadow_prospective
+    variant_index: 1
+
+    registration_dataset:
+      path: data/processed/draws.csv
+      source_commit: 39b99a9e0a6351b4143f81c9a95eb1639456a35d
+      sha256: 95434535857a95f3ae9bd25e42345291274804702ed514b0bace6fafcf584bdf
+      draw_count: 4431
+      history_through: 2026-08-12
+
+    outcomes_known_at_registration:
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
+    historical_partitions:
+      development:
+        start: 1982-01-01
+        end: 2014-12-31
+      legacy_validation:
+        start: 2015-01-01
+        end: 2019-12-31
+      consumed_diagnostic:
+        start: 2020-01-01
+        end: 2025-12-31
+
+    parameters:
+      evidence_lane: prospective_only
+      historical_performance_scoring: prohibited
+      historical_evidence_status: consumed_v2_v4_result_only
+      statistical_behavior_change_from_current_v3: none_on_valid_strict_prefix_inputs
+      current_legacy_snapshot_version: v1.0.0
+      eligible_prospective_snapshot_version: v3.0.0
+      all_v3_v1_snapshots: excluded
+      newest_known_excluded_snapshot_target: "2026-08-19"
+      minimum_history_draws: 300
+      training_draws: 280
+      training_stride: 14
+      training_frame_start: max_120_or_history_length_minus_280
+      training_targets: range_start_to_history_length_exclusive_step_14
+      training_feature_history: strict_prefix_before_each_training_target
+      scoring_target: six_main_numbers_only
+      bonus_numbers: excluded
+      features:
+        - number_scaled
+        - long_freq
+        - freq_10
+        - freq_25
+        - freq_50
+        - freq_100
+        - freq_250
+        - ema_12
+        - ema_35
+        - ema_90
+        - gap
+        - gap_ratio
+        - in_prev
+        - in_prev2
+        - weekday_freq
+        - month_freq
+        - transition_freq
+        - sum_prev_centered
+        - sum_ma5_centered
+        - sum_ma20_centered
+        - sum_slope5
+        - target_weekday
+        - target_month_sin
+        - target_month_cos
+      estimator: sklearn_hist_gradient_boosting_classifier
+      learning_rate: 0.06
+      max_iter: 45
+      max_leaf_nodes: 15
+      min_samples_leaf: 35
+      l2_regularization: 2.0
+      estimator_random_state: 649
+      learned_probability_weight: 0.72
+      fair_probability_weight: 0.28
+      fair_inclusion_probability: 0.12244897959183673
+      output_normalization: normalize_expected_sum_to_six
+      ranking_tie_break: probability_desc_number_asc
+      output_labels: integers_1_through_49
+      output_probability_contract: open_interval_zero_one_sum_six
+      probability_contract_key_set: exact_integer_labels_1_through_49
+      probability_contract_finite: required
+      probability_contract_bounds: strictly_greater_than_zero_and_less_than_one
+      probability_contract_sum: math_fsum_equals_6
+      probability_contract_sum_relative_tolerance: 0.0
+      probability_contract_sum_absolute_tolerance: 1.0e-12
+      probability_contract_violation: runtime_error_before_cache_or_snapshot_write
+      frozen_implementation_paths:
+        - .github/workflows/live.yml
+        - .github/workflows/prospective.yml
+        - docs/experiments/V3_frozen_shadow_cohort.md
+        - src/lotto649/models/v3_boosting.py
+        - src/lotto649/models/baselines.py
+        - src/lotto649/models/logistic.py
+        - src/lotto649/models/ensemble.py
+        - src/lotto649/research_features.py
+        - src/lotto649/features.py
+        - src/lotto649/models/base.py
+        - src/lotto649/models/factory.py
+        - src/lotto649/predictor.py
+        - src/lotto649/optimizer.py
+        - src/lotto649/live.py
+        - src/lotto649/config.py
+        - src/lotto649/storage.py
+        - src/lotto649/domain.py
+        - src/lotto649/evaluation.py
+        - src/lotto649/research_protocol.py
+        - src/lotto649/prospective.py
+        - src/lotto649/cli.py
+        - src/lotto649/data.py
+        - src/lotto649/data_sources.py
+        - config.yaml
+        - pyproject.toml
+        - requirements-live.lock
+      activation_runtime_constraint: pip_install_requirements_live_with_constraints_lock
+      live_python_implementation: CPython
+      live_python_major_minor: "3.12"
+      version_override_preconfigured_at_freeze: true
+      version_override_experiment_gate: V3_frozen_shadow_cohort
+      version_override_gate_state: experiment_status_prospective_shadow_and_prospective_status_active
+      release_changes_frozen_paths: prohibited
+      release_registry_transition_only: true
+      registration_freeze_policy: canonical_entry_at_F_with_admin_allowlist
+      registration_release_mutable_fields:
+        - status
+        - result
+        - prospective.status
+        - prospective.freeze_commit
+        - prospective.activation_commit
+        - prospective.outcomes_known_at_activation
+        - prospective.cohort_start
+      registration_all_other_fields: immutable_from_F
+      comparison_models:
+        - fair_constant_6_over_49
+        - ensemble_v1.0.0
+        - random_v1.0.0
+      v1_ensemble_top12_gate_scope: aggregate_208
+      v1_ensemble_top12_minimum_difference: strictly_greater_than_zero
+      random_control_null_rule: raw_exact_p_gt_0_05_or_bootstrap_ci_includes_zero
+      random_control_gate_scopes:
+        - aggregate_208
+        - first_104
+        - second_104
+      primary_exact_test: hypergeometric_draw_level_convolution_upper_tail
+      primary_alpha: 0.05
+      primary_multiplicity_method: single_registered_variant_no_secondary_claims
+      bootstrap_replicates: 10000
+      bootstrap_rng: numpy.default_rng
+      bootstrap_seed: 649
+      bootstrap_unit: complete_target_draw
+      bootstrap_interval: two_sided_95_percentile_linear
+      proper_score_max_delta_vs_fair: 1.0e-9
+      proper_score_gate_scopes:
+        - aggregate_208
+        - first_104
+        - second_104
+      prospective_exact_eligible_evaluated_draws: 208
+      prospective_half_draws: 104
+      prospective_early_look: prohibited
+      prospective_extension: prohibited
+      formal_look_count: exactly_one
+      formal_look_overdue_at_eligible_count: 209
+      formal_look_schema_version: 1
+      formal_look_json: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.json
+      formal_look_markdown: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.md
+      formal_look_claim: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.claim
+      formal_look_attempt: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__formal.attempt
+      formal_look_claim_retention: permanent_success_or_failure
+      formal_look_protocol: claim_commit_before_checkpoint_aggregate_computation
+      formal_look_claim_timing: before_any_checkpoint_aggregate_metric_computation
+      formal_look_publication: stage_both_then_publish_without_overwrite
+      formal_look_prepublication_failure: archive_and_never_rerun_same_version
+      formal_look_publication_commit_point: both_final_hardlinks_and_parent_directory_fsync
+      formal_look_postpublication_cleanup_failure: warning_does_not_invalidate_durable_result
+      formal_gate_keys:
+        - positive_aggregate_primary_lift
+        - aggregate_adjusted_p_at_most_0_05
+        - aggregate_bootstrap_lower_above_zero
+        - positive_primary_lift_in_both_fixed_halves
+        - proper_scores_within_fair_tolerance_aggregate_and_halves
+        - candidate_top12_mean_strictly_above_v1_ensemble
+        - random_control_null_aggregate_and_halves
+        - audit_clear
+      formal_invalidity_gate_keys:
+        - random_control_null_aggregate_and_halves
+        - audit_clear
+      formal_invalidity_decision: archive
+      formal_scientific_gate_failure_decision: reject
+      formal_all_gates_pass_decision: eligible_for_reviewed_promotion
+      cohort_order: freeze_F_lt_anchor_A_lt_release_R_lt_snapshot_S
+      activation_anchor_enables_live: false
+      activation_anchor_schema_version: 1
+      activation_anchor_json: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__activation.json
+      activation_anchor_markdown: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__activation.md
+      activation_anchor_claim: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__activation.claim
+      activation_anchor_commit_changes: exact_three_activation_artifacts_only
+      activation_boundary_source_commit: activation_anchor_commit
+      activation_anchor_required_fields:
+        - schema_version
+        - experiment_id
+        - model_name
+        - model_version
+        - freeze_commit
+        - decision
+        - role
+        - outcome_path
+        - outcome_sha256
+        - outcome_draw_count
+        - outcome_history_through
+        - cohort_start
+      release_requires_reviewed_registry_transition: true
+      release_requires_per_model_version_v3_0_0: true
+      snapshot_requires_release_strict_ancestor: true
+      snapshot_integrity: immutable_single_first_commit_before_target_local_date
+      missed_late_regenerated_or_integrity_failed_snapshot: excluded
+      promotion: separate_reviewed_pr_only_after_all_frozen_gates
+
+    negative_controls:
+      - kind: target_date_seeded_fair_random
+        seed: 649
+
+    prospective:
+      status: not_activated
+      role: shadow
+      minimum_eligible_draws: 208
+      commit_deadline: before_target_local_date
+      freeze_commit: null
+      activation_commit: null
+      outcomes_known_at_activation: null
+      cohort_start: null
+
   - id: V5_pair_affinity
     family: pair_cooccurrence
     model_name: v5_pair_affinity

@@ -14,6 +14,7 @@ in `V2_V4_RESULTS.md`.
 | V1 live suite | Production baseline | Six models continue to create forward snapshots: `random`, `long_frequency`, `recent_frequency`, `ema_gap`, `logistic`, and `ensemble`. |
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Shadow | Creates immutable live snapshots and evaluations beside V1; it does not change V1 predictions or ensemble weights. |
+| V3 formal cohort | Registered, not activated | V3 is frozen as prospective identity `v3.0.0` with unchanged valid-input probabilities plus fail-closed chronology/cache hardening; every existing `v1.0.0` snapshot is excluded and a separate F/A/R release sequence is required before evidence starts. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V5 pair affinity | Rejected | `v5.0.0` was implemented exactly, did not establish historical signal, and was closed without shadow activation. It remains absent from live config. |
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
@@ -24,6 +25,96 @@ in `V2_V4_RESULTS.md`.
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
+
+## V3 prospective registration checkpoint
+
+V3, numerically unchanged for valid strict-prefix inputs, is now registered as
+[`V3_frozen_shadow_cohort`](experiments/V3_frozen_shadow_cohort.md), prospective
+identity `v3_boosting v3.0.0`. This is a freeze record only: registry status is
+`registered`, prospective status is `not_activated`, and all freeze/activation
+boundary fields remain null. The current stacked research branch must not
+enable live execution or create any `v3.0.0` prediction.
+
+The registration freezes the current 280-draw training span, stride 14,
+300-draw minimum, exact V3 feature vector and gradient-boosting parameters,
+seed 649, 0.72 learned/0.28 fair blend, expected-six normalization, and the
+dependency versions in `requirements-live.lock`. The workflow frozen at `F`
+must install using that file as a constraints lock.
+
+The freeze also makes chronology fail closed before prediction and keys the V3
+cache by the complete history plus target date. This removes stale-cache alias
+risk without changing valid uncached probabilities. V3 also rejects any output
+whose integer keys are not exactly 1--49, whose values are non-finite or outside
+`(0,1)`, or whose `math.fsum` differs from six by more than `1e-12`; failure
+occurs before snapshot persistence.
+
+The freeze preconfigures `v3_boosting -> v3.0.0` in `config.yaml`, guarded by
+the registry experiment ID. The frozen live code applies that mapping only when
+the named experiment/cohort is `prospective_shadow` / `active`; while it is
+`registered` / `not_activated`, V3 continues to emit legacy `v1.0.0`. Thus `R`
+changes only the registry's administrative cohort state. It must not change the
+frozen config, code, dependency lock, or workflow.
+
+The auditor must compare the immutable portion of the V3 registry row to `F`,
+derive the actual release-transition commit `R`, and prove `A < R < S`; the
+mutable allowlist is limited to status/result and the prospective activation
+fields named in the registration.
+
+Activation is deliberately four-stage Git evidence:
+
+```text
+F = this freeze
+A = later anchor recording F plus the latest verified outcome boundary; no live enable
+R = later registry-only release seal that opens the preconfigured v3.0.0 gate
+S = first eligible snapshot's one-time first-add commit
+
+F < A < R < S
+```
+
+`A` must retain its real SHA and must not be removed by a squash merge. Every
+V3 snapshot stamped `v1.0.0` is excluded, including the current 2026-08-19
+snapshot. The cohort has one exact 208-draw look, split 104 + 104, with no early
+look or extension. Primary Top-12 lift must pass the exact fair-null test and
+10,000-replicate seed-649 bootstrap; Brier and log loss must not degrade versus
+fair in either half or the aggregate. V1 ensemble and fixed random remain
+comparisons. Passing the conjunction permits only a separate promotion review;
+V1 remains production meanwhile.
+
+Routine monitoring uses `lotto649 prospective-audit --experiment
+V3_frozen_shadow_cohort`, which exposes integrity/count state but no interim
+performance. At the exact ready checkpoint, `prospective-claim` creates a
+permanent claim that must be committed alone before `prospective-formal-look`.
+The latter acquires the permanent registered attempt before aggregate
+calculation and publishes the single JSON/Markdown result pair. A failed
+post-attempt run before the durable pair-publication commit point is consumed
+and must be archived, never retried; cleanup warnings after that point do not
+invalidate the durable result.
+The read-only `lotto649-prospective-cohort-monitor` workflow also runs after
+each live workflow: it notices raw count 207 and performs the full audit from
+208 onward. A ready/overdue/integrity condition is highly visible but cannot
+roll back the already committed V1 live cycle. The frozen live interlock holds
+only V3 before any 209th evaluation; the workflow never auto-claims or reads a
+formal metric. Catch-up cycles quota V3 to the remaining raw slots below 208;
+at or above that threshold a still-collecting state admits at most one candidate
+evaluation before the next committed-tree audit, while earlier-pending admits
+zero. V1 remains unrestricted.
+After the one formal result, a separate registry-only terminal commit `T` binds
+the reviewed decision to the immutable formal report. Closed audits cap their
+data and target range at `T`, reject later same-version artifacts, and still
+replay all three frozen models. Once a future version changes any frozen path,
+re-audit this cohort from a checkout of `T`; current code is not allowed to
+stand in for the frozen implementation.
+If the prospective experiment mapping, registry, release verifier, runtime
+lock, target boundary, or V3 prediction fails during a future live cycle, the
+cycle suppresses only V3 `v3.0.0`, emits a structured warning, and keeps the six
+V1 production-baseline snapshots running. It never lets a non-default version
+bypass the experiment gate or disguises the gap with a V3 `v1.0.0` fallback;
+shared storage and V1 failures still fail loudly.
+
+The source-bounded V9 union-propensity note is retained at
+[`V9_post_rng_seven_number_selection_basis.md`](research/V9_post_rng_seven_number_selection_basis.md),
+but V9 is deferred, prospective-only if ever revived, and has never been
+implemented or historically scored.
 
 ## V5 research checkpoint
 
@@ -167,7 +258,7 @@ The CLI entry points are:
 
 ```bash
 lotto649 bootstrap
-lotto649 backtest
+lotto649 backtest --models random ema_gap v2_statistical
 lotto649 live
 ```
 
@@ -177,22 +268,27 @@ loads existing committed history, refreshes sources, evaluates every due snapsho
 that lacks an evaluation, and creates predictions for the next Wednesday or
 Saturday after the latest known draw.
 
-`config.yaml` deliberately separates two selections:
+`config.yaml` deliberately separates two selections. Its default backtest suite
+and the automatic `main` and integration workflows use the same consumed-safe
+model subset that excludes V3 and V4 (which embeds V3):
 
-- `backtest.models`: the configured historical comparison suite, including V2,
-  V3, and V4.
+- `backtest.models`: `random`, `ema_gap`, and rejected `v2_statistical`, used
+  only as labeled consumed regression context.
 - `live.models`: the approved V1 suite plus V3.
+
+Do not invoke V3 or V4 through the generic historical backtest command under
+the new cohort registration. Their authoritative historical numbers already
+exist in `docs/V2_V4_RESULTS.md`; recomputing them cannot create new evidence.
 
 `live.shadow_models: [v3_boosting]` adds `"role": "shadow"` to V3 snapshot
 metadata; all other live snapshots receive `"role": "primary"`. The role is a
 research label, not a separate execution path. V3 is still evaluated and can
 trigger the common hit-threshold email. It does not feed the V1 ensemble.
 
-All live models currently inherit `project.model_version: v1.0.0` for the
-`model_version` field and filename. Therefore the model identity
-`v3_boosting` plus `metadata.role == "shadow"` distinguishes the V3 shadow
-snapshot; do not infer that it is a V1 algorithm from the shared version tag.
-Change version semantics deliberately rather than renaming committed snapshots.
+While `V3_frozen_shadow_cohort` remains inactive, all live models still inherit
+`project.model_version: v1.0.0`; the dormant `v3.0.0` mapping is ignored. Only a
+verified future `prospective_shadow / active` registry release may cause new V3
+files to use `v3.0.0`. Existing files retain their original version forever.
 
 ## Current V3 forward checkpoint
 
@@ -226,8 +322,9 @@ The active workflows are:
 - `test.yml`: unit tests on every push and pull request.
 - `integration.yml`: source/model smoke checks on relevant pull-request paths or
   manual dispatch.
-- `backtest.yml`: frozen configured backtest on relevant `main` changes or manual
-  dispatch.
+- `backtest.yml`: explicitly consumed, non-blind historical regression on
+  relevant `main` changes or manual dispatch; its automatic model list excludes
+  the new V3 prospective identity.
 - `live.yml`: `15:15 UTC` every Thursday and Sunday, manual dispatch, and relevant
   `main` changes. It commits `data/processed`, `predictions`, `evaluations`, and
   `reports` with `contents: write` permission.
@@ -310,9 +407,12 @@ Do not broaden the fallback to swallow those integrity failures.
    model changed in response to them.
 6. Start a future candidate as shadow only through a separate reviewed PR and
    count evidence only from that exact version's first eligible pre-draw snapshot.
-7. Let normal live jobs continue during research. Never rewrite forward artifacts
+7. For V3 `v3.0.0`, preserve `F < A < R < S`, install live dependencies with
+   `requirements-live.lock` as constraints, and exclude every legacy `v1.0.0`
+   V3 snapshot from the cohort.
+8. Let normal live jobs continue during research. Never rewrite forward artifacts
    or mix research-only models into `live.models` without a reviewed promotion PR.
-8. Run `pytest -q` and `ruff check .`; run integration smoke checks for live/data
+9. Run `pytest -q` and `ruff check .`; run integration smoke checks for live/data
    changes; record both positive and negative research results.
 
 Use `docs/RESEARCH_ROADMAP.md` as the decision process, not as evidence that any
