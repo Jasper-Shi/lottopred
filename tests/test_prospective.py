@@ -368,6 +368,8 @@ def _active_repository_with_mixed_observations(
     include_third_evaluated: bool = False,
     activation_result_overrides: dict | None = None,
     pre_release_terminal_restore: bool = False,
+    activation_committed_at: str = "2026-01-04T12:00:00-05:00",
+    release_committed_at: str = "2026-01-04T13:00:00-05:00",
 ) -> Path:
     repository = tmp_path / "repository"
     repository.mkdir(parents=True)
@@ -455,7 +457,7 @@ def _active_repository_with_mixed_observations(
     activation_commit = _commit(
         repository,
         "Record activation anchor",
-        "2026-01-04T12:00:00-05:00",
+        activation_committed_at,
     )
 
     cfg = dict(config_payload)
@@ -603,7 +605,7 @@ def _active_repository_with_mixed_observations(
     release_commit = _commit(
         repository,
         "Release active cohort",
-        "2026-01-04T13:00:00-05:00",
+        release_committed_at,
     )
     if not release_after_snapshots:
         release_evidence = verify_live_release(
@@ -977,6 +979,35 @@ def test_verify_live_release_returns_committed_release_and_manifest_evidence(
         "requirements-live.lock",
     }
     assert len(evidence.frozen_manifest_sha256) == 64
+
+
+@pytest.mark.parametrize(
+    ("activation_committed_at", "release_committed_at", "expected"),
+    [
+        (
+            "2026-01-07T00:01:00-05:00",
+            "2026-01-07T00:02:00-05:00",
+            "activation commit must precede cohort start",
+        ),
+        (
+            "2026-01-04T12:00:00-05:00",
+            "2026-01-07T00:01:00-05:00",
+            "registry release commit must precede cohort start",
+        ),
+    ],
+)
+def test_verify_live_release_rejects_activation_or_release_on_cohort_start_date(
+    tmp_path: Path,
+    activation_committed_at: str,
+    release_committed_at: str,
+    expected: str,
+) -> None:
+    with pytest.raises(GitEvidenceError, match=expected):
+        _active_repository_with_mixed_observations(
+            tmp_path,
+            activation_committed_at=activation_committed_at,
+            release_committed_at=release_committed_at,
+        )
 
 
 @pytest.mark.parametrize(

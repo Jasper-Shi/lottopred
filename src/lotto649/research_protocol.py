@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import yaml
 
+from .data import validate_draw_spacing
 from .domain import Draw, Prediction
 
 
@@ -1194,9 +1195,9 @@ def _draws_from_csv_blob(raw: bytes) -> tuple[Draw, ...]:
     if not draws:
         raise GitEvidenceError("outcome data blob contains no draws")
     try:
-        validate_draw_chronology(draws)
-    except ValueError as exc:
-        raise GitEvidenceError("outcome data blob is not strictly chronological") from exc
+        validate_draw_spacing(draws)
+    except RuntimeError as exc:
+        raise GitEvidenceError(f"outcome data continuity failure: {exc}") from exc
     return tuple(draws)
 
 

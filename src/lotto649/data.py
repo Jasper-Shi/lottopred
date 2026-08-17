@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 import io
 import re
 from datetime import date, datetime
@@ -157,15 +158,20 @@ def merge_draws(*groups: list[Draw]) -> list[Draw]:
     return [by_date[k] for k in sorted(by_date)]
 
 
-def validate_continuity(draws: list[Draw]) -> None:
-    if len(draws) < 4000:
-        raise RuntimeError(f"Expected more than 4,000 historical draws; got {len(draws)}")
+def validate_draw_spacing(draws: Sequence[Draw]) -> None:
+    """Reject chronology defects and implausibly large modern draw gaps."""
     dates = [d.draw_date for d in draws]
     if dates != sorted(dates) or len(dates) != len(set(dates)):
         raise RuntimeError("Draw dates are not strictly ordered and unique")
     for a, b in zip(dates, dates[1:]):
         if a.year >= 2000 and (b - a).days > 14:
             raise RuntimeError(f"Suspicious historical gap: {a} -> {b}")
+
+
+def validate_continuity(draws: list[Draw]) -> None:
+    if len(draws) < 4000:
+        raise RuntimeError(f"Expected more than 4,000 historical draws; got {len(draws)}")
+    validate_draw_spacing(draws)
 
 
 def refresh_with_sources(existing: list[Draw], cfg: dict) -> list[Draw]:

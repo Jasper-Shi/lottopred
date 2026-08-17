@@ -679,6 +679,7 @@ def _derive_registry_release(
 
     frozen_row = _registry_row_at(repository, freeze_commit, experiment_id)
     frozen_prospective = frozen_row.get("prospective")
+    frozen_parameters = frozen_row.get("parameters")
     dormant_fields = (
         "freeze_commit",
         "activation_commit",
@@ -688,6 +689,11 @@ def _derive_registry_release(
     if (
         frozen_row.get("status") != "registered"
         or frozen_row.get("result") is not None
+        or not isinstance(frozen_parameters, Mapping)
+        or frozen_parameters.get("activation_anchor_commit_deadline")
+        != "before_cohort_start_toronto_date"
+        or frozen_parameters.get("release_commit_deadline")
+        != "before_cohort_start_toronto_date"
         or not isinstance(frozen_prospective, Mapping)
         or frozen_prospective.get("status") != "not_activated"
         or any(
@@ -696,7 +702,9 @@ def _derive_registry_release(
             for field in dormant_fields
         )
     ):
-        raise GitEvidenceError("freeze registry entry must be fully dormant")
+        raise GitEvidenceError(
+            "freeze registry entry must be dormant with frozen release deadlines"
+        )
     dormant_digest = _mapping_digest(frozen_row)
     immutable_digest = _mapping_digest(_immutable_registration_view(frozen_row))
 
@@ -758,6 +766,31 @@ def _derive_registry_release(
             if row.get("status") != "prospective_shadow":
                 raise GitEvidenceError(
                     "registry must enter one active release before any terminal state"
+                )
+            active_prospective = row.get("prospective")
+            cohort_start = (
+                active_prospective.get("cohort_start")
+                if isinstance(active_prospective, Mapping)
+                else None
+            )
+            if isinstance(cohort_start, datetime):
+                cohort_start = cohort_start.date()
+            elif isinstance(cohort_start, str):
+                try:
+                    cohort_start = date.fromisoformat(cohort_start)
+                except ValueError as exc:
+                    raise GitEvidenceError(
+                        "active cohort start date is invalid"
+                    ) from exc
+            if not isinstance(cohort_start, date):
+                raise GitEvidenceError("active cohort start date is invalid")
+            if _commit_toronto_date(repository, activation_commit) >= cohort_start:
+                raise GitEvidenceError(
+                    "activation commit must precede cohort start"
+                )
+            if _commit_toronto_date(repository, commit) >= cohort_start:
+                raise GitEvidenceError(
+                    "registry release commit must precede cohort start"
                 )
             release_commit = commit
             active_digest = _mapping_digest(_active_registration_view(row))

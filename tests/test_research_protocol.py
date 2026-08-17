@@ -185,6 +185,12 @@ def test_v3_prospective_registration_freezes_identity_boundaries_and_one_look():
     ]
     assert parameters["prospective_exact_eligible_evaluated_draws"] == 208
     assert parameters["prospective_half_draws"] == 104
+    assert parameters["activation_anchor_commit_deadline"] == (
+        "before_cohort_start_toronto_date"
+    )
+    assert parameters["release_commit_deadline"] == (
+        "before_cohort_start_toronto_date"
+    )
     assert parameters["live_python_implementation"] == "CPython"
     assert parameters["live_python_major_minor"] == "3.12"
     assert parameters["formal_look_claim"] == (
@@ -1616,7 +1622,17 @@ def _git_repo_with_immutable_snapshot(
     (repo / "freeze.txt").write_text("frozen\n", encoding="utf-8")
     data_path = repo / "data" / "processed" / "draws.csv"
     data_path.parent.mkdir(parents=True)
-    data_path.write_bytes((ROOT / "data" / "processed" / "draws.csv").read_bytes())
+    registration = load_experiment_registry(REGISTRY_PATH).get(
+        "V6_fixed_boundary_js_regime"
+    )
+    current_rows = (
+        (ROOT / registration.dataset_path).read_bytes().splitlines(keepends=True)
+    )
+    registered_data = b"".join(
+        current_rows[: registration.dataset_draw_count + 1]
+    )
+    assert sha256(registered_data).hexdigest() == registration.dataset_sha256
+    data_path.write_bytes(registered_data)
     freeze = _commit(repo, "freeze", "2027-01-01T12:00:00-05:00")
     (repo / "activation.txt").write_text("active\n", encoding="utf-8")
     activation = _commit(repo, "activate", "2027-01-02T12:00:00-05:00")
@@ -1832,8 +1848,54 @@ def test_verified_outcome_boundary_rejects_rewritten_registration_prefix(tmp_pat
             registration_boundary=registration_boundary,
         )
 
+
+def test_verified_outcome_boundary_rejects_suspicious_append_only_gap(tmp_path):
+    repo, _, activation_boundary = _git_repo_with_outcome_boundaries(tmp_path)
+    draws = synthetic_draws(4)
+    gap_draw = Draw(
+        draws[-1].draw_date + timedelta(days=15),
+        (2, 10, 18, 26, 34, 42),
+        1,
+    )
+    data_path = repo / "data" / "processed" / "draws.csv"
+    gap_bytes = _csv_bytes([*draws, gap_draw])
+    data_path.write_bytes(gap_bytes)
+    gap_commit = _commit(
+        repo,
+        "append suspiciously delayed outcome",
+        "2027-01-03T12:00:00-05:00",
+    )
+    gap_boundary = OutcomeBoundary(
+        source_commit=gap_commit,
+        sha256=sha256(gap_bytes).hexdigest(),
+        draw_count=5,
+        history_through=gap_draw.draw_date,
+    )
+
+    with pytest.raises(GitEvidenceError, match="Suspicious historical gap"):
+        VerifiedOutcomeBoundary.from_repository(
+            repo,
+            gap_boundary,
+            registration_boundary=activation_boundary,
+        )
+
+
+def _scheduled_draw_dates(history_through: date, target: date) -> tuple[date, ...]:
+    dates = tuple(
+        history_through + timedelta(days=offset)
+        for offset in range(1, (target - history_through).days + 1)
+        if (history_through + timedelta(days=offset)).weekday() in {2, 5}
+    )
+    assert dates and dates[-1] == target
+    return dates
+
+
 def _evaluation(snapshot: dict, actual: Draw, snapshot_path: str) -> dict:
     probability = 6 / 49
+    history_through = date.fromisoformat(snapshot["metadata"]["history_through"])
+    verified_draw_count = snapshot["metadata"]["history_draws"] + len(
+        _scheduled_draw_dates(history_through, actual.draw_date)
+    )
     return {
         "target_draw_date": actual.draw_date.isoformat(),
         "model_name": snapshot["model_name"],
@@ -1854,7 +1916,7 @@ def _evaluation(snapshot: dict, actual: Draw, snapshot_path: str) -> dict:
         "prediction_snapshot_digest": snapshot_digest(snapshot),
         "prediction_snapshot_path": snapshot_path,
         "actual_draw_digest": draw_digest(actual),
-        "verified_data_draw_count": 4432,
+        "verified_data_draw_count": verified_draw_count,
         "verified_data_history_through": actual.draw_date.isoformat(),
     }
 
@@ -1871,9 +1933,23 @@ def _commit_evaluation(
     path.parent.mkdir()
     path.write_text(json.dumps(evaluation, indent=2), encoding="utf-8")
     data_path = repo / "data" / "processed" / "draws.csv"
-    values = ",".join(str(number) for number in actual.numbers)
-    row = f"{actual.draw_date.isoformat()},{values},{actual.bonus}\n".encode()
-    data_path.write_bytes(data_path.read_bytes() + row)
+    history_through = date.fromisoformat(
+        data_path.read_text(encoding="utf-8").splitlines()[-1].split(",", 1)[0]
+    )
+    appended_rows = []
+    for draw_date in _scheduled_draw_dates(history_through, actual.draw_date):
+        draw = (
+            actual
+            if draw_date == actual.draw_date
+            else Draw(draw_date, (2, 10, 18, 26, 34, 42), 1)
+        )
+        values = ",".join(str(number) for number in draw.numbers)
+        appended_rows.append(
+            f"{draw.draw_date.isoformat()},{values},{draw.bonus}\n"
+        )
+    data_path.write_bytes(
+        data_path.read_bytes() + "".join(appended_rows).encode("utf-8")
+    )
     commit = _commit(repo, "evaluation", timestamp)
     return path, commit
 
@@ -1912,6 +1988,13 @@ def test_active_cohort_accounts_for_pending_and_verified_evaluation(tmp_path):
         snapshot_commit,
         boundary,
     )
+    assert (
+        snapshot["metadata"]["history_draws"]
+        == snapshot_source_evidence.boundary.draw_count
+    )
+    assert snapshot["metadata"]["history_through"] == (
+        snapshot_source_evidence.boundary.history_through.isoformat()
+    )
     snapshot_evidence = GitFileEvidence.from_repository(
         repo,
         path,
@@ -1939,6 +2022,13 @@ def test_active_cohort_accounts_for_pending_and_verified_evaluation(tmp_path):
         repo,
         evaluation_commit,
         snapshot_source_evidence.boundary,
+    )
+    assert evaluation["verified_data_draw_count"] == (
+        evaluation_source_evidence.boundary.draw_count
+    )
+    assert (
+        evaluation_source_evidence.boundary.draw_count
+        > snapshot_source_evidence.boundary.draw_count
     )
     evaluated = assess_prospective_snapshot(
         registration,

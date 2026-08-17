@@ -336,6 +336,11 @@ The result row introduced at `R` must cite the three fixed artifacts as its JSON
 Markdown, and result/claim paths. This avoids a self-referential commit hash in
 the anchor while still proving what `A` reviewed. Any delayed release that misses
 the planned start requires a new anchor rather than editing or reusing `A`.
+Both `A` and `R` must have timezone-aware Git commit timestamps whose
+`America/Toronto` calendar date is strictly before the planned `cohort_start`.
+An anchor or release committed on the start date is late, even if no draw has
+yet occurred that day, and the version must remain inactive until a new anchor
+and later start are reviewed.
 
 `A` must remain a real, reachable commit with its exact SHA; the activation PR
 must not squash it away. The release verifier must prove that `F` is a strict

@@ -31,6 +31,33 @@ live generation, preserve the exact full SHA of `F`, and bind the complete
 verified `data/processed/draws.csv` outcome boundary then known. The activation
 PR must preserve `A` as a reachable commit; do not squash it away.
 
+Prepare `A` only from a clean, complete checkout of official `main`. First run
+the administrative producer in its default dry-run mode and review the printed
+paths, byte counts, and SHA-256 values:
+
+```bash
+git fetch origin main
+python tools/prepare_v3_activation_anchor.py \
+  --repository . \
+  --experiment-id V3_frozen_shadow_cohort \
+  --freeze-commit <full-40-character-F> \
+  --cohort-start <future-Wednesday-or-Saturday>
+```
+
+The producer requires `HEAD` to equal the freshly fetched `origin/main` commit
+and independently verifies that its committed outcome data is append-only,
+full-size, strictly chronological, and free of suspicious modern gaps. Create
+an activation branch at that exact commit before running the command, but do
+not add any intermediate commit. A stale or feature-diverged branch is rejected.
+
+After independent review, repeat the same command with `--write`. It creates the
+three registered artifacts exclusively, never overwrites an existing path, and
+does not edit the registry, run a model, or enable live prediction. Inspect the
+three files and commit exactly those paths as `A`. The producer is a
+non-authoritative operator adapter outside the statistical freeze: the frozen
+release verifier re-derives and validates the committed JSON, data boundary,
+ancestry, paths, and deadlines before any V3 snapshot can be emitted.
+
 At `F`, `config.yaml` already contains the dormant mapping
 `live.model_versions.v3_boosting: v3.0.0` and its guard
 `live.model_version_experiments.v3_boosting: V3_frozen_shadow_cohort`. The
@@ -51,6 +78,11 @@ code, `requirements-live.lock`, or `.github/workflows/live.yml`; all are part of
 the frozen manifest. The registry itself is intentionally outside that manifest
 because its administrative state must change at `R`.
 
+The Toronto calendar dates of both `A` and `R` must be strictly before the
+planned `cohort_start`. Missing that deadline invalidates the planned start;
+create a new activation anchor with a later start instead of amending or reusing
+the old artifacts.
+
 The cohort auditor must nevertheless compare the V3 registry specification to
 its canonical entry at `F`. Only status/result and the named prospective
 activation fields may change; identity, parameters, controls, metrics, gates,
@@ -65,11 +97,14 @@ distribution. An unconstrained live environment, changed frozen path, missing
 ancestor, or snapshot added in the same commit as `R` is ineligible for the
 cohort.
 
-`S` must be strictly later than `R`, add exactly one new immutable prediction
-file for a target not yet knowable, and precede that target's Toronto local
-calendar date. All existing `v3_boosting v1.0.0` files are excluded regardless
-of target date. Missing, late, regenerated, dependency-drifted, or integrity-
-failed snapshots are excluded rather than repaired.
+`S` must be strictly later than `R`, first-add exactly one new immutable
+`v3_boosting v3.0.0` prediction path for a target not yet knowable, and precede
+that target's Toronto local calendar date. The ordinary live commit may also
+append V1 snapshots, verified data, and due evaluations; those paths do not
+weaken the single first-add proof for the V3 candidate. All existing
+`v3_boosting v1.0.0` files are excluded regardless of target date. Missing,
+late, regenerated, dependency-drifted, or integrity-failed snapshots are
+excluded rather than repaired.
 
 Every `v3.0.0` snapshot must carry the nested
 `metadata.prospective_release` evidence written by the verified live path. The

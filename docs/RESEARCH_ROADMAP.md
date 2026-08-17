@@ -151,6 +151,9 @@ order is `F < A < R < S`: freeze, a later non-live activation anchor, a later
 reviewed release seal, then the first snapshot's one-time first-add commit.
 At `F`, config and live code contain a dormant registry-gated `v3.0.0` mapping;
 `R` changes only the registry to `active` and may not change any frozen path.
+The performance-blind activation producer defaults to dry-run and can create
+only the three registered `A` artifacts; the frozen verifier independently
+requires both `A` and `R` to precede the planned start's Toronto calendar date.
 
 The sole formal look is the earliest exactly 208 eligible evaluated snapshots,
 split positionally into 104 + 104. There is no early look and no extension.

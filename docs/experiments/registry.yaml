@@ -203,6 +203,8 @@ experiments:
       formal_scientific_gate_failure_decision: reject
       formal_all_gates_pass_decision: eligible_for_reviewed_promotion
       cohort_order: freeze_F_lt_anchor_A_lt_release_R_lt_snapshot_S
+      activation_anchor_commit_deadline: before_cohort_start_toronto_date
+      release_commit_deadline: before_cohort_start_toronto_date
       activation_anchor_enables_live: false
       activation_anchor_schema_version: 1
       activation_anchor_json: reports/prospective/V3_frozen_shadow_cohort__v3.0.0__activation.json

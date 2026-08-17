@@ -80,6 +80,17 @@ fair in either half or the aggregate. V1 ensemble and fixed random remain
 comparisons. Passing the conjunction permits only a separate promotion review;
 V1 remains production meanwhile.
 
+The performance-blind administrative producer
+`tools/prepare_v3_activation_anchor.py` is the supported way to preview and,
+only with `--write`, create the three fixed `A` artifacts. It requires a clean,
+non-shallow checkout whose `HEAD` equals freshly fetched `origin/main`, proves the
+supplied `F` itself committed the registry freeze, verifies the frozen paths
+and the registration-to-main append-only, full-size, continuity-checked outcome
+chain, and rejects a start that is not a future Wednesday/Saturday. It never
+edits the registry or invokes live/backtest code. Both `A` and the registry-only
+`R` must be committed before the Toronto calendar date of `cohort_start`;
+missing that date requires a new anchor and later start.
+
 Routine monitoring uses `lotto649 prospective-audit --experiment
 V3_frozen_shadow_cohort`, which exposes integrity/count state but no interim
 performance. At the exact ready checkpoint, `prospective-claim` creates a
