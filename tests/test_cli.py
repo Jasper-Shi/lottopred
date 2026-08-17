@@ -39,6 +39,15 @@ def test_prospective_monitor_is_read_only_and_never_auto_claims_or_scores():
     assert "git commit" not in workflow
 
 
+def test_ci_tests_install_the_frozen_live_dependency_constraints():
+    workflow = (ROOT / ".github" / "workflows" / "test.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "python-version: '3.12'" in workflow
+    assert "python -m pip install -c requirements-live.lock -e '.[dev]'" in workflow
+
+
 def test_prospective_audit_help_covers_active_and_closed_cohorts(
     monkeypatch,
     capsys,
