@@ -1,0 +1,24 @@
+{
+  "actual": [
+    1,
+    9,
+    17,
+    34,
+    36,
+    43
+  ],
+  "bonus": 24,
+  "brier_score": 0.10709695912140338,
+  "final_6_hits": 1,
+  "log_loss": 0.37017477827687706,
+  "matched_final": [
+    34
+  ],
+  "mean_actual_rank": 19.5,
+  "model_name": "long_frequency",
+  "model_version": "v1.0.0",
+  "target_draw_date": "2026-08-15",
+  "top_12_hits": 3,
+  "top_18_hits": 4,
+  "top_6_hits": 1
+}
