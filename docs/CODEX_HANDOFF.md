@@ -124,8 +124,12 @@ shared storage and V1 failures still fail loudly.
 
 The source-bounded V9 union-propensity note is retained at
 [`V9_post_rng_seven_number_selection_basis.md`](research/V9_post_rng_seven_number_selection_basis.md),
-but V9 is deferred, prospective-only if ever revived, and has never been
-implemented or historically scored.
+and its independent
+[`selection-stage review`](research/V9_selection_stage_independence_review.md)
+closed the idea before registration. The observable is distinct from V7 but
+too close to V1 main-frequency, with insufficient official mechanism support.
+V9 remains deferred, has never been implemented or scored, and may not be
+reopened from lottery outcomes.
 
 ## V5 research checkpoint
 
