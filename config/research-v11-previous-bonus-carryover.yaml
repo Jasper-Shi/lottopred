@@ -1,0 +1,448 @@
+project:
+  timezone: America/Toronto
+  model_version: v11.0.0
+  seed: 649
+data:
+  history_url: https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print
+  recent_url: https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print
+  bridge_year_url: https://www.lotto.net/canada-lotto-6-49/numbers/{year}
+  bridge_start_year: 2024
+  processed_csv: data/processed/draws.csv
+  registered_source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+  registered_sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+  registered_draw_count: 4432
+  registered_history_through: '2026-08-15'
+backtest:
+  start: '2020-01-01'
+  end: '2025-12-31'
+  min_history_draws: 1
+  models:
+  - v11_previous_bonus_carryover
+  - v11_previous_bonus_carryover_pseudo_bonus_control
+  - ensemble
+  - random
+features:
+  recent_windows:
+  - 10
+  - 25
+  - 50
+  - 100
+  - 250
+  ema_half_life: 35
+  logistic_training_draws: 480
+  min_logistic_samples: 300
+research:
+  experiment_id: V11_previous_bonus_carryover
+  descriptive_family: cross_draw_role_transition
+  multiplicity_family: transition_markov
+  variant_index: 3
+  evidence_lane: consumed_historical_diagnostic
+  scoring_before_registration: prohibited
+  historical_one_shot: true
+  historical_target_start: '2020-01-01'
+  historical_target_end: '2025-12-31'
+  historical_target_count: 621
+  history_window: complete_expanding_verified_prefix
+  minimum_history_draws: 1
+  stability_halves:
+  - name: first_half
+    start: '2020-01-01'
+    end: '2022-12-31'
+    target_count: 307
+  - name: second_half
+    start: '2023-01-01'
+    end: '2025-12-31'
+    target_count: 314
+  excluded_historical_scoring_periods:
+  - 1982-01-01..2019-12-31
+  - 2026-01-01..2026-08-15
+  rng_regime_start: '2019-05-15'
+  rng_regime_source: official_ALC_first_rng_draw_date_not_outcome_selected
+  transition_prefix: post_rng_adjacent_source_destination_with_destination_strictly_before_target
+  transition_order: destination_target_date_ascending
+  transition_source: immediately_previous_verified_draw
+  transition_destination: next_verified_draw
+  transition_source_and_destination_post_rng: required
+  current_anchor: immediately_previous_draw_published_bonus
+  target_event: previous_bonus_anchor_in_current_six_main_numbers
+  target_bonus_use: prohibited
+  target_main_use_before_freeze: prohibited
+  current_target_history: every_verified_draw_strictly_before_target
+  transition_training_history: nested_prefix_strictly_before_each_transition_destination
+  prior_transition_outcomes: available_only_after_their_destination_dates
+  no_eligible_transition_behavior: beta_positive_zero
+  v1_base_model: ensemble
+  v1_base_version: v1.0.0
+  v1_base_source_commit: 86549d2650fe98cd48375fa77b5b8521ca271df2
+  v1_base_config_path: config.yaml
+  v1_base_config_sha256: b67b6cd4e1ace10275da6142fbb8739c1de0e91c37a7f636e42d2c0f4d862ff5
+  v1_base_components:
+  - model: long_frequency
+    weight: 0.15
+  - model: recent_frequency_100
+    weight: 0.2
+  - model: ema_gap
+    weight: 0.2
+  - model: logistic_training480_min300_stride4_C0.25_maxiter500
+    weight: 0.45
+  v1_base_file_sha256:
+  - path: src/lotto649/models/baselines.py
+    sha256: 76f9050a13bde44d51584397ecd6acb358f320e1617ef329b70bd6a22d23e28a
+  - path: src/lotto649/models/logistic.py
+    sha256: 886367c16ed0f0d1109aacb943a3393e63807a31e7710bd0e664e06f6f3c4da2
+  - path: src/lotto649/models/ensemble.py
+    sha256: 9b2a3fb3156efb3ff248fa6debecfd7a92b718e9517d8da0e3a5fc43da7c0047
+  - path: src/lotto649/models/factory.py
+    sha256: d0d3043656144a469b1677491c11cde3143a65b026c2a815485cc89ae5d48fcc
+  - path: src/lotto649/features.py
+    sha256: b7bc67b9038b2e3d78230c3087c3ac4e3f17751aeab678574f3601af00671979
+  - path: src/lotto649/models/base.py
+    sha256: e2f0c90c376ea6063b906bcca042e8903b351a1ed4b76e9d83e17be3bcf166ec
+  - path: src/lotto649/domain.py
+    sha256: fbcb22747ae361767df070c6e50af49fda1aa190b72fd39894afa1c879a50b7a
+  - path: src/lotto649/config.py
+    sha256: 7563042563ec197de01120bf2d4267d9f089875defdfa95da8323d9f5702e862
+  v1_anchor_probability: q_b=original_v1_ensemble_marginal_for_anchor
+  v1_probability_contract: exact_labels_1_to_49_open_interval_math.fsum_within_abs_1e-12_of_six
+  v1_forecast_history: all_verified_main_draws_strictly_before_destination
+  v1_bonus_input: none
+  v1_model_graph_policy: fresh_instance_for_every_transition_destination
+  v1_forecast_cache_key: complete_prefix_sha256_plus_destination_date
+  v1_forecast_cache_hit_without_full_prefix_hash: prohibited
+  candidate_control_v1_forecast: same_immutable_49_probability_mapping
+  candidate_control_history: same_original_verified_history
+  v1_refit_or_reweight: prohibited
+  parameter_count: 1
+  parameter_name: beta
+  beta_estimator: strict_prefix_penalized_bernoulli_offset_MAP
+  beta_prior: N(0,1)
+  beta_prior_variance: 1.0
+  training_response: y_j=1_if_anchor_is_in_destination_main_else_0
+  training_anchor_probability: q_j=original_v1_marginal_for_source_anchor
+  training_tilted_probability: r_j(beta)=sigmoid(logit(q_j)+beta)
+  stable_logit: math.log(q)-math.log1p(-q)
+  stable_sigmoid_nonnegative: 1.0/(1.0+math.exp(-z))
+  stable_sigmoid_negative: math.exp(z)/(1.0+math.exp(z))
+  stable_sigmoid_zero_branch: nonnegative
+  beta_score: "U(beta)=math.fsum([-beta, *residuals_in_target_date_order])"
+  beta_residual_definition: residuals_in_target_date_order=[y_j-r_j(beta)_for_each_eligible_transition]
+  beta_score_operation_order: construct_chronological_residual_list_then_one_math.fsum_with_negative_beta_first
+  beta_score_derivative: -1-math.fsum(r_j*(1-r_j))_strictly_negative
+  beta_root_uniqueness: required
+  beta_zero_branch: D==0_or_U(0.0)==0.0_returns_positive_zero
+  root_bracket_radius: B=float(D+64)
+  root_bracket_if_U0_positive: lower=0.0_upper=B
+  root_bracket_if_U0_negative: lower=-B_upper=0.0
+  root_bracket_required: U(lower)>0.0>U(upper)
+  root_bracket_expansion: prohibited
+  root_bisection_iterations: 256
+  root_midpoint: lower+(upper-lower)/2.0
+  root_positive_branch: lower=mid
+  root_nonpositive_branch: upper=mid
+  root_equality_branch: upper
+  root_early_exit: prohibited
+  root_return: lower+(upper-lower)/2.0_after_iteration_256
+  numerical_arithmetic: CPython_3.12_ieee754_binary64
+  numerical_summation: math.fsum_in_frozen_order
+  beta_oracle_q: four_repetitions_of_6_over_49
+  beta_oracle_y:
+  - 1
+  - 0
+  - 0
+  - 1
+  beta_oracle_decimal: '0.9440698092952482'
+  beta_oracle_hex: 0x1.e35d1e3820caep-1
+  beta_oracle_r_decimal: '0.26398254767618795'
+  beta_oracle_r_hex: 0x1.0e5170e3ef9a9p-2
+  balanced_oracle_q:
+  - 0.5
+  - 0.5
+  balanced_oracle_y:
+  - 1
+  - 0
+  balanced_oracle_beta_hex: 0x0.0p+0
+  anchor_tilt: r_b=sigmoid(logit(q_b)+beta)
+  redistribution_family: deterministic_direct_marginal_capacity_transfer
+  positive_branch_condition: r_b>q_b
+  positive_branch_anchor: p_b=r_b
+  positive_branch_nonanchor: p_i=q_i*(6-r_b)/(6-q_b)
+  positive_branch_invariant: nonanchor_probability_ratios_preserved
+  negative_branch_condition: r_b<q_b
+  negative_branch_anchor: p_b=r_b
+  negative_branch_nonanchor: p_i=q_i+(q_b-r_b)*(1-q_i)/(42+q_b)
+  negative_branch_denominator_identity: math.fsum(1-q_i_for_i_not_b)=42+q_b
+  negative_branch_invariant: nonanchor_remaining_capacity_ratios_preserved
+  feature_off_identity: beta_positive_zero_or_r_b_equals_q_b_returns_original_v1_mapping_bitwise
+  probability_labels: exact_integers_1_through_49
+  probability_finite: required
+  probability_bounds: strictly_between_zero_and_one
+  probability_sum: math.fsum_probabilities_in_ascending_label_order
+  probability_sum_absolute_tolerance: 1.0e-12
+  probability_repair: prohibited
+  probability_clipping: prohibited
+  probability_post_normalization: prohibited
+  nonanchor_ranking: unchanged_from_v1
+  ranking_tie_break: probability_desc_number_asc
+  full_ranking_required: true
+  topk_sets: ranking_prefixes_6_12_18
+  final_combination: sorted_marginal_top6
+  final6_maximum_change_from_v1: one_label_replacement
+  topk_maximum_change_from_v1: one_label_replacement_each_k
+  joint_map: prohibited
+  max_entropy_fixed_six_completion: prohibited
+  redistribution_oracle_q_anchor_hex: 0x1.999999999999ap-3
+  redistribution_oracle_q_nonanchor: 29/240
+  redistribution_oracle_positive_beta: math.log(2.0)
+  redistribution_oracle_positive_anchor_hex: 0x1.5555555555555p-2
+  redistribution_oracle_positive_nonanchor_hex: 0x1.e38e38e38e38fp-4
+  redistribution_oracle_positive_sum: '6.000000000000001'
+  redistribution_oracle_negative_beta: -math.log(2.0)
+  redistribution_oracle_negative_anchor_hex: 0x1.c71c71c71c71ep-4
+  redistribution_oracle_negative_nonanchor_hex: 0x1.f684bda12f685p-4
+  redistribution_oracle_negative_sum: '6.0'
+  candidate_control_model: v11_previous_bonus_carryover_pseudo_bonus_control
+  targeted_control_kind: within_draw_role_reassignment
+  targeted_control_registry_enum: within_draw_bonus_reassignment
+  control_source_set: sorted_union_of_source_draw_six_main_and_bonus
+  control_payload_template: lotto649-v11-bonus-anchor-control-v1:649:{ISO-date}:{label}
+  control_payload_encoding: utf8
+  control_date_format: YYYY-MM-DD
+  control_digest: sha256_full_32_bytes
+  control_selection: minimum_full_sha256_digest_bytes_then_label_over_source_draw_seven_label_union
+  control_identity_allowed: true
+  control_retry: prohibited
+  control_anchor: selected_pseudo_bonus_only
+  control_target: unchanged_next_six_main_numbers
+  control_target_bonus_use: prohibited
+  control_beta_fit: independent_same_strict_prefix_solver
+  candidate_control_shared_base: same_original_v1_history_and_same_original_v1_49_marginals
+  control_history_role_rewrite: prohibited
+  control_oracle_date: '2020-01-01'
+  control_oracle_union:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  control_oracle_pseudo_bonus: 4
+  control_oracle_winning_digest: 1052da1f3ebf9c1bfe2f06998f13ebc812c01dd08fd9b0b21cc20fd35d0840c8
+  global_random_conditional_role_audit: deferred_excluded_from_v11.0.0
+  global_random_conditional_role_audit_runner: prohibited
+  global_random_conditional_role_audit_gate: none
+  fair_random_model: random
+  fair_random_version: v1.0.0
+  fair_random_seed_formula: 649000000+target_date.toordinal()
+  fair_random_rng: numpy.random.default_rng
+  fair_random_jitter: one_Uniform(-1e-9,1e-9)_draw_per_ascending_label
+  fair_random_probability_base: 6/49
+  fair_random_normalization: frozen_normalize_expected_six
+  fair_random_role: descriptive_fair_sanity_control_never_supports_v11
+  fair_random_null_rule: raw_exact_p_gt_0_05_or_bootstrap_ci_includes_zero
+  fair_random_gate_scopes:
+  - aggregate_621
+  - first_307
+  - second_314
+  primary_metric: top12_hits_lift_vs_theory
+  primary_fair_expectation: 72/49
+  primary_exact_test: hypergeometric_draw_level_convolution_upper_tail
+  primary_alpha: 0.05
+  top6_fair_expectation: 36/49
+  top18_fair_expectation: 108/49
+  multiplicity_method: holm_step_down
+  holm_family_size_at_registration: 3
+  holm_prior_entries:
+  - experiment: V2_statistical_transition_bearing
+    compatible_primary_p: false
+    holm_p_entry: 1.0
+  - experiment: V3_boosting_transition_bearing
+    compatible_primary_p: false
+    holm_p_entry: 1.0
+  holm_prior_incompatible_or_missing_p_policy: enter_as_1.0
+  holm_v11_rule: min(1.0,3.0*raw_primary_p)
+  v1_transition_overlap: in_prev_feature_is_operational_baseline_not_new_discovery_variant
+  v2_overlap: prior_main_transition_feature_counted_as_prior_family_variant
+  v3_overlap: transition_bearing_boosting_attempt_counted_conservatively_as_prior_family_variant
+  v5_overlap: previous_main_pair_family_disclosed_but_not_transition_markov_entry
+  v7_overlap: same_draw_main_bonus_role_family_not_cross_draw_recurrence
+  v9_overlap: deferred_union_propensity_unimplemented_unscored_and_not_cross_draw
+  multiplicity_reset: prohibited
+  bootstrap_rng: numpy.default_rng
+  bootstrap_seed: 649
+  bootstrap_replicates: 10000
+  bootstrap_unit: complete_aligned_target_draw
+  bootstrap_interval: two_sided_95_percentile_linear
+  paired_top12_contrasts:
+  - candidate_minus_v1_ensemble
+  - candidate_minus_pseudo_bonus_control
+  paired_contrast_construction: per_target_hit_difference_before_resampling
+  control_null_rule: raw_exact_p_gt_0_05_or_bootstrap_ci_includes_zero
+  gate_scopes:
+  - aggregate_621
+  - first_307
+  - second_314
+  proper_score_brier: math.fsum((p_i-y_i)**2_in_label_order)/49.0
+  proper_score_log_loss: -math.fsum(log(p_i)_if_y_else_log1p(-p_i)_in_label_order)/49.0
+  proper_score_aggregate: math.fsum(per_target_score_in_target_date_order)/draw_count
+  proper_score_max_delta_vs_fair: 1.0e-09
+  proper_score_max_delta_vs_v1: 1.0e-09
+  proper_score_gate_scopes:
+  - aggregate_621
+  - first_307
+  - second_314
+  mechanism_scalar_six_set_law: R(S)=r_b/C(48,5)_if_anchor_in_S_else_(1-r_b)/C(48,6)
+  mechanism_law_role: scalar_anchor_diagnostic_not_integrated_v1_joint_law
+  mechanism_fair_log_gain: log_g=y*log(r_b/(6/49))+(1-y)*log((1-r_b)/(43/49))
+  mechanism_v1_log_gain: d=y*log(r_b/q_b)+(1-y)*log((1-r_b)/(1-q_b))
+  mechanism_per_target_branching: evaluate_only_observed_y_branch_no_zero_times_log
+  mechanism_scope_order: target_date_ascending_then_math.fsum
+  mechanism_candidate_aggregate_minimum: log(20)
+  mechanism_candidate_aggregate_threshold_binary64: 2.995732273553991
+  mechanism_candidate_halves: log_g_positive_and_d_positive
+  mechanism_candidate_v1_aggregate: d_strictly_positive
+  mechanism_control_aggregate_maximum: log_g_strictly_less_than_log20
+  mechanism_candidate_minus_control: log_g_and_d_strictly_positive_aggregate_and_halves
+  mechanism_confidence_interval: prohibited
+  scientific_gate_count: 10
+  scientific_gate_combination: all_ten_conjunctive
+  scientific_gates:
+  - aggregate_candidate_top12_lift_strictly_positive
+  - aggregate_candidate_holm_adjusted_exact_p_at_most_0.05
+  - aggregate_candidate_top12_bootstrap_lower_strictly_positive
+  - candidate_top12_lift_strictly_positive_in_both_halves
+  - paired_candidate_minus_v1_top12_bootstrap_lower_strictly_positive_aggregate_and_halves
+  - paired_candidate_minus_control_top12_bootstrap_lower_strictly_positive_and_pseudo_bonus_and_random_controls_null_aggregate_and_halves
+  - candidate_top6_lift_strictly_positive_aggregate_and_halves
+  - candidate_brier_and_log_loss_no_worse_than_fair_or_v1_by_more_than_1e-9_aggregate_and_halves
+  - all_anchor_mechanism_log_g_d_candidate_control_conditions_pass
+  - no_audit_warning
+  historical_pass_disposition: eligible_for_separate_reviewed_shadow_decision_only
+  historical_scientific_failure: reject_not_activated
+  historical_audit_failure: archive_not_activated
+  secondary_rescue: prohibited
+  per_target_probabilities: candidate_control_v1_random_all_labels_1_through_49
+  per_target_output: target_prefix_hash_anchor_q_r_beta_D_y_after_reveal_log_g_d_candidate_control_v1_random_probabilities_ranking_top6_top12_top18_final6_hits_scores
+  hit_histogram_keys:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  progressive_record_ledger: every_target_and_every_new_maximum
+  performance_by_year: required_descriptive
+  performance_by_regime: fixed_halves_only_no_posthoc_regimes
+  calibration_bins: 10
+  calibration_bin_edges: fixed_equal_width_0_to_1_last_bin_right_closed
+  calibration_outputs: count_mean_forecast_observed_inclusion_rate_ece
+  calibration_scopes: aggregate_and_fixed_halves
+  calibration_role: descriptive_not_a_decision_gate
+  historical_claim: reports/v11_previous_bonus_carryover_v11.0.0_historical.claim
+  historical_attempt_ledger: reports/v11_previous_bonus_carryover_v11.0.0_historical.ledger.jsonl
+  historical_report_json: reports/v11_previous_bonus_carryover_v11.0.0_historical.json
+  historical_report_markdown: reports/v11_previous_bonus_carryover_v11.0.0_historical.md
+  historical_claim_retention: permanent_success_or_failure
+  historical_attempt_ledger_retention: permanent_success_or_failure
+  claim_acquisition: exclusive_before_any_forecast_or_score_operation
+  claim_existing_artifact_policy: refuse_without_overwrite
+  historical_prediction_freeze: deterministic_forecast_payload_sha256_in_timestamped_event_before_actual_access
+  forecast_payload_timestamp: excluded
+  forecast_payload_determinism: byte_for_byte_repeated_calls
+  historical_ledger_sequence: contiguous_zero_based
+  historical_ledger_hash_chain: sha256_canonical_json_plus_previous_event_hash
+  per_target_event_order: prediction_frozen_then_target_revealed_scored
+  per_target_prediction_frozen_payload: target_prefix_candidate_control_v1_random_full_forecasts_and_digests
+  per_target_prediction_frozen_durability: append_flush_fsync_before_actual_access
+  per_target_actual_access: prohibited_before_durable_prediction_frozen_event
+  per_target_scored_durability: append_flush_fsync_before_next_target
+  prediction_timestamp_field: prediction_frozen_at_utc
+  prediction_timestamp_format: rfc3339_utc_Z
+  prediction_timestamp_role: audit_metadata_never_model_input
+  registration_commit_policy: preregistration_commit_must_be_ancestor_of_implementation_commit
+  implementation_commit_policy: clean_exact_pushed_HEAD_and_CI_green_before_claim
+  implementation_source_paths:
+  - src/lotto649/models/v11_previous_bonus_carryover.py
+  - src/lotto649/v11_diagnostics.py
+  - tools/run_v11_historical.py
+  - tests/test_v11_previous_bonus_carryover.py
+  - tests/test_v11_diagnostics.py
+  required_implementation_status_documentation_paths:
+  - docs/CODEX_HANDOFF.md
+  - docs/MODEL_PROTOCOL.md
+  - docs/RESEARCH_ROADMAP.md
+  implementation_changed_path_policy: exact_required_five_source_paths_plus_required_three_status_docs
+  implementation_status_doc_mutation: implemented_not_scored_not_activated_only
+  dedicated_research_config_path: config/research-v11-previous-bonus-carryover.yaml
+  runtime_python: CPython_3.12
+  runtime_lock_path: requirements-live.lock
+  runtime_lock_sha256: 2fea4cf73cc2578b73c21e6600e31ad843bd903e8a2656b7a2543164ab8d801c
+  runtime_manifest: python_platform_and_all_installed_distribution_versions
+  historical_post_claim_failure: consumed_archive_no_rerun
+  historical_report_overwrite: prohibited
+  automatic_historical_execution: prohibited
+  opportunity_models:
+  - v11_previous_bonus_carryover
+  - v11_previous_bonus_carryover_pseudo_bonus_control
+  - ensemble_v1.0.0
+  - random_v1.0.0
+  opportunity_definition: one_sorted_final6_for_each_listed_model_and_target
+  opportunity_same_target_deduplication: identical_sorted_final6_counted_once
+  opportunity_primary_producer: first_registered_opportunity_model_with_identical_sorted_final6
+  opportunity_bundle_producers: primary_model_name_in_path_and_all_producer_model_names_in_registered_order
+  opportunity_identical_final6_bundle_count: one_per_target_unique_sorted_final6
+  opportunity_count_per_target: u_t_number_of_unique_final6_sets
+  opportunity_count_per_target_bounds: 1_through_4
+  opportunity_event: durable_target_revealed_scored_event_before_next_target
+  opportunity_required_fields: target_primary_producer_model_name_producer_model_names_producer_forecast_sha256_by_model_final6_actual_hits_chronology_status
+  opportunity_denominator: 13983816
+  opportunity_familywise_fair_probability: -math.expm1(math.fsum(math.log1p(-u_t/13983816)_in_target_date_order))
+  opportunity_outputs: per_target_u_t_cumulative_unique_count_cumulative_fair_probability
+  opportunity_global_export: full_snapshot_evidence_only_no_reconstruction_after_reveal
+  breakthrough_trigger: any_new_unique_final6_exactly_equals_target_main_set
+  breakthrough_record_event: append_flush_fsync_before_audit_or_email
+  breakthrough_historical_6of6_status: historical-6of6-candidate
+  breakthrough_stop_v11_scoring_on_final6_6of6: true
+  breakthrough_stop_global_search: audit_clear_only
+  breakthrough_control_classification: control_hit_never_supports_v11_mechanism_or_activation
+  breakthrough_leakage_audit: mandatory_immediate
+  breakthrough_audit_clear_required_for_success: true
+  breakthrough_audit_failure_terminal: historical_6of6_candidate_archived_leakage_failed
+  breakthrough_bundle_path_template: reports/historical-6of6-candidate__{target_date}__{model_name}__v11.0.0.json
+  breakthrough_bundle_publication: staged_fsynced_exclusive_no_overwrite
+  breakthrough_normal_621_report: prohibited_after_early_stop
+  breakthrough_email_workflow: .github/workflows/email-test.yml
+  breakthrough_email_language: Chinese
+  breakthrough_email_title: 🚨 [LOTTO649] 历史严格回测成功预测 6/6
+  breakthrough_audit_failure_email_title: ⚠️ [LOTTO649] 历史 6/6 候选泄漏审计失败
+  breakthrough_email_required_fields: prediction_actual_target_model_cutoff_leakage_audit_commit_opportunity_count_familywise_probability_oos_reason
+  breakthrough_email_failure_policy: preserve_evidence_and_emit_warning
+  top12_6of6_alert: immediate_after_durable_score_and_explicitly_not_final6_success
+  historical_terminal_success_states:
+  - published_after_exactly_621_scored_targets
+  - historical_6of6_candidate_published_after_at_least_1_scored_target
+  historical_terminal_failure_states:
+  - failed
+  - historical_6of6_candidate_archived_leakage_failed
+  prospective_status: not_activated
+  prospective_exact_eligible_evaluated_draws: 208
+  prospective_half_draws: 104
+  prospective_formal_look_count: exactly_one
+  prospective_early_look: prohibited
+  prospective_extension: prohibited
+  prospective_backfill: prohibited
+  prospective_activation: separate_reviewed_freeze_activation_release_sequence_only
+  prospective_live_before_activation: prohibited
+  v1_production_role: unchanged
+  v3_shadow_role: unchanged
+prediction:
+  candidate_pool_size: 12
+  final_size: 6
+  selection_rule: sorted_marginal_top6
+live:
+  enabled: false
+  models: []
+  shadow_models: []
+notifications:
+  enabled: false

@@ -1,0 +1,222 @@
+{
+  "catalog_notes": [
+    "All seven unexpired GitHub Actions ZIP archives were copied byte-for-byte and verified against the digest reported by GitHub.",
+    "A repeated detail SHA-256 is an exact duplicate stream and contributes zero additional opportunities.",
+    "Different detail SHA-256 values remain separate consumed implementation streams even when model names and target dates overlap.",
+    "Legacy detail rows contain reported hit counts but omit the complete final6 and Top-12 snapshots, so cross-stream forecast deduplication remains unknown."
+  ],
+  "coverage_gaps": [
+    {
+      "date_end": "2025-12-31",
+      "date_start": "2020-01-01",
+      "evidence_lane": "consumed_historical_diagnostic",
+      "experiment_id": "V5_pair_affinity",
+      "model_name": "v5_pair_affinity",
+      "model_version": "v5.0.0",
+      "reason": "aggregate_report_only",
+      "reported_target_count": 621,
+      "source_path": "reports/v5_pair_affinity_v5.0.0_historical.json",
+      "source_sha256": "b86391ada265d96f94e789f4962812d32771385702e2efa2285cb9ef96d5d6bb"
+    },
+    {
+      "date_end": "2025-12-31",
+      "date_start": "2020-01-01",
+      "evidence_lane": "consumed_historical_diagnostic",
+      "experiment_id": "V6_entropy_regime",
+      "model_name": "v6_entropy_regime",
+      "model_version": "v6.0.0",
+      "reason": "aggregate_report_only",
+      "reported_target_count": 621,
+      "source_path": "reports/v6_entropy_regime_v6.0.0_historical.json",
+      "source_sha256": "12400a4b5164b030225827d47a8024a1ec7aeaeb32fa64cd2fab0b46ff8d4c2a"
+    },
+    {
+      "date_end": "2025-12-31",
+      "date_start": "2020-01-01",
+      "evidence_lane": "consumed_historical_diagnostic",
+      "experiment_id": "V7_main_bonus_role_bias",
+      "model_name": "v7_main_bonus_role_bias",
+      "model_version": "v7.0.0",
+      "reason": "aggregate_report_only",
+      "reported_target_count": 621,
+      "source_path": "reports/v7_main_bonus_role_bias_v7.0.0_historical.json",
+      "source_sha256": "242018714a17a78a8b99309e4391e153c293a02121738addd2bb8f9f74d6c121"
+    },
+    {
+      "date_end": "2025-12-31",
+      "date_start": "2020-01-01",
+      "evidence_lane": "consumed_historical_diagnostic",
+      "experiment_id": "V8_spectral_phase",
+      "model_name": "v8_spectral_phase",
+      "model_version": "v8.0.0",
+      "reason": "aggregate_report_only",
+      "reported_target_count": 621,
+      "source_path": "reports/v8_spectral_phase_v8.0.0_historical.json",
+      "source_sha256": "e9b51a5316811cbde2b06c36bb61ffffd04b283a4c886cb9ac213bb8fb7deed5"
+    }
+  ],
+  "evidence_gaps": [
+    "legacy_complete_final6_values_missing",
+    "legacy_complete_top6_top12_top18_values_missing",
+    "legacy_probabilities_and_full_rankings_missing",
+    "legacy_per_target_prefix_hashes_missing",
+    "legacy_pre_reveal_persistence_not_proven",
+    "legacy_exact_dataset_bytes_not_bound_by_action_artifacts",
+    "legacy_reported_model_version_is_generic_v1.0.0",
+    "legacy_cross_stream_prediction_deduplication_unknown_without_snapshots",
+    "v5_v8_per_target_results_missing"
+  ],
+  "expected_high_water": {
+    "global_final6_max": null,
+    "global_final6_max_status": "unknown_due_to_incomplete_coverage",
+    "reported_final6_max_at_least": 4,
+    "verified_full_snapshot_final6_max": 3
+  },
+  "verified_snapshot_policy": {
+    "event_order": "one_freeze_then_one_reveal_per_target_and_prior_reveal_before_next_freeze",
+    "hit_counts": "independently_recomputed_from_frozen_sets_and_actual_then_required_to_match_source",
+    "prefix_chronology": "history_metadata_matches_forecast_then_history_through_equals_previous_target_and_draw_count_increments_one",
+    "report_alignment": "per_target_records_exactly_equal_joined_source_ledger_evidence",
+    "stop_global_search": "snapshot_verified_6of6_and_runner_preflight_chronology_leakage_audit_all_clear_only"
+  },
+  "github_actions": {
+    "catalog_anchor_artifact_id": 9247962892,
+    "catalog_anchor_run_id": 31888527837,
+    "repository": "Jasper-Shi/lottopred"
+  },
+  "legacy_bundles": [
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9238718557.zip",
+      "archive_sha256": "698fe9acdb499f1dadb7188649a2fed43359ea63b71f071cae80d0a8344147e9",
+      "artifact_id": 9238718557,
+      "artifact_name": "backtest-reports",
+      "bundle_id": "artifact-9238718557",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/78abb855c62249b8/detail.csv",
+      "detail_sha256": "78abb855c62249b84540d7b49ee75532a720f68269afb9c5f59562d168ab5ee8",
+      "exact_duplicate_of": null,
+      "head_sha": "323b71607f6155b6b1b10b497f6b464aa9fc3bde",
+      "job_id": 94933923596,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31853568483,
+      "summary_path": "evidence/historical/actions/31888527837/streams/78abb855c62249b8/summary.csv",
+      "summary_sha256": "045b0549707b22aba33e5b8200e567675813d68046c0f6dc563f643a50a788e1"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9238792690.zip",
+      "archive_sha256": "381a322f89335284c1f0be6e0b1b6aba57d31b4650b629aacfed0046f730f5d5",
+      "artifact_id": 9238792690,
+      "artifact_name": "backtest-reports",
+      "bundle_id": "artifact-9238792690",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/78abb855c62249b8/detail.csv",
+      "detail_sha256": "78abb855c62249b84540d7b49ee75532a720f68269afb9c5f59562d168ab5ee8",
+      "exact_duplicate_of": "artifact-9238718557",
+      "head_sha": "1e0652c0fb642ab754d90b2f874d151564dce319",
+      "job_id": 94934594417,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31853798359,
+      "summary_path": "evidence/historical/actions/31888527837/streams/78abb855c62249b8/summary.csv",
+      "summary_sha256": "045b0549707b22aba33e5b8200e567675813d68046c0f6dc563f643a50a788e1"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9248543222.zip",
+      "archive_sha256": "0d22ea952ae0a2b7f5e54e725e27a6a9d013b8c939b75d84fd5e8632e9d00084",
+      "artifact_id": 9248543222,
+      "artifact_name": "v2-v4-research-reports",
+      "bundle_id": "artifact-9248543222",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/21a113a89afe8ec7/detail.csv",
+      "detail_sha256": "21a113a89afe8ec7ec2c49ec991fbd13ac445de7b617aef5b72844bf56043db9",
+      "exact_duplicate_of": null,
+      "head_sha": "07f32ddc01ead33f2ea09a98af2fa9f597fc80e8",
+      "job_id": 95020953209,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31888413139,
+      "summary_path": "evidence/historical/actions/31888527837/streams/21a113a89afe8ec7/summary.csv",
+      "summary_sha256": "187a27d32749af7d92c4da3c43fe1b06a8f1f673598ff127a9e9742e19d7cf76"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9247962892.zip",
+      "archive_sha256": "2e9a7d6ecd163fd64bd87354f5cf8e5776723ffaad572e1740d9cb6bea62cd50",
+      "artifact_id": 9247962892,
+      "artifact_name": "v2-v4-research-reports",
+      "bundle_id": "artifact-9247962892",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/e7e20bc089a8a488/detail.csv",
+      "detail_sha256": "e7e20bc089a8a4883468424ed6e499acaf0043a40f0d0ba821e3d75f0a598edd",
+      "exact_duplicate_of": null,
+      "head_sha": "2310713e3f6fc6ae61a165874c049ac3cb69dffb",
+      "job_id": 95021219682,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31888527837,
+      "summary_path": "evidence/historical/actions/31888527837/streams/e7e20bc089a8a488/summary.csv",
+      "summary_sha256": "6d4b122cdf7b9333f03dcf1bb4843ac702961886cfa78e792aa956fb406013fb"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9247988617.zip",
+      "archive_sha256": "edcc1ad82f46b0705b15bb10e58159d0248d4cd219a55f9df5d3d690b3a99786",
+      "artifact_id": 9247988617,
+      "artifact_name": "v2-fast-reports",
+      "bundle_id": "artifact-9247988617",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/2c988e5590a6ed17/detail.csv",
+      "detail_sha256": "2c988e5590a6ed1706c4121bcc7ca490483ca2cb534824f4d5a55d67e4acfb78",
+      "exact_duplicate_of": null,
+      "head_sha": "276c8ad290f071962112b1b9a75300a7269ffed8",
+      "job_id": 95021922612,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31888831449,
+      "summary_path": "evidence/historical/actions/31888527837/streams/2c988e5590a6ed17/summary.csv",
+      "summary_sha256": "dbb3581cc946d926a799b305eee306039f77e87c9753eba4597146d14336d1e6"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9248111786.zip",
+      "archive_sha256": "0e0fb08f25a45d0c092b8bf3a2afde8762af72c57195a70b653df9a96e8c335d",
+      "artifact_id": 9248111786,
+      "artifact_name": "backtest-reports",
+      "bundle_id": "artifact-9248111786",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/d0d24b8494a9bbc8/detail.csv",
+      "detail_sha256": "d0d24b8494a9bbc888b7481be528e63bd4b2c1f6880bc46b1cbf270bb7982912",
+      "exact_duplicate_of": null,
+      "head_sha": "2c0d4ca90d5c4dab49d32c531cc80aa920cecfd4",
+      "job_id": 95022582496,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31889097167,
+      "summary_path": "evidence/historical/actions/31888527837/streams/d0d24b8494a9bbc8/summary.csv",
+      "summary_sha256": "0cf0e6ca9eb770e4e0710f2c014070b0267187e71ed05f60cf99b1030472a315"
+    },
+    {
+      "archive_path": "evidence/historical/actions/31888527837/artifact-9248159303.zip",
+      "archive_sha256": "e0fb61fb0efbe57b12acfc6b7de2e182a5fb0a0fbeea1cc8637101b3fbbae652",
+      "artifact_id": 9248159303,
+      "artifact_name": "backtest-reports",
+      "bundle_id": "artifact-9248159303",
+      "chronology": "implementation_strict_prefix",
+      "detail_path": "evidence/historical/actions/31888527837/streams/d0d24b8494a9bbc8/detail.csv",
+      "detail_sha256": "d0d24b8494a9bbc888b7481be528e63bd4b2c1f6880bc46b1cbf270bb7982912",
+      "exact_duplicate_of": "artifact-9248111786",
+      "head_sha": "7a8f7e6b480cdd2bef643cf595da166856307fe8",
+      "job_id": 95023019432,
+      "pre_reveal_persistence": "not_proven",
+      "run_id": 31889275115,
+      "summary_path": "evidence/historical/actions/31888527837/streams/d0d24b8494a9bbc8/summary.csv",
+      "summary_sha256": "0cf0e6ca9eb770e4e0710f2c014070b0267187e71ed05f60cf99b1030472a315"
+    }
+  ],
+  "schema_version": 1,
+  "source_id": "github-actions-historical-catalog-2026-08-15",
+  "verified_snapshot_sources": [
+    {
+      "expected_target_count": 621,
+      "experiment_id": "V10_adjacent_pair_structure",
+      "ledger_path": "reports/v10_adjacent_pair_structure_v10.0.0_historical.ledger.jsonl",
+      "ledger_sha256": "774434e8cd34664f4546a7874f043dbf752e9aaf579ef9d020639cf2d8c4d3c9",
+      "model_name": "v10_adjacent_pair_structure",
+      "model_version": "v10.0.0",
+      "report_path": "reports/v10_adjacent_pair_structure_v10.0.0_historical.json",
+      "report_sha256": "26fe097bad44c6563a1c4d659a42b0bbdbdc7e3414bc62e37a3ec5108edd49c6"
+    }
+  ]
+}
