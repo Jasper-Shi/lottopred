@@ -20,7 +20,7 @@ in `V2_V4_RESULTS.md`.
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
-| V10 adjacent-pair structure | Registered; not implemented or scored | `v10.0.0` freezes one exact fair-centred set-level adjacency tilt and fixed label-bijection control. It is research-only, live-disabled, and must be implemented/frozen before its sole consumed diagnostic. |
+| V10 adjacent-pair structure | Implemented for review; not scored | `v10.0.0` freezes one exact fair-centred set-level adjacency tilt and fixed label-bijection control. Its isolated model and one-shot runner have only synthetic test evidence; it remains research-only, live-disabled, and must be frozen on a reviewed implementation commit before its sole consumed diagnostic. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -153,12 +153,13 @@ mechanism gate, not a second primary and not a rescue. V10 is conservatively
 variant 2 of the append-only `v5_pair_cooccurrence` family because its statistic
 still aggregates same-draw label pairs.
 
-No V10 score exists. After this registration is committed and pushed, a later
-implementation commit must pass local and CI checks from a clean exact HEAD
-before the permanent one-shot claim may be acquired. The only allowed historical
-run scores exactly the 621 targets in 2020–2025 with every earlier verified draw
-as training history. It is consumed historical diagnostic evidence, never
-blind, untouched, confirmatory, or prospective. The dedicated config keeps
+No V10 score exists. The isolated model and one-shot runner are implemented for
+review, but their exact implementation commit must pass local and CI checks from
+a clean pushed HEAD before the permanent one-shot claim may be acquired. The
+only allowed historical run scores exactly the 621 targets in 2020–2025 with
+every earlier verified draw as training history. It is consumed historical
+diagnostic evidence, never blind, untouched, confirmatory, or prospective. The
+dedicated config keeps
 `live.enabled: false`; V1 remains production, V3 remains shadow, and a future
 V10 cohort would require a separate reviewed activation with exactly 208
 eligible immutable snapshots.
@@ -449,10 +450,11 @@ Do not broaden the fallback to swallow those integrity failures.
 4. Keep rejected `v5.0.0` through `v8.0.0` immutable and retain every claim,
    report, decision record, and registry row as a negative result. Never rerun
    the same version or tune it against its consumed answers.
-5. Implement the already pre-registered V10 formula without changing its frozen
-   choices; do not inspect a V10 score before a separate implementation freeze.
-   Any later hypothesis must likewise be registered before implementation, and
-   all currently observed outcomes are consumed for a model changed in response.
+5. Review and freeze the implemented V10 formula without changing its frozen
+   choices; do not inspect a V10 score before the separate implementation commit
+   is clean, pushed, and green in CI. Any later hypothesis must likewise be
+   registered before implementation, and all currently observed outcomes are
+   consumed for a model changed in response.
 6. Start a future candidate as shadow only through a separate reviewed PR and
    count evidence only from that exact version's first eligible pre-draw snapshot.
 7. For V3 `v3.0.0`, preserve `F < A < R < S`, install live dependencies with
