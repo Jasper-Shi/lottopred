@@ -1,0 +1,673 @@
+{
+  "$id": "https://github.com/Jasper-Shi/lottopred/reports/historical_oos/global_opportunities.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "source_registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/sourceRegistered"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "opportunity"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/opportunity"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "duplicate_stream"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/duplicateStream"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "coverage_gap"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/coverageGap"
+          }
+        }
+      }
+    }
+  ],
+  "description": "Schema for one canonical JSON line. Cryptographic chain validity is checked by validate_historical_oos_evidence, not by JSON Schema.",
+  "properties": {
+    "event_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "event_type": {
+      "enum": [
+        "source_registered",
+        "opportunity",
+        "duplicate_stream",
+        "coverage_gap"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    },
+    "previous_event_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "sequence": {
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_sha256",
+    "event_type",
+    "payload",
+    "previous_event_sha256",
+    "sequence"
+  ],
+  "title": "Historical OOS opportunity ledger event",
+  "type": "object",
+  "$defs": {
+    "classification": {
+      "additionalProperties": false,
+      "properties": {
+        "exact_final6_status": {
+          "enum": [
+            "reported_false",
+            "reported_unverified",
+            "verified_false",
+            "verified_true"
+          ]
+        },
+        "stop_global_search": {
+          "type": "boolean"
+        },
+        "success_class": {
+          "enum": [
+            "partial_final6",
+            "top12_coverage_only",
+            "reported_unverified_final6",
+            "verified_historical_final6",
+            "verified_historical_final6_audit_not_clear"
+          ]
+        },
+        "top12_all_main_status": {
+          "enum": [
+            "reported_false",
+            "reported_true"
+          ]
+        }
+      },
+      "required": [
+        "exact_final6_status",
+        "stop_global_search",
+        "success_class",
+        "top12_all_main_status"
+      ],
+      "type": "object"
+    },
+    "coverageGap": {
+      "additionalProperties": false,
+      "properties": {
+        "date_end": {
+          "format": "date",
+          "type": "string"
+        },
+        "date_start": {
+          "format": "date",
+          "type": "string"
+        },
+        "evidence_lane": {
+          "const": "consumed_historical_diagnostic"
+        },
+        "experiment_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "maximum_final6_hits": {
+          "type": "null"
+        },
+        "model_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "per_target_final6": {
+          "const": "unknown"
+        },
+        "per_target_top12": {
+          "const": "unknown"
+        },
+        "reason": {
+          "const": "aggregate_report_only"
+        },
+        "reported_target_count": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": [
+        "date_end",
+        "date_start",
+        "evidence_lane",
+        "experiment_id",
+        "maximum_final6_hits",
+        "model_name",
+        "model_version",
+        "per_target_final6",
+        "per_target_top12",
+        "reason",
+        "reported_target_count",
+        "source_path",
+        "source_sha256"
+      ],
+      "type": "object"
+    },
+    "duplicateStream": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "detail_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "exact_duplicate_of": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "opportunities_added": {
+          "const": 0
+        }
+      },
+      "required": [
+        "bundle_id",
+        "detail_sha256",
+        "exact_duplicate_of",
+        "opportunities_added"
+      ],
+      "type": "object"
+    },
+    "hitCount": {
+      "maximum": 6,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "number": {
+      "maximum": 49,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "numberList": {
+      "items": {
+        "$ref": "#/$defs/number"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "opportunity": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "missing_from_source"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "stop_global_search": {
+                    "const": false
+                  }
+                }
+              },
+              "forecast": {
+                "properties": {
+                  "final6": {
+                    "type": "null"
+                  },
+                  "forecast_sha256": {
+                    "type": "null"
+                  },
+                  "top12": {
+                    "type": "null"
+                  },
+                  "top18": {
+                    "type": "null"
+                  },
+                  "top6": {
+                    "type": "null"
+                  }
+                }
+              },
+              "reported_evaluation": {
+                "properties": {
+                  "score_origin": {
+                    "const": "copied_not_recomputed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "verified_full_snapshot"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reported_evaluation": {
+                "properties": {
+                  "score_origin": {
+                    "const": "independently_recomputed_and_matched"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "verified_full_snapshot"
+                  }
+                }
+              },
+              "reported_evaluation": {
+                "properties": {
+                  "final6_hits": {
+                    "const": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "success_class": {
+                    "const": "verified_historical_final6"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  },
+                  "stop_global_search": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "success_class": {
+                    "const": "verified_historical_final6_audit_not_clear"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  },
+                  "stop_global_search": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "audit": {
+          "type": "object"
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "evidence_lane": {
+          "const": "consumed_historical_diagnostic"
+        },
+        "forecast": {
+          "$ref": "#/$defs/forecast"
+        },
+        "model_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "reported_evaluation": {
+          "$ref": "#/$defs/reportedEvaluation"
+        },
+        "reported_model_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "type": "object"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        }
+      },
+      "required": [
+        "audit",
+        "classification",
+        "evidence_lane",
+        "forecast",
+        "model_name",
+        "reported_evaluation",
+        "reported_model_version",
+        "source",
+        "target"
+      ],
+      "type": "object"
+    },
+    "forecast": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "snapshot_status": {
+                "const": "verified_full_snapshot"
+              }
+            },
+            "required": [
+              "snapshot_status"
+            ]
+          },
+          "then": {
+            "required": [
+              "ranking",
+              "strict_prefix_sha256"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "final6": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sixNumbers"
+            }
+          ]
+        },
+        "forecast_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "ranking": {
+          "items": {
+            "$ref": "#/$defs/number"
+          },
+          "maxItems": 49,
+          "minItems": 49,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "snapshot_status": {
+          "enum": [
+            "missing_from_source",
+            "verified_full_snapshot"
+          ]
+        },
+        "strict_prefix_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "top12": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/numberList"
+                },
+                {
+                  "maxItems": 12,
+                  "minItems": 12
+                }
+              ]
+            }
+          ]
+        },
+        "top18": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/numberList"
+                },
+                {
+                  "maxItems": 18,
+                  "minItems": 18
+                }
+              ]
+            }
+          ]
+        },
+        "top6": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sixNumbers"
+            }
+          ]
+        }
+      },
+      "required": [
+        "final6",
+        "forecast_sha256",
+        "snapshot_status",
+        "top12",
+        "top18",
+        "top6"
+      ],
+      "type": "object"
+    },
+    "reportedEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "final6_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "matched_final": {
+          "$ref": "#/$defs/numberList"
+        },
+        "score_origin": {
+          "enum": [
+            "copied_not_recomputed",
+            "independently_recomputed_and_matched"
+          ]
+        },
+        "top12_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "top18_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "top6_hits": {
+          "$ref": "#/$defs/hitCount"
+        }
+      },
+      "required": [
+        "final6_hits",
+        "matched_final",
+        "score_origin",
+        "top12_hits",
+        "top18_hits",
+        "top6_hits"
+      ],
+      "type": "object"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "sixNumbers": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/numberList"
+        },
+        {
+          "maxItems": 6,
+          "minItems": 6
+        }
+      ]
+    },
+    "sourceRegistered": {
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source_id"
+      ],
+      "type": "object"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_main": {
+          "$ref": "#/$defs/sixNumbers"
+        },
+        "bonus": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/number"
+            }
+          ]
+        },
+        "target_date": {
+          "format": "date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actual_main",
+        "bonus",
+        "target_date"
+      ],
+      "type": "object"
+    }
+  }
+}
