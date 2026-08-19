@@ -166,7 +166,10 @@ failed. Final-six output reached 3/6 ten times and never reached 4/6, 5/6, or
 The claim, 1,250-event hash-chain ledger, JSON, Markdown, registry result, and
 terminal seal permanently consume this attempt. It is never blind, untouched,
 confirmatory, or prospective evidence and must not be rerun. The dedicated
-config remains live-disabled; V1 remains production and V3 remains shadow.
+config remains live-disabled; V1 remains production and V3 remains shadow. A
+post-result read-only validator fix permits the unchanged artifact bundle to be
+verified from a different clone path while retaining filename, hash, event,
+report, and Markdown bindings; it does not change the scored implementation.
 
 Adding the V10 terminal seal advances `research_protocol.py`, which is in the
 V3 `v3.0.0` frozen manifest. V3 still has no F/A/R/S sequence and no `v3.0.0`

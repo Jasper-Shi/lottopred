@@ -411,6 +411,17 @@ def validate_v10_ledger_state_machine(
             and all(character in "0123456789abcdef" for character in value)
         )
 
+    def _matches_relocated_artifact(value: Any, expected: Path) -> bool:
+        """Bind a copied artifact by its fixed output directory and filename."""
+
+        if not isinstance(value, str) or not value:
+            return False
+        recorded = Path(value)
+        return (
+            recorded.name == expected.name
+            and recorded.parent.name == expected.parent.name
+        )
+
     def _load_bound_claim(
         *,
         require_preflight: bool = True,
@@ -742,7 +753,10 @@ def validate_v10_ledger_state_machine(
         expected_bundle_path = path.parent / (
             f"historical-6of6-candidate__{last_target}__v10.0.0.json"
         )
-        if terminal_payload.get("bundle_path") != str(expected_bundle_path):
+        if not _matches_relocated_artifact(
+            terminal_payload.get("bundle_path"),
+            expected_bundle_path,
+        ):
             raise V10DiagnosticError("V10 6/6 terminal bundle path is invalid")
         if not expected_bundle_path.is_file() or terminal_payload.get(
             "bundle_sha256"
@@ -825,7 +839,10 @@ def validate_v10_ledger_state_machine(
             or bundle.get("runtime") != preflight_payload.get("runtime")
             or not isinstance(claim_evidence, Mapping)
             or set(claim_evidence) != {"path", "sha256"}
-            or claim_evidence.get("path") != str(expected_claim_path)
+                or not _matches_relocated_artifact(
+                    claim_evidence.get("path"),
+                    expected_claim_path,
+                )
             or claim_evidence.get("sha256") != bound_claim_sha
             or claim_evidence.get("sha256")
             != body[0]["payload"].get("claim_sha256")
@@ -836,7 +853,7 @@ def validate_v10_ledger_state_machine(
         bundle_ledger = bundle.get("ledger")
         if (
             not isinstance(bundle_ledger, Mapping)
-            or bundle_ledger.get("path") != str(path)
+                or not _matches_relocated_artifact(bundle_ledger.get("path"), path)
             or bundle_ledger.get("head_sha256_before_bundle")
             != body[index - 1].get("event_sha256")
             or bundle_ledger.get("event_count_before_bundle") != index
@@ -932,9 +949,14 @@ def validate_v10_ledger_state_machine(
         or any(not isinstance(warning, str) for warning in publication_warnings)
         or publication_warnings != derived_notification_warnings
         or publication.get("scored_targets") != expected_targets
-        or publication.get("report_json") != str(expected_artifacts.report_json)
-        or publication.get("report_markdown")
-        != str(expected_artifacts.report_markdown)
+        or not _matches_relocated_artifact(
+            publication.get("report_json"),
+            expected_artifacts.report_json,
+        )
+        or not _matches_relocated_artifact(
+            publication.get("report_markdown"),
+            expected_artifacts.report_markdown,
+        )
     ):
         raise V10DiagnosticError("V10 publication_started payload is invalid")
     index += 1
@@ -971,8 +993,14 @@ def validate_v10_ledger_state_machine(
         or not isinstance(published_warnings, list)
         or any(not isinstance(warning, str) for warning in published_warnings)
         or published_warnings[: len(publication_warnings)] != publication_warnings
-        or published.get("json_path") != str(expected_artifacts.report_json)
-        or published.get("markdown_path") != str(expected_artifacts.report_markdown)
+        or not _matches_relocated_artifact(
+            published.get("json_path"),
+            expected_artifacts.report_json,
+        )
+        or not _matches_relocated_artifact(
+            published.get("markdown_path"),
+            expected_artifacts.report_markdown,
+        )
         or published.get("scored_targets") != expected_targets
         or not expected_artifacts.report_json.is_file()
         or not expected_artifacts.report_markdown.is_file()
@@ -1084,6 +1112,17 @@ def validate_v10_ledger_state_machine(
         scientific_sections=scientific_sections,
         notification_warnings=publication_warnings,
     )
+    report_claim = report.get("one_shot_claim")
+    report_ledger = report.get("attempt_ledger")
+    if (
+        not isinstance(report_claim, Mapping)
+        or not _matches_relocated_artifact(report_claim.get("path"), claim_path)
+        or not isinstance(report_ledger, Mapping)
+        or not _matches_relocated_artifact(report_ledger.get("path"), path)
+    ):
+        raise V10DiagnosticError("V10 published report artifact paths are invalid")
+    expected_report["one_shot_claim"]["path"] = report_claim["path"]
+    expected_report["attempt_ledger"]["path"] = report_ledger["path"]
     if _canonical_json_bytes(report) != _canonical_json_bytes(expected_report):
         raise V10DiagnosticError("V10 published report template does not replay")
     try:
@@ -1092,7 +1131,6 @@ def validate_v10_ledger_state_machine(
         raise V10DiagnosticError("V10 published Markdown report is unreadable") from exc
     if markdown_bytes != _render_markdown(expected_report).encode("utf-8"):
         raise V10DiagnosticError("V10 published Markdown does not render from JSON")
-    report_claim = report.get("one_shot_claim")
     if (
         not isinstance(report_claim, Mapping)
         or set(report_claim)
@@ -1103,7 +1141,7 @@ def validate_v10_ledger_state_machine(
             "retention",
             "sha256",
         }
-        or report_claim.get("path") != str(claim_path)
+        or not _matches_relocated_artifact(report_claim.get("path"), claim_path)
         or report_claim.get("sha256") != claim_sha
         or report_claim.get("payload") != claim_payload
         or report_claim.get("created_before_first_forecast_and_score") is not True
@@ -1121,7 +1159,6 @@ def validate_v10_ledger_state_machine(
         if all_gates_passed
         else "reject"
     )
-    report_ledger = report.get("attempt_ledger")
     if (
         decision.get("all_scientific_gates_passed") is not all_gates_passed
         or decision.get("decision") != expected_decision
@@ -1146,7 +1183,7 @@ def validate_v10_ledger_state_machine(
         or report.get("notification_result_authority")
         != "external_workflow_receipt_after_terminal"
         or not isinstance(report_ledger, Mapping)
-        or report_ledger.get("path") != str(path)
+        or not _matches_relocated_artifact(report_ledger.get("path"), path)
         or report_ledger.get("event_count_at_report") != index
         or report_ledger.get("head_sha256_at_report")
         != body[index - 1].get("event_sha256")

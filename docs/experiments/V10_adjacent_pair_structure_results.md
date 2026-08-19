@@ -61,6 +61,14 @@ fixed halves, CPython 3.12 runtime lock, implementation ancestry, pushed commit,
 CI checks, data boundary, control map, and V5/V8 reference identities all
 passed before the claim was acquired.
 
+After these immutable bytes were committed, the read-only validator was
+hardened to recognize the same fixed report-directory and filename identities
+after a repository is cloned at a different absolute path. It still verifies
+the claim, file hashes, complete event replay, report JSON, and rendered
+Markdown. This portability fix changes no artifact byte, forecast, score,
+gate, decision, or frozen implementation identity; the scored code commit
+remains `38be95eb27aa69a9e16bc972d14df13b0b24d6dd`.
+
 ## Candidate ranking results
 
 Fair per-draw expectations are `36/49 = 0.7346938775510204` for Top-6,
