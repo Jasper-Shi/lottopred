@@ -330,6 +330,19 @@ def test_v11_gates_evidence_ledger_and_prospective_boundary_are_frozen() -> None
     assert params["opportunity_same_target_deduplication"] == (
         "identical_sorted_final6_counted_once"
     )
+    assert params["opportunity_primary_producer"] == (
+        "first_registered_opportunity_model_with_identical_sorted_final6"
+    )
+    assert params["opportunity_bundle_producers"] == (
+        "primary_model_name_in_path_and_all_producer_model_names_in_registered_order"
+    )
+    assert params["opportunity_identical_final6_bundle_count"] == (
+        "one_per_target_unique_sorted_final6"
+    )
+    assert params["opportunity_required_fields"] == (
+        "target_primary_producer_model_name_producer_model_names_"
+        "producer_forecast_sha256_by_model_final6_actual_hits_chronology_status"
+    )
     assert params["opportunity_familywise_fair_probability"] == (
         "-math.expm1(math.fsum(math.log1p(-u_t/13983816)_in_target_date_order))"
     )
@@ -346,6 +359,17 @@ def test_v11_gates_evidence_ledger_and_prospective_boundary_are_frozen() -> None
         "tests/test_v11_previous_bonus_carryover.py",
         "tests/test_v11_diagnostics.py",
     ]
+    assert params["required_implementation_status_documentation_paths"] == [
+        "docs/CODEX_HANDOFF.md",
+        "docs/MODEL_PROTOCOL.md",
+        "docs/RESEARCH_ROADMAP.md",
+    ]
+    assert params["implementation_changed_path_policy"] == (
+        "exact_required_five_source_paths_plus_required_three_status_docs"
+    )
+    assert params["implementation_status_doc_mutation"] == (
+        "implemented_not_scored_not_activated_only"
+    )
 
     assert registration.prospective.status == "not_activated"
     assert registration.prospective.role == "shadow"

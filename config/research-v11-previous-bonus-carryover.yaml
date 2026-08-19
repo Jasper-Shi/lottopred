@@ -368,6 +368,12 @@ research:
   - tools/run_v11_historical.py
   - tests/test_v11_previous_bonus_carryover.py
   - tests/test_v11_diagnostics.py
+  required_implementation_status_documentation_paths:
+  - docs/CODEX_HANDOFF.md
+  - docs/MODEL_PROTOCOL.md
+  - docs/RESEARCH_ROADMAP.md
+  implementation_changed_path_policy: exact_required_five_source_paths_plus_required_three_status_docs
+  implementation_status_doc_mutation: implemented_not_scored_not_activated_only
   dedicated_research_config_path: config/research-v11-previous-bonus-carryover.yaml
   runtime_python: CPython_3.12
   runtime_lock_path: requirements-live.lock
@@ -383,10 +389,13 @@ research:
   - random_v1.0.0
   opportunity_definition: one_sorted_final6_for_each_listed_model_and_target
   opportunity_same_target_deduplication: identical_sorted_final6_counted_once
+  opportunity_primary_producer: first_registered_opportunity_model_with_identical_sorted_final6
+  opportunity_bundle_producers: primary_model_name_in_path_and_all_producer_model_names_in_registered_order
+  opportunity_identical_final6_bundle_count: one_per_target_unique_sorted_final6
   opportunity_count_per_target: u_t_number_of_unique_final6_sets
   opportunity_count_per_target_bounds: 1_through_4
   opportunity_event: durable_target_revealed_scored_event_before_next_target
-  opportunity_required_fields: target_model_names_final6_forecast_hash_actual_hits_chronology_status
+  opportunity_required_fields: target_primary_producer_model_name_producer_model_names_producer_forecast_sha256_by_model_final6_actual_hits_chronology_status
   opportunity_denominator: 13983816
   opportunity_familywise_fair_probability: -math.expm1(math.fsum(math.log1p(-u_t/13983816)_in_target_date_order))
   opportunity_outputs: per_target_u_t_cumulative_unique_count_cumulative_fair_probability

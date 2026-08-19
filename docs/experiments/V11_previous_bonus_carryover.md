@@ -446,10 +446,15 @@ failure.
 At each reveal, collect the candidate, pseudo-bonus control, V1 ensemble, and
 target-date random sorted final-six sets. Deduplicate identical sets on the
 same target; in particular, a feature-off candidate identical to V1 is one
-opportunity, not two. Let `u_t` be the number of unique sets (`1..4`). The durable scored event
-records each set, all producing model names, forecast hash, actual set, hits,
-chronology status, `u_t`, cumulative unique opportunities, and cumulative fair
-probability
+opportunity, not two. For each unique set, the primary producer is the first
+matching entry in the frozen `opportunity_models` order. Its model name is used
+in the breakthrough path, while the bundle records every matching
+`producer_model_names` entry in that same order. Exactly one bundle, opportunity,
+and alert is permitted for a target/unique-set pair. Let `u_t` be the number of
+unique sets (`1..4`). The durable scored event records each set, all producing
+model names, `producer_forecast_sha256_by_model` in the same registered order,
+actual set, hits, chronology status, `u_t`, cumulative unique opportunities,
+and cumulative fair probability
 
 ```text
 -expm1(fsum_t(log1p(-u_t / C(49,6))))
@@ -486,8 +491,8 @@ or scientific gates. Normal completion requires exactly 621 scored targets.
 
 The commit containing this registration must be an ancestor of the later V11
 implementation commit. Before claim acquisition, that exact clean/pushed
-implementation commit must contain only the reviewed behavior and the frozen
-implementation paths:
+implementation commit must differ from the registration commit in exactly five
+required source/test paths and three required non-behavioral status documents:
 
 ```text
 src/lotto649/models/v11_previous_bonus_carryover.py
@@ -495,11 +500,17 @@ src/lotto649/v11_diagnostics.py
 tools/run_v11_historical.py
 tests/test_v11_previous_bonus_carryover.py
 tests/test_v11_diagnostics.py
+docs/CODEX_HANDOFF.md
+docs/MODEL_PROTOCOL.md
+docs/RESEARCH_ROADMAP.md
 ```
 
-This registration does not create those files, authorize a diagnostic run, or
-modify factory, CLI, live, production `config.yaml`, V1, or any V3 frozen path.
-The dedicated config has live and notifications disabled and lists only the
+The three documentation diffs may state only **implemented / not scored / not
+activated** and may not change a formula, gate, evidence interpretation, or
+execution rule. Every other changed path is prohibited. This registration does
+not create the five implementation files, authorize a diagnostic run, or modify
+factory, CLI, live, production `config.yaml`, V1, or any V3 frozen path. The
+dedicated config has live and notifications disabled and lists only the
 candidate, pseudo-bonus control, V1 ensemble, and target-date random benchmark
 for the diagnostic.
 
