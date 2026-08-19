@@ -20,7 +20,7 @@ in `V2_V4_RESULTS.md`.
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
-| V10 adjacent-pair structure | Implemented for review; not scored | `v10.0.0` freezes one exact fair-centred set-level adjacency tilt and fixed label-bijection control. Its isolated model and one-shot runner have only synthetic test evidence; it remains research-only, live-disabled, and must be frozen on a reviewed implementation commit before its sole consumed diagnostic. |
+| V10 adjacent-pair structure | Rejected | `v10.0.0` completed its unique 621-target consumed diagnostic. Top-12 point lift was small and positive but non-significant after Holm correction; proper-score, targeted-control, and joint-mechanism gates failed. Maximum final-six hit was 3/6, with no 6/6. It remains live-disabled and must never be rerun. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -132,9 +132,9 @@ too close to V1 main-frequency, with insufficient official mechanism support.
 V9 remains deferred, has never been implemented or scored, and may not be
 reopened from lottery outcomes.
 
-## V10 research registration checkpoint
+## V10 terminal research result
 
-The next bounded attempt is
+The completed bounded attempt is
 [`V10_adjacent_pair_structure`](experiments/V10_adjacent_pair_structure.md),
 version `v10.0.0`. Its
 [outcome-blind basis](research/V10_adjacent_pair_structure_basis.md) derives the
@@ -153,16 +153,26 @@ mechanism gate, not a second primary and not a rescue. V10 is conservatively
 variant 2 of the append-only `v5_pair_cooccurrence` family because its statistic
 still aggregates same-draw label pairs.
 
-No V10 score exists. The isolated model and one-shot runner are implemented for
-review, but their exact implementation commit must pass local and CI checks from
-a clean pushed HEAD before the permanent one-shot claim may be acquired. The
-only allowed historical run scores exactly the 621 targets in 2020–2025 with
-every earlier verified draw as training history. It is consumed historical
-diagnostic evidence, never blind, untouched, confirmatory, or prospective. The
-dedicated config keeps
-`live.enabled: false`; V1 remains production, V3 remains shadow, and a future
-V10 cohort would require a separate reviewed activation with exactly 208
-eligible immutable snapshots.
+The unique historical run completed all 621 registered 2020–2025 targets from
+the frozen implementation commit
+`38be95eb27aa69a9e16bc972d14df13b0b24d6dd`. The audit chain is valid and
+warning-free, but the model is rejected: aggregate Top-12 lift was
+`0.020145256170100767`, Holm `p=0.5445965052903498`, and the bootstrap interval
+included zero. Proper-score, targeted-control, and joint-mechanism gates also
+failed. Final-six output reached 3/6 ten times and never reached 4/6, 5/6, or
+6/6. See the
+[decision record](experiments/V10_adjacent_pair_structure_results.md).
+
+The claim, 1,250-event hash-chain ledger, JSON, Markdown, registry result, and
+terminal seal permanently consume this attempt. It is never blind, untouched,
+confirmatory, or prospective evidence and must not be rerun. The dedicated
+config remains live-disabled; V1 remains production and V3 remains shadow.
+
+Adding the V10 terminal seal advances `research_protocol.py`, which is in the
+V3 `v3.0.0` frozen manifest. V3 still has no F/A/R/S sequence and no `v3.0.0`
+evidence. Any future V3 activation must use the commit containing the V10
+terminal registry result and seal as its new final freeze `F`; the earlier
+`f791c91` candidate is obsolete.
 
 ## V5 research checkpoint
 
@@ -450,14 +460,14 @@ Do not broaden the fallback to swallow those integrity failures.
 4. Keep rejected `v5.0.0` through `v8.0.0` immutable and retain every claim,
    report, decision record, and registry row as a negative result. Never rerun
    the same version or tune it against its consumed answers.
-5. Review and freeze the implemented V10 formula without changing its frozen
-   choices; do not inspect a V10 score before the separate implementation commit
-   is clean, pushed, and green in CI. Any later hypothesis must likewise be
-   registered before implementation, and all currently observed outcomes are
-   consumed for a model changed in response.
+5. Preserve rejected `v10.0.0`, its permanent claim/ledger/reports, terminal
+   seal, and decision record. Do not rerun or tune it. Any later hypothesis must
+   be registered before implementation, and all currently observed outcomes
+   are consumed for a model changed in response.
 6. Start a future candidate as shadow only through a separate reviewed PR and
    count evidence only from that exact version's first eligible pre-draw snapshot.
-7. For V3 `v3.0.0`, preserve `F < A < R < S`, install live dependencies with
+7. For V3 `v3.0.0`, use the V10 terminal-result commit as the new final `F`,
+   preserve `F < A < R < S`, install live dependencies with
    `requirements-live.lock` as constraints, and exclude every legacy `v1.0.0`
    V3 snapshot from the cohort.
 8. Let normal live jobs continue during research. Never rewrite forward artifacts
