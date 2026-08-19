@@ -245,6 +245,9 @@ KNOWN_TERMINAL_RESULT_SEALS = {
     "V8_fixed_recurrence_harmonic": (
         "150b1243fc884926a22c63f9b707b96af808bfae39b228382cc0b852b0a1c2b5"
     ),
+    "V10_adjacent_pair_structure": (
+        "ab20b6b930ca446b7961ac16494dcc0619b3653ac9e402bea96e2a019ba163ec"
+    ),
 }
 
 

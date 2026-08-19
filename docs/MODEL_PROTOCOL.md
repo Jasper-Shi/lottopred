@@ -78,11 +78,11 @@ Each hypothesis must prove value out-of-sample and survive multiple-testing corr
 - calibration curves
 - probability sharpness vs accuracy
 
-## Registered V10 structural-set diagnostic
+## Closed V10 structural-set diagnostic
 
-`V10_adjacent_pair_structure v10.0.0` is registered and implemented in an
-isolated model/one-shot runner for review, but it has not been historically
-scored. It tests exactly one statistic: the count of adjacent integer pairs in
+`V10_adjacent_pair_structure v10.0.0` completed its sole registered one-shot
+historical diagnostic and is closed as **Reject / not activated**. It tests
+exactly one statistic: the count of adjacent integer pairs in
 an unordered six-main-number set. Its complete-set law is a one-parameter
 exponential tilt of the exact fair six-set distribution, estimated from every
 strictly prior verified main draw with one fair-equivalent pseudo-observation.
@@ -93,10 +93,14 @@ The sole formal primary remains Top-12 lift versus exact fair theory. The
 complete-set prequential likelihood advantage is a mandatory conjunctive
 mechanism check, not another selectable primary. Because the statistic is a sum
 over same-draw label pairs, this attempt is variant 2 of the existing
-`v5_pair_cooccurrence` Holm family. The only authorized historical run is the
-fixed 621-target 2020–2025 consumed diagnostic; it cannot become confirmatory
-evidence or activate the model. See
-[`V10_adjacent_pair_structure.md`](experiments/V10_adjacent_pair_structure.md).
+`v5_pair_cooccurrence` Holm family. The fixed 621-target 2020–2025 consumed
+diagnostic produced a small positive Top-12 point lift
+(`0.020145256170100767`) but no reliable evidence: Holm
+`p=0.5445965052903498`, the bootstrap interval crossed zero, proper scores and
+the joint mechanism gate failed, and final-six output reached only 3/6. It
+cannot become confirmatory evidence, activate the model, or be rerun. See the
+frozen [registration](experiments/V10_adjacent_pair_structure.md) and
+[decision record](experiments/V10_adjacent_pair_structure_results.md).
 
 ## Interpretation
 

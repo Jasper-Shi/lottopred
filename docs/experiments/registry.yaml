@@ -697,7 +697,7 @@ experiments:
     family: structural_set_features
     model_name: v10_adjacent_pair_structure
     model_version: v10.0.0
-    status: registered
+    status: closed_rejected
     registration_file: docs/experiments/V10_adjacent_pair_structure.md
     registered_on: 2026-08-19
     seed: 649
@@ -988,7 +988,15 @@ experiments:
       - kind: target_date_seeded_fair_random
         seed: 649
 
-    result: null
+    result:
+      decision: reject
+      decided_on: 2026-08-19
+      implementation_commit: 38be95eb27aa69a9e16bc972d14df13b0b24d6dd
+      report_json: reports/v10_adjacent_pair_structure_v10.0.0_historical.json
+      report_markdown: reports/v10_adjacent_pair_structure_v10.0.0_historical.md
+      result_file: docs/experiments/V10_adjacent_pair_structure_results.md
+      historical_primary_signal_supported: false
+      shadow_activation: not_activated
 
     prospective:
       status: not_activated

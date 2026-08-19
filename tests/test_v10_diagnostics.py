@@ -7,6 +7,7 @@ import json
 import math
 from math import comb
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -576,6 +577,31 @@ def test_synthetic_vertical_slice_fsyncs_each_freeze_before_reveal_and_publishes
     assert Path(result["markdown_path"]).is_file()
     assert not V10ArtifactPaths.in_directory(tmp_path).report_json_staging.exists()
     assert not V10ArtifactPaths.in_directory(tmp_path).report_markdown_staging.exists()
+
+
+def test_published_artifacts_validate_after_clone_path_changes(tmp_path: Path) -> None:
+    source = tmp_path / "source-clone" / "reports"
+    source.mkdir(parents=True)
+    request = _synthetic_request(
+        source,
+        actuals=[(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+    )
+    result = run_v10_historical(request)
+    assert result["status"] == "published"
+
+    destination = tmp_path / "different-clone" / "reports"
+    destination.mkdir(parents=True)
+    for artifact in V10ArtifactPaths.in_directory(source).__dict__.values():
+        artifact_path = Path(artifact)
+        if artifact_path.is_file():
+            shutil.copy2(artifact_path, destination / artifact_path.name)
+
+    moved = V10ArtifactPaths.in_directory(destination)
+    events = validate_v10_ledger_state_machine(
+        moved.ledger.resolve(),
+        expected_targets=2,
+    )
+    assert events[-1]["event_type"] == "published"
 
 
 def test_progress_notification_outbox_is_fsynced_before_dispatch_and_next_target(

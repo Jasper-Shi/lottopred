@@ -1217,6 +1217,7 @@ def test_activated_cohort_cannot_be_reset_with_dataclass_replace():
         "V6_fixed_boundary_js_regime",
         "V7_post_rng_main_bonus_role_bias",
         "V8_fixed_recurrence_harmonic",
+        "V10_adjacent_pair_structure",
     ],
 )
 def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
@@ -1243,6 +1244,7 @@ def test_sealed_terminal_result_cannot_be_removed_from_reloaded_registry(
         "V6_fixed_boundary_js_regime",
         "V7_post_rng_main_bonus_role_bias",
         "V8_fixed_recurrence_harmonic",
+        "V10_adjacent_pair_structure",
     ],
 )
 def test_sealed_terminal_experiment_cannot_be_deleted_from_registry(

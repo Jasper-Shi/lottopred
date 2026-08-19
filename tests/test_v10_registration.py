@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from hashlib import sha256
 from pathlib import Path
 
 import yaml
 
-from lotto649.research_protocol import load_experiment_registry
+from lotto649.research_protocol import (
+    KNOWN_TERMINAL_RESULT_SEALS,
+    load_experiment_registry,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +20,7 @@ DEFAULT_CONFIG = ROOT / "config.yaml"
 WORKFLOWS = ROOT / ".github" / "workflows"
 
 
-def test_v10_registration_freezes_one_unscored_adjacent_pair_variant() -> None:
+def test_v10_registration_preserves_frozen_variant_and_rejected_result() -> None:
     registration = load_experiment_registry(REGISTRY).get(
         "V10_adjacent_pair_structure"
     )
@@ -24,7 +28,7 @@ def test_v10_registration_freezes_one_unscored_adjacent_pair_variant() -> None:
     assert registration.family == "structural_set_features"
     assert registration.model_name == "v10_adjacent_pair_structure"
     assert registration.model_version == "v10.0.0"
-    assert registration.status == "registered"
+    assert registration.status == "closed_rejected"
     assert registration.registration_file == (
         "docs/experiments/V10_adjacent_pair_structure.md"
     )
@@ -36,7 +40,26 @@ def test_v10_registration_freezes_one_unscored_adjacent_pair_variant() -> None:
     # still a sum over 48 same-draw label pairs, so it cannot reset multiplicity.
     assert registration.multiplicity_family == "v5_pair_cooccurrence"
     assert registration.variant_index == 2
-    assert registration.result is None
+    assert registration.result is not None
+    assert registration.result.decision == "reject"
+    assert registration.result.decided_on == date(2026, 8, 19)
+    assert registration.result.implementation_commit == (
+        "38be95eb27aa69a9e16bc972d14df13b0b24d6dd"
+    )
+    assert registration.result.report_json == (
+        "reports/v10_adjacent_pair_structure_v10.0.0_historical.json"
+    )
+    assert registration.result.report_markdown == (
+        "reports/v10_adjacent_pair_structure_v10.0.0_historical.md"
+    )
+    assert registration.result.result_file == (
+        "docs/experiments/V10_adjacent_pair_structure_results.md"
+    )
+    assert registration.result.historical_primary_signal_supported is False
+    assert registration.result.shadow_activation == "not_activated"
+    assert KNOWN_TERMINAL_RESULT_SEALS[registration.experiment_id] == (
+        "ab20b6b930ca446b7961ac16494dcc0619b3653ac9e402bea96e2a019ba163ec"
+    )
     assert registration.dataset_source_commit == (
         "90177c80cfb070038d79508fb2e73305a297f516"
     )
@@ -302,6 +325,43 @@ def test_v10_registration_freezes_one_unscored_adjacent_pair_variant() -> None:
     assert registration.prospective.activation_commit is None
     assert registration.prospective.outcomes_known_at_activation is None
     assert registration.prospective.cohort_start is None
+
+    result_paths = (
+        registration.result.report_json,
+        registration.result.report_markdown,
+        registration.result.result_file,
+        params["historical_claim"],
+        params["historical_attempt_ledger"],
+    )
+    for result_path in result_paths:
+        assert (ROOT / result_path).is_file()
+    assert sha256((ROOT / registration.result.report_json).read_bytes()).hexdigest() == (
+        "26fe097bad44c6563a1c4d659a42b0bbdbdc7e3414bc62e37a3ec5108edd49c6"
+    )
+    assert sha256(
+        (ROOT / registration.result.report_markdown).read_bytes()
+    ).hexdigest() == (
+        "25ac333713db4fab79bcc72f83662456f54ed6adc0eb6ec6775a7794060281c8"
+    )
+    assert sha256((ROOT / params["historical_claim"]).read_bytes()).hexdigest() == (
+        "0f68d60ec923de2fc3370e95f939069d3ffd4f22f4ed6b30da3773dcd49877c6"
+    )
+    assert sha256(
+        (ROOT / params["historical_attempt_ledger"]).read_bytes()
+    ).hexdigest() == (
+        "774434e8cd34664f4546a7874f043dbf752e9aaf579ef9d020639cf2d8c4d3c9"
+    )
+    report = json.loads(
+        (ROOT / registration.result.report_json).read_text(encoding="utf-8")
+    )
+    assert report["code_commit"] == registration.result.implementation_commit
+    assert report["historical_decision"]["decision"] == "reject"
+    assert report["historical_decision"]["all_scientific_gates_passed"] is False
+    assert report["historical_decision"]["prospective_status"] == "not_activated"
+    assert report["audit_warnings"] == []
+    assert report["scopes"]["aggregate"][registration.model_name][
+        "final6_hit_histogram"
+    ] == {"0": 274, "1": 262, "2": 75, "3": 10, "4": 0, "5": 0, "6": 0}
 
 
 def test_v10_research_config_isolated_from_live_models() -> None:
