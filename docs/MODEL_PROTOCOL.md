@@ -80,7 +80,8 @@ Each hypothesis must prove value out-of-sample and survive multiple-testing corr
 
 ## Registered V10 structural-set diagnostic
 
-`V10_adjacent_pair_structure v10.0.0` is registered but not yet implemented or
+`V10_adjacent_pair_structure v10.0.0` is registered and implemented in an
+isolated model/one-shot runner for review, but it has not been historically
 scored. It tests exactly one statistic: the count of adjacent integer pairs in
 an unordered six-main-number set. Its complete-set law is a one-parameter
 exponential tilt of the exact fair six-set distribution, estimated from every
