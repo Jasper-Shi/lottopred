@@ -165,9 +165,13 @@ target-date-seeded random control remain comparisons. Even if every gate passes,
 V1 remains production until a separate reviewed promotion PR.
 
 The V9 post-RNG seven-number-selection idea is
-[documented](research/V9_post_rng_seven_number_selection_basis.md) but deferred.
-It was not registered, implemented, or scored. If ever revived, it must be
-prospective-only; no historical V9 performance search is permitted.
+[documented](research/V9_post_rng_seven_number_selection_basis.md). An
+[outcome-blind independent review](research/V9_selection_stage_independence_review.md)
+found it identifiable from V7 but too highly overlapping with V1 main-frequency
+and unsupported by a distinct official production mechanism. It was rejected
+before registration, implementation, or scoring and remains deferred. It may
+only be reopened by new outcome-independent external evidence; no historical
+V9 performance search is permitted.
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256
