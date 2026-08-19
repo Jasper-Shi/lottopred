@@ -27,6 +27,15 @@ changed model; the changed version must start a new prospective cohort.
 
 The random model remains in every benchmark.
 
+Historical hit-count claims must cite the permanent evidence catalog described
+in [`HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`](HISTORICAL_OOS_EVIDENCE_PROTOCOL.md).
+Keep three claims separate: a legacy reported maximum when the complete frozen
+ticket is unavailable, a snapshot-verified maximum when the stored Top-6 and
+actual set can be recomputed independently, and the global maximum. Coverage
+gaps and incomplete legacy ticket-level deduplication make the last quantity
+unknown; a Top-12 containing all six actual labels is not a Final-6 6/6
+prediction.
+
 ## Why numerical distance is meaningless
 
 Predicting 27 when 28 is drawn is not a near-hit. Number labels are categorical. The system predicts a probability for each of 49 labels and uses proper probability/ranking metrics.
@@ -101,6 +110,33 @@ the joint mechanism gate failed, and final-six output reached only 3/6. It
 cannot become confirmatory evidence, activate the model, or be rerun. See the
 frozen [registration](experiments/V10_adjacent_pair_structure.md) and
 [decision record](experiments/V10_adjacent_pair_structure_results.md).
+
+## Registered V11 previous-bonus carryover diagnostic
+
+`V11_previous_bonus_carryover v11.0.0` is registered but not implemented,
+scored, or activated. It tests one cross-draw observable: whether the previous
+published bonus label enters the next six-main set more or less often than its
+strict-prefix frozen V1 ensemble probability implies. A single `N(0,1)`-
+regularized log-odds coefficient is fitted using only earlier eligible targets;
+one capacity-proportional transfer changes the anchor marginal while preserving
+expected count six and every non-anchor ordering. A zero coefficient returns
+the V1 probabilities and ranking bit for bit.
+
+The deterministic pseudo-bonus control changes only the prior-draw anchor; it
+does not alter the original main history or the shared V1 probabilities. The
+target-date-seeded `random v1.0.0` benchmark remains a descriptive fair sanity
+control and a separately counted Final-6 opportunity. A broader randomized
+conditional-role audit is deferred and prohibited for this version.
+
+The only authorized historical execution is one permanent, forecast-before-
+reveal 621-target diagnostic over the already-consumed 2020–2025 period. It is
+variant 3 of the append-only `transition_markov` Holm family, uses fixed 307/314
+halves, and must pass all registered Top-12, V1, control, Top-6, proper-score,
+anchor-evidence, and audit gates. Even a complete historical pass cannot
+activate V11; it could only justify a separate reviewed 208-draw prospective
+shadow cohort. No forecast may be produced until the registration and a later
+independent implementation commit are pushed with green CI. See the frozen
+[registration](experiments/V11_previous_bonus_carryover.md).
 
 ## Interpretation
 

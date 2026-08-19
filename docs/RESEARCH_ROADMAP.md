@@ -129,6 +129,7 @@ must remain in the ledger rather than being deleted.
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
 | [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Closed — reject | Negative aggregate Top-12 lift; six of eight frozen gates failed | Never activated |
 | [`V10_adjacent_pair_structure`](experiments/V10_adjacent_pair_structure.md) | Structural set feature; `v5_pair_cooccurrence` variant 2 for multiplicity | `v10.0.0` | Closed — reject | Small positive Top-12 point lift, but Holm/CI, proper-score, control, and joint-mechanism gates failed; maximum final-six hit was 3/6 | Never activated |
+| [`V11_previous_bonus_carryover`](experiments/V11_previous_bonus_carryover.md) | Previous-bonus cross-draw residual; `transition_markov` variant 3 | `v11.0.0` | Registered; not implemented or scored | One 621-target consumed diagnostic is pre-registered but not authorized until a separate audited implementation commit | Not activated; fixed 208 eligible draws (104 + 104) only after a separate reviewed release sequence |
 
 ### V3 prospective freeze
 
@@ -193,6 +194,40 @@ failed. Final-six output reached only 3/6 and never 6/6. See the
 [decision record](experiments/V10_adjacent_pair_structure_results.md). The run
 cannot be repeated or relabeled as blind or confirmatory evidence, and any
 formula change requires a new version and prospective cohort.
+
+V11 is the next registered falsification attempt. It applies one standard-
+normal-penalized scalar logit offset to the immediately previous published
+bonus label's frozen V1 ensemble marginal, then conserves expected count six
+with one deterministic direct-marginal capacity transfer. The current RNG
+boundary is fixed externally at 2019-05-15. The only targeted control selects a
+deterministic pseudo bonus from each prior seven-label draw union using the
+registered full SHA-256 rule; candidate and control retain the same original V1
+history and marginals. The project-wide target-date-seeded `random v1.0.0`
+benchmark remains a descriptive null control and a separately counted Final-6
+opportunity. V11 is conservatively variant 3 of the append-only
+`transition_markov` family because V2 and V3 were prior transition-bearing
+attempts; their incompatible historical primary p-values enter Holm as `1.0`.
+
+No V11 forecast or score existed at registration. Its one possible historical
+run includes exactly the 621 already-consumed 2020--2025 targets, fixed 307/314
+halves, paired V1/control gates, proper-score and anchor-evidence gates, and a
+hash-chained forecast-before-reveal plus 6/6 opportunity ledger. It cannot be
+called blind or confirmatory and cannot be rerun after claim acquisition. V11
+is absent from production/live workflows; V1 remains production and V3 remains
+shadow. Historical passage could only justify a separate reviewed activation
+decision for an unchanged 208-draw prospective cohort.
+
+The permanent historical opportunity catalog now preserves every still-
+available V1--V4 Actions artifact and the complete V10 snapshot stream. It
+records 16,146 legacy reported opportunities, 621 independently recomputed V10
+opportunities, two exact duplicate streams that add zero opportunities, and
+four explicit V5--V8 coverage gaps. Consequently the evidence statements stay
+separate: legacy reports at least 4/6 without the complete frozen ticket, V10
+verifies a maximum of 3/6, and the global maximum remains unknown. Legacy rows
+whose Top-12 contains all six actual labels are coverage records, not Final-6
+6/6 successes. The global claim also remains blocked by incomplete legacy
+ticket-level deduplication. See
+[`HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`](HISTORICAL_OOS_EVIDENCE_PROTOCOL.md).
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256

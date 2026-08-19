@@ -1,6 +1,7 @@
 # Codex Handoff
 
-Last verified against `main` commit `90177c8` on 2026-08-16.
+Last verified on 2026-08-19 against the feature-branch state containing this
+handoff. The deployed `origin/main` checkpoint remains `90177c8`.
 
 ## Current state
 
@@ -21,6 +22,7 @@ in `V2_V4_RESULTS.md`.
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V10 adjacent-pair structure | Rejected | `v10.0.0` completed its unique 621-target consumed diagnostic. Top-12 point lift was small and positive but non-significant after Holm correction; proper-score, targeted-control, and joint-mechanism gates failed. Maximum final-six hit was 3/6, with no 6/6. It remains live-disabled and must never be rerun. |
+| V11 previous-bonus carryover | Registered, not implemented or scored | `v11.0.0` freezes one normally regularized previous-bonus-to-next-main residual on the exact V1 ensemble, one deterministic pseudo-bonus control, and the required target-date random benchmark. No V11 output exists; historical execution remains prohibited until a separate reviewed implementation commit. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -176,6 +178,52 @@ V3 `v3.0.0` frozen manifest. V3 still has no F/A/R/S sequence and no `v3.0.0`
 evidence. Any future V3 activation must use the commit containing the V10
 terminal registry result and seal as its new final freeze `F`; the earlier
 `f791c91` candidate is obsolete.
+
+## V11 registered research attempt
+
+[`V11_previous_bonus_carryover`](experiments/V11_previous_bonus_carryover.md)
+is registered as `v11.0.0`, but it is not implemented, scored, or activated.
+Its sole candidate estimates one `N(0,1)`-regularized scalar log-odds residual
+for whether the immediately previous published bonus label enters the next
+six-main set, conditional on that label's exact frozen V1 ensemble marginal.
+It applies one fixed capacity-proportional marginal transfer, returns V1 bit
+for bit when beta is zero, and cannot change any non-anchor ordering.
+
+The mechanism boundary is the officially documented first RNG draw on
+2019-05-15. Candidate and deterministic pseudo-bonus control share the same
+original main-only V1 history and 49 marginals; only the anchor role changes.
+The target-date-seeded `random v1.0.0` model remains a descriptive null
+benchmark and separately counted Final-6 opportunity. A broader Monte Carlo
+role audit is explicitly deferred and prohibited for this version.
+
+The only possible historical run is a permanent one-shot, 621-target consumed
+2020--2025 diagnostic with fixed 307/314 halves, transition-family Holm variant
+3, paired V1/control contrasts, proper-score and anchor log-evidence gates, and
+a per-target `fsync` forecast-before-reveal ledger. Passing every gate would
+permit only a separate reviewed prospective-shadow decision; V1 production and
+V3 shadow remain unchanged. Until the registration is committed, pushed, and
+followed by a separately reviewed implementation commit with green CI, no V11
+forecast or score may be generated.
+
+## Permanent historical OOS opportunity baseline
+
+The seven still-available V1--V4 GitHub Actions archives are preserved byte for
+byte under `evidence/historical/actions/31888527837/`, with run/job/head and ZIP/
+CSV SHA-256 identities in the manifest. Exact duplicate output streams add zero
+opportunities. The canonical hash-chain baseline is
+`reports/historical_oos/global_opportunities.jsonl`; its 16,774 events comprise
+16,767 opportunity events (16,146 legacy reported plus 621 V10 full-snapshot),
+one source-registration event, two duplicate-stream declarations, and four
+explicit V5--V8 coverage gaps.
+
+The three high-water statements must remain separate: legacy evidence reports
+at least 4/6 but lacks the complete frozen ticket; V10 independently verifies a
+maximum of 3/6 from its stored snapshot and actual set; the global maximum is
+unknown because V5--V8 have aggregate-only reports and legacy ticket-level
+deduplication cannot be completed. Four imported legacy rows report Top-12
+coverage of all six main numbers, but none is classified as a Final-6 success.
+See
+[`HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`](HISTORICAL_OOS_EVIDENCE_PROTOCOL.md).
 
 ## V5 research checkpoint
 
