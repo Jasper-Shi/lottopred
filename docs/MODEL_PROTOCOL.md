@@ -72,11 +72,30 @@ Each hypothesis must prove value out-of-sample and survive multiple-testing corr
 
 - permutation tests
 - bootstrap confidence intervals
-- false-discovery-rate correction
+- append-only family-wise Holm correction for registered discovery attempts
 - shuffled-label controls
 - stability across eras
 - calibration curves
 - probability sharpness vs accuracy
+
+## Registered V10 structural-set diagnostic
+
+`V10_adjacent_pair_structure v10.0.0` is registered but not yet implemented or
+scored. It tests exactly one statistic: the count of adjacent integer pairs in
+an unordered six-main-number set. Its complete-set law is a one-parameter
+exponential tilt of the exact fair six-set distribution, estimated from every
+strictly prior verified main draw with one fair-equivalent pseudo-observation.
+Bonus numbers, alternate gaps, windows, eras, hard combination constraints,
+joint-MAP tie choices, fitted scales, and calibration are excluded.
+
+The sole formal primary remains Top-12 lift versus exact fair theory. The
+complete-set prequential likelihood advantage is a mandatory conjunctive
+mechanism check, not another selectable primary. Because the statistic is a sum
+over same-draw label pairs, this attempt is variant 2 of the existing
+`v5_pair_cooccurrence` Holm family. The only authorized historical run is the
+fixed 621-target 2020–2025 consumed diagnostic; it cannot become confirmatory
+evidence or activate the model. See
+[`V10_adjacent_pair_structure.md`](experiments/V10_adjacent_pair_structure.md).
 
 ## Interpretation
 

@@ -20,6 +20,7 @@ in `V2_V4_RESULTS.md`.
 | V6 entropy regime | Rejected | `v6.0.0` failed its frozen historical gates and was closed without shadow activation. Its research config explicitly disables live execution. |
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
+| V10 adjacent-pair structure | Registered; not implemented or scored | `v10.0.0` freezes one exact fair-centred set-level adjacency tilt and fixed label-bijection control. It is research-only, live-disabled, and must be implemented/frozen before its sole consumed diagnostic. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -130,6 +131,37 @@ closed the idea before registration. The observable is distinct from V7 but
 too close to V1 main-frequency, with insufficient official mechanism support.
 V9 remains deferred, has never been implemented or scored, and may not be
 reopened from lottery outcomes.
+
+## V10 research registration checkpoint
+
+The next bounded attempt is
+[`V10_adjacent_pair_structure`](experiments/V10_adjacent_pair_structure.md),
+version `v10.0.0`. Its
+[outcome-blind basis](research/V10_adjacent_pair_structure_basis.md) derives the
+exact fair law for the number of adjacent integer pairs in an unordered
+six-main-number set. The candidate is one fair-centred exponential tilt learned
+from the complete strict prefix, with no window, grid, calibration, hard
+combination constraint, joint-MAP tie choice, or outcome-selected era. Bonus
+numbers are excluded.
+
+The registration fixes the binary64 root solver, exact dynamic-program
+marginals for all labels `1..49`, complete ranking, sorted marginal Top-6 final,
+and a seed-649 global-label bijection that preserves history while destroying
+numeric-path adjacency. The sole formal primary remains Top-12 lift versus exact
+fair theory. Complete-set prequential log advantage is a mandatory conjunctive
+mechanism gate, not a second primary and not a rescue. V10 is conservatively
+variant 2 of the append-only `v5_pair_cooccurrence` family because its statistic
+still aggregates same-draw label pairs.
+
+No V10 score exists. After this registration is committed and pushed, a later
+implementation commit must pass local and CI checks from a clean exact HEAD
+before the permanent one-shot claim may be acquired. The only allowed historical
+run scores exactly the 621 targets in 2020–2025 with every earlier verified draw
+as training history. It is consumed historical diagnostic evidence, never
+blind, untouched, confirmatory, or prospective. The dedicated config keeps
+`live.enabled: false`; V1 remains production, V3 remains shadow, and a future
+V10 cohort would require a separate reviewed activation with exactly 208
+eligible immutable snapshots.
 
 ## V5 research checkpoint
 
@@ -417,9 +449,10 @@ Do not broaden the fallback to swallow those integrity failures.
 4. Keep rejected `v5.0.0` through `v8.0.0` immutable and retain every claim,
    report, decision record, and registry row as a negative result. Never rerun
    the same version or tune it against its consumed answers.
-5. Pre-register one genuinely separate hypothesis before implementing or
-   inspecting its scores; all currently observed outcomes are consumed for any
-   model changed in response to them.
+5. Implement the already pre-registered V10 formula without changing its frozen
+   choices; do not inspect a V10 score before a separate implementation freeze.
+   Any later hypothesis must likewise be registered before implementation, and
+   all currently observed outcomes are consumed for a model changed in response.
 6. Start a future candidate as shadow only through a separate reviewed PR and
    count evidence only from that exact version's first eligible pre-draw snapshot.
 7. For V3 `v3.0.0`, preserve `F < A < R < S`, install live dependencies with
