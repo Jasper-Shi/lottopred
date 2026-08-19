@@ -128,6 +128,7 @@ must remain in the ledger rather than being deleted.
 | [`V6_fixed_boundary_js_regime`](experiments/V6_entropy_regime.md) | Entropy/regime | `v6.0.0` | Closed — reject | Frozen historical gate failed; no stable Top-12 or proper-score support | Never activated |
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
 | [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Closed — reject | Negative aggregate Top-12 lift; six of eight frozen gates failed | Never activated |
+| [`V10_adjacent_pair_structure`](experiments/V10_adjacent_pair_structure.md) | Structural set feature; `v5_pair_cooccurrence` variant 2 for multiplicity | `v10.0.0` | Registered; not implemented or scored | None; one 621-target consumed diagnostic is permitted only after a separate implementation freeze | Not activated; any later cohort is exactly 208 eligible draws (104 + 104) |
 
 ### V3 prospective freeze
 
@@ -172,6 +173,22 @@ and unsupported by a distinct official production mechanism. It was rejected
 before registration, implementation, or scoring and remains deferred. It may
 only be reopened by new outcome-independent external evidence; no historical
 V9 performance search is permitted.
+
+V10 is the next registered bounded falsification attempt. Its
+[source basis](research/V10_adjacent_pair_structure_basis.md) derives the exact
+fair distribution of the count of adjacent integer pairs in an unordered
+six-main-number set. The
+[pre-registration](experiments/V10_adjacent_pair_structure.md) freezes one
+fair-centred one-parameter exponential tilt, a fixed seed-649 global-label
+bijection control, marginal Top-6/12/18 outputs, the sole Top-12 primary, and a
+mandatory non-primary complete-set prequential likelihood gate. Because the
+statistic sums 48 same-draw label pairs, V10 is conservatively variant 2 of
+V5's append-only `v5_pair_cooccurrence` multiplicity family rather than a fresh
+family. It is research-only, absent from live config, and has not been
+implemented or scored. The only registered historical run is all 621 targets
+in 2020–2025, explicitly labeled consumed diagnostic; it cannot create blind or
+confirmatory evidence, and any formula change after seeing it requires a new
+version and cohort.
 
 The V5 registration dataset contains 4,431 committed draws through 2026-08-12
 with SHA-256

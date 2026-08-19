@@ -692,3 +692,310 @@ experiments:
       activation_commit: null
       outcomes_known_at_activation: null
       cohort_start: null
+
+  - id: V10_adjacent_pair_structure
+    family: structural_set_features
+    model_name: v10_adjacent_pair_structure
+    model_version: v10.0.0
+    status: registered
+    registration_file: docs/experiments/V10_adjacent_pair_structure.md
+    registered_on: 2026-08-19
+    seed: 649
+    primary_metric: top12_hits_lift_vs_theory
+    multiplicity_family: v5_pair_cooccurrence
+    variant_index: 2
+
+    registration_dataset:
+      path: data/processed/draws.csv
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
+    outcomes_known_at_registration:
+      source_commit: 90177c80cfb070038d79508fb2e73305a297f516
+      sha256: edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3
+      draw_count: 4432
+      history_through: 2026-08-15
+
+    historical_partitions:
+      development:
+        start: 1982-01-01
+        end: 2014-12-31
+      legacy_validation:
+        start: 2015-01-01
+        end: 2019-12-31
+      consumed_diagnostic:
+        start: 2020-01-01
+        end: 2025-12-31
+
+    parameters:
+      experiment_id: V10_adjacent_pair_structure
+      descriptive_family: structural_set_features
+      multiplicity_family: v5_pair_cooccurrence
+      variant_index: 2
+      evidence_lane: consumed_historical_diagnostic
+      historical_one_shot: true
+      historical_target_start: "2020-01-01"
+      historical_target_end: "2025-12-31"
+      historical_target_count: 621
+      history_window: complete_expanding_verified_prefix
+      minimum_history_draws: 1
+      bonus_numbers: excluded
+      adjacency_definition: sorted_main_gap_exactly_one
+      adjacency_wrap_49_to_1: false
+      adjacency_categories: [0, 1, 2, 3, 4, 5]
+      fair_category_counts: [7059052, 5430040, 1357510, 132440, 4730, 44]
+      fair_total_six_sets: 13983816
+      fair_mean_adjacency: "30/49"
+      fair_variance_adjacency: "2365/4802"
+      model_family: one_parameter_exponential_tilt
+      parameter_estimator: conjugate_prior_map_plugin
+      prior_strength_fair_draw_equivalents: 1
+      moment_integer_numerator: 49*sum_A+30
+      moment_integer_denominator: 49*(D+1)
+      moment_binary64_conversion: CPython_int_true_division
+      moment_comparison_operand: binary64_m
+      moment_fraction_or_cross_multiply: prohibited
+      moment_D2_T2_numerator: 128
+      moment_D2_T2_denominator: 147
+      moment_D2_T2_binary64_hex: 0x1.bdd2b899406f7p-1
+      moment_D2_T2_theta_hex: 0x1.d4c61abbdd33cp-2
+      exact_fair_bypass: 49*sum_A==30*D
+      exact_fair_bypass_logZ: math.log(13983816)
+      exact_fair_bypass_logZ_hex: 0x1.07412c1f4cc68p+4
+      exact_fair_bypass_joint_log_gain: 0x0.0p+0
+      root_bracket: [-64.0, 64.0]
+      root_bracket_required: strict
+      root_bracket_expansion: prohibited
+      root_bisection_iterations: 256
+      root_equality_branch: upper
+      root_early_exit: prohibited
+      numerical_arithmetic: ieee754_binary64
+      numerical_summation: math.fsum_ascending_a
+      partition_function: stable_logsumexp
+      marginal_method: forced_label_binary_string_dynamic_program
+      marginal_count_table_canonicalization: json_compact_rows_labels_1_to_49_columns_adjacency_0_to_5
+      marginal_count_table_sha256: 7d14a90bc388cb0e02dda77ff315a1662492c2cb44f6d5497e297354804d781b
+      marginal_numerator: math.fsum_exp_log_N_ai_plus_a_theta_minus_ell_max_ascending_a
+      marginal_denominator: partition_W_same_ell_max
+      marginal_ratio_shortcut: prohibited
+      marginal_oracle_theta_neg_1_3_label_1_hex: 0x1.0e2c39c67edaep-3
+      reflection_probability_comparison: exact_binary64_equality
+      probability_sum_absolute_tolerance: 1.0e-12
+      probability_repair: prohibited
+      ranking_tie_break: probability_desc_number_asc
+      full_ranking_required: true
+      final_combination: sorted_marginal_top6
+      joint_map: prohibited
+      hit_histogram_keys: [0, 1, 2, 3, 4, 5, 6]
+      progressive_record_ledger: every_target_and_every_new_maximum
+      per_target_probabilities: all_integer_labels_1_through_49
+      prediction_timestamp_field: prediction_frozen_at_utc
+      prediction_timestamp_format: rfc3339_utc_Z
+      prediction_timestamp_role: audit_metadata_never_model_input
+      calibration_bins: 10
+      calibration_bin_edges: fixed_equal_width_0_to_1_last_bin_right_closed
+      calibration_outputs: count_mean_forecast_observed_inclusion_rate_ece
+      calibration_role: descriptive_not_a_decision_gate
+      performance_by_year: required_descriptive
+      performance_by_regime: fixed_halves_only_no_posthoc_regimes
+      stability_halves:
+        - name: first_half
+          start: "2020-01-01"
+          end: "2022-12-31"
+          target_count: 307
+        - name: second_half
+          start: "2023-01-01"
+          end: "2025-12-31"
+          target_count: 314
+      excluded_historical_scoring_periods:
+        - "1982-01-01..2019-12-31"
+        - "2026-01-01..2026-08-15"
+      primary_metric: top12_hits_lift_vs_theory
+      primary_fair_expectation: "72/49"
+      primary_exact_test: hypergeometric_draw_level_convolution_upper_tail
+      primary_alpha: 0.05
+      multiplicity_method: holm_step_down
+      holm_family_size_at_registration: 2
+      multiplicity_reference_report: reports/v5_pair_affinity_v5.0.0_historical.json
+      multiplicity_reference_report_sha256: b86391ada265d96f94e789f4962812d32771385702e2efa2285cb9ef96d5d6bb
+      bootstrap_rng: numpy.default_rng
+      bootstrap_seed: 649
+      bootstrap_replicates: 10000
+      bootstrap_unit: complete_aligned_target_draw
+      bootstrap_interval: two_sided_95_percentile_linear
+      paired_top12_contrast: candidate_minus_label_bijection_control
+      proper_score_max_delta_vs_fair: 1.0e-9
+      proper_score_gate_scopes:
+        - aggregate_621
+        - first_307
+        - second_314
+      joint_structure_metric: complete_set_prequential_log_score_advantage_vs_fair
+      joint_structure_gate_role: mandatory_conjunctive_non_primary
+      joint_candidate_aggregate_log_evalue_minimum: "log(20)"
+      joint_candidate_aggregate_threshold_binary64: 2.995732273553991
+      joint_candidate_aggregate_operator: greater_than_or_equal
+      joint_control_aggregate_log_evalue_maximum: "log(20)"
+      joint_control_aggregate_operator: strictly_less_than
+      joint_control_half_sums: report_only_no_threshold
+      joint_half_candidate_log_gain: strictly_positive
+      joint_candidate_minus_control_log_gain: strictly_positive_aggregate_and_halves
+      joint_per_target_operation_order: theta_times_A_minus_logZ_plus_log_fair_total
+      joint_scope_target_order: target_date_ascending
+      joint_scope_summation: math.fsum
+      joint_delta_construction: per_target_candidate_minus_control_then_math_fsum
+      joint_confidence_interval: prohibited
+      candidate_control_model: v10_adjacency_label_bijection_control
+      targeted_control_kind: frozen_global_label_bijection
+      targeted_control_spec_location: research_parameters_due_frozen_protocol_enum
+      control_payload_template: "lotto649-v10-adjacency-control-v1:649:{source-label}"
+      control_digest: sha256_full_32_bytes
+      control_digest_sort: ascending_bytes_then_source_label
+      control_map_canonical: "1:3,2:11,3:2,4:14,5:41,6:45,7:22,8:39,9:1,10:40,11:31,12:37,13:29,14:12,15:30,16:6,17:7,18:19,19:46,20:15,21:27,22:26,23:42,24:28,25:13,26:21,27:20,28:36,29:18,30:4,31:5,32:32,33:17,34:8,35:9,36:10,37:35,38:43,39:47,40:16,41:48,42:34,43:23,44:24,45:44,46:25,47:33,48:38,49:49"
+      control_map_sha256: c533509f258e0bb8bdd9fabac8a017ee689e07af0f1d6daf4d36ee63873c0562
+      control_target: unchanged
+      control_bonus: excluded
+      control_seed_retries: prohibited
+      control_map_destinations_by_source:
+        - 3
+        - 11
+        - 2
+        - 14
+        - 41
+        - 45
+        - 22
+        - 39
+        - 1
+        - 40
+        - 31
+        - 37
+        - 29
+        - 12
+        - 30
+        - 6
+        - 7
+        - 19
+        - 46
+        - 15
+        - 27
+        - 26
+        - 42
+        - 28
+        - 13
+        - 21
+        - 20
+        - 36
+        - 18
+        - 4
+        - 5
+        - 32
+        - 17
+        - 8
+        - 9
+        - 10
+        - 35
+        - 43
+        - 47
+        - 16
+        - 48
+        - 34
+        - 23
+        - 24
+        - 44
+        - 25
+        - 33
+        - 38
+        - 49
+      target_date_random_model: random
+      target_date_random_version: v1.0.0
+      target_date_random_seed_formula: 649000000+target_date.toordinal()
+      control_null_rule: raw_exact_p_gt_0_05_or_bootstrap_ci_includes_zero
+      control_gate_scopes:
+        - aggregate_621
+        - first_307
+        - second_314
+      comparison_reference_report: reports/v8_spectral_phase_v8.0.0_historical.json
+      comparison_reference_report_sha256: e9b51a5316811cbde2b06c36bb61ffffd04b283a4c886cb9ac213bb8fb7deed5
+      comparison_reference_claim: reports/v8_spectral_phase_v8.0.0_historical.claim
+      comparison_reference_claim_sha256: 6598a2f38462fe6274b9dfa6b6b8c51e6af367b551fd861ef8a582000d60c76d
+      v1_comparison_models:
+        - long_frequency
+        - recent_frequency
+        - ema_gap
+        - logistic
+        - ensemble
+      v1_formal_gate: candidate_aggregate_top12_mean_strictly_above_ensemble
+      v1_comparison_scope: all_v1_production_models_reported
+      historical_claim: reports/v10_adjacent_pair_structure_v10.0.0_historical.claim
+      historical_attempt_ledger: reports/v10_adjacent_pair_structure_v10.0.0_historical.ledger.jsonl
+      historical_report_json: reports/v10_adjacent_pair_structure_v10.0.0_historical.json
+      historical_report_markdown: reports/v10_adjacent_pair_structure_v10.0.0_historical.md
+      historical_claim_retention: permanent_success_or_failure
+      historical_attempt_ledger_retention: permanent_success_or_failure
+      historical_prediction_freeze: deterministic_forecast_payload_sha256_in_timestamped_event_before_actual_access
+      forecast_payload_timestamp: excluded
+      forecast_payload_determinism: byte_for_byte_repeated_calls
+      historical_ledger_sequence: contiguous_zero_based
+      historical_ledger_hash_chain: sha256_canonical_json_previous_event
+      per_target_event_order: prediction_frozen_then_target_revealed_scored
+      per_target_prediction_frozen_payload: target_prefix_candidate_control_random_full_forecasts_and_digests
+      per_target_prediction_frozen_durability: append_flush_fsync_before_actual_access
+      per_target_actual_access: prohibited_before_durable_prediction_frozen_event
+      per_target_scored_durability: append_flush_fsync_before_next_target
+      runtime_python: CPython_3.12
+      runtime_lock_path: requirements-live.lock
+      runtime_lock_sha256: 2fea4cf73cc2578b73c21e6600e31ad843bd903e8a2656b7a2543164ab8d801c
+      runtime_manifest: python_platform_and_all_installed_distribution_versions
+      breakthrough_record_event: durable_before_any_next_target
+      breakthrough_historical_6of6_status: historical-6of6-candidate
+      breakthrough_stop_v10_scoring_on_final6_6of6: true
+      breakthrough_stop_global_search: audit_clear_only
+      breakthrough_leakage_audit: mandatory_immediate
+      breakthrough_audit_clear_required_for_success: true
+      breakthrough_audit_failure_terminal: historical_6of6_candidate_archived_leakage_failed
+      breakthrough_bundle_leakage_audit: complete_result_required_before_publication
+      breakthrough_bundle_path_template: "reports/historical-6of6-candidate__{target_date}__v10.0.0.json"
+      breakthrough_bundle_publication: staged_fsynced_exclusive_no_overwrite
+      breakthrough_normal_621_report: prohibited_after_early_stop
+      historical_terminal_success_states:
+        - published_after_exactly_621_scored_targets
+        - historical_6of6_candidate_published_after_at_least_1_scored_target
+      historical_terminal_failure_states:
+        - failed
+        - historical_6of6_candidate_archived_leakage_failed
+      breakthrough_email_workflow: .github/workflows/email-test.yml
+      breakthrough_email_language: Chinese
+      breakthrough_email_title: "🚨 [LOTTO649] 历史严格回测成功预测 6/6"
+      breakthrough_audit_failure_email_title: "⚠️ [LOTTO649] 历史 6/6 候选泄漏审计失败"
+      breakthrough_email_required_fields: prediction_actual_target_model_cutoff_leakage_audit_commit_benchmark_oos_reason
+      breakthrough_email_failure_policy: preserve_evidence_and_emit_warning
+      top12_6of6_alert: immediate_after_durable_score
+      new_within_run_final6_record_alert: immediate_and_explicitly_not_global_until_audited
+      new_within_run_final6_record_minimum_hits: 2
+      all_scientific_gates_passed_alert: immediate_after_durable_report
+      historical_post_claim_failure: consumed_archive_no_rerun
+      historical_report_overwrite: prohibited
+      automatic_historical_execution: prohibited
+      prospective_status: not_activated
+      prospective_exact_eligible_evaluated_draws: 208
+      prospective_half_draws: 104
+      prospective_early_look: prohibited
+      prospective_extension: prohibited
+      prospective_activation: separate_reviewed_shadow_decision_only
+
+    negative_controls:
+      - kind: target_date_seeded_fair_random
+        seed: 649
+
+    result: null
+
+    prospective:
+      status: not_activated
+      role: shadow
+      minimum_eligible_draws: 208
+      commit_deadline: before_target_local_date
+      freeze_commit: null
+      activation_commit: null
+      outcomes_known_at_activation: null
+      cohort_start: null
