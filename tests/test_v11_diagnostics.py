@@ -554,6 +554,88 @@ def test_hash_chain_append_rollback_fsync_failure_marks_ledger_corrupt(
     ledger.close()
 
 
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "initial_flush",
+        "initial_file_fsync",
+        "initial_directory_fsync",
+        "constructor_fstat",
+    ],
+)
+def test_ledger_create_initialization_fault_closes_owned_fd_and_blocks_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fault: str,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    original_open = Path.open
+    original_fsync = diagnostics.os.fsync
+    original_fstat = diagnostics.os.fstat
+    original_directory_fsync = diagnostics._directory_fsync
+    captured_handle = None
+    ledger_descriptor: int | None = None
+    directory_fsync_calls = 0
+    file_fsync_faulted = False
+
+    def capture_ledger_open(path: Path, *args, **kwargs):
+        nonlocal captured_handle, ledger_descriptor
+        handle = original_open(path, *args, **kwargs)
+        if path == paths.ledger_staging:
+            captured_handle = handle
+            ledger_descriptor = handle.fileno()
+            if fault == "initial_flush":
+                return _OneShotLedgerIoFault(handle, "flush")
+        return handle
+
+    def fail_initial_file_fsync(descriptor: int) -> None:
+        nonlocal file_fsync_faulted
+        if (
+            fault == "initial_file_fsync"
+            and descriptor == ledger_descriptor
+            and not file_fsync_faulted
+        ):
+            file_fsync_faulted = True
+            raise OSError("synthetic initial ledger file fsync failure")
+        original_fsync(descriptor)
+
+    def fail_constructor_fstat(descriptor: int):
+        if fault == "constructor_fstat" and descriptor == ledger_descriptor:
+            raise OSError("synthetic ledger constructor fstat failure")
+        return original_fstat(descriptor)
+
+    def fail_initial_directory_fsync(directory: Path) -> None:
+        nonlocal directory_fsync_calls
+        if directory == tmp_path:
+            directory_fsync_calls += 1
+            if fault == "initial_directory_fsync" and directory_fsync_calls == 2:
+                raise OSError("synthetic initial ledger directory fsync failure")
+        original_directory_fsync(directory)
+
+    monkeypatch.setattr(Path, "open", capture_ledger_open)
+    monkeypatch.setattr(diagnostics.os, "fsync", fail_initial_file_fsync)
+    monkeypatch.setattr(diagnostics.os, "fstat", fail_constructor_fstat)
+    monkeypatch.setattr(diagnostics, "_directory_fsync", fail_initial_directory_fsync)
+
+    with pytest.raises(OSError, match="synthetic"):
+        run_v11_historical(request)
+
+    assert captured_handle is not None
+    assert captured_handle.closed
+    assert calls == []
+    assert paths.ledger_staging.is_file()
+    assert not paths.claim.exists()
+    with pytest.raises(V11DiagnosticError, match="artifact already exists"):
+        run_v11_historical(request)
+    assert calls == []
+
+
 def test_public_runner_seam_fsyncs_full_four_model_forecast_before_reveal(
     tmp_path: Path,
 ) -> None:
@@ -899,6 +981,68 @@ def test_exact_final6_stops_after_durable_multi_producer_evidence_and_full_audit
     ]
 
 
+@pytest.mark.parametrize("attack", ["bundle_prediction", "notification_copy"])
+def test_exact6_terminal_is_rebuilt_from_replayed_scientific_evidence(
+    tmp_path: Path,
+    attack: str,
+) -> None:
+    request = _request(tmp_path, [(1, 2, 3, 4, 5, 6)])
+    result = run_v11_historical(request)
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    events = verify_hash_chain_ledger(paths.ledger)
+    terminal = events[-2]["payload"]
+    receipt = events[-1]["payload"]["receipt"]
+    bundle_path = Path(result["bundle_path"])
+
+    if attack == "bundle_prediction":
+        bundle = json.loads(bundle_path.read_bytes())
+        bundle["prediction"] = [44, 45, 46, 47, 48, 49]
+        bundle_path.write_bytes(
+            json.dumps(
+                bundle,
+                indent=2,
+                sort_keys=True,
+                allow_nan=False,
+                ensure_ascii=False,
+            ).encode("utf-8")
+            + b"\n"
+        )
+        bundle_sha256 = hashlib.sha256(bundle_path.read_bytes()).hexdigest()
+        terminal["bundle_sha256"] = bundle_sha256
+        terminal["notification_request"]["context"]["bundle_sha256"] = bundle_sha256
+    else:
+        terminal["notification_subject"] = "FORGED SUBJECT"
+        terminal["notification_body"] = "FORGED BODY"
+        terminal["notification_request"]["subject"] = "FORGED SUBJECT"
+        terminal["notification_request"]["body"] = "FORGED BODY"
+
+    key = diagnostics.canonical_sha256(terminal["notification_request"])
+    terminal["notification_idempotency_key"] = key
+    terminal["notification_pending_warning"] = f"notification_pending:{key}"
+    terminal["operational_warnings"][-1] = f"notification_pending:{key}"
+    receipt["notification_idempotency_key"] = key
+    if receipt["outcome"] == "returned_false":
+        receipt["operational_warning"] = f"notification_returned_false:{key}"
+    elif receipt["outcome"] == "exception":
+        receipt["operational_warning"] = (
+            f"notification_exception:{receipt['exception_type']}:{key}"
+        )
+    _rewrite_chain(paths.ledger, events)
+    rewritten = verify_hash_chain_ledger(paths.ledger)
+    events[-1]["payload"]["scientific_terminal_event_sha256"] = rewritten[-2][
+        "event_sha256"
+    ]
+    _rewrite_chain(paths.ledger, events)
+
+    with pytest.raises(V11DiagnosticError, match="bundle|notification"):
+        validate_v11_ledger_state_machine(
+            paths.ledger,
+            expected_targets=1,
+            source_blob_resolver=request.source_blob_resolver,
+            registered_identity=request.registered_identity,
+        )
+
+
 def test_post_claim_failure_is_archived_and_permanent_claim_blocks_rerun(
     tmp_path: Path,
 ) -> None:
@@ -1118,23 +1262,46 @@ def test_registered_analysis_plan_mismatch_fails_before_claim_or_forecast(
 
 def test_status_documents_must_equal_exact_registered_blob_replacements() -> None:
     root = Path(__file__).resolve().parents[1]
-    for path in sorted(v11_cli.REQUIRED_STATUS_DOCUMENTATION_PATHS):
-        registered = subprocess.run(
-            ["git", "show", f"{diagnostics.REGISTRATION_COMMIT}:{path}"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-        ).stdout
+    frozen_hashes = {
+        "docs/CODEX_HANDOFF.md": (
+            "e78b392a7e5076210c7f77d3088f8272ab0870fb7ba26e1ff3ad46bac60fa918"
+        ),
+        "docs/MODEL_PROTOCOL.md": (
+            "4660bc2e716d3f277b57530f3fbdb0e8bab0664968a5f96ff6a31c176df3703f"
+        ),
+        "docs/RESEARCH_ROADMAP.md": (
+            "e2e62cbc0721c8c51fc8a9c55a926eab3084c8a542f0d19d485266e61beabd31"
+        ),
+    }
+    assert v11_cli.STATUS_DOCUMENT_REGISTRATION_SHA256 == frozen_hashes
+
+    for path, replacements in v11_cli.STATUS_DOCUMENT_REPLACEMENTS.items():
         current = (root / path).read_bytes()
+        registered = current
+        for old, new in reversed(replacements):
+            assert registered.count(new) == 1
+            assert old not in registered
+            registered = registered.replace(new, old, 1)
+        assert hashlib.sha256(registered).hexdigest() == frozen_hashes[path]
 
         evidence = v11_cli._validate_status_documentation_blobs(
             path, registered, current
         )
 
-        assert evidence["exact_status_replacements_only"] is True
+        assert evidence == {
+            "path": path,
+            "exact_status_replacements_only": True,
+            "registration_sha256": frozen_hashes[path],
+            "current_sha256": hashlib.sha256(current).hexdigest(),
+            "replacement_count": len(replacements),
+        }
         with pytest.raises(V11DiagnosticError, match="exact frozen status"):
             v11_cli._validate_status_documentation_blobs(
                 path, registered, current + b"\n"
+            )
+        with pytest.raises(V11DiagnosticError, match="registered.*hash"):
+            v11_cli._validate_status_documentation_blobs(
+                path, registered + b"\n", current
             )
 
 
@@ -1867,9 +2034,14 @@ def test_acquisition_precommit_faults_leave_no_reusable_partial_attempt(
         monkeypatch.setattr(diagnostics, "_directory_fsync", fail_claim_parent_fsync)
     elif fault == "claim_hash":
         original_hash = diagnostics._file_sha256
+        wrong_once = False
 
         def wrong_claim_hash(path: Path) -> str:
-            return "0" * 64 if path == paths.claim_staging else original_hash(path)
+            nonlocal wrong_once
+            if path == paths.claim_staging and not wrong_once:
+                wrong_once = True
+                return "0" * 64
+            return original_hash(path)
 
         monkeypatch.setattr(diagnostics, "_file_sha256", wrong_claim_hash)
     else:
@@ -1941,16 +2113,26 @@ def test_acquisition_rejects_foreign_stage_swap_before_link_without_forecast(
     target_final = paths.claim if role == "claim" else paths.ledger
     foreign = f"foreign-{role}-stage\n".encode()
     original_link = diagnostics.os.link
+    original_inode_identity = diagnostics._inode_identity
+    forced_identity: tuple[int, int] | None = None
+
+    def reuse_owned_inode(path: Path) -> tuple[int, int]:
+        if Path(path) in {target_stage, target_final} and forced_identity is not None:
+            return forced_identity
+        return original_inode_identity(path)
 
     def swap_before_link(source: Path, destination: Path) -> None:
+        nonlocal forced_identity
         source_path = Path(source)
         destination_path = Path(destination)
         if destination_path == target_final:
+            forced_identity = original_inode_identity(source_path)
             source_path.unlink()
             source_path.write_bytes(foreign)
         original_link(source_path, destination_path)
 
     monkeypatch.setattr(diagnostics.os, "link", swap_before_link)
+    monkeypatch.setattr(diagnostics, "_inode_identity", reuse_owned_inode)
 
     with pytest.raises(V11DiagnosticError):
         run_v11_historical(request)
@@ -1962,6 +2144,220 @@ def test_acquisition_rejects_foreign_stage_swap_before_link_without_forecast(
     failure = json.loads(paths.acquisition_failure.read_bytes())
     assert failure["status"] == "consumed_archive_acquisition_failure"
     assert failure["rollback_failures"]
+
+
+@pytest.mark.parametrize("role", ["claim", "ledger"])
+def test_acquisition_rejects_same_content_stage_replacement_with_reused_inode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    role: str,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    target_stage = paths.claim_staging if role == "claim" else paths.ledger_staging
+    target_final = paths.claim if role == "claim" else paths.ledger
+    original_link = diagnostics.os.link
+    original_inode_identity = diagnostics._inode_identity
+    original_owned_path_matches = diagnostics._owned_path_matches
+    forced_identity: tuple[int, int] | None = None
+    observed_leases: list[diagnostics._OwnedArtifactLease] = []
+
+    def reuse_owned_inode(path: Path) -> tuple[int, int]:
+        if Path(path) in {target_stage, target_final} and forced_identity is not None:
+            return forced_identity
+        return original_inode_identity(path)
+
+    def replace_same_bytes_before_link(source: Path, destination: Path) -> None:
+        nonlocal forced_identity
+        source_path = Path(source)
+        destination_path = Path(destination)
+        if destination_path == target_final:
+            forced_identity = original_inode_identity(source_path)
+            same_bytes = source_path.read_bytes()
+            source_path.unlink()
+            source_path.write_bytes(same_bytes)
+        original_link(source_path, destination_path)
+
+    def require_live_lease(path: Path, lease: diagnostics._OwnedArtifactLease) -> bool:
+        diagnostics.os.fstat(lease.handle.fileno())
+        observed_leases.append(lease)
+        return original_owned_path_matches(path, lease)
+
+    monkeypatch.setattr(diagnostics.os, "link", replace_same_bytes_before_link)
+    monkeypatch.setattr(diagnostics, "_inode_identity", reuse_owned_inode)
+    monkeypatch.setattr(diagnostics, "_owned_path_matches", require_live_lease)
+
+    with pytest.raises(V11DiagnosticError, match="rollback retained evidence"):
+        run_v11_historical(request)
+
+    assert calls == []
+    assert target_stage.is_file()
+    assert target_final.is_file()
+    assert target_stage.read_bytes() == target_final.read_bytes()
+    failure = json.loads(paths.acquisition_failure.read_bytes())
+    assert failure["rollback_failures"]
+    assert observed_leases
+    assert all(lease.handle.closed for lease in observed_leases)
+
+
+def test_acquisition_revalidates_ledger_after_claim_link_before_forecast(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    foreign_ledger = b"foreign-ledger-after-first-validation\n"
+    original_link = diagnostics.os.link
+
+    def replace_ledger_while_linking_claim(source: Path, destination: Path) -> None:
+        destination_path = Path(destination)
+        if destination_path == paths.claim:
+            paths.ledger.unlink()
+            paths.ledger.write_bytes(foreign_ledger)
+        original_link(source, destination)
+
+    monkeypatch.setattr(diagnostics.os, "link", replace_ledger_while_linking_claim)
+
+    with pytest.raises(V11DiagnosticError, match="rollback retained evidence"):
+        run_v11_historical(request)
+
+    assert calls == []
+    assert paths.ledger.read_bytes() == foreign_ledger
+    assert not paths.claim.exists()
+    failure = json.loads(paths.acquisition_failure.read_bytes())
+    assert failure["status"] == "consumed_archive_acquisition_failure"
+    assert any(
+        item["phase"] == "rollback_final_unlink" and item["path"] == paths.ledger.name
+        for item in failure["rollback_failures"]
+    )
+
+
+def test_acquisition_revalidates_claim_after_stage_cleanup_before_forecast(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    foreign_claim = b"foreign-claim-during-stage-cleanup\n"
+    original_unlink_owned = diagnostics._unlink_owned_path
+    replaced = False
+
+    def replace_claim_during_cleanup(
+        path: Path, lease: diagnostics._OwnedArtifactLease
+    ) -> None:
+        nonlocal replaced
+        if path == paths.claim_staging and not replaced:
+            replaced = True
+            paths.claim.unlink()
+            paths.claim.write_bytes(foreign_claim)
+        original_unlink_owned(path, lease)
+
+    monkeypatch.setattr(diagnostics, "_unlink_owned_path", replace_claim_during_cleanup)
+
+    with pytest.raises(V11DiagnosticError, match="acquisition.*evidence"):
+        run_v11_historical(request)
+
+    assert calls == []
+    assert paths.claim.read_bytes() == foreign_claim
+    assert paths.ledger.is_file()
+    failure = json.loads(paths.acquisition_failure.read_bytes())
+    assert failure["status"] == "consumed_archive_acquisition_failure"
+    assert any(
+        item["phase"] == "post_commit_final_verification"
+        and item["path"] == paths.claim.name
+        for item in failure["rollback_failures"]
+    )
+
+
+@pytest.mark.parametrize(
+    "artifact",
+    ["report_json", "claim", "ledger", "claim_staging", "breakthrough_bundle"],
+)
+def test_dangling_artifact_entry_blocks_claim_before_forecast(
+    tmp_path: Path,
+    artifact: str,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    if artifact == "breakthrough_bundle":
+        target = (
+            tmp_path / "historical-6of6-candidate__2020-01-01__candidate__v11.0.0.json"
+        )
+    else:
+        target = getattr(paths, artifact)
+    target.symlink_to(tmp_path / "missing-artifact-target")
+
+    with pytest.raises(V11DiagnosticError, match="artifact already exists"):
+        run_v11_historical(request)
+
+    assert calls == []
+    assert target.is_symlink()
+    assert not paths.acquisition_failure.exists()
+
+
+def test_acquisition_cleanup_refuses_dangling_foreign_stage_before_forecast(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str]] = []
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+        calls=calls,
+    )
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    original_unlink_owned = diagnostics._unlink_owned_path
+    replaced = False
+
+    def replace_stage_with_dangling_symlink(
+        path: Path, lease: diagnostics._OwnedArtifactLease
+    ) -> None:
+        nonlocal replaced
+        if path == paths.claim_staging and not replaced:
+            replaced = True
+            path.unlink()
+            path.symlink_to(tmp_path / "missing-foreign-stage-target")
+        original_unlink_owned(path, lease)
+
+    monkeypatch.setattr(
+        diagnostics, "_unlink_owned_path", replace_stage_with_dangling_symlink
+    )
+
+    with pytest.raises(V11DiagnosticError, match="acquisition cleanup"):
+        run_v11_historical(request)
+
+    assert calls == []
+    assert paths.claim_staging.is_symlink()
+    events = validate_v11_ledger_state_machine(
+        paths.ledger,
+        expected_targets=2,
+        source_blob_resolver=request.source_blob_resolver,
+        registered_identity=request.registered_identity,
+    )
+    assert [event["event_type"] for event in events[-2:]] == [
+        "acquisition_cleanup_failed",
+        "failed",
+    ]
 
 
 def test_acquisition_rejects_ledger_stage_swap_before_identity_capture(
@@ -2615,18 +3011,31 @@ def test_pair_publication_rejects_stage_swap_before_link_without_linking_second_
 ) -> None:
     paths = V11ArtifactPaths.in_directory(tmp_path)
     original_link = diagnostics.os.link
+    original_inode_identity = diagnostics._inode_identity
+    forced_identity: tuple[int, int] | None = None
     destinations: list[Path] = []
 
+    def reuse_owned_inode(path: Path) -> tuple[int, int]:
+        if (
+            Path(path) in {paths.report_json_staging, paths.report_json}
+            and forced_identity is not None
+        ):
+            return forced_identity
+        return original_inode_identity(path)
+
     def swap_first_stage_before_link(source: Path, destination: Path) -> None:
+        nonlocal forced_identity
         source_path = Path(source)
         destination_path = Path(destination)
         destinations.append(destination_path)
         if destination_path == paths.report_json:
+            forced_identity = original_inode_identity(source_path)
             source_path.unlink()
             source_path.write_bytes(b"foreign-stage\n")
         original_link(source_path, destination_path)
 
     monkeypatch.setattr(diagnostics.os, "link", swap_first_stage_before_link)
+    monkeypatch.setattr(diagnostics, "_inode_identity", reuse_owned_inode)
 
     with pytest.raises(V11DiagnosticError, match="rollback_failed"):
         diagnostics._safe_publish_pair(paths, b"{}\n", b"# report\n")
@@ -2634,6 +3043,31 @@ def test_pair_publication_rejects_stage_swap_before_link_without_linking_second_
     assert destinations == [paths.report_json]
     assert paths.report_json.read_bytes() == b"foreign-stage\n"
     assert not paths.report_markdown.exists()
+
+
+def test_pair_publication_revalidates_json_final_after_markdown_link(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    foreign_json = b"foreign-json-after-first-validation\n"
+    original_link = diagnostics.os.link
+
+    def replace_json_while_linking_markdown(source: Path, destination: Path) -> None:
+        if Path(destination) == paths.report_markdown:
+            paths.report_json.unlink()
+            paths.report_json.write_bytes(foreign_json)
+        original_link(source, destination)
+
+    monkeypatch.setattr(diagnostics.os, "link", replace_json_while_linking_markdown)
+
+    with pytest.raises(V11DiagnosticError, match="rollback_failed"):
+        diagnostics._safe_publish_pair(paths, b"{}\n", b"# report\n")
+
+    assert paths.report_json.read_bytes() == foreign_json
+    assert not paths.report_markdown.exists()
+    assert paths.report_json_staging.read_bytes() == b"{}\n"
+    assert paths.report_markdown_staging.read_bytes() == b"# report\n"
 
 
 def test_bundle_publication_link_fault_retains_stage_without_final(
@@ -2661,20 +3095,172 @@ def test_bundle_publication_rejects_foreign_stage_swap_before_commit(
     final = tmp_path / "historical-6of6-candidate__synthetic.json"
     staging = final.with_name(f".{final.name}.staging")
     original_link = diagnostics.os.link
+    original_inode_identity = diagnostics._inode_identity
+    forced_identity: tuple[int, int] | None = None
+
+    def reuse_owned_inode(path: Path) -> tuple[int, int]:
+        if Path(path) in {staging, final} and forced_identity is not None:
+            return forced_identity
+        return original_inode_identity(path)
 
     def swap_stage_before_link(source: Path, destination: Path) -> None:
+        nonlocal forced_identity
         source_path = Path(source)
+        forced_identity = original_inode_identity(source_path)
         source_path.unlink()
         source_path.write_bytes(b"foreign-stage\n")
         original_link(source_path, destination)
 
     monkeypatch.setattr(diagnostics.os, "link", swap_stage_before_link)
+    monkeypatch.setattr(diagnostics, "_inode_identity", reuse_owned_inode)
 
     with pytest.raises(V11DiagnosticError, match="rollback_failed"):
         diagnostics._safe_publish_bundle(final, {"status": "synthetic"})
 
     assert staging.read_bytes() == b"foreign-stage\n"
     assert final.read_bytes() == b"foreign-stage\n"
+
+
+@pytest.mark.parametrize("surface", ["pair", "bundle"])
+def test_publication_rejects_same_content_stage_replacement_with_reused_inode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    surface: str,
+) -> None:
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    if surface == "pair":
+        target_stage = paths.report_json_staging
+        target_final = paths.report_json
+    else:
+        target_final = tmp_path / "historical-6of6-candidate__synthetic.json"
+        target_stage = target_final.with_name(f".{target_final.name}.staging")
+    original_link = diagnostics.os.link
+    original_inode_identity = diagnostics._inode_identity
+    original_owned_path_matches = diagnostics._owned_path_matches
+    forced_identity: tuple[int, int] | None = None
+    observed_leases: list[diagnostics._OwnedArtifactLease] = []
+
+    def reuse_owned_inode(path: Path) -> tuple[int, int]:
+        if Path(path) in {target_stage, target_final} and forced_identity is not None:
+            return forced_identity
+        return original_inode_identity(path)
+
+    def replace_same_bytes_before_link(source: Path, destination: Path) -> None:
+        nonlocal forced_identity
+        source_path = Path(source)
+        destination_path = Path(destination)
+        if destination_path == target_final:
+            forced_identity = original_inode_identity(source_path)
+            same_bytes = source_path.read_bytes()
+            source_path.unlink()
+            source_path.write_bytes(same_bytes)
+        original_link(source_path, destination_path)
+
+    def require_live_lease(path: Path, lease: diagnostics._OwnedArtifactLease) -> bool:
+        diagnostics.os.fstat(lease.handle.fileno())
+        observed_leases.append(lease)
+        return original_owned_path_matches(path, lease)
+
+    monkeypatch.setattr(diagnostics.os, "link", replace_same_bytes_before_link)
+    monkeypatch.setattr(diagnostics, "_inode_identity", reuse_owned_inode)
+    monkeypatch.setattr(diagnostics, "_owned_path_matches", require_live_lease)
+
+    with pytest.raises(V11DiagnosticError, match="rollback_failed"):
+        if surface == "pair":
+            diagnostics._safe_publish_pair(paths, b"{}\n", b"# report\n")
+        else:
+            diagnostics._safe_publish_bundle(target_final, {"status": "synthetic"})
+
+    assert target_final.is_file()
+    assert target_stage.is_file()
+    assert target_final.read_bytes() == target_stage.read_bytes()
+    if surface == "pair":
+        assert not paths.report_markdown.exists()
+    assert observed_leases
+    assert all(lease.handle.closed for lease in observed_leases)
+
+
+@pytest.mark.parametrize("surface", ["pair", "bundle"])
+def test_publication_revalidates_final_after_stage_cleanup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    surface: str,
+) -> None:
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    if surface == "pair":
+        target_stage = paths.report_json_staging
+        target_final = paths.report_json
+    else:
+        target_final = tmp_path / "historical-6of6-candidate__synthetic.json"
+        target_stage = target_final.with_name(f".{target_final.name}.staging")
+    foreign_final = f"foreign-{surface}-during-stage-cleanup\n".encode()
+    original_unlink_owned = diagnostics._unlink_owned_path
+    replaced = False
+
+    def replace_final_during_cleanup(
+        path: Path, lease: diagnostics._OwnedArtifactLease
+    ) -> None:
+        nonlocal replaced
+        if path == target_stage and not replaced:
+            replaced = True
+            target_final.unlink()
+            target_final.write_bytes(foreign_final)
+        original_unlink_owned(path, lease)
+
+    monkeypatch.setattr(diagnostics, "_unlink_owned_path", replace_final_during_cleanup)
+
+    with pytest.raises(V11DiagnosticError, match="rollback_failed"):
+        if surface == "pair":
+            diagnostics._safe_publish_pair(paths, b"{}\n", b"# report\n")
+        else:
+            diagnostics._safe_publish_bundle(target_final, {"status": "synthetic"})
+
+    assert target_final.read_bytes() == foreign_final
+    if surface == "pair":
+        assert not paths.report_markdown.exists()
+
+
+@pytest.mark.parametrize("surface", ["pair", "bundle"])
+def test_publication_cleanup_refuses_dangling_foreign_stage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    surface: str,
+) -> None:
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    if surface == "pair":
+        target_stage = paths.report_json_staging
+        target_final = paths.report_json
+    else:
+        target_final = tmp_path / "historical-6of6-candidate__synthetic.json"
+        target_stage = target_final.with_name(f".{target_final.name}.staging")
+    missing_target = tmp_path / "missing-publication-stage-target"
+    original_unlink_owned = diagnostics._unlink_owned_path
+    replaced = False
+
+    def replace_stage_with_dangling_symlink(
+        path: Path, lease: diagnostics._OwnedArtifactLease
+    ) -> None:
+        nonlocal replaced
+        if path == target_stage and not replaced:
+            replaced = True
+            path.unlink()
+            path.symlink_to(missing_target)
+        original_unlink_owned(path, lease)
+
+    monkeypatch.setattr(
+        diagnostics, "_unlink_owned_path", replace_stage_with_dangling_symlink
+    )
+
+    with pytest.raises(V11DiagnosticError, match="partial .*publication"):
+        if surface == "pair":
+            diagnostics._safe_publish_pair(paths, b"{}\n", b"# report\n")
+        else:
+            diagnostics._safe_publish_bundle(target_final, {"status": "synthetic"})
+
+    assert target_stage.is_symlink()
+    assert not target_final.exists()
+    if surface == "pair":
+        assert not paths.report_markdown.exists()
 
 
 def test_bundle_raced_away_stage_still_rolls_back_final_on_commit_fsync(
@@ -2948,6 +3534,56 @@ def test_terminal_notification_failure_cannot_change_scientific_terminal(
         "exception" if mode == "exception" else "returned_false"
     )
     assert b"secret terminal failure" not in paths.ledger.read_bytes()
+
+
+def test_normal_pass_notification_copy_is_rebuilt_from_replayed_report(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_decision = diagnostics.v11_historical_decision
+
+    def force_scientific_pass(**kwargs) -> dict:
+        decision = original_decision(**kwargs)
+        decision["gates"] = {name: True for name in diagnostics.SCIENTIFIC_GATE_NAMES}
+        decision["all_scientific_gates_passed"] = True
+        decision["decision"] = "eligible_for_separate_reviewed_shadow_decision"
+        return decision
+
+    monkeypatch.setattr(diagnostics, "v11_historical_decision", force_scientific_pass)
+    request = _request(
+        tmp_path,
+        [(44, 45, 46, 47, 48, 49), (38, 39, 40, 41, 42, 43)],
+    )
+    run_v11_historical(request)
+    paths = V11ArtifactPaths.in_directory(tmp_path)
+    events = verify_hash_chain_ledger(paths.ledger)
+    terminal = events[-2]["payload"]
+    receipt = events[-1]["payload"]["receipt"]
+    terminal["notification_subject"] = "FORGED SUBJECT"
+    terminal["notification_body"] = "FORGED BODY"
+    terminal["notification_request"]["subject"] = "FORGED SUBJECT"
+    terminal["notification_request"]["body"] = "FORGED BODY"
+    key = diagnostics.canonical_sha256(terminal["notification_request"])
+    terminal["notification_idempotency_key"] = key
+    terminal["notification_pending_warning"] = f"notification_pending:{key}"
+    terminal["operational_warnings"][-1] = f"notification_pending:{key}"
+    receipt["notification_idempotency_key"] = key
+    if receipt["outcome"] == "returned_false":
+        receipt["operational_warning"] = f"notification_returned_false:{key}"
+    _rewrite_chain(paths.ledger, events)
+    rewritten = verify_hash_chain_ledger(paths.ledger)
+    events[-1]["payload"]["scientific_terminal_event_sha256"] = rewritten[-2][
+        "event_sha256"
+    ]
+    _rewrite_chain(paths.ledger, events)
+
+    with pytest.raises(V11DiagnosticError, match="notification"):
+        validate_v11_ledger_state_machine(
+            paths.ledger,
+            expected_targets=2,
+            source_blob_resolver=request.source_blob_resolver,
+            registered_identity=request.registered_identity,
+        )
 
 
 def test_terminal_receipt_append_fault_leaves_auditable_pending_scientific_terminal(

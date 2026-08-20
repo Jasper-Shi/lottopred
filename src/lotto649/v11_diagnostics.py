@@ -13,6 +13,7 @@ import json
 import math
 import os
 import shlex
+import stat
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
@@ -233,6 +234,22 @@ def _canonical_json_bytes(payload: Mapping[str, Any]) -> bytes:
         raise V11DiagnosticError("V11 payload is not canonical finite JSON") from exc
 
 
+def _pretty_json_bytes(payload: Mapping[str, Any]) -> bytes:
+    try:
+        return (
+            json.dumps(
+                payload,
+                indent=2,
+                sort_keys=True,
+                allow_nan=False,
+                ensure_ascii=False,
+            ).encode("utf-8")
+            + b"\n"
+        )
+    except (TypeError, ValueError, UnicodeEncodeError) as exc:
+        raise V11DiagnosticError("V11 payload is not finite report JSON") from exc
+
+
 def canonical_sha256(payload: Mapping[str, Any]) -> str:
     """Return the registered canonical JSON digest for a payload."""
 
@@ -343,13 +360,17 @@ class HashChainLedger:
     def create(cls, path: Path) -> Self:
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            handle = path.open("x", encoding="utf-8", newline="\n")
+            handle = path.open("x+", encoding="utf-8", newline="\n")
         except FileExistsError as exc:
             raise V11DiagnosticError("V11 attempt ledger already exists") from exc
-        handle.flush()
-        os.fsync(handle.fileno())
-        _directory_fsync(path.parent)
-        return cls(path, handle)
+        try:
+            handle.flush()
+            os.fsync(handle.fileno())
+            _directory_fsync(path.parent)
+            return cls(path, handle)
+        except BaseException:
+            handle.close()
+            raise
 
     @classmethod
     def open_existing(cls, path: Path) -> Self:
@@ -1466,46 +1487,53 @@ def _exclusive_write(path: Path, payload: bytes) -> None:
         raise V11DiagnosticError(f"V11 artifact already exists: {path.name}") from exc
 
 
+@dataclass
+class _OwnedArtifactLease:
+    """Pin a stage inode until its final link and all cleanup are complete.
+
+    Keeping the descriptor open prevents POSIX inode-number reuse from making
+    an unlinked-and-recreated path appear owned.  The surrounding transaction
+    still assumes every same-UID writer to the output directory follows this
+    exclusive-stage protocol; POSIX has no atomic compare-and-unlink primitive.
+    """
+
+    handle: Any
+    content_sha256: str
+
+    def close(self) -> None:
+        if not self.handle.closed:
+            self.handle.close()
+
+
 class _OwnedStagingWriteError(OSError):
     """A staging write failed after this attempt acquired a specific inode."""
 
-    def __init__(self, path: Path, identity: tuple[int, int], cause: OSError) -> None:
+    def __init__(self, path: Path, lease: _OwnedArtifactLease, cause: OSError) -> None:
         super().__init__(str(cause))
         self.path = path
-        self.identity = identity
+        self.lease = lease
 
 
-def _write_staging(path: Path, payload: bytes) -> tuple[int, int]:
+def _write_staging(path: Path, payload: bytes) -> _OwnedArtifactLease:
     path.parent.mkdir(parents=True, exist_ok=True)
-    identity: tuple[int, int] | None = None
+    handle = None
+    lease: _OwnedArtifactLease | None = None
     try:
-        with path.open("xb") as handle:
-            stat = os.fstat(handle.fileno())
-            identity = (stat.st_dev, stat.st_ino)
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
+        handle = path.open("x+b")
+        lease = _OwnedArtifactLease(handle, sha256(payload).hexdigest())
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
         _directory_fsync(path.parent)
     except FileExistsError as exc:
         raise V11DiagnosticError(f"V11 artifact already exists: {path.name}") from exc
     except OSError as exc:
-        if identity is not None:
-            raise _OwnedStagingWriteError(path, identity, exc) from exc
+        if lease is not None:
+            raise _OwnedStagingWriteError(path, lease, exc) from exc
+        if handle is not None:
+            handle.close()
         raise
-    return identity
-
-
-def _unlink_if_same_inode(final: Path, staging: Path) -> None:
-    if not final.exists() or not staging.exists():
-        return
-    final_stat = final.stat(follow_symlinks=False)
-    staging_stat = staging.stat(follow_symlinks=False)
-    if (final_stat.st_dev, final_stat.st_ino) != (
-        staging_stat.st_dev,
-        staging_stat.st_ino,
-    ):
-        raise V11DiagnosticError(f"refusing to unlink raced artifact: {final.name}")
-    final.unlink()
+    return lease
 
 
 def _inode_identity(path: Path) -> tuple[int, int]:
@@ -1513,12 +1541,74 @@ def _inode_identity(path: Path) -> tuple[int, int]:
     return stat.st_dev, stat.st_ino
 
 
-def _unlink_owned_path(path: Path, identity: tuple[int, int]) -> None:
-    if not path.exists():
+def _open_fd_sha256(descriptor: int) -> str:
+    """Hash a pinned regular-file descriptor without moving its write offset."""
+
+    digest = sha256()
+    offset = 0
+    while chunk := os.pread(descriptor, 1024 * 1024, offset):
+        digest.update(chunk)
+        offset += len(chunk)
+    return digest.hexdigest()
+
+
+def _owned_path_matches(path: Path, lease: _OwnedArtifactLease) -> bool:
+    try:
+        descriptor = lease.handle.fileno()
+        owned_stat = os.fstat(descriptor)
+        path_stat = path.stat(follow_symlinks=False)
+        return (path_stat.st_dev, path_stat.st_ino) == (
+            owned_stat.st_dev,
+            owned_stat.st_ino,
+        ) and _open_fd_sha256(descriptor) == lease.content_sha256
+    except (OSError, ValueError):
+        return False
+
+
+def _directory_entry_exists(path: Path) -> bool:
+    """Return whether the directory name exists, including dangling symlinks."""
+
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def _foreign_entry_binding(path: Path) -> tuple[str, str]:
+    metadata = path.lstat()
+    file_type = stat.S_IFMT(metadata.st_mode)
+    if stat.S_ISREG(metadata.st_mode):
+        return "foreign_snapshot_sha256", _file_sha256(path)
+    if stat.S_ISLNK(metadata.st_mode):
+        target = os.fsencode(os.readlink(path))
+        return "foreign_symlink_target_sha256", sha256(target).hexdigest()
+    encoded_type = f"mode:{file_type:o}".encode("ascii")
+    return "foreign_entry_type_sha256", sha256(encoded_type).hexdigest()
+
+
+def _unlink_owned_path(path: Path, lease: _OwnedArtifactLease) -> None:
+    if not _directory_entry_exists(path):
         return
-    if _inode_identity(path) != identity:
+    if not _owned_path_matches(path, lease):
         raise V11DiagnosticError(f"refusing to unlink foreign artifact: {path.name}")
     path.unlink()
+
+
+def _require_owned_artifacts(
+    artifacts: Sequence[tuple[Path, _OwnedArtifactLease]],
+    *,
+    phase: str,
+) -> None:
+    """Revalidate every transaction name after the preceding OS boundary."""
+
+    changed = [
+        path.name for path, lease in artifacts if not _owned_path_matches(path, lease)
+    ]
+    if changed:
+        raise V11DiagnosticError(
+            f"V11 owned artifact changed during {phase}: {sorted(changed)}"
+        )
 
 
 def _record_acquisition_failure(
@@ -1572,21 +1662,25 @@ def _acquire_attempt(
     committed = False
     ledger_stage: HashChainLedger | None = None
     cleanup_receipt: dict[str, Any] | None = None
-    claim_stage_identity: tuple[int, int] | None = None
-    ledger_stage_identity: tuple[int, int] | None = None
+    claim_stage_lease: _OwnedArtifactLease | None = None
+    ledger_stage_lease: _OwnedArtifactLease | None = None
     claim_final_created = False
     ledger_final_created = False
+    post_commit_verification_failures: list[dict[str, Any]] = []
     try:
         try:
-            claim_stage_identity = _write_staging(paths.claim_staging, claim_bytes)
+            claim_stage_lease = _write_staging(paths.claim_staging, claim_bytes)
         except _OwnedStagingWriteError as exc:
-            claim_stage_identity = exc.identity
+            claim_stage_lease = exc.lease
             raise
         if _file_sha256(paths.claim_staging) != expected_claim_sha256:
             raise V11DiagnosticError("V11 staged claim digest mismatch")
         ledger_stage = HashChainLedger.create(paths.ledger_staging)
-        ledger_stage_identity = ledger_stage.inode_identity
-        ledger_stage.append(
+        ledger_stage_lease = _OwnedArtifactLease(
+            ledger_stage._handle,
+            sha256(b"").hexdigest(),
+        )
+        claimed_event = ledger_stage.append(
             "claimed",
             {
                 "claim_sha256": expected_claim_sha256,
@@ -1594,31 +1688,57 @@ def _acquire_attempt(
                 "started_at_utc": claim_payload["started_at_utc"],
             },
         )
-        ledger_stage.close()
-        ledger_stage = None
+        ledger_stage_lease = _OwnedArtifactLease(
+            ledger_stage._handle,
+            sha256(_canonical_json_bytes(claimed_event) + b"\n").hexdigest(),
+        )
         os.link(paths.ledger_staging, paths.ledger)
         ledger_final_created = True
-        if _inode_identity(paths.ledger) != ledger_stage_identity:
-            raise V11DiagnosticError("V11 linked ledger inode differs from owned stage")
+        if not _owned_path_matches(paths.ledger, ledger_stage_lease):
+            raise V11DiagnosticError(
+                "V11 linked ledger identity or content differs from owned stage"
+            )
         _directory_fsync(paths.ledger.parent)
+        _require_owned_artifacts(
+            (
+                (paths.ledger, ledger_stage_lease),
+                (paths.ledger_staging, ledger_stage_lease),
+                (paths.claim_staging, claim_stage_lease),
+            ),
+            phase="before claim link",
+        )
         os.link(paths.claim_staging, paths.claim)
         claim_final_created = True
-        if _inode_identity(paths.claim) != claim_stage_identity:
-            raise V11DiagnosticError("V11 linked claim inode differs from owned stage")
+        _require_owned_artifacts(
+            (
+                (paths.claim, claim_stage_lease),
+                (paths.ledger, ledger_stage_lease),
+                (paths.claim_staging, claim_stage_lease),
+                (paths.ledger_staging, ledger_stage_lease),
+            ),
+            phase="after claim link",
+        )
         _directory_fsync(paths.claim.parent)
+        _require_owned_artifacts(
+            (
+                (paths.claim, claim_stage_lease),
+                (paths.ledger, ledger_stage_lease),
+                (paths.claim_staging, claim_stage_lease),
+                (paths.ledger_staging, ledger_stage_lease),
+            ),
+            phase="after acquisition commit fsync",
+        )
         committed = True
     except Exception as exc:
-        if ledger_stage is not None:
-            ledger_stage.close()
         rollback_errors: list[dict[str, Any]] = []
-        for created, final, identity in (
-            (claim_final_created, paths.claim, claim_stage_identity),
-            (ledger_final_created, paths.ledger, ledger_stage_identity),
+        for created, final, lease in (
+            (claim_final_created, paths.claim, claim_stage_lease),
+            (ledger_final_created, paths.ledger, ledger_stage_lease),
         ):
-            if not created or identity is None:
+            if not created or lease is None:
                 continue
             try:
-                _unlink_owned_path(final, identity)
+                _unlink_owned_path(final, lease)
             except (OSError, V11DiagnosticError) as rollback_exc:
                 rollback_errors.append(
                     {
@@ -1627,14 +1747,14 @@ def _acquire_attempt(
                         "error_type": type(rollback_exc).__name__,
                     }
                 )
-        for staging, identity in (
-            (paths.claim_staging, claim_stage_identity),
-            (paths.ledger_staging, ledger_stage_identity),
+        for staging, lease in (
+            (paths.claim_staging, claim_stage_lease),
+            (paths.ledger_staging, ledger_stage_lease),
         ):
-            if identity is None:
+            if lease is None:
                 continue
             try:
-                _unlink_owned_path(staging, identity)
+                _unlink_owned_path(staging, lease)
             except (OSError, V11DiagnosticError) as rollback_exc:
                 rollback_errors.append(
                     {
@@ -1662,83 +1782,113 @@ def _acquire_attempt(
             ) from exc
         raise
     finally:
-        if committed:
-            stage_results = []
-            for role, staging, identity in (
-                ("claim", paths.claim_staging, claim_stage_identity),
-                ("ledger", paths.ledger_staging, ledger_stage_identity),
-            ):
-                if identity is None:  # pragma: no cover - committed invariant
-                    raise V11DiagnosticError(
-                        "V11 committed acquisition lacks owned stage identity"
-                    )
-                outcome = "removed"
-                error_type = None
-                try:
-                    _unlink_owned_path(staging, identity)
-                except V11DiagnosticError as exc:
-                    outcome = "foreign_inode_refused"
-                    error_type = type(exc).__name__
-                except OSError:
-                    if not staging.exists():
-                        outcome = "removed"
-                        error_type = None
-                    elif _inode_identity(staging) != identity:
+        try:
+            if committed:
+                stage_results = []
+                for role, staging, lease in (
+                    ("claim", paths.claim_staging, claim_stage_lease),
+                    ("ledger", paths.ledger_staging, ledger_stage_lease),
+                ):
+                    if lease is None:  # pragma: no cover - committed invariant
+                        raise V11DiagnosticError(
+                            "V11 committed acquisition lacks owned stage lease"
+                        )
+                    outcome = "removed"
+                    error_type = None
+                    content_binding = None
+                    content_sha256 = None
+                    try:
+                        _unlink_owned_path(staging, lease)
+                    except V11DiagnosticError as exc:
                         outcome = "foreign_inode_refused"
-                        error_type = "V11DiagnosticError"
-                    else:
-                        outcome = "unlink_failed"
-                        error_type = "OSError"
-                stage_results.append(
-                    {
-                        "phase": "stage_unlink",
-                        "role": role,
-                        "path": _artifact_relative_identity(
-                            staging, paths.claim.parent
-                        ),
-                        "outcome": outcome,
-                        "error_type": error_type,
-                        "content_binding": (
-                            "mutable_final_bytes"
-                            if outcome == "unlink_failed"
-                            else (
-                                "foreign_snapshot_sha256"
-                                if outcome == "foreign_inode_refused"
-                                else None
+                        error_type = type(exc).__name__
+                        content_binding, content_sha256 = _foreign_entry_binding(
+                            staging
+                        )
+                    except OSError:
+                        if not _directory_entry_exists(staging):
+                            outcome = "removed"
+                            error_type = None
+                        elif not _owned_path_matches(staging, lease):
+                            outcome = "foreign_inode_refused"
+                            error_type = "V11DiagnosticError"
+                            content_binding, content_sha256 = _foreign_entry_binding(
+                                staging
                             )
-                        ),
-                        "content_sha256": (
-                            _file_sha256(staging)
-                            if outcome == "foreign_inode_refused" and staging.is_file()
-                            else None
-                        ),
-                    }
-                )
-            parent_outcome = "succeeded"
-            parent_error_type = None
-            try:
-                _directory_fsync(paths.claim.parent)
-            except OSError:
-                parent_outcome = "failed"
-                parent_error_type = "OSError"
-            cleanup_receipt = {
-                "schema_version": 1,
-                "phase": "post_claim_commit_cleanup",
-                "stage_results": stage_results,
-                "parent_fsync": {
-                    "phase": "parent_directory_fsync",
-                    "path": ".",
-                    "outcome": parent_outcome,
-                    "error_type": parent_error_type,
-                },
-            }
+                        else:
+                            outcome = "unlink_failed"
+                            error_type = "OSError"
+                            content_binding = "mutable_final_bytes"
+                    stage_results.append(
+                        {
+                            "phase": "stage_unlink",
+                            "role": role,
+                            "path": _artifact_relative_identity(
+                                staging, paths.claim.parent
+                            ),
+                            "outcome": outcome,
+                            "error_type": error_type,
+                            "content_binding": content_binding,
+                            "content_sha256": content_sha256,
+                        }
+                    )
+                parent_outcome = "succeeded"
+                parent_error_type = None
+                try:
+                    _directory_fsync(paths.claim.parent)
+                except OSError:
+                    parent_outcome = "failed"
+                    parent_error_type = "OSError"
+                cleanup_receipt = {
+                    "schema_version": 1,
+                    "phase": "post_claim_commit_cleanup",
+                    "stage_results": stage_results,
+                    "parent_fsync": {
+                        "phase": "parent_directory_fsync",
+                        "path": ".",
+                        "outcome": parent_outcome,
+                        "error_type": parent_error_type,
+                    },
+                }
+                for final, lease in (
+                    (paths.claim, claim_stage_lease),
+                    (paths.ledger, ledger_stage_lease),
+                ):
+                    if lease is not None and not _owned_path_matches(final, lease):
+                        post_commit_verification_failures.append(
+                            {
+                                "phase": "post_commit_final_verification",
+                                "path": _artifact_relative_identity(
+                                    final, paths.claim.parent
+                                ),
+                                "error_type": "V11DiagnosticError",
+                            }
+                        )
+        finally:
+            if ledger_stage is not None and (not committed or cleanup_receipt is None):
+                ledger_stage.close()
+            if claim_stage_lease is not None:
+                claim_stage_lease.close()
     if cleanup_receipt is None:  # pragma: no cover - success return invariant
         raise V11DiagnosticError("V11 acquisition cleanup receipt is missing")
-    return (
-        HashChainLedger.open_existing(paths.ledger),
-        expected_claim_sha256,
-        cleanup_receipt,
-    )
+    if ledger_stage is None:  # pragma: no cover - committed invariant
+        raise V11DiagnosticError("V11 acquisition ledger handle is missing")
+    if post_commit_verification_failures:
+        error = V11DiagnosticError(
+            "V11 acquisition final identity changed after committed cleanup"
+        )
+        _record_acquisition_failure(
+            paths,
+            error,
+            post_commit_verification_failures,
+        )
+        ledger_stage.close()
+        raise V11DiagnosticError(
+            "V11 acquisition failed; foreign final evidence retained: "
+            f"{post_commit_verification_failures}"
+        ) from error
+    ledger_stage.path = paths.ledger
+    return ledger_stage, expected_claim_sha256, cleanup_receipt
 
 
 def _safe_publish_pair(
@@ -1748,25 +1898,36 @@ def _safe_publish_pair(
         (paths.report_json_staging, paths.report_json, json_bytes),
         (paths.report_markdown_staging, paths.report_markdown, markdown_bytes),
     )
-    stage_identities: dict[Path, tuple[int, int]] = {}
-    linked: list[tuple[Path, tuple[int, int]]] = []
+    stage_leases: dict[Path, _OwnedArtifactLease] = {}
+    linked: list[tuple[Path, _OwnedArtifactLease]] = []
     try:
         for staging, _final, payload in stages:
-            stage_identities[staging] = _write_staging(staging, payload)
+            try:
+                stage_leases[staging] = _write_staging(staging, payload)
+            except _OwnedStagingWriteError as exc:
+                stage_leases[staging] = exc.lease
+                raise
         for staging, final, _payload in stages:
             os.link(staging, final)
-            linked.append((final, stage_identities[staging]))
-            if _inode_identity(final) != stage_identities[staging]:
+            linked.append((final, stage_leases[staging]))
+            if not _owned_path_matches(final, stage_leases[staging]):
                 raise V11DiagnosticError(
-                    f"V11 linked final inode differs from owned stage: {final.name}"
+                    f"V11 linked final identity or content differs from owned stage: {final.name}"
                 )
+        _require_owned_artifacts(
+            tuple(linked)
+            + tuple((staging, stage_leases[staging]) for staging, _, _ in stages),
+            phase="after report final links",
+        )
         # Stage removal is part of the publication transaction.  The sole
         # commit fsync occurs only after both owned names have been removed,
         # so an immutable final never predates a cleanup outcome it cannot
         # report.
         for staging, _final, _payload in stages:
-            _unlink_owned_path(staging, stage_identities[staging])
+            _unlink_owned_path(staging, stage_leases[staging])
+        _require_owned_artifacts(linked, phase="after report stage cleanup")
         _directory_fsync(paths.report_json.parent)
+        _require_owned_artifacts(linked, phase="after report commit fsync")
     except Exception as exc:
         rollback_errors = []
         for final, identity in reversed(linked):
@@ -1787,38 +1948,46 @@ def _safe_publish_pair(
                 f"V11 publication rollback_failed; evidence_retained={rollback_errors}"
             ) from exc
         raise V11DiagnosticError("V11 partial publication retained in staging") from exc
+    finally:
+        for lease in stage_leases.values():
+            lease.close()
     return []
 
 
 def _safe_publish_bundle(path: Path, payload: Mapping[str, Any]) -> list[str]:
     staging = path.with_name(f".{path.name}.staging")
-    raw = (
-        json.dumps(
-            payload,
-            indent=2,
-            sort_keys=True,
-            allow_nan=False,
-            ensure_ascii=False,
-        ).encode("utf-8")
-        + b"\n"
-    )
-    stage_identity: tuple[int, int] | None = None
+    raw = _pretty_json_bytes(payload)
+    stage_lease: _OwnedArtifactLease | None = None
     final_created = False
     try:
-        stage_identity = _write_staging(staging, raw)
+        try:
+            stage_lease = _write_staging(staging, raw)
+        except _OwnedStagingWriteError as exc:
+            stage_lease = exc.lease
+            raise
         os.link(staging, path)
         final_created = True
-        if _inode_identity(path) != stage_identity:
+        if not _owned_path_matches(path, stage_lease):
             raise V11DiagnosticError(
-                f"V11 linked bundle inode differs from owned stage: {path.name}"
+                f"V11 linked bundle identity or content differs from owned stage: {path.name}"
             )
-        _unlink_owned_path(staging, stage_identity)
+        _require_owned_artifacts(
+            ((path, stage_lease), (staging, stage_lease)),
+            phase="before bundle stage cleanup",
+        )
+        _unlink_owned_path(staging, stage_lease)
+        _require_owned_artifacts(
+            ((path, stage_lease),), phase="after bundle stage cleanup"
+        )
         _directory_fsync(path.parent)
+        _require_owned_artifacts(
+            ((path, stage_lease),), phase="after bundle commit fsync"
+        )
     except Exception as exc:
         rollback_errors = []
-        if final_created and stage_identity is not None:
+        if final_created and stage_lease is not None:
             try:
-                _unlink_owned_path(path, stage_identity)
+                _unlink_owned_path(path, stage_lease)
             except (OSError, V11DiagnosticError) as rollback_exc:
                 rollback_errors.append(
                     f"{path.name}:{type(rollback_exc).__name__}:{rollback_exc}"
@@ -1836,6 +2005,9 @@ def _safe_publish_bundle(path: Path, payload: Mapping[str, Any]) -> list[str]:
         raise V11DiagnosticError(
             "V11 partial bundle publication retained in staging"
         ) from exc
+    finally:
+        if stage_lease is not None:
+            stage_lease.close()
     return []
 
 
@@ -1923,6 +2095,209 @@ def _notification_payload(
         "notification_request": request,
         "notification_pending_warning": f"notification_pending:{key}",
     }
+
+
+def _build_exact6_bundle(
+    *,
+    clear: bool,
+    target_date: str,
+    exact: Mapping[str, Any],
+    forecast_payload: Mapping[str, Any],
+    forecast_sha256: str,
+    actual: tuple[int, ...],
+    opportunity: Mapping[str, Any],
+    evaluation_by_model: Mapping[str, Mapping[str, Any]],
+    results: Mapping[str, Sequence[Mapping[str, Any]]],
+    bootstrap_replicates: int,
+    bootstrap_seed: int,
+    audit: Mapping[str, Any],
+    preflight: Mapping[str, Any],
+    implementation_commit: str,
+    exact_command: str,
+    claim_path: str,
+    claim_sha256: str,
+    ledger_head_before_bundle: str,
+    scored_targets: int,
+) -> dict[str, Any]:
+    forecasts = forecast_payload["forecasts"]
+    primary_raw_model = next(
+        name
+        for name in MODEL_ORDER
+        if OPPORTUNITY_MODEL_NAMES[name] == exact["primary_producer_model_name"]
+    )
+    primary_forecast = forecasts[primary_raw_model]
+    scored_prefix_benchmark = {
+        name: summarize_v11_scope(
+            results[name],
+            scope=f"scored_prefix_{scored_targets}",
+            bootstrap_replicates=bootstrap_replicates,
+            bootstrap_seed=bootstrap_seed,
+        )
+        for name in MODEL_ORDER
+    }
+    return {
+        "schema_version": 1,
+        "status": "historical-6of6-candidate" if clear else "Archive",
+        "experiment_id": EXPERIMENT_ID,
+        "model_version": MODEL_VERSION,
+        "primary_producer_model_version": primary_forecast["model_version"],
+        "primary_producer_feature_set": primary_forecast["feature_set"],
+        "primary_producer_parameters": {
+            key: primary_forecast[key]
+            for key in (
+                "anchor",
+                "transition_count",
+                "D",
+                "beta",
+                "q_b",
+                "r_b",
+                "seed",
+            )
+            if key in primary_forecast
+        },
+        "target_date": target_date,
+        "primary_producer_model_name": exact["primary_producer_model_name"],
+        "producer_model_names": exact["producer_model_names"],
+        "producer_forecast_sha256_by_model": exact["producer_forecast_sha256_by_model"],
+        "forecast_payload": forecast_payload,
+        "forecast_sha256": forecast_sha256,
+        "prediction": exact["final6"],
+        "actual": list(actual),
+        "training_cutoff": forecast_payload["prefix"]["history_through"],
+        "opportunity": opportunity,
+        "evaluation_by_model": evaluation_by_model,
+        "scored_prefix_benchmark": scored_prefix_benchmark,
+        "registration_commit": REGISTRATION_COMMIT,
+        "implementation_commit": implementation_commit,
+        "source_commit": preflight.get("data", {}).get("source_commit"),
+        "runtime": preflight.get("runtime"),
+        "exact_command": exact_command,
+        "claim": {"path": claim_path, "sha256": claim_sha256},
+        "ledger_head_before_bundle": ledger_head_before_bundle,
+        "leakage_audit": audit,
+        "scored_targets_before_stop": scored_targets,
+        "normal_621_report": "prohibited_after_early_stop",
+        "oos_reason": "strict_prefix_forecast_fsynced_before_opaque_reveal",
+        "control_producer_never_supports_v11_mechanism_or_activation": True,
+        "historical_6of6_does_not_rescue_scientific_gates": True,
+    }
+
+
+def _exact6_notification(
+    bundle: Mapping[str, Any],
+    *,
+    terminal_type: str,
+    bundle_sha256: str,
+) -> dict[str, Any]:
+    clear = bundle["status"] == "historical-6of6-candidate"
+    subject = (
+        "🚨 [LOTTO649] 历史严格回测成功预测 6/6"
+        if clear
+        else "⚠️ [LOTTO649] 历史 6/6 候选泄漏审计失败"
+    )
+    audit = bundle["leakage_audit"]
+    body = (
+        f"目标日期: {bundle['target_date']}\n"
+        f"预测: {bundle['prediction']}\n实际: {bundle['actual']}\n"
+        f"首个生产者: {bundle['primary_producer_model_name']}\n"
+        f"生产者模型版本: {bundle['primary_producer_model_version']}\n"
+        f"实验版本: {MODEL_VERSION}\n"
+        f"全部生产者及哈希: {bundle['producer_forecast_sha256_by_model']}\n"
+        f"训练截止: {bundle['training_cutoff']}\n"
+        f"泄漏审计通过: {clear}; "
+        f"检查: {[(item['name'], item['passed']) for item in audit['checks']]}\n"
+        f"实现提交: {bundle['implementation_commit']}\n"
+        f"累计机会: {bundle['opportunity']['cumulative_unique_opportunities']}\n"
+        f"家族公平概率: "
+        f"{bundle['opportunity']['cumulative_familywise_fair_probability']}\n"
+        f"截至停止点四模型TopK/proper/Final6评分: "
+        f"{bundle['evaluation_by_model']}\n"
+        f"截至停止点完整四模型benchmark: "
+        f"{bundle['scored_prefix_benchmark']}\n"
+        "OOS理由: 预测在不透明揭示前已持久化。"
+    )
+    return _notification_payload(
+        subject,
+        body,
+        {
+            "event_type": terminal_type,
+            "target_date": bundle["target_date"],
+            "bundle_sha256": bundle_sha256,
+        },
+    )
+
+
+def _exact6_terminal_payload(
+    bundle: Mapping[str, Any],
+    *,
+    terminal_type: str,
+    bundle_path: str,
+    bundle_sha256: str,
+    operational_warnings: Sequence[str],
+) -> dict[str, Any]:
+    notification = _exact6_notification(
+        bundle,
+        terminal_type=terminal_type,
+        bundle_sha256=bundle_sha256,
+    )
+    return {
+        "target_date": bundle["target_date"],
+        "bundle_path": bundle_path,
+        "bundle_sha256": bundle_sha256,
+        "scored_targets": bundle["scored_targets_before_stop"],
+        "stop_global_search": bundle["status"] == "historical-6of6-candidate",
+        "operational_warnings": [
+            *operational_warnings,
+            notification["notification_pending_warning"],
+        ],
+        **notification,
+    }
+
+
+def _normal_terminal_payload(
+    report: Mapping[str, Any],
+    *,
+    json_path: str,
+    json_sha256: str,
+    markdown_path: str,
+    markdown_sha256: str,
+    scored_targets: int,
+    implementation_commit: str,
+    operational_warnings: Sequence[str],
+) -> dict[str, Any]:
+    decision = report["historical_decision"]
+    passed = decision["all_scientific_gates_passed"] is True
+    terminal: dict[str, Any] = {
+        "decision": decision["decision"],
+        "all_scientific_gates_passed": passed,
+        "gates": decision["gates"],
+        "json_path": json_path,
+        "json_sha256": json_sha256,
+        "markdown_path": markdown_path,
+        "markdown_sha256": markdown_sha256,
+        "scored_targets": scored_targets,
+        "operational_warnings": list(operational_warnings),
+    }
+    if not passed:
+        terminal.update(_notification_not_required())
+        return terminal
+    notification = _notification_payload(
+        "[LOTTO649] 【历史严格回测】V11全部统计门槛通过",
+        "V11 十项冻结门槛全部通过；仍未激活，需另行审核。",
+        {
+            "event_type": "published",
+            "json_sha256": json_sha256,
+            "markdown_sha256": markdown_sha256,
+            "implementation_commit": implementation_commit,
+            "experiment_id": EXPERIMENT_ID,
+        },
+    )
+    terminal.update(notification)
+    terminal["operational_warnings"] = [
+        *operational_warnings,
+        notification["notification_pending_warning"],
+    ]
+    return terminal
 
 
 def _notification_not_required() -> dict[str, Any]:
@@ -2822,24 +3197,28 @@ def _validate_acquisition_cleanup_receipt(
                 item["error_type"] is None
                 and item["content_binding"] is None
                 and item["content_sha256"] is None
-                and not stage.exists()
+                and not _directory_entry_exists(stage)
             )
         elif outcome == "unlink_failed":
             valid = (
                 item["error_type"] == "OSError"
                 and item["content_binding"] == "mutable_final_bytes"
                 and item["content_sha256"] is None
-                and stage.is_file()
+                and _directory_entry_exists(stage)
+                and stat.S_ISREG(stage.lstat().st_mode)
                 and _file_sha256(stage) == _file_sha256(final)
             )
         elif outcome == "foreign_inode_refused":
-            valid = (
-                item["error_type"] == "V11DiagnosticError"
-                and item["content_binding"] == "foreign_snapshot_sha256"
-                and _is_lower_hex(item["content_sha256"], 64)
-                and stage.is_file()
-                and _file_sha256(stage) == item["content_sha256"]
-            )
+            try:
+                expected_binding, expected_sha256 = _foreign_entry_binding(stage)
+            except FileNotFoundError:
+                valid = False
+            else:
+                valid = (
+                    item["error_type"] == "V11DiagnosticError"
+                    and item["content_binding"] == expected_binding
+                    and item["content_sha256"] == expected_sha256
+                )
         else:
             valid = False
         if not valid:
@@ -3274,22 +3653,6 @@ def validate_v11_ledger_state_machine(
                 raise V11DiagnosticError("V11 exact 6/6 terminal disposition changed")
             terminal_index = index
             terminal = events[terminal_index]["payload"]
-            _validate_notification_envelope(terminal)
-            terminal_context = terminal["notification_request"]["context"]
-            if terminal_context != {
-                "event_type": terminal_type,
-                "target_date": target_text,
-                "bundle_sha256": terminal.get("bundle_sha256"),
-            }:
-                raise V11DiagnosticError("V11 exact 6/6 notification context changed")
-            terminal_warnings = terminal.get("operational_warnings")
-            if terminal_warnings != [
-                *operational_warnings,
-                terminal["notification_pending_warning"],
-            ]:
-                raise V11DiagnosticError(
-                    "V11 exact 6/6 operational warning chain changed"
-                )
             expected_bundle_path = path.parent / (
                 "historical-6of6-candidate__"
                 f"{target_text}__{expected_exact['primary_producer_model_name']}__"
@@ -3300,35 +3663,48 @@ def validate_v11_ledger_state_machine(
                 terminal.get("bundle_path"),
                 expected=expected_bundle_path,
             )
-            if not bundle_path.is_file() or _file_sha256(bundle_path) != terminal.get(
-                "bundle_sha256"
-            ):
-                raise V11DiagnosticError("V11 exact 6/6 bundle hash changed")
-            bundle = json.loads(bundle_path.read_bytes())
-            replay_benchmark = {
-                name: summarize_v11_scope(
-                    results[name],
-                    scope=f"scored_prefix_{scored}",
-                    bootstrap_replicates=plan["bootstrap_replicates"],
-                    bootstrap_seed=plan["bootstrap_seed"],
-                )
-                for name in MODEL_ORDER
-            }
-            if (
-                bundle.get("forecast_sha256") != forecast_sha
-                or bundle.get("leakage_audit") != audit
-                or bundle.get("claim")
-                != {
-                    "path": _artifact_relative_identity(paths.claim, path.parent),
-                    "sha256": claim_sha256,
-                }
-                or bundle.get("evaluation_by_model") != scores
-                or bundle.get("scored_prefix_benchmark") != replay_benchmark
-                or bundle.get("status")
-                != ("historical-6of6-candidate" if recomputed_clear else "Archive")
-                or terminal.get("stop_global_search") is not recomputed_clear
-            ):
+            expected_bundle = _build_exact6_bundle(
+                clear=recomputed_clear,
+                target_date=target_text,
+                exact=expected_exact,
+                forecast_payload=normalized,
+                forecast_sha256=forecast_sha,
+                actual=actual,
+                opportunity=opportunity,
+                evaluation_by_model=scores,
+                results=results,
+                bootstrap_replicates=plan["bootstrap_replicates"],
+                bootstrap_seed=plan["bootstrap_seed"],
+                audit=audit,
+                preflight=preflight,
+                implementation_commit=claim["implementation_commit"],
+                exact_command=claim["exact_command"],
+                claim_path=_artifact_relative_identity(paths.claim, path.parent),
+                claim_sha256=claim_sha256,
+                ledger_head_before_bundle=events[terminal_index - 1]["event_sha256"],
+                scored_targets=scored,
+            )
+            expected_bundle_raw = _pretty_json_bytes(expected_bundle)
+            try:
+                bundle_raw = bundle_path.read_bytes()
+            except OSError as exc:
+                raise V11DiagnosticError("V11 exact 6/6 bundle is missing") from exc
+            if bundle_raw != expected_bundle_raw:
                 raise V11DiagnosticError("V11 exact 6/6 bundle is not replayable")
+            bundle_sha256 = sha256(bundle_raw).hexdigest()
+            expected_terminal = _exact6_terminal_payload(
+                expected_bundle,
+                terminal_type=terminal_type,
+                bundle_path=_artifact_relative_identity(bundle_path, path.parent),
+                bundle_sha256=bundle_sha256,
+                operational_warnings=operational_warnings,
+            )
+            _same_payload(
+                terminal,
+                expected_terminal,
+                "V11 exact 6/6 notification or terminal was forged",
+            )
+            _validate_notification_envelope(terminal)
             _validate_terminal_notification_suffix(
                 events,
                 terminal_index=terminal_index,
@@ -3481,16 +3857,7 @@ def validate_v11_ledger_state_machine(
         report = json.loads(report_raw)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise V11DiagnosticError("V11 published JSON report is unreadable") from exc
-    expected_json = (
-        json.dumps(
-            expected_report,
-            indent=2,
-            sort_keys=True,
-            allow_nan=False,
-            ensure_ascii=False,
-        ).encode("utf-8")
-        + b"\n"
-    )
+    expected_json = _pretty_json_bytes(expected_report)
     if report_raw != expected_json or report != expected_report:
         raise V11DiagnosticError("V11 published JSON report is not replayable")
     try:
@@ -3499,42 +3866,22 @@ def validate_v11_ledger_state_machine(
         raise V11DiagnosticError("V11 published Markdown report is missing") from exc
     if markdown_raw != _render_markdown(expected_report).encode("utf-8"):
         raise V11DiagnosticError("V11 published Markdown report is not replayable")
-    base_terminal = {
-        "decision": expected_report["historical_decision"]["decision"],
-        "all_scientific_gates_passed": expected_report["historical_decision"][
-            "all_scientific_gates_passed"
-        ],
-        "gates": expected_report["historical_decision"]["gates"],
-        "json_path": _artifact_relative_identity(paths.report_json, path.parent),
-        "json_sha256": sha256(report_raw).hexdigest(),
-        "markdown_path": _artifact_relative_identity(
-            paths.report_markdown, path.parent
-        ),
-        "markdown_sha256": sha256(markdown_raw).hexdigest(),
-        "scored_targets": expected_targets,
-    }
-    for key, value in base_terminal.items():
-        if terminal.get(key) != value:
-            raise V11DiagnosticError("V11 published terminal binding changed")
+    expected_terminal = _normal_terminal_payload(
+        expected_report,
+        json_path=_artifact_relative_identity(paths.report_json, path.parent),
+        json_sha256=sha256(report_raw).hexdigest(),
+        markdown_path=_artifact_relative_identity(paths.report_markdown, path.parent),
+        markdown_sha256=sha256(markdown_raw).hexdigest(),
+        scored_targets=expected_targets,
+        implementation_commit=claim["implementation_commit"],
+        operational_warnings=operational_warnings,
+    )
+    _same_payload(
+        terminal,
+        expected_terminal,
+        "V11 published notification or terminal was forged",
+    )
     _validate_notification_envelope(terminal)
-    terminal_warnings = terminal.get("operational_warnings")
-    if not isinstance(terminal_warnings, list):
-        raise V11DiagnosticError("V11 published operational warnings changed")
-    if expected_report["historical_decision"]["all_scientific_gates_passed"]:
-        context = terminal["notification_request"]["context"]
-        if context != {
-            "event_type": "published",
-            "json_sha256": base_terminal["json_sha256"],
-            "markdown_sha256": base_terminal["markdown_sha256"],
-            "implementation_commit": claim["implementation_commit"],
-            "experiment_id": EXPERIMENT_ID,
-        } or terminal_warnings != [
-            *operational_warnings,
-            terminal["notification_pending_warning"],
-        ]:
-            raise V11DiagnosticError("V11 published notification binding changed")
-    elif terminal_warnings != operational_warnings:
-        raise V11DiagnosticError("V11 published operational warning chain changed")
     _validate_terminal_notification_suffix(
         events,
         terminal_index=terminal_index,
@@ -3567,7 +3914,9 @@ def run_v11_historical(request: V11DiagnosticRequest) -> dict[str, Any]:
     breakthrough_final = tuple(
         request.output_dir.glob("historical-6of6-candidate__*__v11.0.0.json")
     )
-    existing = [path for path in paths.all_normal_paths() if path.exists()]
+    existing = [
+        path for path in paths.all_normal_paths() if _directory_entry_exists(path)
+    ]
     existing.extend(breakthrough_staging)
     existing.extend(breakthrough_final)
     if existing:
@@ -3704,7 +4053,6 @@ def run_v11_historical(request: V11DiagnosticRequest) -> dict[str, Any]:
                 prior_u_values=opportunity_u_values,
             )
             opportunity_u_values.append(int(opportunity["u_t"]))
-            cumulative_opportunities = sum(opportunity_u_values)
             candidate_hits = int(target_scores[CANDIDATE_MODEL]["final6_hits"])
             record = _build_progressive_record(
                 target_date=plan.target_date,
@@ -3802,133 +4150,52 @@ def run_v11_historical(request: V11DiagnosticRequest) -> dict[str, Any]:
                     f"{plan.target_date.isoformat()}__"
                     f"{exact['primary_producer_model_name']}__v11.0.0.json"
                 )
-                primary_raw_model = next(
-                    name
-                    for name in MODEL_ORDER
-                    if OPPORTUNITY_MODEL_NAMES[name]
-                    == exact["primary_producer_model_name"]
-                )
-                primary_forecast = forecasts[primary_raw_model]
-                scored_prefix_benchmark = {
-                    name: summarize_v11_scope(
-                        results[name],
-                        scope=f"scored_prefix_{len(per_target)}",
-                        bootstrap_replicates=request.bootstrap_replicates,
-                        bootstrap_seed=request.bootstrap_seed,
-                    )
-                    for name in MODEL_ORDER
-                }
-                bundle = {
-                    "schema_version": 1,
-                    "status": (
-                        "historical-6of6-candidate"
-                        if audit["clear"] is True
-                        else "Archive"
+                clear = audit["clear"] is True
+                bundle = _build_exact6_bundle(
+                    clear=clear,
+                    target_date=plan.target_date.isoformat(),
+                    exact=exact,
+                    forecast_payload=first,
+                    forecast_sha256=forecast_sha,
+                    actual=actual,
+                    opportunity=opportunity,
+                    evaluation_by_model=target_scores,
+                    results=results,
+                    bootstrap_replicates=request.bootstrap_replicates,
+                    bootstrap_seed=request.bootstrap_seed,
+                    audit=audit,
+                    preflight=preflight,
+                    implementation_commit=request.code_commit,
+                    exact_command=request.exact_command,
+                    claim_path=_artifact_relative_identity(
+                        paths.claim, request.output_dir
                     ),
-                    "experiment_id": EXPERIMENT_ID,
-                    "model_version": MODEL_VERSION,
-                    "primary_producer_model_version": primary_forecast["model_version"],
-                    "primary_producer_feature_set": primary_forecast["feature_set"],
-                    "primary_producer_parameters": {
-                        key: primary_forecast[key]
-                        for key in (
-                            "anchor",
-                            "transition_count",
-                            "D",
-                            "beta",
-                            "q_b",
-                            "r_b",
-                            "seed",
-                        )
-                        if key in primary_forecast
-                    },
-                    "target_date": plan.target_date.isoformat(),
-                    "primary_producer_model_name": exact["primary_producer_model_name"],
-                    "producer_model_names": exact["producer_model_names"],
-                    "producer_forecast_sha256_by_model": exact[
-                        "producer_forecast_sha256_by_model"
-                    ],
-                    "forecast_payload": first,
-                    "forecast_sha256": forecast_sha,
-                    "prediction": exact["final6"],
-                    "actual": list(actual),
-                    "training_cutoff": first["prefix"]["history_through"],
-                    "opportunity": opportunity,
-                    "evaluation_by_model": target_scores,
-                    "scored_prefix_benchmark": scored_prefix_benchmark,
-                    "registration_commit": REGISTRATION_COMMIT,
-                    "implementation_commit": request.code_commit,
-                    "source_commit": preflight.get("data", {}).get("source_commit"),
-                    "runtime": preflight.get("runtime"),
-                    "exact_command": request.exact_command,
-                    "claim": {
-                        "path": _artifact_relative_identity(
-                            paths.claim, request.output_dir
-                        ),
-                        "sha256": claim_sha256,
-                    },
-                    "ledger_head_before_bundle": ledger.head_sha256,
-                    "leakage_audit": audit,
-                    "scored_targets_before_stop": len(per_target),
-                    "normal_621_report": "prohibited_after_early_stop",
-                    "oos_reason": "strict_prefix_forecast_fsynced_before_opaque_reveal",
-                    "control_producer_never_supports_v11_mechanism_or_activation": True,
-                    "historical_6of6_does_not_rescue_scientific_gates": True,
-                }
+                    claim_sha256=claim_sha256,
+                    ledger_head_before_bundle=ledger.head_sha256,
+                    scored_targets=len(per_target),
+                )
                 publication_warnings = _safe_publish_bundle(bundle_path, bundle)
                 external_warnings.extend(publication_warnings)
-                clear = audit["clear"] is True
                 terminal_type = (
                     "historical_6of6_candidate_published"
                     if clear
                     else "historical_6of6_candidate_archived_leakage_failed"
                 )
-                subject = (
-                    "🚨 [LOTTO649] 历史严格回测成功预测 6/6"
-                    if clear
-                    else "⚠️ [LOTTO649] 历史 6/6 候选泄漏审计失败"
+                bundle_sha256 = _file_sha256(bundle_path)
+                notification = _exact6_notification(
+                    bundle,
+                    terminal_type=terminal_type,
+                    bundle_sha256=bundle_sha256,
                 )
-                body = (
-                    f"目标日期: {plan.target_date.isoformat()}\n"
-                    f"预测: {exact['final6']}\n实际: {list(actual)}\n"
-                    f"首个生产者: {exact['primary_producer_model_name']}\n"
-                    f"生产者模型版本: {primary_forecast['model_version']}\n"
-                    f"实验版本: {MODEL_VERSION}\n"
-                    f"全部生产者及哈希: "
-                    f"{exact['producer_forecast_sha256_by_model']}\n"
-                    f"训练截止: {first['prefix']['history_through']}\n"
-                    f"泄漏审计通过: {clear}; "
-                    f"检查: {[(item['name'], item['passed']) for item in audit['checks']]}\n"
-                    f"实现提交: {request.code_commit}\n"
-                    f"累计机会: {cumulative_opportunities}\n"
-                    f"家族公平概率: {opportunity['cumulative_familywise_fair_probability']}\n"
-                    f"截至停止点四模型TopK/proper/Final6评分: {target_scores}\n"
-                    f"截至停止点完整四模型benchmark: {scored_prefix_benchmark}\n"
-                    "OOS理由: 预测在不透明揭示前已持久化。"
-                )
-                notification = _notification_payload(
-                    subject,
-                    body,
-                    {
-                        "event_type": terminal_type,
-                        "target_date": plan.target_date.isoformat(),
-                        "bundle_sha256": _file_sha256(bundle_path),
-                    },
-                )
-                terminal_payload = {
-                    "target_date": plan.target_date.isoformat(),
-                    "bundle_path": _artifact_relative_identity(
+                terminal_payload = _exact6_terminal_payload(
+                    bundle,
+                    terminal_type=terminal_type,
+                    bundle_path=_artifact_relative_identity(
                         bundle_path, request.output_dir
                     ),
-                    "bundle_sha256": _file_sha256(bundle_path),
-                    "scored_targets": len(per_target),
-                    "stop_global_search": clear,
-                    "operational_warnings": [
-                        *external_warnings,
-                        notification["notification_pending_warning"],
-                    ],
-                    **notification,
-                }
+                    bundle_sha256=bundle_sha256,
+                    operational_warnings=external_warnings,
+                )
                 terminal_event = ledger.append(terminal_type, terminal_payload)
                 terminal = True
                 validate_v11_ledger_state_machine(
@@ -4041,56 +4308,25 @@ def run_v11_historical(request: V11DiagnosticRequest) -> dict[str, Any]:
             source_blob_resolver=request.source_blob_resolver,
             registered_identity=request.registered_identity,
         )
-        json_bytes = (
-            json.dumps(
-                report,
-                indent=2,
-                sort_keys=True,
-                allow_nan=False,
-                ensure_ascii=False,
-            ).encode("utf-8")
-            + b"\n"
-        )
+        json_bytes = _pretty_json_bytes(report)
         markdown_bytes = _render_markdown(report).encode("utf-8")
         publication_warnings = _safe_publish_pair(paths, json_bytes, markdown_bytes)
         external_warnings.extend(publication_warnings)
         passed = report["historical_decision"]["all_scientific_gates_passed"]
-        subject = "[LOTTO649] 【历史严格回测】V11全部统计门槛通过" if passed else None
-        body = "V11 十项冻结门槛全部通过；仍未激活，需另行审核。" if passed else None
-        terminal_payload: dict[str, Any] = {
-            "decision": report["historical_decision"]["decision"],
-            "all_scientific_gates_passed": passed,
-            "gates": report["historical_decision"]["gates"],
-            "json_path": _artifact_relative_identity(
+        terminal_payload = _normal_terminal_payload(
+            report,
+            json_path=_artifact_relative_identity(
                 paths.report_json, request.output_dir
             ),
-            "json_sha256": _file_sha256(paths.report_json),
-            "markdown_path": _artifact_relative_identity(
+            json_sha256=_file_sha256(paths.report_json),
+            markdown_path=_artifact_relative_identity(
                 paths.report_markdown, request.output_dir
             ),
-            "markdown_sha256": _file_sha256(paths.report_markdown),
-            "scored_targets": len(per_target),
-            "operational_warnings": list(external_warnings),
-        }
-        if subject is not None and body is not None:
-            notification = _notification_payload(
-                subject,
-                body,
-                {
-                    "event_type": "published",
-                    "json_sha256": terminal_payload["json_sha256"],
-                    "markdown_sha256": terminal_payload["markdown_sha256"],
-                    "implementation_commit": request.code_commit,
-                    "experiment_id": EXPERIMENT_ID,
-                },
-            )
-            terminal_payload.update(notification)
-            terminal_payload["operational_warnings"] = [
-                *external_warnings,
-                notification["notification_pending_warning"],
-            ]
-        else:
-            terminal_payload.update(_notification_not_required())
+            markdown_sha256=_file_sha256(paths.report_markdown),
+            scored_targets=len(per_target),
+            implementation_commit=request.code_commit,
+            operational_warnings=external_warnings,
+        )
         terminal_event = ledger.append("published", terminal_payload)
         terminal = True
         validate_v11_ledger_state_machine(
@@ -4102,8 +4338,8 @@ def run_v11_historical(request: V11DiagnosticRequest) -> dict[str, Any]:
         )
         sent = None
         receipt = None
-        if subject is not None and body is not None:
-            receipt = _dispatch_notification(request.notifier, notification)
+        if passed:
+            receipt = _dispatch_notification(request.notifier, terminal_payload)
             ledger.append(
                 "terminal_notification_receipt",
                 {

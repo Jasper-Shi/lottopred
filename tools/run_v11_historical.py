@@ -102,6 +102,17 @@ STATUS_DOCUMENT_REPLACEMENTS: dict[str, tuple[tuple[bytes, bytes], ...]] = {
         ),
     ),
 }
+STATUS_DOCUMENT_REGISTRATION_SHA256 = {
+    "docs/CODEX_HANDOFF.md": (
+        "e78b392a7e5076210c7f77d3088f8272ab0870fb7ba26e1ff3ad46bac60fa918"
+    ),
+    "docs/MODEL_PROTOCOL.md": (
+        "4660bc2e716d3f277b57530f3fbdb0e8bab0664968a5f96ff6a31c176df3703f"
+    ),
+    "docs/RESEARCH_ROADMAP.md": (
+        "e2e62cbc0721c8c51fc8a9c55a926eab3084c8a542f0d19d485266e61beabd31"
+    ),
+}
 REQUIRED_SOURCE_PATHS = frozenset(
     {
         "src/lotto649/models/v11_previous_bonus_carryover.py",
@@ -148,6 +159,8 @@ def _validate_status_documentation_blobs(
     replacements = STATUS_DOCUMENT_REPLACEMENTS.get(path)
     if replacements is None:
         raise V11DiagnosticError("V11 status document path is not registered")
+    if _sha256_bytes(registration_blob) != STATUS_DOCUMENT_REGISTRATION_SHA256[path]:
+        raise V11DiagnosticError("V11 registered status document hash changed")
     expected = registration_blob
     for old, new in replacements:
         if expected.count(old) != 1 or new in registration_blob:
