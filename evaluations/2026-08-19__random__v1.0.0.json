@@ -1,0 +1,25 @@
+{
+  "actual": [
+    6,
+    7,
+    10,
+    32,
+    33,
+    36
+  ],
+  "bonus": 11,
+  "brier_score": 0.1074552269328038,
+  "final_6_hits": 2,
+  "log_loss": 0.37177617968310767,
+  "matched_final": [
+    10,
+    36
+  ],
+  "mean_actual_rank": 18.5,
+  "model_name": "random",
+  "model_version": "v1.0.0",
+  "target_draw_date": "2026-08-19",
+  "top_12_hits": 3,
+  "top_18_hits": 4,
+  "top_6_hits": 2
+}
