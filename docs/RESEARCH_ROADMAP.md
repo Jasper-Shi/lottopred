@@ -129,7 +129,7 @@ must remain in the ledger rather than being deleted.
 | [`V7_post_rng_main_bonus_role_bias`](experiments/V7_main_bonus_role_bias.md) | Draw-role exchangeability | `v7.0.0` | Closed — reject | Frozen 2020–2025 gate failed on significance, stability, proper scores, and global role audit | Never activated |
 | [`V8_fixed_recurrence_harmonic`](experiments/V8_fixed_recurrence_harmonic.md) | Periodicity/frequency domain | `v8.0.0` | Closed — reject | Negative aggregate Top-12 lift; six of eight frozen gates failed | Never activated |
 | [`V10_adjacent_pair_structure`](experiments/V10_adjacent_pair_structure.md) | Structural set feature; `v5_pair_cooccurrence` variant 2 for multiplicity | `v10.0.0` | Closed — reject | Small positive Top-12 point lift, but Holm/CI, proper-score, control, and joint-mechanism gates failed; maximum final-six hit was 3/6 | Never activated |
-| [`V11_previous_bonus_carryover`](experiments/V11_previous_bonus_carryover.md) | Previous-bonus cross-draw residual; `transition_markov` variant 3 | `v11.0.0` | Registered; not implemented or scored | One 621-target consumed diagnostic is pre-registered but not authorized until a separate audited implementation commit | Not activated; fixed 208 eligible draws (104 + 104) only after a separate reviewed release sequence |
+| [`V11_previous_bonus_carryover`](experiments/V11_previous_bonus_carryover.md) | Previous-bonus cross-draw residual; `transition_markov` variant 3 | `v11.0.0` | Implemented; not scored or activated | One 621-target consumed diagnostic is pre-registered but not authorized until a separate audited implementation commit | Not activated; fixed 208 eligible draws (104 + 104) only after a separate reviewed release sequence |
 
 ### V3 prospective freeze
 

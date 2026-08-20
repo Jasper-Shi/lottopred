@@ -113,8 +113,8 @@ frozen [registration](experiments/V10_adjacent_pair_structure.md) and
 
 ## Registered V11 previous-bonus carryover diagnostic
 
-`V11_previous_bonus_carryover v11.0.0` is registered but not implemented,
-scored, or activated. It tests one cross-draw observable: whether the previous
+`V11_previous_bonus_carryover v11.0.0` is implemented as registered but not
+scored or activated. It tests one cross-draw observable: whether the previous
 published bonus label enters the next six-main set more or less often than its
 strict-prefix frozen V1 ensemble probability implies. A single `N(0,1)`-
 regularized log-odds coefficient is fitted using only earlier eligible targets;
