@@ -14,6 +14,55 @@ V1 merges three sources:
 
 Overlapping dates are compared exactly, including bonus. Any disagreement raises an error. The merged chronology must contain more than 4,000 draws and may not contain suspicious post-2000 gaps greater than 14 days.
 
+## Data-integrity incident execution boundary
+
+The registered-history reconciliation opened on 2026-08-20 places the
+operational source-refresh, default historical-backtest, and live-cycle paths
+behind three explicit kill switches:
+
+| Boundary | Required configuration | Incident value |
+|---|---|---|
+| Network/source refresh and processed-data write | `data.refresh_enabled is True` | `false` |
+| Unattended live refresh/evaluation/prediction cycle | `live.enabled is True` **and** `data.refresh_enabled is True` | `false` / `false` |
+| Historical backtest and report generation | `backtest.enabled is True` | `false` |
+
+These checks deny by default. A missing key, a non-boolean value, or a value
+other than literal boolean `true` does not enable execution. `bootstrap`
+checks before resolving or loading the processed dataset or contacting a
+source; `backtest` checks before loading data, building a model, or writing a
+report; public live entry points check before source access, filesystem reads,
+evaluation writes, or prediction generation. Literal `true`
+satisfies only this runtime gate; it is never sufficient to reopen a sealed
+workflow.
+
+The three affected GitHub Actions workflows have a read-only boundary directly
+after checkout. That boundary reads the committed configuration with the
+runner's standard Python runtime and hashes the complete `config.yaml` byte
+stream with SHA-256; it does not interpret YAML. The incident seal recognizes
+only disabled-config SHA-256
+`ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`,
+and even that exact match emits `false` for every execution stage. Every other
+digest also emits only `false`. Runtime setup, dependency installation,
+bootstrap, backtest, live execution, artifact upload, and Git writes therefore
+skip successfully for both the sealed config and any unreviewed byte change.
+
+The ordinary paths below describe the system when a later reviewed release has
+reopened them. Re-enablement requires a committed and independently reviewed
+corrected-history epoch, exact identity/integrity verification at its consumer
+boundary, and passing offline tests and source-policy review. The release must
+change the exact config bytes **and**, in the same reviewed commit, replace the
+affected workflow's incident seal with an explicit execution plan bound to the
+new config SHA-256. The CLI/runtime literal-boolean checks remain a second,
+independent approval gate; a config-only toggle or a workflow-only digest
+change cannot enable execution. Live must never be reopened without data
+refresh in that same reviewed release. Existing predictions, evaluations,
+reports, and registered evidence remain immutable.
+
+This emergency seal is deliberately scoped to the three execution commands on
+main: `bootstrap`, `backtest`, and `live`. It grants no authority for any other
+research execution. Any broader operation must be added to a reviewed incident
+plan rather than inferred from this operational seal.
+
 ## Path A — Live forward prediction
 
 ```text
@@ -36,6 +85,9 @@ GitHub Actions commit
 ```
 
 The Git commit timestamp creates an external audit trail proving the prediction existed before the result was known.
+
+During the data-integrity incident this entire path is dormant; the kill-switch
+boundary takes precedence over the normal unattended schedule.
 
 ## Path B — Historical walk-forward simulation
 

@@ -1,6 +1,7 @@
 # Codex Handoff
 
-Last verified against `main` commit `7f9447f` on 2026-08-16.
+Last verified on 2026-08-20 for the incident kill-switch port based on
+`origin/main` checkpoint `90177c8`.
 
 ## Current state
 
@@ -8,6 +9,19 @@ This repository is the execution and audit system. Codex develops and reviews th
 code; GitHub Actions runs unattended jobs and commits live artifacts. Chat history
 is not required to continue because the research decisions are recorded here and
 in `V2_V4_RESULTS.md`.
+
+> **Data-integrity incident hold (2026-08-20):** the operational roles in the
+> table below describe the pre-incident system, but execution is currently
+> suspended. `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` are
+> all `false`; the live, integration, and backtest workflows are sealed to
+> safe no-op behavior by disabled-config SHA-256
+> `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`.
+> No refresh,
+> backtest, evaluation, or prediction is authorized. The registered 4,432-row
+> history is not strict real-calendar evidence; a 4,442-row corrected epoch and
+> its reconciliation are still awaiting a separate artifact-commit seal.
+> Re-enable only through the reviewed two-gate release described in
+> [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 
 | Component | Status | Meaning |
 |---|---|---|

@@ -27,12 +27,49 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Read incident execution guards
+        id: execution_guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          disabled_sha256 = "ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6"
+          observed_sha256 = hashlib.sha256(
+              Path("config.yaml").read_bytes()
+          ).hexdigest()
+          if observed_sha256 == disabled_sha256:
+              print("Verified incident-disabled config; execution remains sealed")
+          else:
+              print(
+                  "::warning::Unapproved config SHA-256; "
+                  "execution remains sealed"
+              )
+          values = {
+              "refresh": False,
+              "live": False,
+              "cycle": False,
+          }
+          with open(
+              os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8"
+          ) as output:
+              for name, enabled in values.items():
+                  output.write(
+                      f"{name}={'true' if enabled else 'false'}\n"
+                  )
+          PY
       - uses: actions/setup-python@v5
+        if: steps.execution_guard.outputs.cycle == 'true'
         with:
           python-version: '3.12'
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e .
+      - if: steps.execution_guard.outputs.cycle == 'true'
+        run: python -m pip install --upgrade pip
+      - if: steps.execution_guard.outputs.cycle == 'true'
+        run: pip install -e .
       - name: Run live evaluation and next-draw prediction
+        if: steps.execution_guard.outputs.cycle == 'true'
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -42,6 +79,7 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: lotto649 live
       - name: Commit official data, immutable predictions and evaluations
+        if: steps.execution_guard.outputs.cycle == 'true'
         run: |
           git config user.name "lotto649-bot"
           git config user.email "actions@users.noreply.github.com"
