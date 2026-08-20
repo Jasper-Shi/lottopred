@@ -22,7 +22,7 @@ in `V2_V4_RESULTS.md`.
 | V7 main/bonus role bias | Rejected | `v7.0.0` failed its frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V8 fixed-recurrence harmonic | Rejected | `v8.0.0` failed six of eight frozen one-shot historical gates and was closed without shadow activation. Its permanent claim and reports preserve the attempt. |
 | V10 adjacent-pair structure | Rejected | `v10.0.0` completed its unique 621-target consumed diagnostic. Top-12 point lift was small and positive but non-significant after Holm correction; proper-score, targeted-control, and joint-mechanism gates failed. Maximum final-six hit was 3/6, with no 6/6. It remains live-disabled and must never be rerun. |
-| V11 previous-bonus carryover | Registered, not implemented or scored | `v11.0.0` freezes one normally regularized previous-bonus-to-next-main residual on the exact V1 ensemble, one deterministic pseudo-bonus control, and the required target-date random benchmark. No V11 output exists; historical execution remains prohibited until a separate reviewed implementation commit. |
+| V11 previous-bonus carryover | Implemented; not scored or activated | `v11.0.0` freezes one normally regularized previous-bonus-to-next-main residual on the exact V1 ensemble, one deterministic pseudo-bonus control, and the required target-date random benchmark. No V11 output exists; historical execution remains prohibited until a separate reviewed implementation commit. |
 | 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
 | 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
 
@@ -182,7 +182,7 @@ terminal registry result and seal as its new final freeze `F`; the earlier
 ## V11 registered research attempt
 
 [`V11_previous_bonus_carryover`](experiments/V11_previous_bonus_carryover.md)
-is registered as `v11.0.0`, but it is not implemented, scored, or activated.
+is implemented as registered `v11.0.0`, but it is not scored or activated.
 Its sole candidate estimates one `N(0,1)`-regularized scalar log-odds residual
 for whether the immediately previous published bonus label enters the next
 six-main set, conditional on that label's exact frozen V1 ensemble marginal.
