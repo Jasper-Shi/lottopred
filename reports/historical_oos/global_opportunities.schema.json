@@ -1,0 +1,1088 @@
+{
+  "$id": "https://github.com/Jasper-Shi/lottopred/reports/historical_oos/global_opportunities.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "source_registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/sourceRegistered"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "opportunity"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/opportunity"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "duplicate_stream"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/duplicateStream"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "coverage_gap"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/coverageGap"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "data_integrity_incident_registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/dataIntegrityIncidentRegistered"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "opportunity_set_tombstoned"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/opportunitySetTombstoned"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "high_water_erratum"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "#/$defs/highWaterErratum"
+          }
+        }
+      }
+    }
+  ],
+  "description": "Schema for one canonical JSON line. Cryptographic chain validity is checked by validate_historical_oos_evidence, not by JSON Schema.",
+  "properties": {
+    "event_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "event_type": {
+      "enum": [
+        "source_registered",
+        "opportunity",
+        "duplicate_stream",
+        "coverage_gap",
+        "data_integrity_incident_registered",
+        "opportunity_set_tombstoned",
+        "high_water_erratum"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    },
+    "previous_event_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "sequence": {
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_sha256",
+    "event_type",
+    "payload",
+    "previous_event_sha256",
+    "sequence"
+  ],
+  "title": "Historical OOS opportunity ledger event",
+  "type": "object",
+  "$defs": {
+    "dataIntegrityIncidentRegistered": {
+      "additionalProperties": false,
+      "properties": {
+        "authority": {
+          "additionalProperties": false,
+          "properties": {
+            "deployment": {
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "status": {
+                        "const": "awaiting_main_branch_pin"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "main_branch_commit": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "main_branch_commit": {
+                        "$ref": "#/$defs/gitCommit"
+                      }
+                    }
+                  }
+                }
+              ],
+              "properties": {
+                "main_branch_commit": {
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/$defs/gitCommit"
+                    }
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "awaiting_main_branch_pin",
+                    "pinned_to_main_branch"
+                  ]
+                }
+              },
+              "required": [
+                "main_branch_commit",
+                "status"
+              ],
+              "type": "object"
+            },
+            "incident": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_commit": {
+                  "$ref": "#/$defs/gitCommit"
+                },
+                "path": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "sha256": {
+                  "$ref": "#/$defs/sha256"
+                }
+              },
+              "required": [
+                "artifact_commit",
+                "path",
+                "sha256"
+              ],
+              "type": "object"
+            },
+            "seal": {
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "sealed_artifact_commit": {
+                  "$ref": "#/$defs/gitCommit"
+                },
+                "sha256": {
+                  "$ref": "#/$defs/sha256"
+                }
+              },
+              "required": [
+                "path",
+                "sealed_artifact_commit",
+                "sha256"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "deployment",
+            "incident",
+            "seal"
+          ],
+          "type": "object"
+        },
+        "effective_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority",
+        "effective_date",
+        "incident_id"
+      ],
+      "type": "object"
+    },
+    "gitCommit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "highWaterErratum": {
+      "additionalProperties": false,
+      "properties": {
+        "effective_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "eligible_final6_high_water": {
+          "type": "null"
+        },
+        "eligible_opportunity_count": {
+          "const": 0
+        },
+        "eligible_top12_high_water": {
+          "type": "null"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model_disposition": {
+          "additionalProperties": false,
+          "properties": {
+            "closed_nonpromotion_retained_for_versions": {
+              "$ref": "#/$defs/closedNonpromotionVersions"
+            },
+            "legacy_opportunity_metric_scope": {
+              "const": "all_opportunities_in_legacy_prefix"
+            },
+            "legacy_opportunity_numeric_metrics": {
+              "const": "withdrawn"
+            },
+            "v1_operational_status": {
+              "const": "paused_baseline_no_edge_claim"
+            },
+            "v3_operational_status": {
+              "const": "paused_shadow_nonpromotion_retained"
+            },
+            "v3_promotion_status": {
+              "const": "never_promoted"
+            },
+            "v9_numeric_evidence": {
+              "const": "none"
+            }
+          },
+          "required": [
+            "closed_nonpromotion_retained_for_versions",
+            "legacy_opportunity_metric_scope",
+            "legacy_opportunity_numeric_metrics",
+            "v1_operational_status",
+            "v3_operational_status",
+            "v3_promotion_status",
+            "v9_numeric_evidence"
+          ],
+          "type": "object"
+        },
+        "status": {
+          "const": "no_eligible_evidence_after_data_integrity_tombstone"
+        },
+        "stop_global_search": {
+          "const": false
+        }
+      },
+      "required": [
+        "effective_date",
+        "eligible_final6_high_water",
+        "eligible_opportunity_count",
+        "eligible_top12_high_water",
+        "incident_id",
+        "model_disposition",
+        "status",
+        "stop_global_search"
+      ],
+      "type": "object"
+    },
+    "opportunitySetTombstoned": {
+      "additionalProperties": false,
+      "properties": {
+        "disposition": {
+          "additionalProperties": false,
+          "properties": {
+            "eligible": {
+              "const": false
+            },
+            "eligibility": {
+              "const": "ineligible"
+            },
+            "evidence_use": {
+              "const": "registered_data_only"
+            }
+          },
+          "required": [
+            "eligible",
+            "eligibility",
+            "evidence_use"
+          ],
+          "type": "object"
+        },
+        "effective_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "incident_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "selection": {
+          "additionalProperties": false,
+          "properties": {
+            "event_type": {
+              "const": "opportunity"
+            },
+            "legacy_prefix_event_count": {
+              "const": 18259
+            },
+            "mode": {
+              "const": "all_matching_events_in_legacy_prefix"
+            }
+          },
+          "required": [
+            "event_type",
+            "legacy_prefix_event_count",
+            "mode"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "disposition",
+        "effective_date",
+        "incident_id",
+        "selection"
+      ],
+      "type": "object"
+    },
+    "closedNonpromotionVersions": {
+      "const": [
+        "V2",
+        "V4",
+        "V5",
+        "V6",
+        "V7",
+        "V8",
+        "V10",
+        "V11"
+      ],
+      "type": "array"
+    },
+    "classification": {
+      "additionalProperties": false,
+      "properties": {
+        "exact_final6_status": {
+          "enum": [
+            "reported_false",
+            "reported_unverified",
+            "verified_false",
+            "verified_true"
+          ]
+        },
+        "stop_global_search": {
+          "type": "boolean"
+        },
+        "success_class": {
+          "enum": [
+            "partial_final6",
+            "top12_coverage_only",
+            "reported_unverified_final6",
+            "verified_historical_final6",
+            "verified_historical_final6_audit_not_clear"
+          ]
+        },
+        "top12_all_main_status": {
+          "enum": [
+            "reported_false",
+            "reported_true"
+          ]
+        }
+      },
+      "required": [
+        "exact_final6_status",
+        "stop_global_search",
+        "success_class",
+        "top12_all_main_status"
+      ],
+      "type": "object"
+    },
+    "coverageGap": {
+      "additionalProperties": false,
+      "properties": {
+        "date_end": {
+          "format": "date",
+          "type": "string"
+        },
+        "date_start": {
+          "format": "date",
+          "type": "string"
+        },
+        "evidence_lane": {
+          "const": "consumed_historical_diagnostic"
+        },
+        "experiment_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "maximum_final6_hits": {
+          "type": "null"
+        },
+        "model_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "per_target_final6": {
+          "const": "unknown"
+        },
+        "per_target_top12": {
+          "const": "unknown"
+        },
+        "reason": {
+          "const": "aggregate_report_only"
+        },
+        "reported_target_count": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": [
+        "date_end",
+        "date_start",
+        "evidence_lane",
+        "experiment_id",
+        "maximum_final6_hits",
+        "model_name",
+        "model_version",
+        "per_target_final6",
+        "per_target_top12",
+        "reason",
+        "reported_target_count",
+        "source_path",
+        "source_sha256"
+      ],
+      "type": "object"
+    },
+    "duplicateStream": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "detail_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "exact_duplicate_of": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "opportunities_added": {
+          "const": 0
+        }
+      },
+      "required": [
+        "bundle_id",
+        "detail_sha256",
+        "exact_duplicate_of",
+        "opportunities_added"
+      ],
+      "type": "object"
+    },
+    "hitCount": {
+      "maximum": 6,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "number": {
+      "maximum": 49,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "numberList": {
+      "items": {
+        "$ref": "#/$defs/number"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "opportunity": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "missing_from_source"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "stop_global_search": {
+                    "const": false
+                  }
+                }
+              },
+              "forecast": {
+                "properties": {
+                  "final6": {
+                    "type": "null"
+                  },
+                  "forecast_sha256": {
+                    "type": "null"
+                  },
+                  "top12": {
+                    "type": "null"
+                  },
+                  "top18": {
+                    "type": "null"
+                  },
+                  "top6": {
+                    "type": "null"
+                  }
+                }
+              },
+              "reported_evaluation": {
+                "properties": {
+                  "score_origin": {
+                    "const": "copied_not_recomputed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "verified_full_snapshot"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reported_evaluation": {
+                "properties": {
+                  "score_origin": {
+                    "const": "independently_recomputed_and_matched"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "forecast": {
+                "properties": {
+                  "snapshot_status": {
+                    "const": "verified_full_snapshot"
+                  }
+                }
+              },
+              "reported_evaluation": {
+                "properties": {
+                  "final6_hits": {
+                    "const": 6
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "success_class": {
+                    "const": "verified_historical_final6"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  },
+                  "stop_global_search": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "success_class": {
+                    "const": "verified_historical_final6_audit_not_clear"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "classification": {
+                "properties": {
+                  "exact_final6_status": {
+                    "const": "verified_true"
+                  },
+                  "stop_global_search": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "audit": {
+          "type": "object"
+        },
+        "classification": {
+          "$ref": "#/$defs/classification"
+        },
+        "evidence_lane": {
+          "const": "consumed_historical_diagnostic"
+        },
+        "forecast": {
+          "$ref": "#/$defs/forecast"
+        },
+        "model_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "producers": {
+          "items": {
+            "$ref": "#/$defs/producer"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "reported_evaluation": {
+          "$ref": "#/$defs/reportedEvaluation"
+        },
+        "reported_model_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "type": "object"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        }
+      },
+      "required": [
+        "audit",
+        "classification",
+        "evidence_lane",
+        "forecast",
+        "model_name",
+        "reported_evaluation",
+        "reported_model_version",
+        "source",
+        "target"
+      ],
+      "type": "object"
+    },
+    "forecast": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "snapshot_status": {
+                "const": "verified_full_snapshot"
+              }
+            },
+            "required": [
+              "snapshot_status"
+            ]
+          },
+          "then": {
+            "required": [
+              "ranking",
+              "strict_prefix_sha256"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "final6": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sixNumbers"
+            }
+          ]
+        },
+        "forecast_sha256": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sha256"
+            }
+          ]
+        },
+        "ranking": {
+          "items": {
+            "$ref": "#/$defs/number"
+          },
+          "maxItems": 49,
+          "minItems": 49,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "snapshot_status": {
+          "enum": [
+            "missing_from_source",
+            "verified_full_snapshot"
+          ]
+        },
+        "strict_prefix_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "top12": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/numberList"
+                },
+                {
+                  "maxItems": 12,
+                  "minItems": 12
+                }
+              ]
+            }
+          ]
+        },
+        "top18": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/numberList"
+                },
+                {
+                  "maxItems": 18,
+                  "minItems": 18
+                }
+              ]
+            }
+          ]
+        },
+        "top6": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/sixNumbers"
+            }
+          ]
+        }
+      },
+      "required": [
+        "final6",
+        "forecast_sha256",
+        "snapshot_status",
+        "top12",
+        "top18",
+        "top6"
+      ],
+      "type": "object"
+    },
+    "producer": {
+      "additionalProperties": false,
+      "properties": {
+        "forecast": {
+          "$ref": "#/$defs/forecast"
+        },
+        "model_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "model_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "producer_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "reported_evaluation": {
+          "$ref": "#/$defs/reportedEvaluation"
+        }
+      },
+      "required": [
+        "forecast",
+        "model_name",
+        "model_version",
+        "producer_id",
+        "reported_evaluation"
+      ],
+      "type": "object"
+    },
+    "reportedEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "final6_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "matched_final": {
+          "$ref": "#/$defs/numberList"
+        },
+        "score_origin": {
+          "enum": [
+            "copied_not_recomputed",
+            "independently_recomputed_and_matched"
+          ]
+        },
+        "top12_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "top18_hits": {
+          "$ref": "#/$defs/hitCount"
+        },
+        "top6_hits": {
+          "$ref": "#/$defs/hitCount"
+        }
+      },
+      "required": [
+        "final6_hits",
+        "matched_final",
+        "score_origin",
+        "top12_hits",
+        "top18_hits",
+        "top6_hits"
+      ],
+      "type": "object"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "sixNumbers": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/numberList"
+        },
+        {
+          "maxItems": 6,
+          "minItems": 6
+        }
+      ]
+    },
+    "sourceRegistered": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source_type": {
+                "const": "verified_multi_model_hash_chain"
+              }
+            },
+            "required": [
+              "source_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "trusted_source_commit",
+              "trusted_source_draw_count",
+              "trusted_source_git_blob_sha1",
+              "trusted_source_history_through",
+              "trusted_source_path",
+              "trusted_source_sha256"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_type": {
+          "type": "string"
+        },
+        "trusted_source_commit": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "trusted_source_draw_count": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "trusted_source_git_blob_sha1": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "trusted_source_history_through": {
+          "format": "date",
+          "type": "string"
+        },
+        "trusted_source_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "trusted_source_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source_id"
+      ],
+      "type": "object"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_main": {
+          "$ref": "#/$defs/sixNumbers"
+        },
+        "bonus": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/number"
+            }
+          ]
+        },
+        "target_date": {
+          "format": "date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actual_main",
+        "bonus",
+        "target_date"
+      ],
+      "type": "object"
+    }
+  }
+}

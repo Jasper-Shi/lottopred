@@ -42,6 +42,10 @@ Any corrected-history sensitivity analysis gets a new experiment identity,
 states that 2020–2025 is consumed, and preserves the old artifacts plus their
 data-integrity erratum. A historical high-water or opportunity claim is eligible
 only after the corrected source identity and chronology validator both pass.
+The append-only legacy opportunity ledger currently has zero eligible
+opportunities and null Final-6/Top-12 high-waters; its raw metrics are archival
+only. See `docs/HISTORICAL_OOS_EVIDENCE_PROTOCOL.md` before registering or
+reporting any new opportunity.
 
 ## Research loop
 
