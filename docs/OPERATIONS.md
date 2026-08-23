@@ -66,19 +66,25 @@ verified view: 4,444 draws
 seal SHA-256: 80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd
 suffix SHA-256: b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803
 suffix head SHA-256: 3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475
+registry genesis commit: a6857d6b4e6e532062f484bcce4466f76ba4327b
+registry genesis blob: e95aeaaa28d5c1b7e5fb636d0fc4a3c26ff31017
+registry genesis event: 22bcfe219c091dbcdb751ef7a2d9d5251f3040770de6e2e825ac5c64fc69c63d
 ```
 
 The base is bound to artifact commit
 `b04393944ef12f78417dfb6151343c72d4c2a2ac`; the two raw-source receipts are
 bound to evidence commit `60dbd42a502850091508491f9011f9a08acf894f`.
-The verified-history loader checks these Git objects and all three external
-pins. The direct backtest boundary now consumes it through the single
-operational-history read seam after its runtime gate. Public bootstrap, live
-refresh, evaluation, and prediction entry points all refuse execution after
-their gates until the dual-source suffix writer and dynamic external-pin
-publication protocol exist and a reload succeeds. This completes the read half
-of checklist item 2, but not the append half or the reviewed release; all
-switches remain false.
+The operational-history read seam fixes the registry genesis in source, resolves
+the selected revision once, and reads the registry, seal, suffix, and evidence
+only from immutable Git blobs. Worktree replacements and caller-provided pin
+overrides are not authority. The direct backtest boundary consumes this single
+read seam after its runtime gate. Public bootstrap, live refresh, evaluation,
+and prediction entry points all refuse execution after their gates until the
+dual-source suffix writer and Git compare-and-swap publisher exist and a remote
+revision reload succeeds. This completes the read half of checklist item 2, but
+not the append half or the reviewed release; all switches remain false. The
+frozen schema and trust boundary are in
+[`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
 Create or validate the seal only in a permission-isolated repository directory.
 Legitimate concurrent processes must use the exclusive-create protocol. Treat
@@ -87,17 +93,20 @@ the portable seal transaction is not a substitute for OS directory isolation.
 
 The integration that carries this evidence must preserve artifact commit
 `b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
-`60dbd42a502850091508491f9011f9a08acf894f` as reachable ancestors. Do not use a
-squash or rebase merge for that branch. After merge, test the deployed pins from
-a fresh full-history clone of `main`; a passing source worktree is not enough.
+`60dbd42a502850091508491f9011f9a08acf894f`, plus registry genesis
+`a6857d6b4e6e532062f484bcce4466f76ba4327b`, as reachable ancestors. Do not use
+a squash or rebase merge for those migrations. After merge, test the deployed
+registry from a fresh full-history clone of `main`; a passing source worktree is
+not enough.
 
 1. The corrected historical epoch and its reconciliation evidence are
    committed, independently reviewed, and bound to exact expected identities.
 2. The consuming read path verifies the approved epoch before exposing rows.
    The historical base remains immutable. Before live can reopen, the write path
    must commit two independent raw-source receipts, append only the next
-   canonical suffix event, publish externally reviewed file/head pins, and
-   reload successfully before evaluation or prediction.
+   canonical suffix event, append one canonical registry event through the
+   exact `B -> E -> S -> P` transaction, fast-forward compare-and-swap `main`,
+   and reload the remote revision successfully before evaluation or prediction.
 3. Offline unit, chronology, integrity, workflow-guard, and lint checks pass.
    Run a network smoke only after source access itself is approved.
 4. The review names exactly which stages are reopening and why, prepares the

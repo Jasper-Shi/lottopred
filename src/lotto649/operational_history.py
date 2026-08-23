@@ -3,27 +3,42 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .verified_history import VerifiedHistory, load_verified_history
+from .history_registry import (
+    RegistryProvenance,
+    RegistrySealIdentity,
+    RegistrySuffixIdentity,
+    RegistryTransaction,
+    load_history_registry,
+    resolve_repository_head,
+)
+from .verified_history import (
+    VerifiedHistory,
+    _load_verified_history_from_immutable_bytes,
+)
 
 INCIDENT_ID = "DI-2026-08-20-registered-history"
-DEPLOYED_SEAL_PATH = f"evidence/data_integrity/{INCIDENT_ID}/seal.json"
-DEPLOYED_SUFFIX_PATH = f"data/processed/epochs/{INCIDENT_ID}/live_draws.jsonl"
-DEPLOYED_SEAL_SHA256 = (
-    "80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd"
-)
-DEPLOYED_SUFFIX_SHA256 = (
-    "b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803"
-)
-DEPLOYED_SUFFIX_HEAD_SHA256 = (
-    "3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475"
-)
 
 
 class OperationalHistoryConfigurationError(ValueError):
     """Raised when the repository root required by the authority is absent."""
+
+
+class OperationalHistoryIntegrityError(ValueError):
+    """Raised when the registry and verified history disagree."""
+
+
+@dataclass(frozen=True)
+class PublishedHistory(VerifiedHistory):
+    """Verified draws plus the immutable Git publication authority."""
+
+    registry: RegistryProvenance
+    registry_seal: RegistrySealIdentity
+    registry_suffix: RegistrySuffixIdentity
+    registry_transaction: RegistryTransaction
 
 
 def _repository_root(cfg: Mapping[str, Any]) -> Path:
@@ -37,25 +52,59 @@ def _repository_root(cfg: Mapping[str, Any]) -> Path:
     )
 
 
-def load_operational_history(cfg: Mapping[str, Any]) -> VerifiedHistory:
-    """Load the sole operational history using code-reviewed external pins.
+def load_published_history(repository: Path, revision: str) -> PublishedHistory:
+    """Load one exact Git revision through the registry and history validators."""
 
-    Caller-provided configuration cannot replace the registered paths or hashes.
-    Updating any production authority is therefore a source change with tests and
-    review, rather than a mutable runtime option.
-    """
-
-    return load_verified_history(
-        _repository_root(cfg),
-        seal_path=DEPLOYED_SEAL_PATH,
-        expected_seal_sha256=DEPLOYED_SEAL_SHA256,
-        suffix_path=DEPLOYED_SUFFIX_PATH,
-        expected_suffix_sha256=DEPLOYED_SUFFIX_SHA256,
-        expected_suffix_head_sha256=DEPLOYED_SUFFIX_HEAD_SHA256,
+    authority = load_history_registry(repository, revision)
+    history = _load_verified_history_from_immutable_bytes(
+        repository,
+        seal_raw=authority.seal_raw,
+        seal_relative=authority.seal.path,
+        expected_seal_sha256=authority.seal.sha256,
+        suffix_raw=authority.suffix_raw,
+        suffix_relative=authority.suffix.path,
+        expected_suffix_sha256=authority.suffix.sha256,
+        expected_suffix_head_sha256=authority.suffix.head_event_sha256,
+    )
+    if (
+        history.epoch != INCIDENT_ID
+        or history.seal.file_sha256 != authority.seal.sha256
+        or history.suffix.file_sha256 != authority.suffix.sha256
+        or history.suffix.event_count != authority.suffix.event_count
+        or history.suffix.head_event_sha256 != authority.suffix.head_event_sha256
+        or history.suffix.history_through != authority.suffix.history_through
+        or not history.suffix.evidence_commits
+        or history.suffix.evidence_commits[-1] != authority.transaction.evidence_commit
+    ):
+        raise OperationalHistoryIntegrityError(
+            "registry authority does not match verified history"
+        )
+    return PublishedHistory(
+        draws=history.draws,
+        epoch=history.epoch,
+        seal=history.seal,
+        base=history.base,
+        suffix=history.suffix,
+        registry=authority.provenance,
+        registry_seal=authority.seal,
+        registry_suffix=authority.suffix,
+        registry_transaction=authority.transaction,
     )
 
 
-def operational_history_provenance(history: VerifiedHistory) -> dict[str, Any]:
+def load_operational_history(cfg: Mapping[str, Any]) -> PublishedHistory:
+    """Load the sole operational history from the immutable registry at HEAD.
+
+    Caller configuration cannot replace the registry, revision, paths, or hashes.
+    The repository's HEAD is resolved once to an exact commit before validation.
+    """
+
+    repository = _repository_root(cfg)
+    revision = resolve_repository_head(repository)
+    return load_published_history(repository, revision)
+
+
+def operational_history_provenance(history: PublishedHistory) -> dict[str, Any]:
     """Return the canonical JSON-safe identity carried into audit artifacts."""
 
     return {
@@ -68,6 +117,18 @@ def operational_history_provenance(history: VerifiedHistory) -> dict[str, Any]:
         "suffix_head_sha256": history.suffix.head_event_sha256,
         "suffix_event_count": history.suffix.event_count,
         "suffix_evidence_commits": list(history.suffix.evidence_commits),
+        "observed_revision": history.registry.resolved_revision,
+        "publication_commit": history.registry.publication_commit,
+        "registry_path": history.registry.registry_path,
+        "registry_genesis_commit": history.registry.genesis_commit,
+        "registry_git_blob": history.registry.git_blob,
+        "registry_sha256": history.registry.file_sha256,
+        "registry_event_count": history.registry.event_count,
+        "registry_head_sha256": history.registry.head_event_sha256,
+        "seal_git_blob": history.registry_seal.git_blob,
+        "suffix_git_blob": history.registry_suffix.git_blob,
+        "suffix_commit": history.registry_transaction.suffix_commit,
+        "latest_evidence_commit": history.registry_transaction.evidence_commit,
         "draw_count": len(history.draws),
         "history_through": history.suffix.history_through.isoformat(),
     }

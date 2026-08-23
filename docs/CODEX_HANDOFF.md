@@ -1,7 +1,7 @@
 # Codex Handoff
 
 Last verified on 2026-08-23 against operational `main` base
-`e3c39dda3233cec5933430f22afd6aa8d78a998d` and corrected-epoch artifact
+`cf401a8873821b0f5647945752aee320f9452d57` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -27,11 +27,16 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > `b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803`;
 > and its head event SHA-256 is
 > `3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475`.
+> Append-only authority now begins at registry genesis commit
+> `a6857d6b4e6e532062f484bcce4466f76ba4327b`, event
+> `22bcfe219c091dbcdb751ef7a2d9d5251f3040770de6e2e825ac5c64fc69c63d`.
+> The operational reader resolves that registry, seal, suffix, and evidence from
+> immutable Git blobs; local worktree replacements are never history authority.
 > The verified-history read interface is now the sole input to the direct
 > backtest boundary. The kill switches remain false, so it is not authorized to
 > execute. Bootstrap and every public live entry point fail explicitly after
-> their gates until the reviewed dual-source suffix writer and dynamic
-> pin-publication protocol exist and a reload succeeds. Re-enable only through
+> their gates until the reviewed dual-source suffix writer and Git
+> compare-and-swap publication protocol exist and a reload succeeds. Re-enable only through
 > the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
@@ -65,12 +70,12 @@ lotto649 backtest
 lotto649 live
 ```
 
-After the suffix writer and external-pin publication protocol are implemented
+After the suffix writer and Git registry publication protocol are implemented
 and reviewed, `bootstrap` may append and validate independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create
 predictions for the next Wednesday or Saturday only after that same writer has
-published new pins and a reload succeeds. During the incident all three commands
+published a new registry event and a reload succeeds. During the incident all three commands
 fail closed at their disabled runtime gates. A direct true-toggle still cannot
 move `bootstrap` or `live` past the missing writer interlock. Backtest has no
 writer dependency, but it remains unauthorized until its separate reviewed
@@ -97,8 +102,9 @@ Change version semantics deliberately rather than renaming committed snapshots.
 ## Current committed forward checkpoint
 
 The immutable pre-hold artifacts originated at `main` commit
-`9f16e20c726c7b65eed1d387c4c725d51248f570` and remain present at current
-operational base `e3c39dda3233cec5933430f22afd6aa8d78a998d`:
+`9f16e20c726c7b65eed1d387c4c725d51248f570`, remained present at ancestor
+`e3c39dda3233cec5933430f22afd6aa8d78a998d`, and remain present at current
+operational base `cf401a8873821b0f5647945752aee320f9452d57`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -119,9 +125,11 @@ draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
 to immutable WCLC and Loto-Québec source receipts at evidence commit
 `60dbd42a502850091508491f9011f9a08acf894f`. The public verified-history loader
 reconstructs a 4,444-draw view through 2026-08-22 only when the external seal,
-suffix-file, and suffix-head pins all match. `operational_history.py` fixes those
-production identities behind one load interface. Backtest consumes that
-interface. Public live evaluation/prediction entry points no longer accept an
+suffix-file, and suffix-head identities all match. `history_registry.py` pins
+the one-line genesis at commit `a6857d6b4e6e532062f484bcce4466f76ba4327b`
+and proves the selected revision's immutable Git state; `operational_history.py`
+combines that authority with the full validator behind one load interface.
+Backtest consumes that interface. Public live evaluation/prediction entry points no longer accept an
 arbitrary draw list and currently stop at the writer interlock; the private
 post-writer helpers accept only the `VerifiedHistory` returned by the live
 cycle. This consumer integration is not authorization to resume execution.
@@ -220,9 +228,10 @@ Do not broaden the fallback to swallow those integrity failures.
    `b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
    `60dbd42a502850091508491f9011f9a08acf894f` remain reachable, then verify the
    deployed pins from a fresh full-history clone of `main`.
-7. Keep the verified-history consumer as the only read path. Implement and
-   independently review the dual-source suffix writer and dynamic external-pin
-   publication protocol; only then re-enable through the reviewed two-gate
+7. Keep the verified-history consumer as the only read path. Preserve registry
+   genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. Implement and
+   independently review the dual-source suffix writer and `B -> E -> S -> P`
+   Git compare-and-swap publication protocol; only then re-enable through the reviewed two-gate
    release in `OPERATIONS.md`, with new exact config bytes and matching workflow
    plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,

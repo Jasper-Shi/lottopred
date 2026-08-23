@@ -22,6 +22,8 @@ Preserve two properties above headline hit counts:
   `docs/RESEARCH_ROADMAP.md`.
 - For historical opportunity, high-water, or 6/6 evidence claims, read
   `docs/HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`.
+- For operational corrected-history authority, registry topology, or suffix
+  publication, read `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`.
 - For system boundaries and operational recovery, read `docs/ARCHITECTURE.md`
   and `docs/OPERATIONS.md`.
 
@@ -35,9 +37,12 @@ affected documentation in the same change.
   fallback policy for audit; it is not an operational CLI write path.
 - `src/lotto649/verified_history.py` validates the sealed corrected-history
   epoch and its Git-bound, dual-source suffix.
-- `src/lotto649/operational_history.py` owns the deployed history paths and
-  external hashes. Operational callers must use its single load interface and
-  must not fall back to `data/processed/draws.csv`.
+- `src/lotto649/history_registry.py` resolves the append-only pin registry and
+  its seal/suffix identities exclusively from immutable Git objects.
+- `src/lotto649/operational_history.py` is the single deployed read seam. It
+  resolves `HEAD` once, validates the source-pinned registry genesis and current
+  publication, and must never fall back to worktree history bytes or
+  `data/processed/draws.csv`.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -120,8 +125,8 @@ history before t -> features/train -> frozen prediction for t -> reveal t -> sco
 
 Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads
 only through the verified operational-history seam. `lotto649 bootstrap` remains
-blocked until the reviewed dual-source suffix writer and external-pin publication
-protocol exist; it must never fall back to the legacy processed CSV.
+blocked until the reviewed dual-source suffix writer and Git registry
+publication protocol exist; it must never fall back to the legacy processed CSV.
 
 Live forward cycle:
 

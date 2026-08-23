@@ -71,26 +71,30 @@ plan rather than inferred from this operational seal.
 
 ## Verified corrected-history boundary
 
-`src/lotto649/verified_history.py` verifies the corrected epoch, while
-`src/lotto649/operational_history.py` is the single operational read seam. It
-hides the deployed paths and external hashes from callers, loads the immutable
-4,442-draw base from the
-sealed Git artifact commit, verifies the external seal SHA-256, and then accepts
-only a canonical append-only suffix whose whole-file and head-event SHA-256 are
-also supplied externally. Each suffix row must be the next scheduled draw and
-must be independently reconstructed from immutable WCLC and Loto-Québec raw
-assets committed after the base. Receipt timestamps must be UTC, conservatively
-post-date the draw, and not post-date the evidence commit.
+`src/lotto649/history_registry.py` resolves the source-pinned registry genesis
+and current seal/suffix identities only from immutable Git objects.
+`src/lotto649/verified_history.py` validates those bytes and reconstructs the
+corrected epoch, while `src/lotto649/operational_history.py` is the single
+operational read seam. It resolves `HEAD` once, hides paths and hashes from
+callers, loads the immutable 4,442-draw base from the sealed artifact commit,
+and accepts only the suffix named by the canonical append-only registry. Each
+suffix row must be the next scheduled draw and must be independently
+reconstructed from immutable WCLC and Loto-Québec raw assets committed after
+the base. Receipt timestamps must be UTC, conservatively post-date the draw,
+and not post-date the evidence commit.
 
 The currently registered suffix adds 2026-08-19 and 2026-08-22, yielding a
-4,444-draw verified view through 2026-08-22. Direct backtest execution loads
-through this seam only after its incident gate and no longer accepts a
-caller-provided draw list. Bootstrap and every public live entry point remain
-quarantined after their gates until the writer has appended, published new
-external pins, and reloaded the resulting history successfully. Live refresh
-raises after both gates because the required
-dual-source suffix writer and dynamic external-pin publication protocol do not
-yet exist. The workflow/config release remains a separate reviewed change.
+4,444-draw verified view through 2026-08-22. Registry genesis commit
+`a6857d6b4e6e532062f484bcce4466f76ba4327b` binds that state without rewriting
+it. Direct backtest execution loads through this seam only after its incident
+gate and no longer accepts a caller-provided draw list. Bootstrap and every
+public live entry point remain quarantined after their gates until the
+dual-source suffix writer has appended a two-source transaction, advanced the Git registry by
+fast-forward compare-and-swap, and reloaded the published revision. Live refresh
+raises after both gates because that writer/publisher does not yet exist. The
+workflow/config release remains a separate reviewed change. See
+`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
+and trust boundary.
 
 Backtest detail and summary rows carry the canonical operational-history
 provenance as serialized JSON. New live prediction metadata carries the verified training
@@ -99,8 +103,9 @@ actual-result history identity; an old prediction is never relabeled as having
 been trained on corrected history.
 
 Workflows that may consume verified history use full-history checkout because
-the loader must resolve the sealed artifact and evidence commits. A shallow
-checkout is not a supported operational adapter.
+the loader must resolve the registry genesis, publication topology, sealed
+artifact, and evidence commits. A shallow checkout is not a supported
+operational adapter.
 
 Seal publication assumes its output directory is permission-isolated and that
 all legitimate concurrent writers follow the repository's exclusive-create

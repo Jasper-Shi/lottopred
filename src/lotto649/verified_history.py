@@ -188,6 +188,37 @@ def _canonical_json(value: Any, *, newline: bool = False) -> bytes:
     return raw + (b"\n" if newline else b"")
 
 
+def _git_environment() -> dict[str, str]:
+    """Return a minimal Git environment without caller-selected authorities."""
+    environment = {
+        key: os.environ[key]
+        for key in (
+            "PATH",
+            "SYSTEMROOT",
+            "WINDIR",
+            "PATHEXT",
+            "TMPDIR",
+            "TMP",
+            "TEMP",
+        )
+        if key in os.environ
+    }
+    environment.update(
+        {
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_NO_LAZY_FETCH": "1",
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_GRAFT_FILE": os.devnull,
+            "GIT_OPTIONAL_LOCKS": "0",
+            "GIT_TERMINAL_PROMPT": "0",
+            "LC_ALL": "C",
+            "LANG": "C",
+        }
+    )
+    return environment
+
+
 def _is_integer(value: object) -> bool:
     return type(value) is int and value >= 0
 
@@ -323,15 +354,12 @@ class VerifiedHistory:
 
 
 def _git_bytes(repository: Path, *arguments: str) -> bytes:
-    environment = os.environ.copy()
-    environment["GIT_NO_REPLACE_OBJECTS"] = "1"
-    environment["GIT_GRAFT_FILE"] = os.devnull
     try:
         completed = subprocess.run(
             ["git", "-C", str(repository), *arguments],
             check=False,
             capture_output=True,
-            env=environment,
+            env=_git_environment(),
         )
     except OSError as exc:
         raise VerifiedHistoryIntegrityError("Git is unavailable") from exc
@@ -538,11 +566,7 @@ def _validate_seal_semantics(repository: Path, seal: dict[str, Any]) -> None:
         ],
         check=False,
         capture_output=True,
-        env={
-            **os.environ,
-            "GIT_NO_REPLACE_OBJECTS": "1",
-            "GIT_GRAFT_FILE": os.devnull,
-        },
+        env=_git_environment(),
     )
     if completed.returncode != 0:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch")
@@ -633,11 +657,7 @@ def _validate_evidence_commit(
         ],
         check=False,
         capture_output=True,
-        env={
-            **os.environ,
-            "GIT_NO_REPLACE_OBJECTS": "1",
-            "GIT_GRAFT_FILE": os.devnull,
-        },
+        env=_git_environment(),
     )
     if completed.returncode != 0:
         raise VerifiedHistoryIntegrityError(
@@ -1032,22 +1052,22 @@ def _local_path(repository: Path, value: str | Path) -> tuple[Path, str]:
     return path, relative.as_posix()
 
 
-def load_verified_history(
+def _load_verified_history_from_immutable_bytes(
     repository: Path,
     *,
-    seal_path: str | Path,
+    seal_raw: bytes,
+    seal_relative: str,
     expected_seal_sha256: str,
-    suffix_path: str | Path | None = None,
+    suffix_raw: bytes = b"",
+    suffix_relative: str | None = None,
     expected_suffix_sha256: str | None = None,
     expected_suffix_head_sha256: str | None = None,
 ) -> VerifiedHistory:
-    """Load corrected draws authenticated by a seal and optional suffix pins."""
+    """Validate corrected history from immutable, already-resolved Git bytes."""
     try:
         repository = repository.resolve(strict=True)
     except OSError as exc:
         raise VerifiedHistoryIntegrityError("repository does not exist") from exc
-    seal_file, seal_relative = _local_path(repository, seal_path)
-    seal_raw = seal_file.read_bytes()
     if sha256(seal_raw).hexdigest() != expected_seal_sha256:
         raise VerifiedHistoryIntegrityError("external seal SHA-256 mismatch")
     try:
@@ -1104,16 +1124,11 @@ def load_verified_history(
     if sha256(base_raw).hexdigest() != _BASE_FILE_SHA256:
         raise VerifiedHistoryIntegrityError("corrected epoch identity mismatch")
 
-    suffix_relative = None
-    suffix_raw = b""
     suffix_draws: tuple[Draw, ...] = ()
     evidence_commits: tuple[str, ...] = ()
     suffix_head: str | None = None
-    if suffix_path is not None:
-        suffix_file, suffix_relative = _local_path(repository, suffix_path)
-        if suffix_relative != _SUFFIX_PATH:
-            raise VerifiedHistoryIntegrityError("suffix path mismatch")
-        suffix_raw = suffix_file.read_bytes()
+    if suffix_relative is not None and suffix_relative != _SUFFIX_PATH:
+        raise VerifiedHistoryIntegrityError("suffix path mismatch")
     if suffix_raw:
         suffix_draws, evidence_commits, suffix_head = _parse_suffix(
             repository,
@@ -1154,11 +1169,51 @@ def load_verified_history(
         suffix=SuffixProvenance(
             path=suffix_relative,
             bytes=len(suffix_raw),
-            file_sha256=sha256(suffix_raw).hexdigest() if suffix_path else None,
+            file_sha256=(
+                sha256(suffix_raw).hexdigest() if suffix_relative is not None else None
+            ),
             event_count=len(suffix_draws),
             base_seal_sha256=expected_seal_sha256,
             head_event_sha256=suffix_head,
             history_through=all_draws[-1].draw_date,
             evidence_commits=evidence_commits,
         ),
+    )
+
+
+def load_verified_history(
+    repository: Path,
+    *,
+    seal_path: str | Path,
+    expected_seal_sha256: str,
+    suffix_path: str | Path | None = None,
+    expected_suffix_sha256: str | None = None,
+    expected_suffix_head_sha256: str | None = None,
+) -> VerifiedHistory:
+    """Load corrected draws authenticated by local seal and suffix paths.
+
+    This compatibility seam validates the supplied local files. Operational
+    callers use the registry-backed authority, which resolves immutable Git
+    blobs before calling the private validator above.
+    """
+    try:
+        repository = repository.resolve(strict=True)
+    except OSError as exc:
+        raise VerifiedHistoryIntegrityError("repository does not exist") from exc
+    seal_file, seal_relative = _local_path(repository, seal_path)
+    seal_raw = seal_file.read_bytes()
+    suffix_relative = None
+    suffix_raw = b""
+    if suffix_path is not None:
+        suffix_file, suffix_relative = _local_path(repository, suffix_path)
+        suffix_raw = suffix_file.read_bytes()
+    return _load_verified_history_from_immutable_bytes(
+        repository,
+        seal_raw=seal_raw,
+        seal_relative=seal_relative,
+        expected_seal_sha256=expected_seal_sha256,
+        suffix_raw=suffix_raw,
+        suffix_relative=suffix_relative,
+        expected_suffix_sha256=expected_suffix_sha256,
+        expected_suffix_head_sha256=expected_suffix_head_sha256,
     )
