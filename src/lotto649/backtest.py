@@ -1,51 +1,79 @@
 from __future__ import annotations
 
+import json
+import math
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
-import math
+
 import pandas as pd
 
 from .domain import Prediction
 from .evaluation import evaluate_prediction
 from .models.factory import build_models
+from .operational_history import (
+    load_operational_history,
+    operational_history_provenance,
+)
 from .optimizer import rank_numbers, select_combination
 
 
 def _require_backtest_enabled(cfg: dict) -> None:
     backtest_cfg = cfg.get("backtest")
-    if (
-        not isinstance(backtest_cfg, dict)
-        or backtest_cfg.get("enabled") is not True
-    ):
+    if not isinstance(backtest_cfg, dict) or backtest_cfg.get("enabled") is not True:
         raise RuntimeError(
             "backtest execution is disabled; backtest.enabled must be explicitly true"
         )
 
 
-def _prediction_at(model, history, target, cfg, version: str):
+def _prediction_at(
+    model,
+    history,
+    target,
+    cfg,
+    version: str,
+    source_provenance: dict,
+):
     probs = model.predict(history, target.draw_date)
     ranked = rank_numbers(probs)
     return Prediction(
         target_draw_date=target.draw_date,
-        generated_at=datetime.combine(target.draw_date, datetime.min.time(), tzinfo=ZoneInfo("UTC")),
+        generated_at=datetime.combine(
+            target.draw_date, datetime.min.time(), tzinfo=ZoneInfo("UTC")
+        ),
         model_name=model.name,
         model_version=version,
         probabilities=probs,
         top6=ranked[:6],
         top12=ranked[:12],
         top18=ranked[:18],
-        final_combination=select_combination(probs, cfg["prediction"].get("candidate_pool_size", 12)),
+        final_combination=select_combination(
+            probs, cfg["prediction"].get("candidate_pool_size", 12)
+        ),
         metadata={
             "mode": "walk_forward",
             "history_draws": len(history),
             "history_through": history[-1].draw_date.isoformat(),
+            "operational_history": source_provenance,
         },
     )
 
 
-def run_backtest(draws, cfg, start: date, end: date, output_dir: Path | None = None) -> pd.DataFrame:
+def run_backtest(
+    cfg,
+    start: date,
+    end: date,
+    output_dir: Path | None = None,
+) -> pd.DataFrame:
     _require_backtest_enabled(cfg)
+    verified_history = load_operational_history(cfg)
+    draws = verified_history.draws
+    source_provenance = operational_history_provenance(verified_history)
+    source_provenance_json = json.dumps(
+        source_provenance,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     models = build_models(cfg)
     min_hist = cfg["backtest"].get("min_history_draws", 300)
     version = cfg["project"].get("model_version", "v1.0.0")
@@ -55,13 +83,30 @@ def run_backtest(draws, cfg, start: date, end: date, output_dir: Path | None = N
             continue
         history = draws[:idx]
         for model in models.values():
-            pred = _prediction_at(model, history, target, cfg, version)
-            rows.append(evaluate_prediction(pred, target))
+            pred = _prediction_at(
+                model,
+                history,
+                target,
+                cfg,
+                version,
+                source_provenance,
+            )
+            evaluation = evaluate_prediction(pred, target)
+            evaluation["training_history_draws"] = pred.metadata["history_draws"]
+            evaluation["training_history_through"] = pred.metadata["history_through"]
+            evaluation["operational_history"] = source_provenance_json
+            rows.append(evaluation)
     frame = pd.DataFrame(rows)
     if output_dir is not None:
+        if frame.empty:
+            raise RuntimeError(
+                "backtest produced no evaluations; refusing to publish empty reports"
+            )
         output_dir.mkdir(parents=True, exist_ok=True)
         frame.to_csv(output_dir / f"backtest_{start}_{end}_detail.csv", index=False)
-        summarize(frame).to_csv(output_dir / f"backtest_{start}_{end}_summary.csv", index=False)
+        summarize(frame).to_csv(
+            output_dir / f"backtest_{start}_{end}_summary.csv", index=False
+        )
     return frame
 
 
@@ -80,33 +125,54 @@ def _two_sided_normal_p(z: float) -> float:
 def summarize(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return frame
-    agg = frame.groupby("model_name").agg(
-        draws=("final_6_hits", "size"),
-        avg_final_hits=("final_6_hits", "mean"),
-        avg_top6_hits=("top_6_hits", "mean"),
-        avg_top12_hits=("top_12_hits", "mean"),
-        avg_top18_hits=("top_18_hits", "mean"),
-        avg_brier=("brier_score", "mean"),
-        avg_log_loss=("log_loss", "mean"),
-        avg_actual_rank=("mean_actual_rank", "mean"),
-        hit_3plus=("final_6_hits", lambda s: float((s >= 3).mean())),
-        hit_4plus=("final_6_hits", lambda s: float((s >= 4).mean())),
-    ).reset_index()
+    provenance = None
+    if "operational_history" in frame.columns:
+        observed = frame["operational_history"].drop_duplicates()
+        if len(observed) != 1:
+            raise RuntimeError("backtest rows contain mixed operational histories")
+        provenance = observed.iloc[0]
+    agg = (
+        frame.groupby("model_name")
+        .agg(
+            draws=("final_6_hits", "size"),
+            avg_final_hits=("final_6_hits", "mean"),
+            avg_top6_hits=("top_6_hits", "mean"),
+            avg_top12_hits=("top_12_hits", "mean"),
+            avg_top18_hits=("top_18_hits", "mean"),
+            avg_brier=("brier_score", "mean"),
+            avg_log_loss=("log_loss", "mean"),
+            avg_actual_rank=("mean_actual_rank", "mean"),
+            hit_3plus=("final_6_hits", lambda s: float((s >= 3).mean())),
+            hit_4plus=("final_6_hits", lambda s: float((s >= 4).mean())),
+        )
+        .reset_index()
+    )
 
     means_vars = {k: _topk_expectation(k) for k in (6, 12, 18)}
     random_row = agg[agg.model_name == "random"]
-    empirical_random = float(random_row.avg_final_hits.iloc[0]) if len(random_row) else means_vars[6][0]
+    empirical_random = (
+        float(random_row.avg_final_hits.iloc[0])
+        if len(random_row)
+        else means_vars[6][0]
+    )
     agg["final_hit_lift_vs_empirical_random"] = agg.avg_final_hits - empirical_random
     agg["final_hit_lift_vs_theory"] = agg.avg_final_hits - means_vars[6][0]
     agg["top6_lift_vs_theory"] = agg.avg_top6_hits - means_vars[6][0]
     agg["top12_lift_vs_theory"] = agg.avg_top12_hits - means_vars[12][0]
     agg["top18_lift_vs_theory"] = agg.avg_top18_hits - means_vars[18][0]
 
-    for k, col in ((6, "avg_top6_hits"), (12, "avg_top12_hits"), (18, "avg_top18_hits")):
+    for k, col in (
+        (6, "avg_top6_hits"),
+        (12, "avg_top12_hits"),
+        (18, "avg_top18_hits"),
+    ):
         mean, var = means_vars[k]
         se = (var / agg["draws"]) ** 0.5
         z = (agg[col] - mean) / se
         agg[f"top{k}_z_vs_theory"] = z
         agg[f"top{k}_p_vs_theory"] = z.map(_two_sided_normal_p)
+
+    if provenance is not None:
+        agg["operational_history"] = provenance
 
     return agg.sort_values(["avg_top6_hits", "avg_top12_hits"], ascending=False)

@@ -71,8 +71,10 @@ plan rather than inferred from this operational seal.
 
 ## Verified corrected-history boundary
 
-`src/lotto649/verified_history.py` exposes the corrected history through one
-fail-closed read interface. It loads the immutable 4,442-draw base from the
+`src/lotto649/verified_history.py` verifies the corrected epoch, while
+`src/lotto649/operational_history.py` is the single operational read seam. It
+hides the deployed paths and external hashes from callers, loads the immutable
+4,442-draw base from the
 sealed Git artifact commit, verifies the external seal SHA-256, and then accepts
 only a canonical append-only suffix whose whole-file and head-event SHA-256 are
 also supplied externally. Each suffix row must be the next scheduled draw and
@@ -81,10 +83,24 @@ assets committed after the base. Receipt timestamps must be UTC, conservatively
 post-date the draw, and not post-date the evidence commit.
 
 The currently registered suffix adds 2026-08-19 and 2026-08-22, yielding a
-4,444-draw verified view through 2026-08-22. The loader is not wired into
-`bootstrap`, `backtest`, or `live`; therefore its presence does not weaken the
-incident switches or authorize model execution. That consumer integration and
-the workflow/config release remain separate reviewed changes.
+4,444-draw verified view through 2026-08-22. Direct backtest execution loads
+through this seam only after its incident gate and no longer accepts a
+caller-provided draw list. Bootstrap and every public live entry point remain
+quarantined after their gates until the writer has appended, published new
+external pins, and reloaded the resulting history successfully. Live refresh
+raises after both gates because the required
+dual-source suffix writer and dynamic external-pin publication protocol do not
+yet exist. The workflow/config release remains a separate reviewed change.
+
+Backtest detail and summary rows carry the canonical operational-history
+provenance as serialized JSON. New live prediction metadata carries the verified training
+history identity, while new evaluation artifacts separately carry the verified
+actual-result history identity; an old prediction is never relabeled as having
+been trained on corrected history.
+
+Workflows that may consume verified history use full-history checkout because
+the loader must resolve the sealed artifact and evidence commits. A shallow
+checkout is not a supported operational adapter.
 
 Seal publication assumes its output directory is permission-isolated and that
 all legitimate concurrent writers follow the repository's exclusive-create
@@ -124,7 +140,7 @@ boundary takes precedence over the normal unattended schedule.
 For target draw `t`:
 
 ```text
-history[0:t] -> features -> model -> probability vector -> result[t] -> score
+verified history[0:t] -> features -> model -> probability vector -> result[t] -> score
 ```
 
 Then advance to `t+1`. Random train/test shuffling is forbidden.

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 import yaml
-
 
 ROOT = Path(__file__).resolve().parents[1]
 DISABLED_CONFIG_SHA256 = (
@@ -55,16 +54,46 @@ WORKFLOW_SWITCHES = {
     ],
     "backtest.yml": [("data", "refresh_enabled"), ("backtest", "enabled")],
 }
+VERIFIED_HISTORY_WORKFLOWS = [
+    *WORKFLOWS,
+    "research-v2-fast.yml",
+    "research-v2-v4.yml",
+    "test.yml",
+]
 
 
 def _steps(workflow_name: str) -> list[dict]:
     payload = yaml.safe_load(
-        (ROOT / ".github" / "workflows" / workflow_name).read_text(
-            encoding="utf-8"
-        )
+        (ROOT / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8")
     )
     assert len(payload["jobs"]) == 1
     return next(iter(payload["jobs"].values()))["steps"]
+
+
+@pytest.mark.parametrize("workflow_name", VERIFIED_HISTORY_WORKFLOWS)
+def test_verified_history_consumers_checkout_full_git_history(workflow_name):
+    checkout = _steps(workflow_name)[0]
+
+    assert checkout["uses"] == "actions/checkout@v4"
+    assert checkout["with"]["fetch-depth"] == 0
+
+
+def test_integration_runs_when_operational_history_boundaries_change():
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "integration.yml").read_text(encoding="utf-8")
+    )
+    changed_paths = set(workflow[True]["pull_request"]["paths"])
+
+    assert {
+        "data/processed/epochs/**",
+        "evidence/data_integrity/**",
+        "evidence/live_sources/**",
+        "src/lotto649/backtest.py",
+        "src/lotto649/data_integrity.py",
+        "src/lotto649/official_history.py",
+        "src/lotto649/operational_history.py",
+        "src/lotto649/verified_history.py",
+    } <= changed_paths
 
 
 @pytest.mark.parametrize("workflow_name", WORKFLOWS)
@@ -376,9 +405,7 @@ def test_workflow_guard_rejects_yaml_equivalent_key_bypasses(
 
 
 def test_incident_docs_require_sha_bound_and_runtime_double_approval():
-    architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(
-        encoding="utf-8"
-    )
+    architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
     operations = (ROOT / "docs" / "OPERATIONS.md").read_text(encoding="utf-8")
     architecture_words = " ".join(architecture.split())
     operations_words = " ".join(operations.split())
@@ -393,20 +420,29 @@ def test_incident_docs_require_sha_bound_and_runtime_double_approval():
     assert "config-only" in operations_words
     assert "never sufficient to reopen" in architecture_words
     assert "not sufficient to re-enable" in operations_words
+    assert "operational_history.py" in architecture_words
+    assert "operational-history read seam" in operations_words
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "committed processed dataset" not in agents
+    assert "verified operational-history seam" in agents
     for words in (architecture_words, operations_words):
         assert "direct `run_backtest`" in words
         assert "`refresh_with_sources`" in words
         assert "missing or unreadable `config.yaml`" in words
+        assert "dual-source suffix writer" in words
 
 
 def test_handoff_matches_current_main_artifacts_and_incident_hold():
     handoff = (ROOT / "docs" / "CODEX_HANDOFF.md").read_text(encoding="utf-8")
     handoff_words = " ".join(handoff.replace(">", "").split())
-    draw_lines = (ROOT / "data" / "processed" / "draws.csv").read_text(
-        encoding="utf-8"
-    ).splitlines()
+    draw_lines = (
+        (ROOT / "data" / "processed" / "draws.csv")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
 
     assert "2026-08-23" in handoff
+    assert "e3c39dda3233cec5933430f22afd6aa8d78a998d" in handoff
     assert "9f16e20c726c7b65eed1d387c4c725d51248f570" in handoff
     assert "4,434" in handoff
     assert "through 2026-08-22" in handoff
