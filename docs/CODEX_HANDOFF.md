@@ -174,8 +174,10 @@ Do not broaden the fallback to swallow those integrity failures.
    or registered evidence artifacts; corrections belong to a new sealed epoch.
 6. Re-enable only through the reviewed two-gate release in `OPERATIONS.md`, with
    new exact config bytes and matching workflow plans in the same commit.
-7. Resume model research or prospective collection only after that release, with
-   a new version whenever statistical behavior changes.
+7. Outcome-blind model design and preregistration may continue during the hold,
+   but do not score models on the unsealed history or resume operational
+   prospective collection before that release. Use a new version whenever
+   statistical behavior changes.
 8. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 
