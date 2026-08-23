@@ -25,6 +25,16 @@ BASE_FILE_SHA256 = "1e1bb768877d3f1b3b901a8cb897b6f439ff80f675c57e786cb54ff1179a
 BASE_ROWS_SHA256 = "58988bbb130be2142bc5a2b20df571cc458eabe66cd873773f55ca1dbfae8874"
 OLD_FILE_SHA256 = "edfb7f8a4a7711a630957d6f86b567e6b254caf7b1d1aaea0edf1d16a34155b3"
 OLD_ROWS_SHA256 = "257aef242bb898649b0923ac03f2271c7536ff7f840edf552c0dc6b4b03ce1dd"
+DEPLOYED_SEAL_SHA256 = (
+    "80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd"
+)
+DEPLOYED_SUFFIX_SHA256 = (
+    "b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803"
+)
+DEPLOYED_SUFFIX_HEAD_SHA256 = (
+    "3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475"
+)
+DEPLOYED_EVIDENCE_COMMIT = "60dbd42a502850091508491f9011f9a08acf894f"
 
 ARTIFACT_PATHS = (
     BASE_PATH,
@@ -1244,3 +1254,22 @@ def test_git_bound_receipts_ignore_worktree_evidence_rewrites(tmp_path):
     )
 
     assert history.draws[-1] == draw
+
+
+def test_deployed_epoch_and_two_source_suffix_load_from_external_pins():
+    history = load_verified_history(
+        ROOT,
+        seal_path=SEAL_PATH,
+        expected_seal_sha256=DEPLOYED_SEAL_SHA256,
+        suffix_path=SUFFIX_PATH,
+        expected_suffix_sha256=DEPLOYED_SUFFIX_SHA256,
+        expected_suffix_head_sha256=DEPLOYED_SUFFIX_HEAD_SHA256,
+    )
+
+    assert len(history.draws) == 4_444
+    assert history.draws[-2] == Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    assert history.draws[-1] == Draw(date(2026, 8, 22), (11, 13, 21, 31, 34, 45), 5)
+    assert history.suffix.event_count == 2
+    assert history.suffix.file_sha256 == DEPLOYED_SUFFIX_SHA256
+    assert history.suffix.head_event_sha256 == DEPLOYED_SUFFIX_HEAD_SHA256
+    assert history.suffix.evidence_commits == (DEPLOYED_EVIDENCE_COMMIT,) * 2
