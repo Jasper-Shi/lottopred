@@ -16,7 +16,7 @@ from lotto649.verified_history import load_verified_history
 
 ROOT = Path(__file__).resolve().parents[1]
 INCIDENT_ID = "DI-2026-08-20-registered-history"
-ARTIFACT_COMMIT = "9fa111d349fda50f85f8cf8dd86b6180f587b961"
+ARTIFACT_COMMIT = "b04393944ef12f78417dfb6151343c72d4c2a2ac"
 REGISTERED_OLD_COMMIT = "90177c80cfb070038d79508fb2e73305a297f516"
 BASE_PATH = f"data/processed/epochs/{INCIDENT_ID}/corrected_draws.csv"
 SEAL_PATH = f"evidence/data_integrity/{INCIDENT_ID}/seal.json"
