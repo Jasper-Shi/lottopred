@@ -1,4 +1,4 @@
-name: v2-v4-blind-research
+name: v2-v4-legacy-diagnostic
 
 on:
   workflow_dispatch:
@@ -13,6 +13,10 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Verified-history tests intentionally validate registered ancestor
+          # commits and must fail closed when those objects are unavailable.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -22,7 +26,7 @@ jobs:
         run: pytest -q
       - name: Verify frozen historical dataset exists
         run: test -s data/processed/draws.csv
-      - name: Run 2020-2025 frozen blind benchmark
+      - name: Run legacy registered-data diagnostic
         run: lotto649 backtest
       - uses: actions/upload-artifact@v4
         with:

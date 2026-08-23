@@ -1,0 +1,1029 @@
+{
+  "changes": [
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "banq-le-quotidien-1989-11-09-p2",
+        "banq-progres-dimanche-1989-11-12-p2"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "1989-11-08",
+      "official_annual_source": {
+        "raw_sha256": "02a36e65fcd6a63b1d3a8ed65a5d5a745c7465309300813ca205cdfa138382e2",
+        "relative_path": "annual/1989.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1989/en"
+      },
+      "official_row": {
+        "bonus": 2,
+        "draw_date": "1989-11-08",
+        "numbers": [
+          9,
+          17,
+          28,
+          36,
+          44,
+          46
+        ]
+      },
+      "official_row_sha256": "f776f8f8696590c12db2db142e72d2758784afc8131ab826c988415afb36340f",
+      "old_row": {
+        "bonus": 32,
+        "draw_date": "1989-11-08",
+        "numbers": [
+          9,
+          17,
+          28,
+          36,
+          44,
+          46
+        ]
+      },
+      "old_row_sha256": "e345e62e815fc44e3a023e8e65e42a583af1b86a82d17512a0afa9c0198eaab8",
+      "rejected_row_sha256s": [
+        "e345e62e815fc44e3a023e8e65e42a583af1b86a82d17512a0afa9c0198eaab8"
+      ],
+      "supported_row_sha256s": [
+        "f776f8f8696590c12db2db142e72d2758784afc8131ab826c988415afb36340f"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "1998-05-02",
+      "official_annual_source": {
+        "raw_sha256": "681d18f19569f416d49974b7a4fa796410351b17e299e3e8f040eb894c732e89",
+        "relative_path": "annual/1998.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1998/en"
+      },
+      "official_row": {
+        "bonus": 22,
+        "draw_date": "1998-05-02",
+        "numbers": [
+          5,
+          12,
+          13,
+          15,
+          30,
+          49
+        ]
+      },
+      "official_row_sha256": "fa70b915fd21b81b34b0703b2fba48a7cc567099d92f1dffe1d7e34b8d95ddcc",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "fa70b915fd21b81b34b0703b2fba48a7cc567099d92f1dffe1d7e34b8d95ddcc"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-cnw-2010-09-04"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2010-09-04",
+      "official_annual_source": {
+        "raw_sha256": "a6631c408742ad978b023d617ba20d6411511bbd989a95a0618b9a5ce7eed62e",
+        "relative_path": "annual/2010.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2010/en"
+      },
+      "official_row": {
+        "bonus": 41,
+        "draw_date": "2010-09-04",
+        "numbers": [
+          11,
+          13,
+          17,
+          18,
+          20,
+          45
+        ]
+      },
+      "official_row_sha256": "191c1d5ff9dd25bcc676cda134f3a45e7755cca620de25be071e632925378575",
+      "old_row": {
+        "bonus": 27,
+        "draw_date": "2010-09-04",
+        "numbers": [
+          3,
+          9,
+          15,
+          19,
+          32,
+          46
+        ]
+      },
+      "old_row_sha256": "74b867b8be568d749a57a09beb34a88b772f717a64e36898223788025ce09f97",
+      "rejected_row_sha256s": [
+        "74b867b8be568d749a57a09beb34a88b772f717a64e36898223788025ce09f97"
+      ],
+      "supported_row_sha256s": [
+        "191c1d5ff9dd25bcc676cda134f3a45e7755cca620de25be071e632925378575"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2012-08-15",
+      "official_annual_source": {
+        "raw_sha256": "0d2e6cce41f40ba6947a7f83e474245b27a897641213b5e49eed5051bd9c173d",
+        "relative_path": "annual/2012.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2012/en"
+      },
+      "official_row": {
+        "bonus": 5,
+        "draw_date": "2012-08-15",
+        "numbers": [
+          1,
+          6,
+          12,
+          19,
+          24,
+          31
+        ]
+      },
+      "official_row_sha256": "38cfd67065367a82a52a358a5b1c0df54bb8ef14667986025160aa9e9e688698",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "38cfd67065367a82a52a358a5b1c0df54bb8ef14667986025160aa9e9e688698"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2012-08-18",
+      "official_annual_source": {
+        "raw_sha256": "0d2e6cce41f40ba6947a7f83e474245b27a897641213b5e49eed5051bd9c173d",
+        "relative_path": "annual/2012.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2012/en"
+      },
+      "official_row": {
+        "bonus": 36,
+        "draw_date": "2012-08-18",
+        "numbers": [
+          7,
+          14,
+          15,
+          23,
+          35,
+          37
+        ]
+      },
+      "official_row_sha256": "dd7026b904b53060bc2d4f7180ddc266a0876d2ff17526f43c7431b80c2e5b0c",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "dd7026b904b53060bc2d4f7180ddc266a0876d2ff17526f43c7431b80c2e5b0c"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2019-06-29"
+      ],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2019-06-29",
+      "official_annual_source": {
+        "raw_sha256": "97a458b9f3861d142ec7c8c7c445615251a1123221a2f39bb6e540fc027da2bf",
+        "relative_path": "annual/2019.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2019/en"
+      },
+      "official_row": {
+        "bonus": 15,
+        "draw_date": "2019-06-29",
+        "numbers": [
+          2,
+          5,
+          19,
+          21,
+          29,
+          46
+        ]
+      },
+      "official_row_sha256": "cd72c355617f97aec2e9de0fbfe62d8d9735149bca5dda2dd51e5833c315aafa",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "cd72c355617f97aec2e9de0fbfe62d8d9735149bca5dda2dd51e5833c315aafa"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2020-02-05",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 48,
+        "draw_date": "2020-02-05",
+        "numbers": [
+          1,
+          3,
+          6,
+          24,
+          29,
+          45
+        ]
+      },
+      "official_row_sha256": "302aab2ec1224e3d55c1c23df34c0896d6c4af67002daaa8142b72489bc96c1c",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "302aab2ec1224e3d55c1c23df34c0896d6c4af67002daaa8142b72489bc96c1c"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2020-02-29"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2020-02-29",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 13,
+        "draw_date": "2020-02-29",
+        "numbers": [
+          6,
+          12,
+          15,
+          18,
+          31,
+          46
+        ]
+      },
+      "official_row_sha256": "4f76de94f2576115d2c5fea251be2b30d98d4767fd6c8b59595f3cfbda93d076",
+      "old_row": {
+        "bonus": 13,
+        "draw_date": "2020-02-29",
+        "numbers": [
+          6,
+          12,
+          15,
+          18,
+          31,
+          43
+        ]
+      },
+      "old_row_sha256": "347070b68f0aaa191252d38806e311b4862976b225c245c5cce3ceab90570b1d",
+      "rejected_row_sha256s": [
+        "347070b68f0aaa191252d38806e311b4862976b225c245c5cce3ceab90570b1d"
+      ],
+      "supported_row_sha256s": [
+        "4f76de94f2576115d2c5fea251be2b30d98d4767fd6c8b59595f3cfbda93d076"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2020-03-21"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2020-03-21",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 10,
+        "draw_date": "2020-03-21",
+        "numbers": [
+          6,
+          11,
+          22,
+          36,
+          37,
+          45
+        ]
+      },
+      "official_row_sha256": "64f179339cfd81eee1d8a5c881bcb05806b3e27d5d48e60ea88a9f88148a4304",
+      "old_row": {
+        "bonus": 10,
+        "draw_date": "2020-03-21",
+        "numbers": [
+          6,
+          11,
+          22,
+          36,
+          37,
+          44
+        ]
+      },
+      "old_row_sha256": "ea4ab04593afa78924ee44148871c22f7b0c9a9679f6a507c4b49de6e149446e",
+      "rejected_row_sha256s": [
+        "ea4ab04593afa78924ee44148871c22f7b0c9a9679f6a507c4b49de6e149446e"
+      ],
+      "supported_row_sha256s": [
+        "64f179339cfd81eee1d8a5c881bcb05806b3e27d5d48e60ea88a9f88148a4304"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2020-04-11"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2020-04-11",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 26,
+        "draw_date": "2020-04-11",
+        "numbers": [
+          10,
+          14,
+          17,
+          32,
+          35,
+          42
+        ]
+      },
+      "official_row_sha256": "970e1d6d3d5d18ac8e2e7a4f32864efc34497e19a25deaef3c6b76922a631412",
+      "old_row": {
+        "bonus": 26,
+        "draw_date": "2020-04-11",
+        "numbers": [
+          10,
+          13,
+          17,
+          32,
+          35,
+          42
+        ]
+      },
+      "old_row_sha256": "68fa429e6b4aa4842a80f061860310a88efd8220cb4cb7d1217512fd8e21b279",
+      "rejected_row_sha256s": [
+        "68fa429e6b4aa4842a80f061860310a88efd8220cb4cb7d1217512fd8e21b279"
+      ],
+      "supported_row_sha256s": [
+        "970e1d6d3d5d18ac8e2e7a4f32864efc34497e19a25deaef3c6b76922a631412"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2020-07-01"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2020-07-01",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 35,
+        "draw_date": "2020-07-01",
+        "numbers": [
+          1,
+          12,
+          27,
+          30,
+          34,
+          49
+        ]
+      },
+      "official_row_sha256": "612a5a3a11513e8202a8402c431d7676c4fc8d9dc14d8e030fa1ce71b0b0a4bc",
+      "old_row": {
+        "bonus": 32,
+        "draw_date": "2020-07-01",
+        "numbers": [
+          1,
+          12,
+          27,
+          30,
+          34,
+          49
+        ]
+      },
+      "old_row_sha256": "07ac7106d3a5fcb98196b5d69e2153abc0ee52c79beeeb58886fb4118be1eb7a",
+      "rejected_row_sha256s": [
+        "07ac7106d3a5fcb98196b5d69e2153abc0ee52c79beeeb58886fb4118be1eb7a"
+      ],
+      "supported_row_sha256s": [
+        "612a5a3a11513e8202a8402c431d7676c4fc8d9dc14d8e030fa1ce71b0b0a4bc"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2020-08-15"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2020-08-15",
+      "official_annual_source": {
+        "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+        "relative_path": "annual/2020.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+      },
+      "official_row": {
+        "bonus": 9,
+        "draw_date": "2020-08-15",
+        "numbers": [
+          6,
+          7,
+          11,
+          18,
+          22,
+          43
+        ]
+      },
+      "official_row_sha256": "bd35ef3a5f6741f7866048e2ed667eef57d759e693078d104de63d46cc1dbb57",
+      "old_row": {
+        "bonus": 9,
+        "draw_date": "2020-08-15",
+        "numbers": [
+          6,
+          7,
+          11,
+          19,
+          22,
+          43
+        ]
+      },
+      "old_row_sha256": "2dedeb87bb4649c8393314b03762b0080a0c96b77132145ecfa21853c592531f",
+      "rejected_row_sha256s": [
+        "2dedeb87bb4649c8393314b03762b0080a0c96b77132145ecfa21853c592531f"
+      ],
+      "supported_row_sha256s": [
+        "bd35ef3a5f6741f7866048e2ed667eef57d759e693078d104de63d46cc1dbb57"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2021-06-16"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2021-06-16",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 3,
+        "draw_date": "2021-06-16",
+        "numbers": [
+          16,
+          23,
+          32,
+          33,
+          37,
+          45
+        ]
+      },
+      "official_row_sha256": "650ea7ebeef4ccbd52cf9e4129c7cb6ee9ce8fd27dc673f217dc87d3f22074f5",
+      "old_row": {
+        "bonus": 3,
+        "draw_date": "2021-06-16",
+        "numbers": [
+          16,
+          23,
+          32,
+          33,
+          37,
+          48
+        ]
+      },
+      "old_row_sha256": "be7239ae1fdc16e5885c4ebad7f2f3f9962ef0b8425b8fcb109f0c426e81350a",
+      "rejected_row_sha256s": [
+        "be7239ae1fdc16e5885c4ebad7f2f3f9962ef0b8425b8fcb109f0c426e81350a"
+      ],
+      "supported_row_sha256s": [
+        "650ea7ebeef4ccbd52cf9e4129c7cb6ee9ce8fd27dc673f217dc87d3f22074f5"
+      ]
+    },
+    {
+      "change_type": "update",
+      "corroborating_evidence_ids": [
+        "loto-quebec-video-2021-08-04"
+      ],
+      "determination": "Replace the registered row with the exact official annual-table row; corroborating evidence is recorded where available.",
+      "draw_date": "2021-08-04",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 27,
+        "draw_date": "2021-08-04",
+        "numbers": [
+          3,
+          8,
+          21,
+          38,
+          42,
+          49
+        ]
+      },
+      "official_row_sha256": "f0940382ffc1570578893da3dd11b39a62865b08437c67344b5a08c02b8a7d6b",
+      "old_row": {
+        "bonus": 27,
+        "draw_date": "2021-08-04",
+        "numbers": [
+          3,
+          8,
+          21,
+          38,
+          42,
+          48
+        ]
+      },
+      "old_row_sha256": "92817745cd655be0946322af97886f6821af6155922cabcb62aa8e4c97bd1f32",
+      "rejected_row_sha256s": [
+        "92817745cd655be0946322af97886f6821af6155922cabcb62aa8e4c97bd1f32"
+      ],
+      "supported_row_sha256s": [
+        "f0940382ffc1570578893da3dd11b39a62865b08437c67344b5a08c02b8a7d6b"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2021-08-14",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 4,
+        "draw_date": "2021-08-14",
+        "numbers": [
+          3,
+          8,
+          11,
+          34,
+          40,
+          47
+        ]
+      },
+      "official_row_sha256": "52f8889fae6565b02d662acefa81f22a737f639361cf5d526308b13fd06dd964",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "52f8889fae6565b02d662acefa81f22a737f639361cf5d526308b13fd06dd964"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2021-08-25",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 21,
+        "draw_date": "2021-08-25",
+        "numbers": [
+          1,
+          16,
+          34,
+          37,
+          41,
+          48
+        ]
+      },
+      "official_row_sha256": "64d51e01491f01b55bd8ae65cf783705ad362a14b7c9c6e90ab99c4145013fd7",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "64d51e01491f01b55bd8ae65cf783705ad362a14b7c9c6e90ab99c4145013fd7"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2021-12-18",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 18,
+        "draw_date": "2021-12-18",
+        "numbers": [
+          2,
+          10,
+          15,
+          16,
+          20,
+          49
+        ]
+      },
+      "official_row_sha256": "a73b188b4c165d8af708453358b8262a644b7971b8c14028069e07e67492cb32",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "a73b188b4c165d8af708453358b8262a644b7971b8c14028069e07e67492cb32"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2021-12-25",
+      "official_annual_source": {
+        "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+        "relative_path": "annual/2021.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+      },
+      "official_row": {
+        "bonus": 41,
+        "draw_date": "2021-12-25",
+        "numbers": [
+          4,
+          13,
+          21,
+          24,
+          31,
+          45
+        ]
+      },
+      "official_row_sha256": "6e6902da8d6afb96ab2b6fd52de5e4b247202fa356d1613de1e9f77b6e30ae20",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "6e6902da8d6afb96ab2b6fd52de5e4b247202fa356d1613de1e9f77b6e30ae20"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2022-12-28",
+      "official_annual_source": {
+        "raw_sha256": "dae6c4fa8eb443cb403e6ceb47ce1087243c5bdad2698889e3acd710812b222c",
+        "relative_path": "annual/2022.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2022/en"
+      },
+      "official_row": {
+        "bonus": 18,
+        "draw_date": "2022-12-28",
+        "numbers": [
+          2,
+          10,
+          16,
+          17,
+          24,
+          26
+        ]
+      },
+      "official_row_sha256": "ebccf8a80f9a3edb5d3b087b09697954f7ddf66ced1f9c8326e89c213c4041e3",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "ebccf8a80f9a3edb5d3b087b09697954f7ddf66ced1f9c8326e89c213c4041e3"
+      ]
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2022-12-31",
+      "official_annual_source": {
+        "raw_sha256": "dae6c4fa8eb443cb403e6ceb47ce1087243c5bdad2698889e3acd710812b222c",
+        "relative_path": "annual/2022.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2022/en"
+      },
+      "official_row": {
+        "bonus": 25,
+        "draw_date": "2022-12-31",
+        "numbers": [
+          2,
+          5,
+          7,
+          11,
+          15,
+          21
+        ]
+      },
+      "official_row_sha256": "085e290ea67dacede55007139c1d3daf35b25a9f0415f06cdf53980eeb42d95d",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "085e290ea67dacede55007139c1d3daf35b25a9f0415f06cdf53980eeb42d95d"
+      ]
+    },
+    {
+      "change_type": "delete",
+      "corroborating_evidence_ids": [],
+      "determination": "Reject the registered row because the complete official annual table contains no draw on this non-scheduled date.",
+      "draw_date": "2023-12-28",
+      "official_annual_source": {
+        "raw_sha256": "874c9d58e0dfe00ef1e633024c4855c2ffbbd877d95b98eb0c0359f315755d05",
+        "relative_path": "annual/2023.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2023/en"
+      },
+      "official_row": null,
+      "official_row_sha256": null,
+      "old_row": {
+        "bonus": 18,
+        "draw_date": "2023-12-28",
+        "numbers": [
+          2,
+          10,
+          16,
+          17,
+          24,
+          26
+        ]
+      },
+      "old_row_sha256": "cf5a77978b8e5a7b9d2dafbb836f7b0887609762d5c6c5309c3362fa0b1359af",
+      "rejected_row_sha256s": [
+        "cf5a77978b8e5a7b9d2dafbb836f7b0887609762d5c6c5309c3362fa0b1359af"
+      ],
+      "supported_row_sha256s": []
+    },
+    {
+      "change_type": "insert",
+      "corroborating_evidence_ids": [],
+      "determination": "Insert the row exactly as published in the complete official annual table.",
+      "draw_date": "2023-12-30",
+      "official_annual_source": {
+        "raw_sha256": "874c9d58e0dfe00ef1e633024c4855c2ffbbd877d95b98eb0c0359f315755d05",
+        "relative_path": "annual/2023.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2023/en"
+      },
+      "official_row": {
+        "bonus": 44,
+        "draw_date": "2023-12-30",
+        "numbers": [
+          7,
+          18,
+          23,
+          28,
+          31,
+          48
+        ]
+      },
+      "official_row_sha256": "d5f78cc6f9718aa05865b7182bea2dfbd94f0e897c29b6fd71c1c5b5717aebef",
+      "old_row": null,
+      "old_row_sha256": null,
+      "rejected_row_sha256s": [],
+      "supported_row_sha256s": [
+        "d5f78cc6f9718aa05865b7182bea2dfbd94f0e897c29b6fd71c1c5b5717aebef"
+      ]
+    },
+    {
+      "change_type": "delete",
+      "corroborating_evidence_ids": [],
+      "determination": "Reject the registered row because the complete official annual table contains no draw on this non-scheduled date.",
+      "draw_date": "2023-12-31",
+      "official_annual_source": {
+        "raw_sha256": "874c9d58e0dfe00ef1e633024c4855c2ffbbd877d95b98eb0c0359f315755d05",
+        "relative_path": "annual/2023.html",
+        "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2023/en"
+      },
+      "official_row": null,
+      "official_row_sha256": null,
+      "old_row": {
+        "bonus": 25,
+        "draw_date": "2023-12-31",
+        "numbers": [
+          2,
+          5,
+          7,
+          11,
+          15,
+          21
+        ]
+      },
+      "old_row_sha256": "0c26f72b4bd6da8635e4851b798b16b7fbb235c0b2575bcc5dfb476f423c2a82",
+      "rejected_row_sha256s": [
+        "0c26f72b4bd6da8635e4851b798b16b7fbb235c0b2575bcc5dfb476f423c2a82"
+      ],
+      "supported_row_sha256s": []
+    }
+  ],
+  "disposition": "accept_official_history_for_all_enumerated_changes",
+  "external_evidence": [
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 47727873,
+      "download_sha256": "c4fb96f04cfeaf9f14199c20e9a5e244a75846ee50f064cb8ecb297dce93f744",
+      "download_url": "https://diffusion2.banq.qc.ca/pdfjs-3.10.111-dist_banq_2025/web/pdf.php/XgNRQD4EE-Sc2NJVnbS2Uw",
+      "draw_dates": [
+        "1989-11-08"
+      ],
+      "evidence_id": "banq-le-quotidien-1989-11-09-p2",
+      "frame_sha256": "4c8255017494c9deb4bbf505f0ca7addb49d04cc29849641e74b962c87ea554e",
+      "frame_summary": "Le Quotidien reports 09 17 28 36 44 46, complémentaire 2.",
+      "notice_url": "https://numerique.banq.qc.ca/patrimoine/details/52327/4223996",
+      "page": 2,
+      "provider": "Bibliothèque et Archives nationales du Québec",
+      "source_type": "government_archive_contemporaneous_newspaper_scan"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 112432487,
+      "download_sha256": "226e9a5e07ef4744a9c398ab2c2ffd0c5859df963da46458a7e23513da54212d",
+      "download_url": "https://diffusion2.banq.qc.ca/pdfjs-3.10.111-dist_banq_2025/web/pdf.php/4k5_xTCVdymt5PQ1sXMf6A",
+      "draw_dates": [
+        "1989-11-08"
+      ],
+      "evidence_id": "banq-progres-dimanche-1989-11-12-p2",
+      "frame_sha256": "62e6801c7a956906fd41543c7e379e938652c7da86dd1bf4423351564496b87a",
+      "frame_summary": "The Loto-Québec result box reports 09 17 28 36 44 46, complémentaire 2.",
+      "notice_url": "https://numerique.banq.qc.ca/patrimoine/details/52327/4295284",
+      "page": 2,
+      "provider": "Bibliothèque et Archives nationales du Québec",
+      "source_type": "government_archive_contemporaneous_loto_quebec_result_scan"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 192007,
+      "download_sha256": "6dd89d9e0eae56d2f903f643f1c8b04e8c887181a45acf12bc2c9c425e20e2d2",
+      "draw_dates": [
+        "2010-09-04"
+      ],
+      "evidence_id": "loto-quebec-cnw-2010-09-04",
+      "frame_summary": "Official bulletin reports 11-13-17-18-20-45, complémentaire 41.",
+      "normalized_result_line_sha256": "5eeddc7037aa314a22a3797f5448992ff621ae8185d02f97f1891d1290842db3",
+      "provider": "Loto-Québec via Canada Newswire",
+      "published_at": "2010-09-04T23:24:00-04:00",
+      "source_type": "same_night_official_transmission_bulletin",
+      "url": "https://www.newswire.ca/fr/news-releases/loto-quebec---rapport-de-transmission---diffusion-de-la-structure---lotto649-545343702.html"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 9507361,
+      "download_sha256": "8526f7a60fb579241460ace647d80c1c4914920e5f5d7c0ab6a62b468e03159a",
+      "draw_dates": [
+        "2019-06-29"
+      ],
+      "evidence_id": "loto-quebec-video-2019-06-29",
+      "frame_sha256": "1cf4491f0a8439f4bc429b9fdaed31e5fbeefbefb6d13f2b707d05db2d3d5b43",
+      "frame_summary": "Official result frame reports 02 05 19 21 29 46, bonus 15.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=mUcSxzt941w",
+      "video_id": "mUcSxzt941w"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 9727890,
+      "download_sha256": "a4253312fccc507aca3775d42bd44ed06fd8e91eb87d392025d9ca13ada5b175",
+      "draw_dates": [
+        "2020-02-29"
+      ],
+      "evidence_id": "loto-quebec-video-2020-02-29",
+      "frame_sha256": "0f016038ec31bb465870825418cad3afd707f0bb3dffbcd25f1ebdf58f2831d2",
+      "frame_summary": "Official result frame reports 06 12 15 18 31 46, bonus 13.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=7r_gdJFJ_c8",
+      "video_id": "7r_gdJFJ_c8"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 10579905,
+      "download_sha256": "1bab7d26974f74f09fda81b7f475bffaa65eede3965199ab96b553ebc5ae17d5",
+      "draw_dates": [
+        "2020-03-21"
+      ],
+      "evidence_id": "loto-quebec-video-2020-03-21",
+      "frame_sha256": "357a10c25565b5f22e32fbe0e671603eecff2593334bcd232de1f5dd474e9fc6",
+      "frame_summary": "Official result frame reports 06 11 22 36 37 45, bonus 10.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=8chDrTVE-U8",
+      "video_id": "8chDrTVE-U8"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 10846468,
+      "download_sha256": "73263f833cc08f98ec048bf4ed2fc5c555c8494c76e30a959ec52cedfb0f5c06",
+      "draw_dates": [
+        "2020-04-11"
+      ],
+      "evidence_id": "loto-quebec-video-2020-04-11",
+      "frame_sha256": "3c53318688b7b8a1dba4339eb2ec85df9e4c97ce4691a5337b77f85c131a5035",
+      "frame_summary": "Official result frame reports 10 14 17 32 35 42, bonus 26.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=48vD7p_0q9s",
+      "video_id": "48vD7p_0q9s"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 9702900,
+      "download_sha256": "ebc296e782022731607c48f1265c6a20971b2d04e3a55169e400341807baab0a",
+      "draw_dates": [
+        "2020-07-01"
+      ],
+      "evidence_id": "loto-quebec-video-2020-07-01",
+      "frame_sha256": "ef1e0622886662ada04e32c3b8536cb9d40796712a22e2511e783f38e0cad339",
+      "frame_summary": "Official result frame reports 01 12 27 30 34 49, bonus 35.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=xzdpIJV7ugE",
+      "video_id": "xzdpIJV7ugE"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 9774237,
+      "download_sha256": "4984a8c07e402a3c36fc8b34ff3d7e9f134bfcd98a4b81b5f25341f210f29df4",
+      "draw_dates": [
+        "2020-08-15"
+      ],
+      "evidence_id": "loto-quebec-video-2020-08-15",
+      "frame_sha256": "6c6a7144765974508022abfdceb7612e4ad3a85f0f2641dfea71fa3b799c8d5a",
+      "frame_summary": "Official result frame reports 06 07 11 18 22 43, bonus 09.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=Y5bf0fbP3pk",
+      "video_id": "Y5bf0fbP3pk"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 10766781,
+      "download_sha256": "92a579b72cc51c143f58860870beff1cb20d64ceb8de99cbc9950501023f97a2",
+      "draw_dates": [
+        "2021-06-16"
+      ],
+      "evidence_id": "loto-quebec-video-2021-06-16",
+      "frame_sha256": "89d69ba1399cb8fe774abb00f537abd19ed97c8e1e1906fa9b00fdf86141df5a",
+      "frame_summary": "Official result frame reports 16 23 32 33 37 45, bonus 03.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=CAPziRd8LKk",
+      "video_id": "CAPziRd8LKk"
+    },
+    {
+      "artifact_status": "metadata_verified_during_review_not_embedded",
+      "download_bytes": 9518852,
+      "download_sha256": "6391f5fa41c8ef179ca42148cf50e5a655fec433ce8500d78bec7bcc1175f1b6",
+      "draw_dates": [
+        "2021-08-04"
+      ],
+      "evidence_id": "loto-quebec-video-2021-08-04",
+      "frame_sha256": "ae34a02ac762387f19d2fcb1cddcd9a71df10359d16236bc8e81f8d9b6e6a7be",
+      "frame_summary": "Official result frame reports 03 08 21 38 42 49, bonus 27.",
+      "provider": "Loto-Québec official YouTube channel",
+      "source_type": "official_draw_video",
+      "url": "https://www.youtube.com/watch?v=QfW1H4qfzTA",
+      "video_id": "QfW1H4qfzTA"
+    }
+  ],
+  "external_evidence_handling": {
+    "artifact_count": 11,
+    "artifact_status": "metadata_verified_during_review_not_embedded",
+    "automatic_two_source_resolution_use": "none",
+    "closure_basis": "externally_allowlisted_reviewed_adjudication"
+  },
+  "incident_id": "DI-2026-08-20-registered-history",
+  "method": "Changes are derived from the full old-versus-official date-keyed diff; no correction row is hard-coded into the builder.",
+  "review_scope": "All differences between the registered Git history and the complete offline Loto-Québec history through the incident boundary.",
+  "reviewed_at": "2026-08-20T05:35:00Z",
+  "root_cause_findings": [
+    "The registered source omitted official scheduled draws.",
+    "Two registered 2023 dates duplicated official 2022 rows under the wrong year.",
+    "Nine registered rows disagreed with the official numbers or bonus."
+  ],
+  "schema_version": "lotto649-reviewed-adjudication-v1",
+  "summary": {
+    "corrected_count": 4442,
+    "decision_count": 4444,
+    "deleted": 2,
+    "inserted": 12,
+    "official_count": 4442,
+    "old_count": 4432,
+    "unchanged": 4421,
+    "unresolved": 0,
+    "updated": 9
+  }
+}

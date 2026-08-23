@@ -8,12 +8,22 @@ A target draw may use only information available strictly before that draw. This
 
 | Period | Purpose |
 |---|---|
-| 1982–2014 | development |
-| 2015–2019 | validation/model selection |
-| 2020–2025 | historical blind test |
-| 2026+ | live forward test |
+| 1982–2014 | historical development; legacy runs carry the registered-history incident caveat |
+| 2015–2019 | exposed legacy validation/model selection |
+| 2020–2025 | consumed historical diagnostic; the old 621-row strict-blind qualification is withdrawn |
+| 2026+ | model-version-specific prospective forward evidence |
 
 Once a blind-test result influences a model change, that period must no longer be described as untouched validation data for the changed model.
+
+The official-calendar reconciliation contains 627 draws in 2020–2025, not the
+621 rows used by the archived V2–V4 run. All exact V2–V4 metrics are therefore
+legacy registered-data diagnostics; see `docs/V2_V4_RESULTS.md`. New historical
+execution must consume the externally pinned corrected-history boundary through
+a reviewed adapter. Recomputing an old candidate on corrected history is a
+data-correction sensitivity diagnostic under a new experiment/version, never a
+restored blind test. Pre-incident 2026 snapshots may still prove that their
+predictions existed before reveal, but models trained on the malformed history
+do not thereby acquire corrected-history promotion evidence.
 
 ## Fair-lottery baselines
 

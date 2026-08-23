@@ -11,9 +11,9 @@ No local computer needs to stay running.
 
 The 2026-08-20 registered-history reconciliation suspends source refresh, live
 execution, and historical backtesting. The registered 4,434-row history through
-2026-08-22 is not strict real-calendar evidence; a separate reviewed change must
-seal the corrected epoch and its reconciliation before any execution can resume.
-The committed incident state is:
+2026-08-22 is not strict real-calendar evidence. A reviewed candidate now seals
+the correction, but sealing evidence does not authorize execution. The
+committed incident state remains:
 
 ```yaml
 data:
@@ -57,6 +57,35 @@ the same sealed state.
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:
 
+The corrected-history evidence available to that release is pinned as follows:
+
+```text
+base: 4,442 draws through 2026-08-15
+verified suffix: 2 draws through 2026-08-22
+verified view: 4,444 draws
+seal SHA-256: 80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd
+suffix SHA-256: b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803
+suffix head SHA-256: 3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475
+```
+
+The base is bound to artifact commit
+`b04393944ef12f78417dfb6151343c72d4c2a2ac`; the two raw-source receipts are
+bound to evidence commit `60dbd42a502850091508491f9011f9a08acf894f`.
+The verified-history loader checks these Git objects and all three external
+pins. No operational command consumes that loader yet, so checklist item 2 and
+the reviewed release itself remain incomplete.
+
+Create or validate the seal only in a permission-isolated repository directory.
+Legitimate concurrent processes must use the exclusive-create protocol. Treat
+any untrusted same-UID process with rename/write access as a compromised host;
+the portable seal transaction is not a substitute for OS directory isolation.
+
+The integration that carries this evidence must preserve artifact commit
+`b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
+`60dbd42a502850091508491f9011f9a08acf894f` as reachable ancestors. Do not use a
+squash or rebase merge for that branch. After merge, test the deployed pins from
+a fresh full-history clone of `main`; a passing source worktree is not enough.
+
 1. The corrected historical epoch and its reconciliation evidence are
    committed, independently reviewed, and bound to exact expected identities.
 2. The consuming data path verifies the approved epoch before exposing rows;
@@ -83,7 +112,9 @@ to perform only checkout plus the safe guard and then skip.
 
 - `test.yml` — runs unit tests on pushes and pull requests.
 - `integration.yml` — verifies real result sources, a short walk-forward run and live snapshot generation.
-- `backtest.yml` — runs the configured historical blind walk-forward benchmark when model code reaches `main`, and can also be run manually.
+- `backtest.yml` — outside the hold, runs the configured historical walk-forward
+  benchmark. Reopening it now requires the reviewed corrected-history consumer;
+  no corrected rerun makes the consumed 2020–2025 outcomes blind again.
 - `live.yml` — runs after model deployment and every Thursday/Sunday, evaluates due predictions, generates the next-draw predictions and commits the audit trail.
 
 During the data-integrity incident the last three workflows remain sealed as

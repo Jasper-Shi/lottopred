@@ -6,10 +6,13 @@ Develop one falsifiable hypothesis at a time while protecting the true forward
 experiment. The goal is evidence about predictability, not a sequence of models
 that look better on already-observed draws.
 
-V5+ begins with a hard fact: every historical result through 2025 has already
-been available to the research process. The 2020–2025 interval was the frozen
-V2–V4 blind test and is now consumed. It remains useful for diagnostics, but it
-cannot become untouched confirmation for a revised model.
+V5+ begins with two hard facts. Every historical result through 2025 has already
+been available to the research process, and the legacy registered history was
+later found incomplete and conflicting. The old V2–V4 run used 621 recorded rows
+in 2020–2025; the sealed official-calendar reconciliation contains 627 draws.
+Its strict-blind qualification and exact headline metrics are withdrawn as
+described in `docs/V2_V4_RESULTS.md`. The interval remains consumed and useful
+only for labeled diagnostics; correction does not make its answers unseen again.
 
 ## Evidence lanes
 
@@ -19,12 +22,26 @@ Keep these lanes separate in code, reports, and claims:
 |---|---|---|---|
 | Historical development | 1982–2014 | Feature construction, fitting choices, nested chronological tuning | Development result only |
 | Historical legacy validation | 2015–2019 | Stability and sensitivity diagnostics | Historical validation, already exposed to model selection |
-| Consumed blind diagnostic | 2020–2025 | Frozen-candidate stress test and failure analysis | Historical diagnostic only; never untouched/blind for V5+ |
-| Prospective forward | 2026+ after a candidate's freeze commit | Immutable pre-draw prediction and later scoring | Confirmatory evidence for that exact frozen version |
+| Consumed corrected-history diagnostic | 2020–2025 | Data-correction sensitivity, frozen-candidate stress test, and failure analysis | Historical diagnostic only; never untouched/blind for V5+ |
+| Prospective forward | 2026+ after a corrected-history candidate's freeze commit | Immutable pre-draw prediction and later scoring | Confirmatory evidence for that exact frozen version and data identity |
 
 Forward evidence is model-specific. A 2026 result observed before V5 is frozen is
 historical input for V5, not V5 forward evidence. If a V5 outcome causes any
 behavioral change, V5 is closed; freeze V5.1/V6 and start a new cohort.
+
+## Data-integrity gate
+
+Before any new historical model execution, the runner must load history through
+the reviewed `src/lotto649/verified_history.py` boundary using the external seal,
+suffix-file, and suffix-head pins recorded in `docs/CODEX_HANDOFF.md`. Direct use
+of the legacy processed CSV is prohibited for new evidence. The operational kill
+switch remains closed until that consumer adapter is independently reviewed.
+
+Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
+Any corrected-history sensitivity analysis gets a new experiment identity,
+states that 2020–2025 is consumed, and preserves the old artifacts plus their
+data-integrity erratum. A historical high-water or opportunity claim is eligible
+only after the corrected source identity and chronology validator both pass.
 
 ## Research loop
 

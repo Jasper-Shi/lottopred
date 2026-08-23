@@ -1,7 +1,8 @@
 # Codex Handoff
 
-Last verified on 2026-08-23 against `main` commit
-`9f16e20c726c7b65eed1d387c4c725d51248f570`.
+Last verified on 2026-08-23 against operational `main` base
+`e585ae797ddcafa423121bf473d70b177a3bd92c` and corrected-epoch artifact
+commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
 
@@ -16,10 +17,20 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > all `false`; the live, integration, and backtest workflows are sealed to
 > safe no-op behavior by disabled-config SHA-256
 > `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`.
-> No refresh, backtest, evaluation, or prediction is authorized. The registered
-> 4,434-row history through 2026-08-22 is not strict real-calendar evidence; a
-> corrected epoch and its reconciliation are not yet sealed into `main`.
-> Re-enable only through the reviewed two-gate release described in
+> No refresh, backtest, evaluation, or prediction is authorized. The legacy
+> 4,434-row history through 2026-08-22 is not strict real-calendar evidence.
+> A reviewed candidate now seals a corrected 4,442-draw base through
+> 2026-08-15 and a two-event, dual-source suffix through 2026-08-22. The
+> verified view contains 4,444 draws. Its external seal SHA-256 is
+> `80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd`;
+> the suffix file SHA-256 is
+> `b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803`;
+> and its head event SHA-256 is
+> `3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475`.
+> This evidence is sealed but not yet an authorized operational input: no
+> bootstrap, backtest, or live consumer has been switched to it, and the kill
+> switches remain false. Re-enable only through the reviewed two-gate release
+> described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 
 | Component | Status | Meaning |
@@ -28,8 +39,8 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
-| 2020–2025 blind period | Consumed | It cannot confirm a model selected or tuned after those outcomes were known. |
-| 2026+ snapshots | Immutable source-relative artifacts | They remain auditable, but the incident means they are not strict real-calendar evidence until a corrected epoch is reviewed. |
+| 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
+| 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
@@ -70,7 +81,9 @@ Change version semantics deliberately rather than renaming committed snapshots.
 
 ## Current committed forward checkpoint
 
-At `main` commit `9f16e20c726c7b65eed1d387c4c725d51248f570`:
+The immutable pre-hold artifacts originated at `main` commit
+`9f16e20c726c7b65eed1d387c4c725d51248f570` and remain present at operational
+base `e585ae797ddcafa423121bf473d70b177a3bd92c`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -85,6 +98,14 @@ registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
 yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed. The
 incident hold prevents any later cycle from evaluating or generating until a
 reviewed release reopens both runtime and workflow gates.
+
+The corrected epoch is separate and append-only. Its sealed base contains 4,442
+draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
+to immutable WCLC and Loto-Québec source receipts at evidence commit
+`60dbd42a502850091508491f9011f9a08acf894f`. The public verified-history loader
+reconstructs a 4,444-draw view through 2026-08-22 only when the external seal,
+suffix-file, and suffix-head pins all match. This loader is currently an audited
+read boundary, not authorization to resume execution.
 
 Prediction files are immutable. `generate_next_predictions` skips an already
 existing target/model/version path, and the storage layer rejects overwrites by
@@ -168,17 +189,23 @@ Do not broaden the fallback to swallow those integrity failures.
    the last pre-hold `main` boundary.
 3. Keep all three runtime switches false and preserve the SHA-bound workflow
    seal. Do not bypass a command guard through a lower-level public function.
-4. Complete and independently review the corrected historical epoch,
-   reconciliation evidence, immutable base identity, and any append-only suffix.
+4. Preserve and independently review the sealed corrected epoch and append-only
+   suffix identities above. Do not replace them with worktree CSV bytes or
+   caller-supplied metadata.
 5. Never rewrite the existing processed history, prediction, evaluation, report,
    or registered evidence artifacts; corrections belong to a new sealed epoch.
-6. Re-enable only through the reviewed two-gate release in `OPERATIONS.md`, with
-   new exact config bytes and matching workflow plans in the same commit.
-7. Outcome-blind model design and preregistration may continue during the hold,
-   but do not score models on the unsealed history or resume operational
-   prospective collection before that release. Use a new version whenever
+6. Merge the sealed-epoch branch without squash/rebase so artifact commit
+   `b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
+   `60dbd42a502850091508491f9011f9a08acf894f` remain reachable, then verify the
+   deployed pins from a fresh full-history clone of `main`.
+7. Integrate the verified-history consumer explicitly, then re-enable only
+   through the reviewed two-gate release in `OPERATIONS.md`, with new exact
+   config bytes and matching workflow plans in the same commit.
+8. Outcome-blind model design and preregistration may continue during the hold,
+   but do not score models on the legacy history or treat the sealed epoch as an
+   authorized runtime before that release. Use a new version whenever
    statistical behavior changes.
-8. Run `pytest -q` and `ruff check .`; run a network smoke only after source
+9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 
 Use `docs/RESEARCH_ROADMAP.md` as the decision process, not as evidence that any

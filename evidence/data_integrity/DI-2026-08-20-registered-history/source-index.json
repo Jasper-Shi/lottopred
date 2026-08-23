@@ -1,0 +1,992 @@
+{
+  "assets": [
+    {
+      "bytes": 10235,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "eec1b22d7b1180d245bcc2ba2ce70e77d48ea2218f88091feb8f34dbe76e2af3",
+      "relative_path": "annual/1982.html",
+      "scope": "1982",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1982/en"
+    },
+    {
+      "bytes": 17003,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "4479144cb66f0ee772607c952404cbcea1e4bad26cadc945ba9682887afb5904",
+      "relative_path": "annual/1983.html",
+      "scope": "1983",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1983/en"
+    },
+    {
+      "bytes": 16721,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "717187c1771c928d9ed928b2b23063ffcbc6bf365f0dca9ae655b3cb99b99056",
+      "relative_path": "annual/1984.html",
+      "scope": "1984",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1984/en"
+    },
+    {
+      "bytes": 21233,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c7da843163e25df821ceda711595724eebd77355018fe05ae8a86a5ef95f7753",
+      "relative_path": "annual/1985.html",
+      "scope": "1985",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1985/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c71f937aa686f81696d39a2e8fda789f6ae37f5fd26adfd2dea03d6e3ecf541c",
+      "relative_path": "annual/1986.html",
+      "scope": "1986",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1986/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "70f9c394d80f47f161bba79f53438359d04c127fbcd714d266add5b9e6647f5a",
+      "relative_path": "annual/1987.html",
+      "scope": "1987",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1987/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "6bf295138631e205bf4a2d3c98903bf4ac4f18b45311156a383941df58c8c4dc",
+      "relative_path": "annual/1988.html",
+      "scope": "1988",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1988/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "02a36e65fcd6a63b1d3a8ed65a5d5a745c7465309300813ca205cdfa138382e2",
+      "relative_path": "annual/1989.html",
+      "scope": "1989",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1989/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "2a7171e9508e0c89b37f12629ebca04ef0f149def85023d88bc0594e1760d835",
+      "relative_path": "annual/1990.html",
+      "scope": "1990",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1990/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "4f6ad81ec209bd968e64d2ad5ba6670ee6a99bc40d97b491fd1a9d36c35ecb08",
+      "relative_path": "annual/1991.html",
+      "scope": "1991",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1991/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "048e62a5c4a2d9c487d7a4626a738a653e80ba39d46519d3ee0fc056fd88a41d",
+      "relative_path": "annual/1992.html",
+      "scope": "1992",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1992/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "370124eb836be817ad71c83a617516f83bba5e899ba6f6b7b1c21ca9e4b61a81",
+      "relative_path": "annual/1993.html",
+      "scope": "1993",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1993/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "33ce2c792a675bc919570ba8216a61932714b07ca9561af6c2d8c72cdbbd60db",
+      "relative_path": "annual/1994.html",
+      "scope": "1994",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1994/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "9c7837c0b72e716b96539bf432833277b09408fbbf9934523ca6e3d54431e5bc",
+      "relative_path": "annual/1995.html",
+      "scope": "1995",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1995/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "d280d266344e44b8fbd0219f8d6ee5ae6cb1ea6d8e95eff562c903474486ff5c",
+      "relative_path": "annual/1996.html",
+      "scope": "1996",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1996/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "69cbddd137ecfe73814d885e7a569f9d53582a6735780d20245da5a186183b74",
+      "relative_path": "annual/1997.html",
+      "scope": "1997",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1997/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "681d18f19569f416d49974b7a4fa796410351b17e299e3e8f040eb894c732e89",
+      "relative_path": "annual/1998.html",
+      "scope": "1998",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1998/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "6a86a986272dc3f31210427b5c20b4a526d80c68fb1233743ea0563eb525804c",
+      "relative_path": "annual/1999.html",
+      "scope": "1999",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/1999/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "7006d5127fc1bac5d92ee8c14bf7e97bdffac2fc88b22500eb34f37081852fa9",
+      "relative_path": "annual/2000.html",
+      "scope": "2000",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2000/en"
+    },
+    {
+      "bytes": 41160,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "0730613b8724d708978f8424df01ff2a2fd5a629ae2bca10d45fc8689a9a15c4",
+      "relative_path": "annual/2001.html",
+      "scope": "2001",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2001/en"
+    },
+    {
+      "bytes": 42140,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "1c596be301f44e0ea60b837ed400d181ba542aa97cb10cffd0fa175d4cd44fb9",
+      "relative_path": "annual/2002.html",
+      "scope": "2002",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2002/en"
+    },
+    {
+      "bytes": 40712,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "da3c54323ed0409012dd72df153d52cc1369a950fba65439303994533d8e0919",
+      "relative_path": "annual/2003.html",
+      "scope": "2003",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2003/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "7a24792abd34311eb3c9eaac6bb27164ca7dcfed011930653dada35dac65d74c",
+      "relative_path": "annual/2004.html",
+      "scope": "2004",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2004/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "ff1fce4c22801bfef2a06965ba088942f58c38cc7883b1df9c853309b4a1aafb",
+      "relative_path": "annual/2005.html",
+      "scope": "2005",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2005/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "95e28ed756e8648f47de4cb4f8045b17ba0e3f1a4e9dabd9406fa700208b0bdc",
+      "relative_path": "annual/2006.html",
+      "scope": "2006",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2006/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "f4b1c41ad0d19966c752db40ae3b17d4b91e626991e245d672039c90ebce53bf",
+      "relative_path": "annual/2007.html",
+      "scope": "2007",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2007/en"
+    },
+    {
+      "bytes": 31667,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "30afd030872ae649f97c8b83af1daa2f340fd69edbe19df9b46953ce6b7f0e92",
+      "relative_path": "annual/2008.html",
+      "scope": "2008",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2008/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "01d33ddab00a8eca6dd6eb2d01cbd5075832ac4b7d1e4a2ad51799464a43e044",
+      "relative_path": "annual/2009.html",
+      "scope": "2009",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2009/en"
+    },
+    {
+      "bytes": 31385,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "a6631c408742ad978b023d617ba20d6411511bbd989a95a0618b9a5ce7eed62e",
+      "relative_path": "annual/2010.html",
+      "scope": "2010",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2010/en"
+    },
+    {
+      "bytes": 33863,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "98a588cc318b62c914de0df1c1d1606b97476c87e2646f1fa05ea3aef0716746",
+      "relative_path": "annual/2011.html",
+      "scope": "2011",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2011/en"
+    },
+    {
+      "bytes": 43746,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "0d2e6cce41f40ba6947a7f83e474245b27a897641213b5e49eed5051bd9c173d",
+      "relative_path": "annual/2012.html",
+      "scope": "2012",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2012/en"
+    },
+    {
+      "bytes": 39381,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "31207c7593a6723261e7119469557a5b458bfdd3d3ea19b291ae6d5b9134fb17",
+      "relative_path": "annual/2013.html",
+      "scope": "2013",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2013/en"
+    },
+    {
+      "bytes": 53337,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "a64304c9d1a9deb6b2a031fe6fb8d9e3c10949ee5aaa8d2d277105bc16bbb7ca",
+      "relative_path": "annual/2014.html",
+      "scope": "2014",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2014/en"
+    },
+    {
+      "bytes": 73805,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "cc477fbeac1fcedd41bb9ecb3497cf352267cfeff37adffbd6b3b85c6d42e210",
+      "relative_path": "annual/2015.html",
+      "scope": "2015",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2015/en"
+    },
+    {
+      "bytes": 102703,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "ef998e996003a89eb83b5d87aa2052848268cbe15d0781027cb4445c26e9c301",
+      "relative_path": "annual/2016.html",
+      "scope": "2016",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2016/en"
+    },
+    {
+      "bytes": 97651,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c827b5e5a478911aa78d1cbae48728c5b2986699e6508488138ed92c89d09b3a",
+      "relative_path": "annual/2017.html",
+      "scope": "2017",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2017/en"
+    },
+    {
+      "bytes": 123351,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "869acb937b95cd6887dd29938e82658c205410c7540910f0f8535afef8ef6917",
+      "relative_path": "annual/2018.html",
+      "scope": "2018",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2018/en"
+    },
+    {
+      "bytes": 74156,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "97a458b9f3861d142ec7c8c7c445615251a1123221a2f39bb6e540fc027da2bf",
+      "relative_path": "annual/2019.html",
+      "scope": "2019",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2019/en"
+    },
+    {
+      "bytes": 54624,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "84f8a0236489debd571c6463f3e7e3b5e9a198681bbf695feea78268e1ca7b64",
+      "relative_path": "annual/2020.html",
+      "scope": "2020",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2020/en"
+    },
+    {
+      "bytes": 67694,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c7cec2a846fc87f84dac6680a6c841b3ae43eddcd8f7e4e7224c72064bfcd5be",
+      "relative_path": "annual/2021.html",
+      "scope": "2021",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2021/en"
+    },
+    {
+      "bytes": 64382,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "dae6c4fa8eb443cb403e6ceb47ce1087243c5bdad2698889e3acd710812b222c",
+      "relative_path": "annual/2022.html",
+      "scope": "2022",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2022/en"
+    },
+    {
+      "bytes": 69718,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "874c9d58e0dfe00ef1e633024c4855c2ffbbd877d95b98eb0c0359f315755d05",
+      "relative_path": "annual/2023.html",
+      "scope": "2023",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2023/en"
+    },
+    {
+      "bytes": 74474,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "340ba47a9c02a07acd775a69c9a786e3d4f8fee86f69a2dd56a3839aeaa13344",
+      "relative_path": "annual/2024.html",
+      "scope": "2024",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2024/en"
+    },
+    {
+      "bytes": 87660,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "77d172b192951901fa6a787717f10680e48c76ed1c330c7dc179ad21078c8c85",
+      "relative_path": "annual/2025.html",
+      "scope": "2025",
+      "source_type": "loto_quebec_annual_history_html",
+      "url": "https://assets.lotoquebec.com/jeux/experience/resultats/banniere/V1/tirages/anterieurs/212/2025/en"
+    },
+    {
+      "bytes": 74402,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "397e8360331eec1fc6e0661a81ecfa84dd5034b8bd067bdf124dbcd32ac75449",
+      "relative_path": "detail/2026-01-03.html",
+      "scope": "2026-01-03",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-03"
+    },
+    {
+      "bytes": 74457,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "43be75b2d1d73ced319f3d3bf6199bdd0090d7a92e2ede6fb01dd30f07249520",
+      "relative_path": "detail/2026-01-07.html",
+      "scope": "2026-01-07",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-07"
+    },
+    {
+      "bytes": 74466,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "3e86355358a3a675677d3e8f559a36fdff4ec8a75ecea239a48881e991576640",
+      "relative_path": "detail/2026-01-10.html",
+      "scope": "2026-01-10",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-10"
+    },
+    {
+      "bytes": 68592,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "f0c942d0a30aeaccc0042b83ecd72720d85a27b959a5d9823bfae96de050615a",
+      "relative_path": "detail/2026-01-14.html",
+      "scope": "2026-01-14",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-14"
+    },
+    {
+      "bytes": 74421,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "9f82cbaa3951c432ac53e383a7e6bdfa54f437a082af724423f364cdbbc54a43",
+      "relative_path": "detail/2026-01-17.html",
+      "scope": "2026-01-17",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-17"
+    },
+    {
+      "bytes": 74401,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "e80828fc203c1478dfc8340d8702240e819781201b1a8946ed061cd59ba0cca8",
+      "relative_path": "detail/2026-01-21.html",
+      "scope": "2026-01-21",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-21"
+    },
+    {
+      "bytes": 74448,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "7c82f6136779e2d1b3487ef2da0474d47687f79540abb12bfc4f6ac1fc100778",
+      "relative_path": "detail/2026-01-24.html",
+      "scope": "2026-01-24",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-24"
+    },
+    {
+      "bytes": 68600,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "755e58baa243b29894fa67dc8f55b26abe80c031fa436763c280a37a6fc4f3c8",
+      "relative_path": "detail/2026-01-28.html",
+      "scope": "2026-01-28",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-28"
+    },
+    {
+      "bytes": 74453,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "cc7f5c8f52557ebb4cab006304ae06317702d94cdd5e1773129d8439d19334dd",
+      "relative_path": "detail/2026-01-31.html",
+      "scope": "2026-01-31",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-01-31"
+    },
+    {
+      "bytes": 68551,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "77d7d916d3baedbf2f6e5dc38dd8030083a2aff5f9f0f25ed8e9704e3d13f930",
+      "relative_path": "detail/2026-02-04.html",
+      "scope": "2026-02-04",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-04"
+    },
+    {
+      "bytes": 74406,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "1a14eefa955206aabb24534fdf59040c027658f1e47fc143b74e1bf85ffad058",
+      "relative_path": "detail/2026-02-07.html",
+      "scope": "2026-02-07",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-07"
+    },
+    {
+      "bytes": 74582,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "b8d7c2dd6cebaaf0e16a9145aaa474e9bb13e858fb738685c57e77461cf3adc0",
+      "relative_path": "detail/2026-02-11.html",
+      "scope": "2026-02-11",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-11"
+    },
+    {
+      "bytes": 82552,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "8b2e6a6a2a44ba8b23cc3981858d4f5c00dd1da1dc6b49b840ed3ad22bd39da3",
+      "relative_path": "detail/2026-02-14.html",
+      "scope": "2026-02-14",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-14"
+    },
+    {
+      "bytes": 74418,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c366b236f21b2a07ac0aa92f55b48bcebfd61b283729f764ed6b654b8eed326e",
+      "relative_path": "detail/2026-02-18.html",
+      "scope": "2026-02-18",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-18"
+    },
+    {
+      "bytes": 74374,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "653216718062003fb4fd8853beb5cd0f85cee0fc76cd68a751e1c0bc3a216dee",
+      "relative_path": "detail/2026-02-21.html",
+      "scope": "2026-02-21",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-21"
+    },
+    {
+      "bytes": 74411,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "6d157fd6e95a491307c6af6c1d14d25feb37e7254b7532082a8a05b907c37d2c",
+      "relative_path": "detail/2026-02-25.html",
+      "scope": "2026-02-25",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-25"
+    },
+    {
+      "bytes": 74367,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "bedc172eb683629a4832dfb5d2ed593abad34143663b1d8de098e13938f7faee",
+      "relative_path": "detail/2026-02-28.html",
+      "scope": "2026-02-28",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-02-28"
+    },
+    {
+      "bytes": 74412,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "251722acaedc551d3b92a7256ff3ddfa4b00de754738198ec5b9598c0ed96354",
+      "relative_path": "detail/2026-03-04.html",
+      "scope": "2026-03-04",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-04"
+    },
+    {
+      "bytes": 74365,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "139086e05eb95bc2b0bd03e76e6d092d1e8080dc69c3a352af0748cf42b7f8aa",
+      "relative_path": "detail/2026-03-07.html",
+      "scope": "2026-03-07",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-07"
+    },
+    {
+      "bytes": 74395,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "a44d30549c5f1f9b623325465a6ae18dcea2e1fc46c0d004eff95ee54871110b",
+      "relative_path": "detail/2026-03-11.html",
+      "scope": "2026-03-11",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-11"
+    },
+    {
+      "bytes": 74414,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "b76ebb121e255654b32b7924ed89e7ade492fe8979f8b9f814dd766742960b9f",
+      "relative_path": "detail/2026-03-14.html",
+      "scope": "2026-03-14",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-14"
+    },
+    {
+      "bytes": 74619,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "4d57b14df7f08e3aea638bb9be36d975fe01fb2bcf3fbd2f56452125d7452b51",
+      "relative_path": "detail/2026-03-18.html",
+      "scope": "2026-03-18",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-18"
+    },
+    {
+      "bytes": 84104,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "9505dc00a0e277cc48c4f57018da30af2280822612821612319e36f902bfe506",
+      "relative_path": "detail/2026-03-21.html",
+      "scope": "2026-03-21",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-21"
+    },
+    {
+      "bytes": 74673,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "199532baa6f08b92f73f986b31e099b0c173426c6d0fd4a8e8748e34c06be27a",
+      "relative_path": "detail/2026-03-25.html",
+      "scope": "2026-03-25",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-25"
+    },
+    {
+      "bytes": 84147,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "5396feb640624ba435765e06ad85dce152a2b02a5eac77dc2b19f7b452ac8544",
+      "relative_path": "detail/2026-03-28.html",
+      "scope": "2026-03-28",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-03-28"
+    },
+    {
+      "bytes": 74401,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "acd154d0042a4cffd7f53f97b3b43dcb6db737fb6cf6dca589beea184c99f73c",
+      "relative_path": "detail/2026-04-01.html",
+      "scope": "2026-04-01",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-01"
+    },
+    {
+      "bytes": 74405,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "1e2e273eb852385dd2b473495d153cafe314344bbc3ddda57d98501190460620",
+      "relative_path": "detail/2026-04-04.html",
+      "scope": "2026-04-04",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-04"
+    },
+    {
+      "bytes": 74447,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "910143b92e59bbb24383b9a91db53ebc6750c34cd7a64990e79ddaf968097ea5",
+      "relative_path": "detail/2026-04-08.html",
+      "scope": "2026-04-08",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-08"
+    },
+    {
+      "bytes": 74445,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "9ed769ccefa80901878d72c07e6957c2c7d3b9a8a306ad08fd4eb6eb00d4e390",
+      "relative_path": "detail/2026-04-11.html",
+      "scope": "2026-04-11",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-11"
+    },
+    {
+      "bytes": 74404,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "33fec66fce166cd00f886ca888796df32bfd8e364d6528587471daa7fe8f437c",
+      "relative_path": "detail/2026-04-15.html",
+      "scope": "2026-04-15",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-15"
+    },
+    {
+      "bytes": 74409,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "635d3a20f5a3ee1cfbca4147cd42927630abdcba03103a6fe363a12708df02f9",
+      "relative_path": "detail/2026-04-18.html",
+      "scope": "2026-04-18",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-18"
+    },
+    {
+      "bytes": 74448,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "06458f9f81ee8f559dc1be8b9349a6de762e2695c8f97a2c1752b573e8e0ee23",
+      "relative_path": "detail/2026-04-22.html",
+      "scope": "2026-04-22",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-22"
+    },
+    {
+      "bytes": 74444,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "23b27f2f52cb74f62ad6d3f0f184a8becc5967621c0cd85b059ebc0a8f743cde",
+      "relative_path": "detail/2026-04-25.html",
+      "scope": "2026-04-25",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-25"
+    },
+    {
+      "bytes": 74406,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "63cd5750ea141f02257183aef5e03998679a2ac779a06919859881f485fc8700",
+      "relative_path": "detail/2026-04-29.html",
+      "scope": "2026-04-29",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-04-29"
+    },
+    {
+      "bytes": 74402,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "5c086735dc332494eed1460c8aa2df6d2031942826fead3cbed50f17db68c572",
+      "relative_path": "detail/2026-05-02.html",
+      "scope": "2026-05-02",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-02"
+    },
+    {
+      "bytes": 74616,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "1c2af229091ad5003038ca88e501131ab606ef00badba805704de7d23a95b3cf",
+      "relative_path": "detail/2026-05-06.html",
+      "scope": "2026-05-06",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-06"
+    },
+    {
+      "bytes": 89161,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "5a5d06a3f657cf08122052482b2b3969d1907baae5f7de065667c1f7989da72c",
+      "relative_path": "detail/2026-05-09.html",
+      "scope": "2026-05-09",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-09"
+    },
+    {
+      "bytes": 74440,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "6f6adecc9cbfb4160546951ec45c225c77be56404751377590caddb017b74ef0",
+      "relative_path": "detail/2026-05-13.html",
+      "scope": "2026-05-13",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-13"
+    },
+    {
+      "bytes": 74413,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "e258ea526f93492f21f77e139812a977b8349c6c2553cb86f17f8cbefc396829",
+      "relative_path": "detail/2026-05-16.html",
+      "scope": "2026-05-16",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-16"
+    },
+    {
+      "bytes": 74402,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "1fbb562f063ecca023a0a2dcc6e1d3bd39278770b3651a905e8da402c8ed5e62",
+      "relative_path": "detail/2026-05-20.html",
+      "scope": "2026-05-20",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-20"
+    },
+    {
+      "bytes": 74505,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "4ae2b5f4d99ba8b9f99bb81c0b9c230f6b789549647270d1a7df4719fc9fdff5",
+      "relative_path": "detail/2026-05-23.html",
+      "scope": "2026-05-23",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-23"
+    },
+    {
+      "bytes": 74409,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "5d10eacc2c36d1adcde8b899de262f13dcdb1b60e94cc1873f3d9eb2bdcc423e",
+      "relative_path": "detail/2026-05-27.html",
+      "scope": "2026-05-27",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-27"
+    },
+    {
+      "bytes": 74438,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "f19d304900cc60ba5add77ffcc995199db5df1946a3dcd9e90959e8df18ebf38",
+      "relative_path": "detail/2026-05-30.html",
+      "scope": "2026-05-30",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-05-30"
+    },
+    {
+      "bytes": 74463,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "fc88a52ab287a7b6b1d7c9b75eee2d24c0917e7276a6365d3bafbcb034b8e67c",
+      "relative_path": "detail/2026-06-03.html",
+      "scope": "2026-06-03",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-03"
+    },
+    {
+      "bytes": 74354,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "cdd8570149ce97d4c71ba3b71a0338ced0f53f44c540b6b78f344aaba96a01c6",
+      "relative_path": "detail/2026-06-06.html",
+      "scope": "2026-06-06",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-06"
+    },
+    {
+      "bytes": 74361,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "ea1ffe7f3cb6034ae76459b6c19fae0feb2cdae2ffd8903988f7ded367835ab5",
+      "relative_path": "detail/2026-06-10.html",
+      "scope": "2026-06-10",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-10"
+    },
+    {
+      "bytes": 74399,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "569918dfe7cb24b9b3c152b628d471ab474603f4a2dfa9045f6160778505de25",
+      "relative_path": "detail/2026-06-13.html",
+      "scope": "2026-06-13",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-13"
+    },
+    {
+      "bytes": 74396,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "d4906a41fc44059d0d18e4a184147d48083455a4d96e7cdeb5e6698de40c0a48",
+      "relative_path": "detail/2026-06-17.html",
+      "scope": "2026-06-17",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-17"
+    },
+    {
+      "bytes": 74364,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "82a311d5f0d02e367a86b9e06f2730fb2de8db6ab0adf2047901120bbb5ccfde",
+      "relative_path": "detail/2026-06-20.html",
+      "scope": "2026-06-20",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-20"
+    },
+    {
+      "bytes": 74357,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "689da671469bcc58050fc0fe9a6f399573b1676a044789bbe16d92a710b350ae",
+      "relative_path": "detail/2026-06-24.html",
+      "scope": "2026-06-24",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-24"
+    },
+    {
+      "bytes": 74362,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "daafa5821c5d1d1c82f5b4f3ac88ff0425165395b502a30f153ad053282171ef",
+      "relative_path": "detail/2026-06-27.html",
+      "scope": "2026-06-27",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-06-27"
+    },
+    {
+      "bytes": 74406,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "2bd6512e909162139825dc299492445a7f76395cd63be6e562dd34eb0f298139",
+      "relative_path": "detail/2026-07-01.html",
+      "scope": "2026-07-01",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-01"
+    },
+    {
+      "bytes": 74440,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "03e4dda70eefd089c26d3d66522a4a9ad35974868f05d79f2e9232e9b718898c",
+      "relative_path": "detail/2026-07-04.html",
+      "scope": "2026-07-04",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-04"
+    },
+    {
+      "bytes": 74410,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "566b0fd3926e11d74e86ed68647a39ab698f589a3e8953f5dbe60682f20409aa",
+      "relative_path": "detail/2026-07-08.html",
+      "scope": "2026-07-08",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-08"
+    },
+    {
+      "bytes": 74406,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "cd7ad2fe589091df60d09cdf3634f4fb382ac29ae1de3a500ac43de044b583da",
+      "relative_path": "detail/2026-07-11.html",
+      "scope": "2026-07-11",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-11"
+    },
+    {
+      "bytes": 74396,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "57b9f04801788dc876e50a9954d7a9c144c9f3f488bb04dc8a5b78698cfe2bd1",
+      "relative_path": "detail/2026-07-15.html",
+      "scope": "2026-07-15",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-15"
+    },
+    {
+      "bytes": 74401,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "c029117ac43797f975e06b244958968353c5930cfdead49c1f6c1c7999d37b15",
+      "relative_path": "detail/2026-07-18.html",
+      "scope": "2026-07-18",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-18"
+    },
+    {
+      "bytes": 74445,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "460bd0bc695c605f6acd70f57c0d927e4995b1405306226face5f1ac573077a5",
+      "relative_path": "detail/2026-07-22.html",
+      "scope": "2026-07-22",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-22"
+    },
+    {
+      "bytes": 74407,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "e9b1ca08cc17409d191b1c4214f7e677eda2b05ce59c135ff2af8e69bea05d32",
+      "relative_path": "detail/2026-07-25.html",
+      "scope": "2026-07-25",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-25"
+    },
+    {
+      "bytes": 74405,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "911a21a89df7d9af780c352265a75ab6e445883c9cbf7bed63435ab23b5513b0",
+      "relative_path": "detail/2026-07-29.html",
+      "scope": "2026-07-29",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-07-29"
+    },
+    {
+      "bytes": 74285,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "273dd1fcadffe43dc9f13cc09e54149002218ee5f4475105c316acfe2eab830f",
+      "relative_path": "detail/2026-08-01.html",
+      "scope": "2026-08-01",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-08-01"
+    },
+    {
+      "bytes": 74290,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "69c63a060e687b409a5d0aace29581b8465f39ab66936efbbaa80f6aec341771",
+      "relative_path": "detail/2026-08-05.html",
+      "scope": "2026-08-05",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-08-05"
+    },
+    {
+      "bytes": 74290,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "27bf9a6829ae2baa366c706ae36d6a3baa6f79fba57db77ae9397cb0aa3531d7",
+      "relative_path": "detail/2026-08-08.html",
+      "scope": "2026-08-08",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-08-08"
+    },
+    {
+      "bytes": 74289,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "fdafe8eedd1eacfc83b23a5f029788c607267451328f24f90359c23f8e02ba4c",
+      "relative_path": "detail/2026-08-12.html",
+      "scope": "2026-08-12",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-08-12"
+    },
+    {
+      "bytes": 74289,
+      "fetch_batch_completed_at": "2026-08-20T05:35:00Z",
+      "raw_sha256": "ff88883f7648979ba1421a56996363ab43757e90480bf15df66838387343ab5e",
+      "relative_path": "detail/2026-08-15.html",
+      "scope": "2026-08-15",
+      "source_type": "loto_quebec_draw_detail_html",
+      "url": "https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats?widget=resultats&action=detailles&noproduit=212&date=2026-08-15"
+    }
+  ],
+  "collection_asset_count": 109,
+  "incident_id": "DI-2026-08-20-registered-history",
+  "official_collection_line_sha256": "7e3328896d5bb7950c10cf5b9cca0e4d7cadd7265c6d4a4f6b3dcc8793b0a88a",
+  "official_draw_count": 4442,
+  "official_json_rows_sha256": "58988bbb130be2142bc5a2b20df571cc458eabe66cd873773f55ca1dbfae8874",
+  "schema_version": "lotto649-official-source-index-v1",
+  "source_assets_sha256": "1be14241443477f7ba347c8fe87605bb4c1367c7b7390f5f05762478a4c36b96"
+}

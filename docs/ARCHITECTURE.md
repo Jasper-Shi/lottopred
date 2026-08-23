@@ -69,6 +69,30 @@ main: `bootstrap`, `backtest`, and `live`. It grants no authority for any other
 research execution. Any broader operation must be added to a reviewed incident
 plan rather than inferred from this operational seal.
 
+## Verified corrected-history boundary
+
+`src/lotto649/verified_history.py` exposes the corrected history through one
+fail-closed read interface. It loads the immutable 4,442-draw base from the
+sealed Git artifact commit, verifies the external seal SHA-256, and then accepts
+only a canonical append-only suffix whose whole-file and head-event SHA-256 are
+also supplied externally. Each suffix row must be the next scheduled draw and
+must be independently reconstructed from immutable WCLC and Loto-Québec raw
+assets committed after the base. Receipt timestamps must be UTC, conservatively
+post-date the draw, and not post-date the evidence commit.
+
+The currently registered suffix adds 2026-08-19 and 2026-08-22, yielding a
+4,444-draw verified view through 2026-08-22. The loader is not wired into
+`bootstrap`, `backtest`, or `live`; therefore its presence does not weaken the
+incident switches or authorize model execution. That consumer integration and
+the workflow/config release remain separate reviewed changes.
+
+Seal publication assumes its output directory is permission-isolated and that
+all legitimate concurrent writers follow the repository's exclusive-create
+protocol. Open file-descriptor leases, content hashes, no-replace Git settings,
+and failure archives protect against ordinary races and ambiguous filesystem
+errors; they are not an OS security boundary against a malicious same-UID
+process that can rename arbitrary directory entries between syscalls.
+
 ## Path A — Live forward prediction
 
 ```text

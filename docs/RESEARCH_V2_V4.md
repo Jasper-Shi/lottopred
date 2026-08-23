@@ -1,6 +1,18 @@
 # V2–V4 Research Protocol
 
-This document records the frozen hypotheses introduced after V1. The 2020–2025 blind period must not be used to tune coefficients after results are observed.
+> **Historical registration note:** “blind” below records the intended frozen
+> protocol at the time of execution. A later source-integrity incident showed
+> that the run used 621 registered rows from a malformed and incomplete history
+> rather than the corrected 627-draw 2020–2025 calendar. Its strict-blind
+> evidence qualification
+> is withdrawn, while the interval remains fully consumed. See
+> `V2_V4_RESULTS.md` for the erratum; do not retune or rerun these versions and
+> relabel the result as blind.
+
+This document records the frozen hypotheses introduced after V1. The consumed
+2020–2025 interval must not be used to tune coefficients after results are
+observed; later uses of “blind” describe the original registration, not the
+current evidence status.
 
 ## V2 — conservative statistical multi-factor model
 
