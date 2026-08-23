@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
-from hashlib import sha256
 import io
 import json
-from pathlib import Path, PurePosixPath
 import re
 import subprocess
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from hashlib import sha256
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
@@ -22,7 +22,6 @@ from .official_history import (
     expected_lotto649_draw_dates,
     parse_lotoquebec_detail_html,
 )
-
 
 _INCIDENT_ID = "DI-2026-08-20-registered-history"
 _SEAL_SCHEMA = "lotto649-data-integrity-seal-v1"
@@ -447,7 +446,7 @@ def _validate_seal_semantics(repository: Path, seal: dict[str, Any]) -> None:
         timestamp = datetime.fromisoformat(created_at.removesuffix("Z") + "+00:00")
     except ValueError as exc:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch") from exc
-    if timestamp.tzinfo != timezone.utc:
+    if timestamp.tzinfo != UTC:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch")
 
     manifest = seal["reconciliation_manifest"]
@@ -729,10 +728,7 @@ def _validate_source_receipts(
             raise VerifiedHistoryIntegrityError(
                 "suffix receipt timestamp is invalid"
             ) from exc
-        if (
-            parsed_timestamp.tzinfo != timezone.utc
-            or parsed_timestamp.date() < draw.draw_date
-        ):
+        if parsed_timestamp.tzinfo != UTC or parsed_timestamp.date() < draw.draw_date:
             raise VerifiedHistoryIntegrityError("suffix receipt timestamp is invalid")
         evidence_path = receipt["evidence_path"]
         if not isinstance(evidence_path, str):

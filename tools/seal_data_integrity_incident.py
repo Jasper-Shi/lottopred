@@ -12,21 +12,21 @@ from __future__ import annotations
 
 import argparse
 import csv
-from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
-from hashlib import sha1, sha256
 import hmac
 import io
 import json
 import math
 import os
-from pathlib import Path
 import re
 import secrets
 import subprocess
 import sys
-from typing import Any, NoReturn, Sequence
-
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from hashlib import sha1, sha256
+from pathlib import Path
+from typing import Any, NoReturn
 
 _SHA1_RE = re.compile(r"[0-9a-f]{40}")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}")
@@ -108,9 +108,9 @@ _EXPECTED_SUMMARY = {
 
 REGISTERED_SEAL_POLICY = IncidentSealPolicy(
     incident_id="DI-2026-08-20-registered-history",
-    artifact_commit="9fa111d349fda50f85f8cf8dd86b6180f587b961",
-    artifact_parent="f5a9804a74c8920c668ff0f73026320e6f7022f5",
-    artifact_commit_created_at="2026-08-20T06:57:33Z",
+    artifact_commit="b04393944ef12f78417dfb6151343c72d4c2a2ac",
+    artifact_parent="e585ae797ddcafa423121bf473d70b177a3bd92c",
+    artifact_commit_created_at="2026-08-23T16:58:17Z",
     old_commit="90177c80cfb070038d79508fb2e73305a297f516",
     old_path="data/processed/draws.csv",
     old_blob="5afa689b7b206a27af78d14368588de00b4a4812",
@@ -270,7 +270,7 @@ def _normalize_commit_time(value: str) -> str:
         raise IncidentSealError("artifact commit time is malformed") from exc
     if parsed.tzinfo is None:
         raise IncidentSealError("artifact commit time has no timezone")
-    return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return parsed.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _verify_commit_boundary(repository: Path, policy: IncidentSealPolicy) -> None:
@@ -464,7 +464,7 @@ def _expected_source_paths(through: date) -> tuple[str, ...]:
         for draw_date in _expected_draw_dates(through)
         if draw_date.year == through.year
     ]
-    return tuple((*annual, *detail))
+    return (*annual, *detail)
 
 
 def _validate_source_index(

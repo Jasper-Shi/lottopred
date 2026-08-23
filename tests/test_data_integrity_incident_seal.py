@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
-from hashlib import sha256
 import importlib.util
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from hashlib import sha256
+from pathlib import Path
 
 import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOL_PATH = ROOT / "tools" / "seal_data_integrity_incident.py"
@@ -164,9 +163,9 @@ def test_creates_and_validates_a_seal_over_the_registered_git_artifact(tmp_path)
         "seal_body_sha256",
     }
     assert created["incident_id"] == "DI-2026-08-20-registered-history"
-    assert created["artifact_commit"] == ("9fa111d349fda50f85f8cf8dd86b6180f587b961")
-    assert created["artifact_parent"] == ("f5a9804a74c8920c668ff0f73026320e6f7022f5")
-    assert created["artifact_commit_created_at"] == "2026-08-20T06:57:33Z"
+    assert created["artifact_commit"] == ("b04393944ef12f78417dfb6151343c72d4c2a2ac")
+    assert created["artifact_parent"] == ("e585ae797ddcafa423121bf473d70b177a3bd92c")
+    assert created["artifact_commit_created_at"] == "2026-08-23T16:58:17Z"
     assert not hasattr(seal_tool.REGISTERED_SEAL_POLICY, "created_at")
     assert created["status"] == "sealed_closed_corrected_epoch"
     assert created["reconciliation_manifest"]["manifest_sha256"] == (
@@ -205,10 +204,14 @@ def test_creates_and_validates_a_seal_over_the_registered_git_artifact(tmp_path)
         "data/processed/epochs/DI-2026-08-20-registered-history/corrected_draws.csv",
         "evidence/data_integrity/DI-2026-08-20-registered-history/incident.json",
         "evidence/data_integrity/DI-2026-08-20-registered-history/official_draws.csv",
-        "evidence/data_integrity/DI-2026-08-20-registered-history/"
-        "reconciliation.manifest.json",
-        "evidence/data_integrity/DI-2026-08-20-registered-history/"
-        "reviewed-adjudication.json",
+        (
+            "evidence/data_integrity/DI-2026-08-20-registered-history/"
+            "reconciliation.manifest.json"
+        ),
+        (
+            "evidence/data_integrity/DI-2026-08-20-registered-history/"
+            "reviewed-adjudication.json"
+        ),
         "evidence/data_integrity/DI-2026-08-20-registered-history/source-index.json",
     }
     assert set(created["code_identities"]) == {
@@ -586,7 +589,7 @@ def test_rollback_parent_fsync_failure_keeps_an_auditable_failed_archive(
         (
             "artifact commit",
             lambda body: body.update(
-                artifact_commit="f5a9804a74c8920c668ff0f73026320e6f7022f5"
+                artifact_commit="e585ae797ddcafa423121bf473d70b177a3bd92c"
             ),
         ),
         (

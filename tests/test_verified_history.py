@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, dataclass
+import json
+import subprocess
 from copy import deepcopy
+from dataclasses import FrozenInstanceError, dataclass
 from datetime import date
 from hashlib import sha256
-import json
 from pathlib import Path
-import subprocess
 from typing import Any
 
 import pytest
 
 from lotto649.domain import Draw
 from lotto649.verified_history import load_verified_history
-
 
 ROOT = Path(__file__).resolve().parents[1]
 INCIDENT_ID = "DI-2026-08-20-registered-history"
