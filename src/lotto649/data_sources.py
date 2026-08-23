@@ -15,6 +15,14 @@ from .data import (
 from .domain import Draw
 
 
+def _require_data_refresh_enabled(cfg: dict) -> None:
+    data_cfg = cfg.get("data")
+    if not isinstance(data_cfg, dict) or data_cfg.get("refresh_enabled") is not True:
+        raise RuntimeError(
+            "data refresh is disabled; data.refresh_enabled must be explicitly true"
+        )
+
+
 def reconcile_by_era(
     existing: list[Draw],
     archive: list[Draw],
@@ -63,6 +71,7 @@ def reconcile_by_era(
 
 
 def refresh_with_sources(existing: list[Draw], cfg: dict) -> list[Draw]:
+    _require_data_refresh_enabled(cfg)
     bridge_start_year = int(cfg["data"].get("bridge_start_year", 2024))
     archive = fetch_wclc_archive(cfg["data"]["history_url"])
 

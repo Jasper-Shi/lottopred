@@ -10,10 +10,10 @@ No local computer needs to stay running.
 ## Data-integrity incident kill switch
 
 The 2026-08-20 registered-history reconciliation suspends source refresh, live
-execution, and historical backtesting. The registered 4,432-row history is not
-strict real-calendar evidence; a separate reviewed change must seal the 4,442-row
-corrected epoch and its reconciliation before any execution can resume. The
-committed incident state is:
+execution, and historical backtesting. The registered 4,434-row history through
+2026-08-22 is not strict real-calendar evidence; a separate reviewed change must
+seal the corrected epoch and its reconciliation before any execution can resume.
+The committed incident state is:
 
 ```yaml
 data:
@@ -27,12 +27,13 @@ live:
 All three switches are fail closed. Missing keys, YAML nulls, numbers, and
 strings such as `"true"` remain disabled. Literal boolean `true` satisfies only
 an individual runtime guard; it is not sufficient to re-enable a workflow. Do
-not work around a disabled command by calling a lower-level function. The
-`bootstrap`, `backtest`, and public live boundaries repeat the checks before
-their data loads, source access, model construction, report writes,
-evaluations, or prediction snapshots. A live cycle additionally requires data
-refresh to be enabled, so changing only `live.enabled` cannot resume
-production.
+not work around a disabled command by calling a lower-level function. The direct
+`run_backtest` boundary and both public `refresh_with_sources` implementations
+repeat their respective checks before model construction, report writes, or
+source access. Public live refresh, evaluation, generation, and cycle boundaries
+require both live and data-refresh approval before their data loads, filesystem
+access, evaluations, or prediction snapshots. Changing only `live.enabled`
+cannot resume production.
 
 `live.yml`, `integration.yml`, and `backtest.yml` checkout the repository and
 then use only the runner's standard Python library to SHA-256 the complete
@@ -49,7 +50,9 @@ toggle—also emits only `false`. The guard never relies on a partial YAML parse
 The guarded runtime, bootstrap, backtest, live, commit, and artifact-upload
 steps are skipped and the workflow exits successfully. A sealed state is not
 treated as a failed model job and cannot fall through to a Git write or other
-side effect.
+side effect. The guard writes its all-false outputs before attempting the hash;
+a missing or unreadable `config.yaml` emits a warning and exits successfully in
+the same sealed state.
 
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:

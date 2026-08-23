@@ -1,14 +1,14 @@
 # Codex Handoff
 
-Last verified on 2026-08-20 for the incident kill-switch port based on
-`origin/main` checkpoint `90177c8`.
+Last verified on 2026-08-23 against `main` commit
+`9f16e20c726c7b65eed1d387c4c725d51248f570`.
 
 ## Current state
 
 This repository is the execution and audit system. Codex develops and reviews the
-code; GitHub Actions runs unattended jobs and commits live artifacts. Chat history
-is not required to continue because the research decisions are recorded here and
-in `V2_V4_RESULTS.md`.
+code; outside an incident hold, GitHub Actions is the unattended runner that
+commits live artifacts. Chat history is not required to continue because the
+research decisions are recorded here and in `V2_V4_RESULTS.md`.
 
 > **Data-integrity incident hold (2026-08-20):** the operational roles in the
 > table below describe the pre-incident system, but execution is currently
@@ -16,21 +16,20 @@ in `V2_V4_RESULTS.md`.
 > all `false`; the live, integration, and backtest workflows are sealed to
 > safe no-op behavior by disabled-config SHA-256
 > `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`.
-> No refresh,
-> backtest, evaluation, or prediction is authorized. The registered 4,432-row
-> history is not strict real-calendar evidence; a 4,442-row corrected epoch and
-> its reconciliation are still awaiting a separate artifact-commit seal.
+> No refresh, backtest, evaluation, or prediction is authorized. The registered
+> 4,434-row history through 2026-08-22 is not strict real-calendar evidence; a
+> corrected epoch and its reconciliation are not yet sealed into `main`.
 > Re-enable only through the reviewed two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 
 | Component | Status | Meaning |
 |---|---|---|
-| V1 live suite | Production baseline | Six models continue to create forward snapshots: `random`, `long_frequency`, `recent_frequency`, `ema_gap`, `logistic`, and `ensemble`. |
+| V1 live suite | Paused baseline | Before the hold, six models created forward snapshots: `random`, `long_frequency`, `recent_frequency`, `ema_gap`, `logistic`, and `ensemble`. |
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
-| V3 boosting | Shadow | Creates immutable live snapshots and evaluations beside V1; it does not change V1 predictions or ensemble weights. |
+| V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
-| 2020–2025 blind period | Consumed | It cannot confirm a tuned V5+ model. |
-| 2026+ snapshots | Prospective evidence | Evidence belongs to the exact frozen version that created each pre-draw snapshot. |
+| 2020–2025 blind period | Consumed | It cannot confirm a model selected or tuned after those outcomes were known. |
+| 2026+ snapshots | Immutable source-relative artifacts | They remain auditable, but the incident means they are not strict real-calendar evidence until a corrected epoch is reviewed. |
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
@@ -45,11 +44,11 @@ lotto649 backtest
 lotto649 live
 ```
 
-`bootstrap` refreshes and validates source data. `backtest` uses the committed
-processed CSV and walks forward chronologically over the configured dates. `live`
-loads existing committed history, refreshes sources, evaluates every due snapshot
-that lacks an evaluation, and creates predictions for the next Wednesday or
-Saturday after the latest known draw.
+When a reviewed configuration explicitly enables them, `bootstrap` refreshes and
+validates source data, `backtest` walks forward chronologically over the committed
+processed CSV, and `live` refreshes history, evaluates due snapshots, and creates
+predictions for the next Wednesday or Saturday. During the incident all three
+commands fail closed before those operations.
 
 `config.yaml` deliberately separates two selections:
 
@@ -59,8 +58,9 @@ Saturday after the latest known draw.
 
 `live.shadow_models: [v3_boosting]` adds `"role": "shadow"` to V3 snapshot
 metadata; all other live snapshots receive `"role": "primary"`. The role is a
-research label, not a separate execution path. V3 is still evaluated and can
-trigger the common hit-threshold email. It does not feed the V1 ensemble.
+research label, not a separate execution path. In the pre-hold path V3 was
+evaluated and could trigger the common hit-threshold email. It does not feed the
+V1 ensemble.
 
 All live models currently inherit `project.model_version: v1.0.0` for the
 `model_version` field and filename. Therefore the model identity
@@ -68,24 +68,23 @@ All live models currently inherit `project.model_version: v1.0.0` for the
 snapshot; do not infer that it is a V1 algorithm from the shared version tag.
 Change version semantics deliberately rather than renaming committed snapshots.
 
-## Current V3 forward checkpoint
+## Current committed forward checkpoint
 
-The first committed V3 shadow snapshot is
-`predictions/2026-08-15__v3_boosting__v1.0.0.json`:
+At `main` commit `9f16e20c726c7b65eed1d387c4c725d51248f570`:
 
-- generated 2026-08-15 10:13:18 EDT (`America/Toronto`);
-- target draw 2026-08-15;
-- trained from 4,431 committed draws through 2026-08-12;
-- Top-6/final combination: `07 21 36 38 41 49` (ranking order is
-  `07 36 41 49 21 38`);
-- Top-12: `07 36 41 49 21 38 13 08 20 43 04 16`;
-- metadata role: `shadow`.
+- `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
+- evaluations for all seven pre-hold live models are committed for both
+  2026-08-19 and 2026-08-22, including
+  `evaluations/2026-08-19__v3_boosting__v1.0.0.json` and
+  `evaluations/2026-08-22__v3_boosting__v1.0.0.json`;
+- seven immutable predictions for target 2026-08-26 are committed, including
+  `predictions/2026-08-26__v3_boosting__v1.0.0.json`.
 
-At this handoff checkpoint, the processed dataset still ends on 2026-08-12 and no
-evaluation for the 2026-08-15 target is committed. The scheduled live job will
-evaluate it only after a verified result appears in the reconciled dataset. To
-find the moving current checkpoint, inspect the newest V3 file under
-`predictions/` and its same-named file under `evaluations/`.
+The newest V3 snapshot was generated on 2026-08-23 at 11:36 EDT from 4,434
+registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
+yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed. The
+incident hold prevents any later cycle from evaluating or generating until a
+reviewed release reopens both runtime and workflow gates.
 
 Prediction files are immutable. `generate_next_predictions` skips an already
 existing target/model/version path, and the storage layer rejects overwrites by
@@ -93,26 +92,29 @@ default. Never edit a snapshot after its result is knowable.
 
 ## GitHub Actions and email
 
-The active workflows are:
+The configured workflows are:
 
 - `test.yml`: unit tests on every push and pull request.
-- `integration.yml`: source/model smoke checks on relevant pull-request paths or
-  manual dispatch.
-- `backtest.yml`: frozen configured backtest on relevant `main` changes or manual
-  dispatch.
-- `live.yml`: `15:15 UTC` every Thursday and Sunday, manual dispatch, and relevant
-  `main` changes. It commits `data/processed`, `predictions`, `evaluations`, and
-  `reports` with `contents: write` permission.
+- `integration.yml`: source/model smoke checks, currently sealed to checkout and
+  the incident guard only.
+- `backtest.yml`: configured historical backtest, currently sealed to checkout
+  and the incident guard only.
+- `live.yml`: scheduled/manual live cycle, currently sealed to checkout and the
+  incident guard only. Its write permission does not bypass guarded steps.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
 - `research-v2-fast.yml` and `research-v2-v4.yml`: historical branch-specific
   research workflows retained for auditability.
 
-The latest checked live run after the bridge fallback fix succeeded on 2026-08-15
-([Actions run 31889275021](https://github.com/Jasper-Shi/lottopred/actions/runs/31889275021)).
-The Gmail alert smoke test also succeeded on 2026-08-15
+The last committed pre-hold live-cycle boundary is `main` commit
+`9f16e20c726c7b65eed1d387c4c725d51248f570`: it appended the 2026-08-22 draw and
+evaluations and froze the 2026-08-26 predictions. Its parent `0ef1883` appended
+the 2026-08-19 evaluations and froze the 2026-08-22 predictions. Those artifacts
+remain immutable during the hold.
+
+The historical Gmail alert smoke test succeeded on 2026-08-15
 ([Actions run 31887288254](https://github.com/Jasper-Shi/lottopred/actions/runs/31887288254)).
-Secret values are not readable from the repository; the successful smoke run
-shows that usable configuration existed at that time.
+Secret values are not readable from the repository; that run establishes only
+that usable configuration existed at that time, not its current state.
 
 Email requires only these repository secrets:
 
@@ -123,9 +125,10 @@ SMTP_PASSWORD=<Google App Password>
 
 Defaults are `smtp.gmail.com:587`, with sender and recipient both equal to
 `SMTP_USERNAME`. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` are
-optional overrides. Missing credentials do not block prediction or evaluation;
-`send_email` returns false. The dedicated email smoke workflow treats that as a
-failure so configuration can be tested explicitly.
+optional overrides. In the ordinary enabled path, missing credentials do not
+block prediction or evaluation; `send_email` returns false. The dedicated email
+smoke workflow treats that as a failure so configuration can be tested
+explicitly.
 
 Current alert thresholds in `config.yaml` are final-combination hits `>= 4` or
 Top-12 hits `>= 5`.
@@ -133,7 +136,7 @@ Top-12 hits `>= 5`.
 ## Data-source and fallback behavior
 
 The live CLI imports `refresh_with_sources` from `src/lotto649/data_sources.py`.
-Its current reconciliation policy is:
+When source refresh is explicitly reopened, its reconciliation policy is:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
 2. Use lotto.net annual HTML as the machine-readable bridge from 2024 onward.
@@ -159,21 +162,22 @@ Do not broaden the fallback to swallow those integrity failures.
 
 ## How Codex should continue
 
-1. Read root `AGENTS.md`, `MODEL_PROTOCOL.md`, `V2_V4_RESULTS.md`, and
-   `RESEARCH_ROADMAP.md` before proposing V5.
-2. Pull current `main` and inspect the newest committed prediction/evaluation
-   files before reporting live status.
-3. Keep V1 unchanged as the baseline and V3 labeled shadow while new hypotheses
-   are developed.
-4. Pre-register one bounded V5 hypothesis and its metrics before implementation.
-5. Use historical data only for development and labeled diagnostics; do not call
-   any 1982–2025 result untouched evidence for V5.
-6. Freeze code/config/version in Git, then start V5 as a shadow model. Count its
-   forward evidence only from its own first pre-draw snapshot.
-7. Let normal live jobs continue during research. Never rewrite forward artifacts
-   or mix research-only models into `live.models` without a reviewed promotion PR.
-8. Run `pytest -q` and `ruff check .`; run integration smoke checks for live/data
-   changes; record both positive and negative research results.
+1. Read root `AGENTS.md`, `MODEL_PROTOCOL.md`, `V2_V4_RESULTS.md`,
+   `RESEARCH_ROADMAP.md`, `ARCHITECTURE.md`, and `OPERATIONS.md` first.
+2. Treat `9f16e20c726c7b65eed1d387c4c725d51248f570` and the artifact facts above as
+   the last pre-hold `main` boundary.
+3. Keep all three runtime switches false and preserve the SHA-bound workflow
+   seal. Do not bypass a command guard through a lower-level public function.
+4. Complete and independently review the corrected historical epoch,
+   reconciliation evidence, immutable base identity, and any append-only suffix.
+5. Never rewrite the existing processed history, prediction, evaluation, report,
+   or registered evidence artifacts; corrections belong to a new sealed epoch.
+6. Re-enable only through the reviewed two-gate release in `OPERATIONS.md`, with
+   new exact config bytes and matching workflow plans in the same commit.
+7. Resume model research or prospective collection only after that release, with
+   a new version whenever statistical behavior changes.
+8. Run `pytest -q` and `ruff check .`; run a network smoke only after source
+   access is explicitly authorized, and record positive and negative results.
 
 Use `docs/RESEARCH_ROADMAP.md` as the decision process, not as evidence that any
 listed feature family will work.

@@ -51,6 +51,7 @@ def refresh_data(cfg: dict) -> list[Draw]:
 
 def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
     _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     root = Path(cfg["_root"])
     actual_by_date = {d.draw_date.isoformat(): d for d in draws}
     completed = []
@@ -81,6 +82,7 @@ def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
 
 def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
     _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     root = Path(cfg["_root"])
     version = cfg["project"].get("model_version", "v1.0.0")
     target = next_draw_date(draws[-1].draw_date)

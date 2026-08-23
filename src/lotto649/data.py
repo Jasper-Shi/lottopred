@@ -168,7 +168,16 @@ def validate_continuity(draws: list[Draw]) -> None:
             raise RuntimeError(f"Suspicious historical gap: {a} -> {b}")
 
 
+def _require_data_refresh_enabled(cfg: dict) -> None:
+    data_cfg = cfg.get("data")
+    if not isinstance(data_cfg, dict) or data_cfg.get("refresh_enabled") is not True:
+        raise RuntimeError(
+            "data refresh is disabled; data.refresh_enabled must be explicitly true"
+        )
+
+
 def refresh_with_sources(existing: list[Draw], cfg: dict) -> list[Draw]:
+    _require_data_refresh_enabled(cfg)
     archive = fetch_wclc_archive(cfg["data"]["history_url"])
     bridge = fetch_bridge_years(
         cfg["data"]["bridge_year_url"],

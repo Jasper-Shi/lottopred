@@ -30,10 +30,13 @@ These checks deny by default. A missing key, a non-boolean value, or a value
 other than literal boolean `true` does not enable execution. `bootstrap`
 checks before resolving or loading the processed dataset or contacting a
 source; `backtest` checks before loading data, building a model, or writing a
-report; public live entry points check before source access, filesystem reads,
-evaluation writes, or prediction generation. Literal `true`
-satisfies only this runtime gate; it is never sufficient to reopen a sealed
-workflow.
+report. The gate is repeated at the direct `run_backtest` boundary and both
+public `refresh_with_sources` implementations, so bypassing the CLI cannot
+construct models or reach a source. Live refresh, evaluation, generation, and
+cycle entry points require both literal-true live and data-refresh approval
+before source access, filesystem reads, evaluation writes, or prediction
+generation. Literal `true` satisfies only this runtime gate; it is never
+sufficient to reopen a sealed workflow.
 
 The three affected GitHub Actions workflows have a read-only boundary directly
 after checkout. That boundary reads the committed configuration with the
@@ -45,6 +48,9 @@ and even that exact match emits `false` for every execution stage. Every other
 digest also emits only `false`. Runtime setup, dependency installation,
 bootstrap, backtest, live execution, artifact upload, and Git writes therefore
 skip successfully for both the sealed config and any unreviewed byte change.
+The guard writes all-false outputs before hashing; a missing or unreadable
+`config.yaml` produces a warning and a successful sealed exit rather than a
+traceback that could obscure the operational state.
 
 The ordinary paths below describe the system when a later reviewed release has
 reopened them. Re-enablement requires a committed and independently reviewed

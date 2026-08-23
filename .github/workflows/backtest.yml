@@ -26,16 +26,6 @@ jobs:
           from pathlib import Path
 
           disabled_sha256 = "ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6"
-          observed_sha256 = hashlib.sha256(
-              Path("config.yaml").read_bytes()
-          ).hexdigest()
-          if observed_sha256 == disabled_sha256:
-              print("Verified incident-disabled config; execution remains sealed")
-          else:
-              print(
-                  "::warning::Unapproved config SHA-256; "
-                  "execution remains sealed"
-              )
           values = {
               "refresh": False,
               "backtest": False,
@@ -46,6 +36,23 @@ jobs:
               for name, enabled in values.items():
                   output.write(
                       f"{name}={'true' if enabled else 'false'}\n"
+                  )
+          try:
+              observed_sha256 = hashlib.sha256(
+                  Path("config.yaml").read_bytes()
+              ).hexdigest()
+          except OSError:
+              print(
+                  "::warning::config.yaml is unavailable; "
+                  "execution remains sealed"
+              )
+          else:
+              if observed_sha256 == disabled_sha256:
+                  print("Verified incident-disabled config; execution remains sealed")
+              else:
+                  print(
+                      "::warning::Unapproved config SHA-256; "
+                      "execution remains sealed"
                   )
           PY
       - uses: actions/setup-python@v5

@@ -136,6 +136,34 @@ def test_committed_disabled_config_makes_workflow_guard_exit_successfully(
     assert observed == WORKFLOWS[workflow_name]["outputs"]
 
 
+@pytest.mark.parametrize("workflow_name", WORKFLOWS)
+@pytest.mark.parametrize("config_state", ["missing", "unreadable-directory"])
+def test_workflow_guard_unavailable_config_outputs_false_and_exits_successfully(
+    tmp_path,
+    workflow_name,
+    config_state,
+):
+    if config_state == "unreadable-directory":
+        (tmp_path / "config.yaml").mkdir()
+    output_path = tmp_path / "github-output.txt"
+    completed = subprocess.run(
+        ["bash", "-c", _steps(workflow_name)[1]["run"]],
+        cwd=tmp_path,
+        env={**os.environ, "GITHUB_OUTPUT": str(output_path)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "config.yaml is unavailable" in completed.stdout
+    observed = dict(
+        line.split("=", 1)
+        for line in output_path.read_text(encoding="utf-8").splitlines()
+    )
+    assert observed == WORKFLOWS[workflow_name]["outputs"]
+
+
 @pytest.mark.parametrize("workflow_name", ["live.yml", "integration.yml"])
 def test_live_workflow_stage_remains_sealed_after_live_only_toggle(
     tmp_path,
@@ -365,3 +393,33 @@ def test_incident_docs_require_sha_bound_and_runtime_double_approval():
     assert "config-only" in operations_words
     assert "never sufficient to reopen" in architecture_words
     assert "not sufficient to re-enable" in operations_words
+    for words in (architecture_words, operations_words):
+        assert "direct `run_backtest`" in words
+        assert "`refresh_with_sources`" in words
+        assert "missing or unreadable `config.yaml`" in words
+
+
+def test_handoff_matches_current_main_artifacts_and_incident_hold():
+    handoff = (ROOT / "docs" / "CODEX_HANDOFF.md").read_text(encoding="utf-8")
+    handoff_words = " ".join(handoff.replace(">", "").split())
+    draw_lines = (ROOT / "data" / "processed" / "draws.csv").read_text(
+        encoding="utf-8"
+    ).splitlines()
+
+    assert "2026-08-23" in handoff
+    assert "9f16e20c726c7b65eed1d387c4c725d51248f570" in handoff
+    assert "4,434" in handoff
+    assert "through 2026-08-22" in handoff
+    assert "evaluations/2026-08-19__v3_boosting__v1.0.0.json" in handoff
+    assert "evaluations/2026-08-22__v3_boosting__v1.0.0.json" in handoff
+    assert "predictions/2026-08-26__v3_boosting__v1.0.0.json" in handoff
+    assert "execution is currently suspended" in handoff_words
+    assert "90177c8" not in handoff
+    assert "still ends on 2026-08-12" not in handoff
+    assert "Let normal live jobs continue" not in handoff
+    assert "latest checked live run after the bridge fallback fix" not in handoff
+    assert len(draw_lines) - 1 == 4434
+    assert draw_lines[-1].startswith("2026-08-22,")
+    assert len(list((ROOT / "evaluations").glob("2026-08-19__*.json"))) == 7
+    assert len(list((ROOT / "evaluations").glob("2026-08-22__*.json"))) == 7
+    assert len(list((ROOT / "predictions").glob("2026-08-26__*.json"))) == 7
