@@ -1,8 +1,26 @@
-# V2–V4 Frozen Blind Results
+# V2–V4 Legacy Registered-Data Results
 
-## Test protocol
+> **Data-integrity erratum (2026-08-23): strict-blind qualification withdrawn.**
+> These archived metrics were computed on the registered history that contained
+> 621 rows in 2020–2025. The sealed official-calendar reconciliation contains
+> 627 draws for that interval and documents missing, misdated, and conflicting
+> rows. Therefore none of the exact metrics, year counts, p-values, or
+> calibration values below is a result on the corrected official cohort. They
+> are retained only as reproducible diagnostics of the legacy registered-data
+> run; they have not been recomputed on the corrected epoch. The conservative
+> operational decisions remain safe—V2 and V4 stay rejected and V3 stays
+> unpromoted—but those decisions must not be cited as proof of performance on a
+> correct blind dataset. See
+> `evidence/data_integrity/DI-2026-08-20-registered-history/incident.json` and
+> `docs/CODEX_HANDOFF.md`.
 
-The confirmatory historical test covered 621 LOTTO 6/49 draws from 2020-01-01 through 2025-12-31. For every target draw, each model saw only earlier draws. The exact fair-draw expectations used as the primary baseline were:
+## Protocol as originally executed
+
+The legacy registered-data run covered 621 recorded LOTTO 6/49 rows from
+2020-01-01 through 2025-12-31. For every recorded target row, each model saw
+only earlier registered rows. That chronology property remains reproducible,
+but the source sequence was not the complete official draw sequence. The exact
+fair-draw expectations used as the primary baseline were:
 
 - Top-6: 0.734694 winning numbers per draw
 - Top-12: 1.469388
@@ -10,7 +28,7 @@ The confirmatory historical test covered 621 LOTTO 6/49 draws from 2020-01-01 th
 
 The finite empirical random model is a sanity check only. Model claims are compared with the exact combinatorial expectations.
 
-## Frozen result
+## Archival registered-data metrics
 
 | Model | Top-6 | Top-12 | Top-18 | Brier | Log loss | Mean actual rank |
 |---|---:|---:|---:|---:|---:|---:|
@@ -22,13 +40,19 @@ The finite empirical random model is a sanity check only. Model claims are compa
 
 ### V2
 
-V2 failed the blind test. Relative to theory, its Top-12 result was lower by about 0.120 winning numbers per draw (`p≈0.0027` under the simple hypergeometric-normal diagnostic), and Top-18 was also lower (`p≈0.032`). The added handcrafted combination of sum trend, calendar, transition, omission and multi-scale frequency factors is therefore rejected in its frozen V2 form.
+V2 underperformed in the legacy registered-data run. Relative to theory, its
+Top-12 result was lower by about 0.120 winning numbers per recorded row
+(`p≈0.0027` under the original simple hypergeometric-normal diagnostic), and
+Top-18 was also lower (`p≈0.032`). Those p-values are not valid claims about the
+corrected 627-draw cohort. The added handcrafted combination remains rejected
+in its frozen V2 form.
 
 The V2 coefficients must not be retuned on the 2020–2025 answers and then presented as a new blind result.
 
 ### V3
 
-V3 was the only research model with positive ranking lift across all three candidate-pool sizes:
+Within the legacy registered-data run, V3 was the only research model with
+positive ranking lift across all three candidate-pool sizes:
 
 - Top-6 lift: +0.0060; `p≈0.843`
 - Top-12 lift: +0.0652; `p≈0.103`
@@ -36,7 +60,8 @@ V3 was the only research model with positive ranking lift across all three candi
 
 None is statistically convincing. In addition, V3's Brier score and log loss are worse than the fair constant-probability baseline, so its slight ranking improvement is not evidence of well-calibrated predictive probabilities.
 
-Year-by-year Top-K performance shows that the apparent lift is not confined to one lucky year, but it is not stable either:
+The following year counts and Top-K values are archival legacy-data values, not
+the corrected official-calendar breakdown:
 
 | Year | Draws | Top-6 | Top-12 | Top-18 |
 |---|---:|---:|---:|---:|
@@ -51,13 +76,23 @@ The 2025 deterioration is a clear warning against treating the aggregate 2020–
 
 ### V4
 
-The frozen V4 ensemble failed to improve on V3 and was below the theoretical baseline at Top-6, Top-12 and Top-18. In particular its Top-12 result was 1.3865 versus the theoretical 1.4694 (`p≈0.038` in the simple diagnostic). Mixing the failed V2 signal into V4 diluted V3 rather than improving it. This V4 design is rejected.
+The frozen V4 ensemble failed to improve on V3 in the legacy registered-data
+run and was below the theoretical baseline at Top-6, Top-12 and Top-18. Its
+original Top-12 diagnostic was 1.3865 versus the theoretical 1.4694
+(`p≈0.038`); this is not a corrected-cohort p-value. This V4 design remains
+rejected.
 
 ## Decision
 
 - **V2:** rejected; retain only for audit/research history.
 - **V3:** retain as a shadow model for genuine future-forward testing; no claim of predictive edge.
-- **V4:** rejected; do not promote or post-hoc tune against the same blind period.
-- **Production/live:** keep the existing V1 models and add V3 as an explicitly experimental shadow predictor so every future draw produces an immutable pre-draw snapshot.
+- **V4:** rejected; do not promote or post-hoc tune against the same consumed interval.
+- **Pre-incident live disposition, currently paused:** V1 baseline plus V3 as an
+  explicitly experimental shadow. This is not authorization to restart the old
+  malformed-history-trained versions; corrected-history behavior requires a
+  reviewed version and release before new immutable pre-draw snapshots resume.
 
-The next statistically meaningful evidence should come from future draws that were never available during model design. Historical diagnostics can continue, but the 2020–2025 interval is now considered consumed for V2–V4 model selection and must not be reused as an untouched test set.
+The next statistically meaningful evidence must come from a corrected-history
+model version frozen before its prospective outcomes. Corrected-data historical
+sensitivity work may continue under a new experiment/version, but 2020–2025 is
+already consumed and can never be reused as an untouched test set.

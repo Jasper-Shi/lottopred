@@ -4,7 +4,13 @@ A reproducible, auditable research pipeline for testing whether historical Canad
 
 The project does **not** assume that lottery draws are predictable. Every serious model is measured against the fair-lottery baseline and evaluated using strict chronological walk-forward testing.
 
-## V1 capabilities
+> **Data-integrity hold (2026-08-23):** source refresh, default backtests, and
+> live cycles are disabled and fail closed while the sealed corrected-history
+> consumer is reviewed. GitHub Actions therefore safe-skip rather than run the
+> cycle described below. Do not re-enable these paths from this README; follow
+> `docs/CODEX_HANDOFF.md` and `docs/OPERATIONS.md` for the reviewed release gate.
+
+## Pre-incident V1 capabilities
 
 - Builds a historical draw dataset from the WCLC since-inception PDF, a yearly archive bridge for periods where the WCLC PDF lags, and WCLC's current official results page.
 - Cross-checks overlapping sources and fails on disagreement rather than silently training on conflicting data.
@@ -30,6 +36,9 @@ lotto649 live
 ```
 
 `lotto649 bootstrap` requires internet access because it refreshes historical/current result sources.
+During the data-integrity hold, the three `lotto649` execution commands above
+are expected to refuse execution until their reviewed switches and corrected-
+history consumer are enabled together.
 
 ## Execution paths
 
@@ -41,7 +50,7 @@ past data -> walk-forward prediction -> reveal historical result -> score -> mov
 
 A model predicting draw `t` can see only draws before `t`.
 
-### Live path
+### Live path (paused)
 
 ```text
 refresh results
@@ -69,7 +78,12 @@ Use a **Google App Password**, not the normal Google account password. See `docs
 
 ## Data-source policy
 
-The WCLC since-inception PDF is the primary historical source, but it can lag recent years. V1 uses annual pages from lotto.net only as a bridge, then cross-checks every overlapping draw with WCLC wherever overlap exists. The current WCLC results page is authoritative for new live draws. Any source disagreement stops the pipeline.
+The former WCLC/bridge policy is not a current historical authority. A sealed
+official-calendar reconciliation corrected the legacy registered history, and
+new consumers must load that corrected epoch through the verified-history
+boundary with its external pins. Live source reconciliation remains disabled;
+any future release must retain two-source, fail-closed conflict handling. See
+`docs/CODEX_HANDOFF.md` for the exact epoch and suffix identities.
 
 ## Research warning
 

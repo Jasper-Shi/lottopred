@@ -323,6 +323,204 @@ def test_concurrent_creators_have_exactly_one_exclusive_winner(tmp_path):
     assert list(tmp_path.glob(".seal.json.staging-*")) == []
 
 
+def test_link_side_effect_then_error_rolls_back_the_formal_seal(tmp_path, monkeypatch):
+    seal_path = tmp_path / "seal.json"
+    real_link = seal_tool.os.link
+
+    def link_then_raise(source, destination, *, follow_symlinks=True):
+        real_link(source, destination, follow_symlinks=follow_symlinks)
+        raise OSError("injected error after link side effect")
+
+    monkeypatch.setattr(seal_tool.os, "link", link_then_raise)
+
+    with pytest.raises(
+        seal_tool.IncidentSealError,
+        match="unable to publish seal exclusively",
+    ):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    assert list(tmp_path.glob(".seal.json.staging-*")) == []
+
+
+def test_link_side_effect_then_base_exception_rolls_back_the_formal_seal(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_link = seal_tool.os.link
+
+    def link_then_interrupt(source, destination, *, follow_symlinks=True):
+        real_link(source, destination, follow_symlinks=follow_symlinks)
+        raise KeyboardInterrupt("injected interruption after link side effect")
+
+    monkeypatch.setattr(seal_tool.os, "link", link_then_interrupt)
+
+    with pytest.raises(KeyboardInterrupt, match="injected interruption"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    assert list(tmp_path.glob(".seal.json.staging-*")) == []
+
+
+def test_postlink_identity_inspection_error_rolls_back_the_formal_seal(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_lstat = seal_tool.os.lstat
+    failed = False
+
+    def fail_first_postlink_inspection(path):
+        nonlocal failed
+        try:
+            final_exists = Path(path) == seal_path and real_lstat(path) is not None
+        except FileNotFoundError:
+            final_exists = False
+        if final_exists and not failed:
+            failed = True
+            raise OSError("injected postlink identity inspection failure")
+        return real_lstat(path)
+
+    monkeypatch.setattr(seal_tool.os, "lstat", fail_first_postlink_inspection)
+
+    with pytest.raises(
+        seal_tool.IncidentSealError,
+        match="unable to inspect seal path ownership",
+    ):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    assert list(tmp_path.glob(".seal.json.staging-*")) == []
+
+
+def test_link_error_uses_the_original_staging_identity_after_a_path_swap(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_link = seal_tool.os.link
+    real_unlink = seal_tool.os.unlink
+    foreign = b"foreign replacement staging bytes\n"
+
+    def link_swap_then_raise(source, destination, *, follow_symlinks=True):
+        real_link(source, destination, follow_symlinks=follow_symlinks)
+        real_unlink(source)
+        Path(source).write_bytes(foreign)
+        raise OSError("injected error after link and staging swap")
+
+    monkeypatch.setattr(seal_tool.os, "link", link_swap_then_raise)
+
+    with pytest.raises(
+        seal_tool.IncidentSealError,
+        match="unable to publish seal exclusively",
+    ):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    foreign_staging = list(tmp_path.glob(".seal.json.staging-*"))
+    assert len(foreign_staging) == 1
+    assert foreign_staging[0].read_bytes() == foreign
+
+
+def test_successful_link_of_a_swapped_staging_file_leaves_no_formal_seal(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_link = seal_tool.os.link
+    real_unlink = seal_tool.os.unlink
+    foreign = b"foreign replacement linked as the formal seal\n"
+
+    def swap_then_link(source, destination, *, follow_symlinks=True):
+        real_unlink(source)
+        Path(source).write_bytes(foreign)
+        real_link(source, destination, follow_symlinks=follow_symlinks)
+
+    monkeypatch.setattr(seal_tool.os, "link", swap_then_link)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="ownership changed"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    foreign_staging = list(tmp_path.glob(".seal.json.staging-*"))
+    assert len(foreign_staging) == 1
+    assert foreign_staging[0].read_bytes() == foreign
+
+
+def test_formal_seal_swap_during_staging_retirement_cannot_return_success(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_unlink = seal_tool.os.unlink
+    foreign = b"foreign formal seal installed during staging cleanup\n"
+
+    def unlink_staging_then_swap_formal(path):
+        if Path(path).name.startswith(".seal.json.staging-"):
+            real_unlink(path)
+            real_unlink(seal_path)
+            seal_path.write_bytes(foreign)
+            return None
+        return real_unlink(path)
+
+    monkeypatch.setattr(seal_tool.os, "unlink", unlink_staging_then_swap_formal)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="ownership changed"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+
+
+def test_formal_seal_swap_during_final_byte_verification_cannot_return_success(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_pread = seal_tool.os.pread
+    real_unlink = seal_tool.os.unlink
+    hash_starts = 0
+    foreign = b"foreign formal seal installed during final verification\n"
+
+    def swap_on_final_hash(descriptor, length, offset):
+        nonlocal hash_starts
+        if offset == 0:
+            hash_starts += 1
+            if hash_starts == 7:
+                real_unlink(seal_path)
+                seal_path.write_bytes(foreign)
+        return real_pread(descriptor, length, offset)
+
+    monkeypatch.setattr(seal_tool.os, "pread", swap_on_final_hash)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="ownership changed"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+
+
 def test_partial_write_then_failure_leaves_no_final_or_staging_path(
     tmp_path, monkeypatch
 ):
@@ -488,9 +686,45 @@ def test_parent_fsync_failure_rolls_back_the_published_final_path(
             policy=seal_tool.REGISTERED_SEAL_POLICY,
         )
 
-    assert calls == 3
+    assert calls == 4
     assert not os.path.lexists(seal_path)
     assert list(tmp_path.glob(".seal.json.staging-*")) == []
+
+
+def test_failed_archive_destination_fsync_is_reported_with_formal_path_empty(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_fsync = seal_tool.os.fsync
+    calls = 0
+
+    def fail_publication_and_archive_destination_fsync(descriptor):
+        nonlocal calls
+        calls += 1
+        if calls in {2, 3}:
+            raise OSError("injected parent or archive fsync failure")
+        return real_fsync(descriptor)
+
+    monkeypatch.setattr(
+        seal_tool.os,
+        "fsync",
+        fail_publication_and_archive_destination_fsync,
+    )
+
+    with pytest.raises(
+        seal_tool.IncidentSealError,
+        match="archive durability failed.*residual archived at",
+    ):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    archive_directories = list(tmp_path.glob(".seal.json.failed-*"))
+    assert len(archive_directories) == 1
+    assert (archive_directories[0] / "seal.json").is_file()
 
 
 def test_rollback_rename_failure_uses_safe_fallback_archive_and_reports_its_path(
@@ -539,6 +773,134 @@ def test_rollback_rename_failure_uses_safe_fallback_archive_and_reports_its_path
     assert sha256(archived_seal.read_bytes()).hexdigest() in archive_directories[0].name
 
 
+def test_archive_fallback_unlink_failure_cannot_leave_the_formal_path(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_fsync = seal_tool.os.fsync
+    real_rename = seal_tool.os.rename
+    real_unlink = seal_tool.os.unlink
+    fsync_calls = 0
+
+    def fail_publication_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 2:
+            raise OSError("injected publication parent fsync failure")
+        return real_fsync(descriptor)
+
+    def fail_formal_rename(source, destination):
+        if Path(source) == seal_path:
+            raise OSError("injected primary archive rename failure")
+        return real_rename(source, destination)
+
+    def fail_formal_unlink(path):
+        if Path(path) == seal_path:
+            raise OSError("injected formal unlink failure")
+        return real_unlink(path)
+
+    monkeypatch.setattr(seal_tool.os, "fsync", fail_publication_fsync)
+    monkeypatch.setattr(seal_tool.os, "rename", fail_formal_rename)
+    monkeypatch.setattr(seal_tool.os, "unlink", fail_formal_unlink)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="publication rolled back"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    archive_directories = list(tmp_path.glob(".seal.json.failed-*"))
+    assert len(archive_directories) == 1
+    assert (archive_directories[0] / "seal.json").is_file()
+
+
+def test_archive_rename_side_effect_then_error_preserves_the_owned_archive(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_fsync = seal_tool.os.fsync
+    real_rename = seal_tool.os.rename
+    fsync_calls = 0
+
+    def fail_publication_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 2:
+            raise OSError("injected publication parent fsync failure")
+        return real_fsync(descriptor)
+
+    def rename_then_raise(source, destination):
+        if Path(source) == seal_path:
+            real_rename(source, destination)
+            raise OSError("injected error after archive rename side effect")
+        return real_rename(source, destination)
+
+    monkeypatch.setattr(seal_tool.os, "fsync", fail_publication_fsync)
+    monkeypatch.setattr(seal_tool.os, "rename", rename_then_raise)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="publication rolled back"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    archive_directories = list(tmp_path.glob(".seal.json.failed-*"))
+    assert len(archive_directories) == 1
+    archived = archive_directories[0] / "seal.json"
+    assert archived.is_file()
+    assert sha256(archived.read_bytes()).hexdigest() in archive_directories[0].name
+
+
+def test_archive_replace_side_effect_then_error_preserves_the_owned_archive(
+    tmp_path, monkeypatch
+):
+    seal_path = tmp_path / "seal.json"
+    real_fsync = seal_tool.os.fsync
+    real_rename = seal_tool.os.rename
+    real_replace = seal_tool.os.replace
+    fsync_calls = 0
+
+    def fail_publication_fsync(descriptor):
+        nonlocal fsync_calls
+        fsync_calls += 1
+        if fsync_calls == 2:
+            raise OSError("injected publication parent fsync failure")
+        return real_fsync(descriptor)
+
+    def fail_formal_rename(source, destination):
+        if Path(source) == seal_path:
+            raise OSError("injected primary archive rename failure")
+        return real_rename(source, destination)
+
+    def replace_then_raise(source, destination):
+        if Path(source) == seal_path:
+            real_replace(source, destination)
+            raise OSError("injected error after archive replace side effect")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(seal_tool.os, "fsync", fail_publication_fsync)
+    monkeypatch.setattr(seal_tool.os, "rename", fail_formal_rename)
+    monkeypatch.setattr(seal_tool.os, "replace", replace_then_raise)
+
+    with pytest.raises(seal_tool.IncidentSealError, match="publication rolled back"):
+        seal_tool.create_data_integrity_incident_seal(
+            repository=ROOT,
+            seal_path=seal_path,
+            policy=seal_tool.REGISTERED_SEAL_POLICY,
+        )
+
+    assert not os.path.lexists(seal_path)
+    archive_directories = list(tmp_path.glob(".seal.json.failed-*"))
+    assert len(archive_directories) == 1
+    archived = archive_directories[0] / "seal.json"
+    assert archived.is_file()
+    assert sha256(archived.read_bytes()).hexdigest() in archive_directories[0].name
+
+
 def test_rollback_parent_fsync_failure_keeps_an_auditable_failed_archive(
     tmp_path, monkeypatch
 ):
@@ -549,7 +911,7 @@ def test_rollback_parent_fsync_failure_keeps_an_auditable_failed_archive(
     def fail_publication_and_rollback_fsync(descriptor):
         nonlocal fsync_calls
         fsync_calls += 1
-        if fsync_calls in {2, 3}:
+        if fsync_calls in {2, 4}:
             raise OSError("injected parent fsync failure")
         return real_fsync(descriptor)
 
@@ -561,7 +923,7 @@ def test_rollback_parent_fsync_failure_keeps_an_auditable_failed_archive(
 
     with pytest.raises(
         seal_tool.IncidentSealError,
-        match="rollback parent fsync failed.*residual archived at",
+        match="source-parent durability failed.*residual archived at",
     ):
         seal_tool.create_data_integrity_incident_seal(
             repository=ROOT,
@@ -569,7 +931,7 @@ def test_rollback_parent_fsync_failure_keeps_an_auditable_failed_archive(
             policy=seal_tool.REGISTERED_SEAL_POLICY,
         )
 
-    assert fsync_calls == 3
+    assert fsync_calls == 4
     assert not os.path.lexists(seal_path)
     assert list(tmp_path.glob(".seal.json.staging-*")) == []
     archive_directories = list(tmp_path.glob(".seal.json.failed-*"))

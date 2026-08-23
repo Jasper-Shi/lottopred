@@ -205,11 +205,15 @@ def _load_json(raw: bytes, label: str) -> dict[str, Any]:
 def _git_process(
     repository: Path, *arguments: str
 ) -> subprocess.CompletedProcess[bytes]:
+    environment = os.environ.copy()
+    environment["GIT_NO_REPLACE_OBJECTS"] = "1"
+    environment["GIT_GRAFT_FILE"] = os.devnull
     try:
         return subprocess.run(
             ["git", "-C", str(repository), *arguments],
             check=False,
             capture_output=True,
+            env=environment,
         )
     except OSError as exc:
         raise IncidentSealError("unable to execute Git") from exc
@@ -816,7 +820,7 @@ def _build_seal_body(repository: Path, policy: IncidentSealPolicy) -> dict[str, 
 
 
 def _exclusive_flags() -> int:
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags = os.O_RDWR | os.O_CREAT | os.O_EXCL
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     return flags
@@ -836,41 +840,106 @@ def _open_unique_staging(path: Path) -> tuple[Path, int]:
 
 def _archive_owned_path(path: Path, raw_sha256: str) -> Path:
     """Move an owned residual out of its formal name without replacing anything."""
-    for _ in range(32):
-        archive_directory = path.parent / (
-            f".{path.name}.failed-{raw_sha256}-{secrets.token_hex(16)}"
-        )
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise IncidentSealError("unable to bind failed-seal residual") from exc
+    try:
         try:
-            os.mkdir(archive_directory, 0o700)
-        except FileExistsError:
-            continue
+            opened = os.fstat(descriptor)
         except OSError as exc:
-            raise IncidentSealError("unable to reserve failed-seal archive") from exc
-        archive_path = archive_directory / path.name
-        try:
-            os.rename(path, archive_path)
-        except OSError as rename_exc:
+            raise IncidentSealError("unable to bind failed-seal residual") from exc
+        captured_identity = (opened.st_dev, opened.st_ino)
+        captured_sha256 = _descriptor_sha256(descriptor)
+        archive_identity = (
+            raw_sha256
+            if hmac.compare_digest(captured_sha256, raw_sha256)
+            else f"untrusted-{captured_sha256}"
+        )
+        for _ in range(32):
+            archive_directory = path.parent / (
+                f".{path.name}.failed-{archive_identity}-{secrets.token_hex(16)}"
+            )
             try:
-                os.link(path, archive_path, follow_symlinks=False)
-                try:
-                    os.unlink(path)
-                except OSError:
-                    os.replace(path, archive_path)
-            except OSError as fallback_exc:
-                try:
-                    if os.path.lexists(archive_path):
-                        os.unlink(archive_path)
-                    os.rmdir(archive_directory)
-                except OSError:
-                    pass
+                os.mkdir(archive_directory, 0o700)
+            except FileExistsError:
+                continue
+            except OSError as exc:
                 raise IncidentSealError(
-                    "unable to archive owned seal residual"
-                ) from ExceptionGroup(
-                    "seal archive primary and fallback failures",
-                    [rename_exc, fallback_exc],
+                    "unable to reserve failed-seal archive"
+                ) from exc
+            archive_path = archive_directory / path.name
+            moved = False
+            primary_error: OSError | None = None
+            try:
+                os.rename(path, archive_path)
+            except OSError as rename_exc:
+                primary_error = rename_exc
+                moved = _path_matches_identity(
+                    archive_path, captured_identity
+                ) and not os.path.lexists(path)
+            else:
+                moved = True
+            if not moved:
+                fallback_error: OSError | None = None
+                try:
+                    os.replace(path, archive_path)
+                except OSError as exc:
+                    fallback_error = exc
+                    moved = _path_matches_identity(
+                        archive_path, captured_identity
+                    ) and not os.path.lexists(path)
+                else:
+                    moved = True
+                if not moved:
+                    try:
+                        if not os.path.lexists(archive_path):
+                            os.rmdir(archive_directory)
+                    except OSError:
+                        pass
+                    raise IncidentSealError(
+                        "unable to archive owned seal residual"
+                    ) from ExceptionGroup(
+                        "seal archive primary and fallback failures",
+                        [
+                            error
+                            for error in (primary_error, fallback_error)
+                            if error is not None
+                        ],
+                    )
+            if (
+                not _path_matches_identity(archive_path, captured_identity)
+                or _descriptor_sha256(descriptor) != captured_sha256
+                or os.path.lexists(path)
+            ):
+                raise IncidentSealError(
+                    "failed-seal archive verification failed; residual at "
+                    f"{archive_path}"
                 )
-        return archive_path
-    raise IncidentSealError("unable to allocate failed-seal archive")
+            try:
+                _fsync_parent(archive_path)
+            except OSError as exc:
+                raise IncidentSealError(
+                    f"failed-seal archive durability failed; residual archived at "
+                    f"{archive_path}"
+                ) from exc
+            try:
+                _fsync_parent(path)
+            except OSError as exc:
+                raise IncidentSealError(
+                    "failed-seal archive source-parent durability failed; residual "
+                    f"archived at {archive_path}"
+                ) from exc
+            return archive_path
+        raise IncidentSealError("unable to allocate failed-seal archive")
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
 
 
 def _remove_or_archive_owned(path: Path, raw_sha256: str) -> Path | None:
@@ -895,15 +964,91 @@ def _fsync_parent(path: Path) -> None:
 
 
 def _rollback_published_seal(path: Path, raw_sha256: str) -> Path | None:
-    archive = _archive_owned_path(path, raw_sha256)
+    return _archive_owned_path(path, raw_sha256)
+
+
+def _path_matches_identity(path: Path, owned_identity: tuple[int, int]) -> bool:
     try:
-        _fsync_parent(path)
+        current = os.lstat(path)
+    except FileNotFoundError:
+        return False
     except OSError as exc:
-        archive_note = f"; residual archived at {archive}" if archive else ""
-        raise IncidentSealError(
-            f"seal rollback parent fsync failed{archive_note}"
-        ) from exc
-    return archive
+        raise IncidentSealError("unable to inspect seal path ownership") from exc
+    return (current.st_dev, current.st_ino) == owned_identity
+
+
+def _descriptor_sha256(descriptor: int) -> str:
+    digest = sha256()
+    offset = 0
+    try:
+        while True:
+            chunk = os.pread(descriptor, 1024 * 1024, offset)
+            if not chunk:
+                return digest.hexdigest()
+            digest.update(chunk)
+            offset += len(chunk)
+    except OSError as exc:
+        raise IncidentSealError("unable to verify seal staging bytes") from exc
+
+
+def _published_seal_matches(
+    path: Path,
+    owned_identity: tuple[int, int],
+    descriptor: int,
+    raw_sha256: str,
+) -> bool:
+    try:
+        opened = os.fstat(descriptor)
+    except OSError as exc:
+        raise IncidentSealError("unable to inspect seal descriptor") from exc
+    if (opened.st_dev, opened.st_ino) != owned_identity or (
+        _descriptor_sha256(descriptor) != raw_sha256
+    ):
+        return False
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        published_descriptor = os.open(path, flags)
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise IncidentSealError("unable to open published seal") from exc
+    try:
+        published = os.fstat(published_descriptor)
+        published_identity = (published.st_dev, published.st_ino)
+        if published_identity != owned_identity:
+            return False
+        if _descriptor_sha256(published_descriptor) != raw_sha256:
+            return False
+        return _path_matches_identity(path, published_identity)
+    except OSError as exc:
+        raise IncidentSealError("unable to inspect published seal") from exc
+    finally:
+        os.close(published_descriptor)
+
+
+def _rollback_link_side_effect_if_owned(
+    path: Path, owned_identity: tuple[int, int], raw_sha256: str
+) -> Path | None:
+    """Retire a formal hardlink created before a failed link call returned."""
+    if not _path_matches_identity(path, owned_identity):
+        return None
+    return _rollback_published_seal(path, raw_sha256)
+
+
+def _rollback_successful_link_result(
+    path: Path, owned_identity: tuple[int, int], raw_sha256: str
+) -> Path | None:
+    """Retire the destination entry after os.link reported success."""
+    if not os.path.lexists(path):
+        return None
+    archive_identity = (
+        raw_sha256
+        if _path_matches_identity(path, owned_identity)
+        else f"untrusted-link-result-{secrets.token_hex(8)}"
+    )
+    return _rollback_published_seal(path, archive_identity)
 
 
 def _write_exclusive(path: Path, raw: bytes) -> None:
@@ -912,8 +1057,17 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
     raw_sha256 = _sha256(raw)
     staging, descriptor = _open_unique_staging(path)
     try:
+        opened_identity = os.fstat(descriptor)
+    except OSError as exc:
+        os.close(descriptor)
+        _remove_or_archive_owned(staging, raw_sha256)
+        raise IncidentSealError("unable to identify seal staging file") from exc
+    owned_identity = (opened_identity.st_dev, opened_identity.st_ino)
+    link_attempted = False
+    link_returned = False
+    try:
         try:
-            with os.fdopen(descriptor, "wb", closefd=True) as handle:
+            with os.fdopen(descriptor, "wb", closefd=False) as handle:
                 remaining = memoryview(raw)
                 while remaining:
                     written = handle.write(remaining)
@@ -928,17 +1082,36 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
                 handle.flush()
                 os.fsync(handle.fileno())
         except OSError as exc:
-            _remove_or_archive_owned(staging, raw_sha256)
+            if _path_matches_identity(staging, owned_identity):
+                _remove_or_archive_owned(staging, raw_sha256)
             raise IncidentSealError("unable to durably write seal") from exc
 
+        if not _path_matches_identity(staging, owned_identity) or (
+            _descriptor_sha256(descriptor) != raw_sha256
+        ):
+            raise IncidentSealError("seal staging ownership changed")
+
         try:
+            link_attempted = True
             os.link(staging, path, follow_symlinks=False)
+            link_returned = True
         except FileExistsError as exc:
-            _remove_or_archive_owned(staging, raw_sha256)
+            _rollback_link_side_effect_if_owned(path, owned_identity, raw_sha256)
+            if _path_matches_identity(staging, owned_identity):
+                _remove_or_archive_owned(staging, raw_sha256)
             raise IncidentSealError("refusing to overwrite an existing seal") from exc
         except OSError as exc:
-            _remove_or_archive_owned(staging, raw_sha256)
+            _rollback_link_side_effect_if_owned(path, owned_identity, raw_sha256)
+            if _path_matches_identity(staging, owned_identity):
+                _remove_or_archive_owned(staging, raw_sha256)
             raise IncidentSealError("unable to publish seal exclusively") from exc
+
+        if not _published_seal_matches(path, owned_identity, descriptor, raw_sha256):
+            _rollback_successful_link_result(path, owned_identity, raw_sha256)
+            raise IncidentSealError("published seal ownership changed")
+        if not _path_matches_identity(staging, owned_identity):
+            _rollback_successful_link_result(path, owned_identity, raw_sha256)
+            raise IncidentSealError("seal staging ownership changed")
 
         try:
             staging_archive = _remove_or_archive_owned(staging, raw_sha256)
@@ -953,6 +1126,10 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
                 f"publication archived at {final_archive}"
             )
 
+        if not _published_seal_matches(path, owned_identity, descriptor, raw_sha256):
+            _rollback_successful_link_result(path, owned_identity, raw_sha256)
+            raise IncidentSealError("published seal ownership changed")
+
         try:
             _fsync_parent(path)
         except OSError as exc:
@@ -962,13 +1139,37 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
                 "unable to fsync seal parent directory; publication rolled back"
                 f"{archive_note}"
             ) from exc
-    except BaseException:
-        if os.path.lexists(staging):
+        if not _published_seal_matches(path, owned_identity, descriptor, raw_sha256):
+            _rollback_successful_link_result(path, owned_identity, raw_sha256)
+            raise IncidentSealError("published seal ownership changed")
+    except BaseException as error:
+        cleanup_errors: list[Exception] = []
+        if link_attempted:
+            try:
+                if _path_matches_identity(path, owned_identity):
+                    _rollback_published_seal(path, raw_sha256)
+                elif link_returned and os.path.lexists(path):
+                    _rollback_successful_link_result(path, owned_identity, raw_sha256)
+            except (IncidentSealError, OSError) as cleanup_error:
+                cleanup_errors.append(cleanup_error)
+        try:
+            staging_owned = _path_matches_identity(staging, owned_identity)
+        except (IncidentSealError, OSError) as cleanup_error:
+            cleanup_errors.append(cleanup_error)
+            staging_owned = False
+        if staging_owned:
             try:
                 _remove_or_archive_owned(staging, raw_sha256)
-            except IncidentSealError:
-                pass
+            except (IncidentSealError, OSError) as cleanup_error:
+                cleanup_errors.append(cleanup_error)
+        for cleanup_error in cleanup_errors:
+            error.add_note(f"seal cleanup also failed: {cleanup_error}")
         raise
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
 
 
 def create_data_integrity_incident_seal(

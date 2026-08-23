@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from copy import deepcopy
 from dataclasses import FrozenInstanceError, dataclass
@@ -77,6 +78,20 @@ def _git_text(repository: Path, *arguments: str) -> str:
     return _git_bytes(repository, *arguments).decode().strip()
 
 
+def _git_commit(repository: Path, message: str, created_at: str) -> None:
+    environment = os.environ.copy()
+    environment.update(
+        GIT_AUTHOR_DATE=created_at,
+        GIT_COMMITTER_DATE=created_at,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "commit", "-qm", message],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+
+
 def _write(repository: Path, relative_path: str, raw: bytes) -> None:
     path = repository / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -134,7 +149,7 @@ def _sealed_repository(
     _write(repository, "README.md", b"synthetic sealed-history repository\n")
     _write(repository, "data/processed/draws.csv", old_raw)
     _git_text(repository, "add", "README.md", "data/processed/draws.csv")
-    _git_text(repository, "commit", "-qm", "registered parent")
+    _git_commit(repository, "registered parent", "2026-08-20T05:59:59Z")
     artifact_parent = _git_text(repository, "rev-parse", "HEAD")
     old_blob = _git_text(repository, "rev-parse", "HEAD:data/processed/draws.csv")
 
@@ -156,7 +171,7 @@ def _sealed_repository(
     for index, relative_path in enumerate(CODE_PATHS):
         _write(repository, relative_path, f"# frozen code {index}\n".encode())
     _git_text(repository, "add", *ARTIFACT_PATHS, *CODE_PATHS)
-    _git_text(repository, "commit", "-qm", "closed corrected epoch")
+    _git_commit(repository, "closed corrected epoch", "2026-08-20T06:00:00Z")
     artifact_commit = _git_text(repository, "rev-parse", "HEAD")
 
     artifacts = {
@@ -238,7 +253,7 @@ def _sealed_repository(
     _write(repository, SEAL_PATH, seal_raw)
     _write(repository, SUFFIX_PATH, b"")
     _git_text(repository, "add", SEAL_PATH, SUFFIX_PATH)
-    _git_text(repository, "commit", "-qm", "publish external seal")
+    _git_commit(repository, "publish external seal", "2026-08-20T06:00:01Z")
     return SealedRepository(
         path=repository,
         seal_sha256=seal_sha256,
@@ -298,7 +313,11 @@ def _install_suffix(
     for path, raw in evidence.values():
         _write(fixture.path, path, raw)
     _git_text(fixture.path, "add", *(path for path, _ in evidence.values()))
-    _git_text(fixture.path, "commit", "-qm", "record immutable source receipts")
+    _git_commit(
+        fixture.path,
+        "record immutable source receipts",
+        "2026-08-23T12:05:00Z",
+    )
     evidence_commit = _git_text(fixture.path, "rev-parse", "HEAD")
 
     previous = fixture.seal_sha256
@@ -393,18 +412,38 @@ def _replace_receipt_asset(
     independence_group: str,
     raw: bytes,
 ) -> dict[str, Any]:
-    result = deepcopy(event)
-    receipt = next(
-        item
-        for item in result["source_receipts"]
-        if item["independence_group"] == independence_group
+    return _replace_receipt_assets(
+        fixture,
+        event,
+        raw_by_group={independence_group: raw},
     )
-    _write(fixture.path, receipt["evidence_path"], raw)
-    _git_text(fixture.path, "add", receipt["evidence_path"])
-    _git_text(fixture.path, "commit", "-qm", "replace synthetic evidence asset")
+
+
+def _replace_receipt_assets(
+    fixture: SealedRepository,
+    event: dict[str, Any],
+    *,
+    raw_by_group: dict[str, bytes],
+) -> dict[str, Any]:
+    result = deepcopy(event)
+    paths = []
+    for receipt in result["source_receipts"]:
+        group = receipt["independence_group"]
+        replacement = raw_by_group.get(group)
+        if replacement is None:
+            current = (fixture.path / receipt["evidence_path"]).read_bytes()
+            replacement = current + f"\n<!-- refreshed {group} -->\n".encode()
+        _write(fixture.path, receipt["evidence_path"], replacement)
+        paths.append(receipt["evidence_path"])
+        receipt["bytes"] = len(replacement)
+        receipt["sha256"] = sha256(replacement).hexdigest()
+    _git_text(fixture.path, "add", *paths)
+    _git_commit(
+        fixture.path,
+        "replace synthetic evidence assets",
+        "2026-08-23T12:06:00Z",
+    )
     result["evidence_commit"] = _git_text(fixture.path, "rev-parse", "HEAD")
-    receipt["bytes"] = len(raw)
-    receipt["sha256"] = sha256(raw).hexdigest()
     return _rehash_event(result)
 
 
@@ -644,6 +683,75 @@ def test_rejects_coordinated_rewrites_of_seal_semantics(tmp_path, mutate):
             expected_seal_sha256=external_pin,
             suffix_path=SUFFIX_PATH,
         )
+
+
+def test_rejects_a_resealed_artifact_commit_timestamp_not_found_in_git(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    tampered = deepcopy(fixture.seal)
+    tampered["artifact_commit_created_at"] = "2099-01-01T00:00:00Z"
+    external_pin = _install_resealed_payload(fixture.path, tampered)
+
+    with pytest.raises(ValueError, match="seal semantic"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=external_pin,
+            suffix_path=SUFFIX_PATH,
+        )
+
+
+def test_git_replace_cannot_rewrite_the_sealed_commit_identity(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    tree = _git_text(fixture.path, "rev-parse", f"{fixture.artifact_commit}^{{tree}}")
+    parent = _git_text(fixture.path, "rev-parse", f"{fixture.artifact_commit}^")
+    environment = os.environ.copy()
+    environment.update(
+        GIT_AUTHOR_DATE="2026-08-20T06:00:02Z",
+        GIT_COMMITTER_DATE="2026-08-20T06:00:02Z",
+    )
+    fake = (
+        subprocess.run(
+            ["git", "-C", str(fixture.path), "commit-tree", tree, "-p", parent],
+            input=b"coordinated replacement object\n",
+            check=True,
+            capture_output=True,
+            env=environment,
+        )
+        .stdout.decode()
+        .strip()
+    )
+    _git_text(fixture.path, "replace", fixture.artifact_commit, fake)
+    attacker = deepcopy(fixture.seal)
+    attacker["artifact_commit_created_at"] = "2026-08-20T06:00:02Z"
+    attacker_pin = _install_resealed_payload(fixture.path, attacker)
+
+    with pytest.raises(ValueError, match="semantic mismatch"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=attacker_pin,
+            suffix_path=SUFFIX_PATH,
+        )
+
+
+def test_git_grafts_cannot_rewrite_the_sealed_commit_identity(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    grafts = fixture.path / ".git/info/grafts"
+    grafts.parent.mkdir(parents=True, exist_ok=True)
+    grafts.write_text(
+        f"{fixture.artifact_commit} {fixture.seal_commit}\n",
+        encoding="ascii",
+    )
+
+    history = load_verified_history(
+        fixture.path,
+        seal_path=SEAL_PATH,
+        expected_seal_sha256=fixture.seal_sha256,
+        suffix_path=SUFFIX_PATH,
+    )
+
+    assert len(history.draws) == 4442
+    assert history.seal.artifact_commit == fixture.artifact_commit
 
 
 def test_rejects_a_noncanonical_corrected_csv_even_when_resealed_in_git(tmp_path):
@@ -1020,7 +1128,7 @@ def test_rejects_git_verified_loto_quebec_bytes_for_a_different_row(tmp_path):
         )
 
 
-def test_rejects_a_second_malformed_wclc_occurrence_for_the_target_date(tmp_path):
+def test_rejects_a_second_wclc_target_date_with_an_invalid_classic_draw(tmp_path):
     fixture = _sealed_repository(tmp_path)
     draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
     suffix = _install_suffix(fixture, (draw,))
@@ -1075,8 +1183,154 @@ def test_rejects_two_classic_draw_blocks_under_one_wclc_target_date(tmp_path):
         )
 
 
+def test_rejects_two_number_results_under_one_wclc_classic_draw(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    duplicate_result = _wclc_html(draw).replace(
+        b"</body></html>",
+        b" 01 02 03 04 05 06 Bonus 07</body></html>",
+    )
+    event = _replace_receipt_asset(
+        fixture,
+        suffix.events[0],
+        independence_group="wclc",
+        raw=duplicate_result,
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="exactly one target"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+def test_rejects_a_result_from_a_later_block_after_malformed_classic_draw(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    malformed = (
+        b"<html><body>Wednesday, August 19, 2026 "
+        b"CLASSIC DRAW MALFORMED GOLD BALL DRAW "
+        b"06 07 10 32 33 36 Bonus 11</body></html>"
+    )
+    event = _replace_receipt_asset(
+        fixture,
+        suffix.events[0],
+        independence_group="wclc",
+        raw=malformed,
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="malformed"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+@pytest.mark.parametrize("suffix", [b"x", b".0"])
+def test_rejects_a_noncanonical_wclc_bonus_token(tmp_path, suffix):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix_artifact = _install_suffix(fixture, (draw,))
+    malformed = _wclc_html(draw).replace(b"Bonus 11", b"Bonus 11" + suffix)
+    event = _replace_receipt_asset(
+        fixture,
+        suffix_artifact.events[0],
+        independence_group="wclc",
+        raw=malformed,
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="malformed"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+def test_rejects_a_second_malformed_wclc_occurrence_for_the_target_date(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    target = draw.draw_date.strftime("%A, %B %d, %Y").encode()
+    duplicate = _wclc_html(draw).replace(
+        b"</body></html>",
+        b"<p>" + target + b" malformed duplicate result</p></body></html>",
+    )
+    event = _replace_receipt_asset(
+        fixture,
+        suffix.events[0],
+        independence_group="wclc",
+        raw=duplicate,
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="exactly one target"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
 @pytest.mark.parametrize(
-    "retrieved_at", ["2026-08-23T08:00:00-04:00", "2026-08-18T23:59:59Z"]
+    "malformed_target",
+    [
+        b"Wednesday, August 19, 20260",
+        b"XWednesday, August 19, 2026Y",
+    ],
+)
+def test_rejects_a_wclc_target_date_embedded_in_a_larger_token(
+    tmp_path, malformed_target
+):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    raw = _wclc_html(draw).replace(b"Wednesday, August 19, 2026", malformed_target)
+    event = _replace_receipt_asset(
+        fixture,
+        suffix.events[0],
+        independence_group="wclc",
+        raw=raw,
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="exactly one target"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+@pytest.mark.parametrize(
+    "retrieved_at",
+    [
+        "2026-08-23T08:00:00-04:00",
+        "2026-08-18T23:59:59Z",
+        "2026-08-19T23:59:59Z",
+    ],
 )
 def test_rejects_non_utc_or_predraw_receipt_timestamps(tmp_path, retrieved_at):
     fixture = _sealed_repository(tmp_path)
@@ -1088,6 +1342,72 @@ def test_rejects_non_utc_or_predraw_receipt_timestamps(tmp_path, retrieved_at):
     file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
 
     with pytest.raises(ValueError, match="timestamp"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+def test_rejects_a_receipt_timestamp_after_its_evidence_commit(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    event = deepcopy(suffix.events[0])
+    event["source_receipts"][0]["retrieved_at"] = "2026-08-23T12:05:01Z"
+    event = _rehash_event(event)
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="timestamp"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+def test_rejects_an_evidence_commit_that_only_inherits_the_receipt_assets(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    _write(fixture.path, "unrelated.txt", b"unrelated later commit\n")
+    _git_text(fixture.path, "add", "unrelated.txt")
+    _git_commit(fixture.path, "unrelated evidence commit", "2026-08-23T12:06:00Z")
+    event = deepcopy(suffix.events[0])
+    event["evidence_commit"] = _git_text(fixture.path, "rev-parse", "HEAD")
+    event = _rehash_event(event)
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="evidence commit"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+def test_rejects_identical_raw_bytes_claimed_as_two_independent_sources(tmp_path):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    polyglot = _wclc_html(draw) + _loto_quebec_html(draw)
+    event = _replace_receipt_assets(
+        fixture,
+        suffix.events[0],
+        raw_by_group={"wclc": polyglot, "loto_quebec": polyglot},
+    )
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="independent"):
         load_verified_history(
             fixture.path,
             seal_path=SEAL_PATH,

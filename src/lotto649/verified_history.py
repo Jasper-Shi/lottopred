@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
 import re
 import subprocess
 from dataclasses import dataclass
@@ -322,17 +323,33 @@ class VerifiedHistory:
 
 
 def _git_bytes(repository: Path, *arguments: str) -> bytes:
+    environment = os.environ.copy()
+    environment["GIT_NO_REPLACE_OBJECTS"] = "1"
+    environment["GIT_GRAFT_FILE"] = os.devnull
     try:
         completed = subprocess.run(
             ["git", "-C", str(repository), *arguments],
             check=False,
             capture_output=True,
+            env=environment,
         )
     except OSError as exc:
         raise VerifiedHistoryIntegrityError("Git is unavailable") from exc
     if completed.returncode != 0:
         raise VerifiedHistoryIntegrityError("sealed Git artifact is unavailable")
     return completed.stdout
+
+
+def _git_commit_created_at(repository: Path, commit: str) -> datetime:
+    try:
+        raw = _git_bytes(repository, "show", "-s", "--format=%cI", commit)
+        value = raw.decode("ascii").strip()
+        timestamp = datetime.fromisoformat(value)
+    except (UnicodeError, ValueError) as exc:
+        raise VerifiedHistoryIntegrityError("Git commit timestamp is invalid") from exc
+    if timestamp.tzinfo is None:
+        raise VerifiedHistoryIntegrityError("Git commit timestamp is invalid")
+    return timestamp.astimezone(UTC)
 
 
 def _validate_artifact_commit(repository: Path, seal: dict[str, Any]) -> None:
@@ -448,6 +465,10 @@ def _validate_seal_semantics(repository: Path, seal: dict[str, Any]) -> None:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch") from exc
     if timestamp.tzinfo != UTC:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch")
+    git_created_at = _git_commit_created_at(repository, seal["artifact_commit"])
+    expected_created_at = git_created_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+    if created_at != expected_created_at:
+        raise VerifiedHistoryIntegrityError("seal semantic mismatch")
 
     manifest = seal["reconciliation_manifest"]
     manifest_inventory = seal["artifacts"][_MANIFEST_PATH]
@@ -517,6 +538,11 @@ def _validate_seal_semantics(repository: Path, seal: dict[str, Any]) -> None:
         ],
         check=False,
         capture_output=True,
+        env={
+            **os.environ,
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_GRAFT_FILE": os.devnull,
+        },
     )
     if completed.returncode != 0:
         raise VerifiedHistoryIntegrityError("seal semantic mismatch")
@@ -607,12 +633,78 @@ def _validate_evidence_commit(
         ],
         check=False,
         capture_output=True,
+        env={
+            **os.environ,
+            "GIT_NO_REPLACE_OBJECTS": "1",
+            "GIT_GRAFT_FILE": os.devnull,
+        },
     )
     if completed.returncode != 0:
         raise VerifiedHistoryIntegrityError(
             "suffix evidence commit is outside sealed lineage"
         )
     return evidence_commit
+
+
+def _evidence_commit_changed_paths(
+    repository: Path, evidence_commit: str
+) -> frozenset[str]:
+    try:
+        lineage = (
+            _git_bytes(
+                repository,
+                "rev-list",
+                "--parents",
+                "-n",
+                "1",
+                evidence_commit,
+            )
+            .decode("ascii")
+            .strip()
+            .split()
+        )
+        raw_changes = _git_bytes(
+            repository,
+            "diff-tree",
+            "--no-commit-id",
+            "--name-status",
+            "--no-renames",
+            "-r",
+            evidence_commit,
+        ).decode("utf-8")
+    except UnicodeError as exc:
+        raise VerifiedHistoryIntegrityError(
+            "suffix evidence commit is invalid"
+        ) from exc
+    if len(lineage) != 2 or lineage[0] != evidence_commit:
+        raise VerifiedHistoryIntegrityError(
+            "suffix evidence commit must have one parent"
+        )
+    changes: dict[str, str] = {}
+    for line in raw_changes.splitlines():
+        try:
+            status, path = line.split("\t", 1)
+        except ValueError as exc:
+            raise VerifiedHistoryIntegrityError(
+                "suffix evidence commit change set is invalid"
+            ) from exc
+        if (
+            status not in {"A", "M"}
+            or path in changes
+            or (
+                path != ".gitattributes"
+                and not path.startswith("evidence/live_sources/")
+            )
+        ):
+            raise VerifiedHistoryIntegrityError(
+                "suffix evidence commit change set is invalid"
+            )
+        changes[path] = status
+    if not changes:
+        raise VerifiedHistoryIntegrityError(
+            "suffix evidence commit change set is invalid"
+        )
+    return frozenset(changes)
 
 
 def _strict_wclc_target_draw(raw: bytes, expected_date: date) -> Draw:
@@ -627,32 +719,41 @@ def _strict_wclc_target_draw(raw: bytes, expected_date: date) -> Draw:
         f"{expected_date.strftime('%A')}, {expected_date.strftime('%B')} "
         f"{expected_date.day}, {expected_date.year}"
     )
-    target_start = re.compile(re.escape(target), re.IGNORECASE)
-    occurrences = []
-    for match in target_start.finditer(text):
-        next_date = _NEXT_WCLC_DATE_RE.search(text, match.end())
-        end = next_date.start() if next_date is not None else len(text)
-        segment = text[match.end() : end]
-        if re.search(r"\bCLASSIC\s+DRAW\b", segment, re.IGNORECASE):
-            occurrences.append(segment)
-    if len(occurrences) != 1:
-        raise VerifiedHistoryIntegrityError(
-            "WCLC evidence must contain exactly one target draw occurrence"
-        )
-    if len(re.findall(r"\bCLASSIC\s+DRAW\b", occurrences[0], flags=re.IGNORECASE)) != 1:
-        raise VerifiedHistoryIntegrityError(
-            "WCLC evidence must contain exactly one target draw occurrence"
-        )
-    ball_match = re.fullmatch(
-        r".*?\bCLASSIC\s+DRAW\s+"
-        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
-        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
-        r"Bonus\s+([0-9]{1,2}).*",
-        occurrences[0],
+    target_start = re.compile(
+        rf"(?<![A-Za-z0-9]){re.escape(target)}(?![A-Za-z0-9])",
         re.IGNORECASE,
     )
+    target_matches = list(target_start.finditer(text))
+    if len(target_matches) != 1:
+        raise VerifiedHistoryIntegrityError(
+            "WCLC evidence must contain exactly one target draw occurrence"
+        )
+    match = target_matches[0]
+    next_date = _NEXT_WCLC_DATE_RE.search(text, match.end())
+    end = next_date.start() if next_date is not None else len(text)
+    segment = text[match.end() : end]
+    classic_matches = list(
+        re.finditer(r"\bCLASSIC\s+DRAW\b", segment, flags=re.IGNORECASE)
+    )
+    if len(classic_matches) != 1:
+        raise VerifiedHistoryIntegrityError(
+            "WCLC evidence must contain exactly one target draw occurrence"
+        )
+    result_pattern = (
+        r"(?<![0-9])"
+        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
+        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
+        r"Bonus\s+([0-9]{1,2})(?=\s|$)"
+    )
+    remainder = segment[classic_matches[0].end() :]
+    ball_match = re.match(rf"\s*{result_pattern}", remainder, re.IGNORECASE)
     if ball_match is None:
         raise VerifiedHistoryIntegrityError("WCLC target draw is malformed")
+    result_matches = list(re.finditer(result_pattern, remainder, re.IGNORECASE))
+    if len(result_matches) != 1:
+        raise VerifiedHistoryIntegrityError(
+            "WCLC evidence must contain exactly one target draw result"
+        )
     balls = [int(value) for value in ball_match.groups()]
     try:
         draw = Draw(expected_date, tuple(balls[:6]), balls[6])
@@ -705,9 +806,12 @@ def _validate_source_receipts(
             "suffix draw requires two independent source receipts"
         )
     row_sha256 = _row_sha256(draw)
+    evidence_commit_created_at = _git_commit_created_at(repository, evidence_commit)
+    evidence_commit_paths = _evidence_commit_changed_paths(repository, evidence_commit)
     sort_keys = []
     groups = set()
     evidence_paths = set()
+    evidence_sha256s = set()
     for receipt in value:
         if not _has_keys(receipt, _RECEIPT_KEYS):
             raise VerifiedHistoryIntegrityError("suffix receipt schema mismatch")
@@ -728,7 +832,11 @@ def _validate_source_receipts(
             raise VerifiedHistoryIntegrityError(
                 "suffix receipt timestamp is invalid"
             ) from exc
-        if parsed_timestamp.tzinfo != UTC or parsed_timestamp.date() < draw.draw_date:
+        if (
+            parsed_timestamp.tzinfo != UTC
+            or parsed_timestamp.date() <= draw.draw_date
+            or parsed_timestamp > evidence_commit_created_at
+        ):
             raise VerifiedHistoryIntegrityError("suffix receipt timestamp is invalid")
         evidence_path = receipt["evidence_path"]
         if not isinstance(evidence_path, str):
@@ -740,8 +848,11 @@ def _validate_source_receipts(
             or ".." in pure_path.parts
             or not evidence_path.startswith(authority["evidence_prefix"])
             or evidence_path in evidence_paths
+            or evidence_path not in evidence_commit_paths
         ):
-            raise VerifiedHistoryIntegrityError("suffix evidence path is invalid")
+            raise VerifiedHistoryIntegrityError(
+                "suffix evidence path is invalid for evidence commit"
+            )
         evidence_paths.add(evidence_path)
         if (
             not _is_integer(receipt["bytes"])
@@ -750,6 +861,7 @@ def _validate_source_receipts(
             or receipt["supported_row_sha256"] != row_sha256
         ):
             raise VerifiedHistoryIntegrityError("suffix receipt identity mismatch")
+        evidence_sha256s.add(receipt["sha256"])
         _, raw = _git_artifact_bytes(repository, evidence_commit, evidence_path)
         if len(raw) != receipt["bytes"] or sha256(raw).hexdigest() != receipt["sha256"]:
             raise VerifiedHistoryIntegrityError("suffix evidence asset mismatch")
@@ -780,6 +892,10 @@ def _validate_source_receipts(
     if groups != set(_RECEIPT_AUTHORITIES):
         raise VerifiedHistoryIntegrityError(
             "suffix receipt independence groups mismatch"
+        )
+    if len(evidence_sha256s) != len(value):
+        raise VerifiedHistoryIntegrityError(
+            "suffix receipts do not contain independent raw source bytes"
         )
     if sort_keys != sorted(sort_keys) or len(set(sort_keys)) != len(sort_keys):
         raise VerifiedHistoryIntegrityError("suffix receipts are not canonical")

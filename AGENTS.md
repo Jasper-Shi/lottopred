@@ -49,17 +49,24 @@ affected documentation in the same change.
 
 ## Model history and status
 
-- **V1 — production baseline suite.** Random, long-frequency, recent-frequency,
-  EMA/gap, logistic, and their frozen ensemble continue to produce live
-  snapshots. V1 is a baseline, not proof that lottery draws are predictable.
+- **V1 — paused production baseline suite.** Before the data-integrity hold,
+  random, long-frequency, recent-frequency, EMA/gap, logistic, and their frozen
+  ensemble produced live snapshots. V1 is a baseline, not proof that lottery
+  draws are predictable; restarting it requires the reviewed corrected-history
+  release described in `docs/CODEX_HANDOFF.md`.
 - **V2 — rejected.** Its frozen statistical multi-factor model underperformed
-  the fair theoretical Top-6, Top-12, and Top-18 expectations on 2020–2025.
-- **V3 — shadow only.** It was the sole V2–V4 candidate with small positive
-  ranking lift at all three Top-K levels, but the lift was not significant,
-  probability calibration was worse than the fair constant baseline, and 2025
-  deteriorated sharply. It must not replace V1 without prospective evidence.
-- **V4 — rejected.** Adding V2 to the V1/V3 signals diluted V3 and finished below
-  fair theoretical expectations at all three Top-K levels.
+  the fair theoretical Top-6, Top-12, and Top-18 expectations in the legacy
+  registered-data run. The exact metrics are withdrawn as corrected-history
+  evidence; see the data-integrity erratum in `docs/V2_V4_RESULTS.md`.
+- **V3 — paused shadow / unpromoted.** It was the sole V2–V4 candidate with
+  small positive ranking lift at all three Top-K levels in that legacy run, but
+  the lift was not significant, probability calibration was worse than the fair
+  constant baseline, and 2025 deteriorated sharply. It remains unpromoted;
+  corrected-history behavior requires a reviewed new version and prospective
+  evidence.
+- **V4 — rejected.** Its legacy registered-data result finished below fair
+  theoretical expectations at all three Top-K levels. The conservative rejection
+  remains, but the exact result is not corrected-history evidence.
 
 The authoritative numbers and decisions are in `docs/V2_V4_RESULTS.md`.
 
@@ -71,7 +78,7 @@ The historical partitions are:
 |---|---|
 | 1982–2014 | historical development |
 | 2015–2019 | legacy validation/model-selection data |
-| 2020–2025 | consumed V2–V4 blind period |
+| 2020–2025 | consumed legacy registered-data diagnostic; strict-blind status withdrawn |
 | 2026+ | model-specific prospective forward evidence |
 
 **Post-hoc tuning on 2020–2025 is prohibited.** Do not change features,
