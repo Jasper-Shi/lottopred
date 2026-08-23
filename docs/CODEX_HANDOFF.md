@@ -1,7 +1,7 @@
 # Codex Handoff
 
 Last verified on 2026-08-23 against operational `main` base
-`8debb2e13d117124dbf4b7cdf7e8744ee23e0e89` and corrected-epoch artifact
+`e3c39dda3233cec5933430f22afd6aa8d78a998d` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -27,10 +27,13 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > `b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803`;
 > and its head event SHA-256 is
 > `3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475`.
-> This evidence is sealed but not yet an authorized operational input: no
-> bootstrap, backtest, or live consumer has been switched to it, and the kill
-> switches remain false. Re-enable only through the reviewed two-gate release
-> described in
+> The verified-history read interface is now the sole input to the direct
+> backtest boundary. The kill switches remain false, so it is not authorized to
+> execute. Bootstrap and every public live entry point fail explicitly after
+> their gates until the reviewed dual-source suffix writer and dynamic
+> pin-publication protocol exist and a reload succeeds. Re-enable only through
+> the reviewed
+> two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
 > The historical OOS opportunity ledger preserves its exact 18,259-event
@@ -62,11 +65,16 @@ lotto649 backtest
 lotto649 live
 ```
 
-When a reviewed configuration explicitly enables them, `bootstrap` refreshes and
-validates source data, `backtest` walks forward chronologically over the committed
-processed CSV, and `live` refreshes history, evaluates due snapshots, and creates
-predictions for the next Wednesday or Saturday. During the incident all three
-commands fail closed before those operations.
+After the suffix writer and external-pin publication protocol are implemented
+and reviewed, `bootstrap` may append and validate independently sourced draws.
+`backtest` walks forward chronologically over the Git-authenticated verified
+history. `live` may refresh history, evaluate due snapshots, and create
+predictions for the next Wednesday or Saturday only after that same writer has
+published new pins and a reload succeeds. During the incident all three commands
+fail closed at their disabled runtime gates. A direct true-toggle still cannot
+move `bootstrap` or `live` past the missing writer interlock. Backtest has no
+writer dependency, but it remains unauthorized until its separate reviewed
+release reopens both the workflow and runtime gates.
 
 `config.yaml` deliberately separates two selections:
 
@@ -90,7 +98,7 @@ Change version semantics deliberately rather than renaming committed snapshots.
 
 The immutable pre-hold artifacts originated at `main` commit
 `9f16e20c726c7b65eed1d387c4c725d51248f570` and remain present at current
-operational base `8debb2e13d117124dbf4b7cdf7e8744ee23e0e89`:
+operational base `e3c39dda3233cec5933430f22afd6aa8d78a998d`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -111,12 +119,17 @@ draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
 to immutable WCLC and Loto-Québec source receipts at evidence commit
 `60dbd42a502850091508491f9011f9a08acf894f`. The public verified-history loader
 reconstructs a 4,444-draw view through 2026-08-22 only when the external seal,
-suffix-file, and suffix-head pins all match. This loader is currently an audited
-read boundary, not authorization to resume execution.
+suffix-file, and suffix-head pins all match. `operational_history.py` fixes those
+production identities behind one load interface. Backtest consumes that
+interface. Public live evaluation/prediction entry points no longer accept an
+arbitrary draw list and currently stop at the writer interlock; the private
+post-writer helpers accept only the `VerifiedHistory` returned by the live
+cycle. This consumer integration is not authorization to resume execution.
 
-Prediction files are immutable. `generate_next_predictions` skips an already
-existing target/model/version path, and the storage layer rejects overwrites by
-default. Never edit a snapshot after its result is knowable.
+Prediction files are immutable. Within the post-writer stage,
+`_generate_next_predictions` skips an already existing target/model/version
+path, and the storage layer rejects overwrites by default. Never edit a snapshot
+after its result is knowable.
 
 ## GitHub Actions and email
 
@@ -163,8 +176,10 @@ Top-12 hits `>= 5`.
 
 ## Data-source and fallback behavior
 
-The live CLI imports `refresh_with_sources` from `src/lotto649/data_sources.py`.
-When source refresh is explicitly reopened, its reconciliation policy is:
+The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
+future refactoring, but they are no longer a valid operational-history write
+path. Live refresh now refuses execution after both gates until a Git-bound,
+dual-source suffix writer exists. The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
 2. Use lotto.net annual HTML as the machine-readable bridge from 2024 onward.
@@ -205,9 +220,11 @@ Do not broaden the fallback to swallow those integrity failures.
    `b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
    `60dbd42a502850091508491f9011f9a08acf894f` remain reachable, then verify the
    deployed pins from a fresh full-history clone of `main`.
-7. Integrate the verified-history consumer explicitly, then re-enable only
-   through the reviewed two-gate release in `OPERATIONS.md`, with new exact
-   config bytes and matching workflow plans in the same commit.
+7. Keep the verified-history consumer as the only read path. Implement and
+   independently review the dual-source suffix writer and dynamic external-pin
+   publication protocol; only then re-enable through the reviewed two-gate
+   release in `OPERATIONS.md`, with new exact config bytes and matching workflow
+   plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
    authorized runtime before that release. Use a new version whenever

@@ -31,8 +31,13 @@ affected documentation in the same change.
 ## Architecture
 
 - `src/lotto649/data.py` parses and validates WCLC and lotto.net payloads.
-- `src/lotto649/data_sources.py` owns the live reconciliation and bridge fallback
-  policy used by the CLI.
+- `src/lotto649/data_sources.py` preserves the legacy reconciliation and bridge
+  fallback policy for audit; it is not an operational CLI write path.
+- `src/lotto649/verified_history.py` validates the sealed corrected-history
+  epoch and its Git-bound, dual-source suffix.
+- `src/lotto649/operational_history.py` owns the deployed history paths and
+  external hashes. Operational callers must use its single load interface and
+  must not fall back to `data/processed/draws.csv`.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -113,8 +118,10 @@ Historical research:
 history before t -> features/train -> frozen prediction for t -> reveal t -> score
 ```
 
-Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads the
-committed processed dataset; `lotto649 bootstrap` refreshes network sources.
+Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads
+only through the verified operational-history seam. `lotto649 bootstrap` remains
+blocked until the reviewed dual-source suffix writer and external-pin publication
+protocol exist; it must never fall back to the legacy processed CSV.
 
 Live forward cycle:
 

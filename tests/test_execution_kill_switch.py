@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from datetime import date
 import importlib
-from pathlib import Path
 import sys
+from datetime import date
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from lotto649.domain import Draw
 import lotto649.live as live_module
-
+from lotto649.domain import Draw
 
 ROOT = Path(__file__).resolve().parents[1]
 _MISSING = object()
@@ -35,7 +35,7 @@ def test_bootstrap_requires_literal_true_before_path_or_source_access(
     monkeypatch,
     enablement,
 ):
-    import lotto649.cli as cli
+    from lotto649 import cli
 
     data_cfg = {"processed_csv": "data/processed/draws.csv"}
     if enablement is not _MISSING:
@@ -46,13 +46,41 @@ def test_bootstrap_requires_literal_true_before_path_or_source_access(
         raise AssertionError("disabled bootstrap reached a side-effect boundary")
 
     monkeypatch.setattr(cli, "load_config", lambda _path: cfg)
-    monkeypatch.setattr(cli, "resolve_path", forbidden)
-    monkeypatch.setattr(cli, "load_draws", forbidden)
-    monkeypatch.setattr(cli, "refresh_with_sources", forbidden)
-    monkeypatch.setattr(cli, "save_draws", forbidden)
+    monkeypatch.setattr(cli, "resolve_path", forbidden, raising=False)
+    monkeypatch.setattr(cli, "load_draws", forbidden, raising=False)
+    monkeypatch.setattr(cli, "refresh_with_sources", forbidden, raising=False)
+    monkeypatch.setattr(cli, "save_draws", forbidden, raising=False)
     monkeypatch.setattr(sys, "argv", ["lotto649", "bootstrap"])
 
     with pytest.raises(SystemExit, match="data refresh is disabled"):
+        cli.main()
+
+
+def test_bootstrap_stays_blocked_until_verified_suffix_writer_exists(
+    tmp_path,
+    monkeypatch,
+):
+    from lotto649 import cli
+
+    cfg = {
+        "_root": str(tmp_path),
+        "data": {
+            "refresh_enabled": True,
+            "processed_csv": "data/processed/draws.csv",
+        },
+    }
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("bootstrap reached the legacy mutable data path")
+
+    monkeypatch.setattr(cli, "load_config", lambda _path: cfg)
+    monkeypatch.setattr(cli, "resolve_path", forbidden, raising=False)
+    monkeypatch.setattr(cli, "load_draws", forbidden, raising=False)
+    monkeypatch.setattr(cli, "refresh_with_sources", forbidden, raising=False)
+    monkeypatch.setattr(cli, "save_draws", forbidden, raising=False)
+    monkeypatch.setattr(sys, "argv", ["lotto649", "bootstrap"])
+
+    with pytest.raises(SystemExit, match="verified history append writer"):
         cli.main()
 
 
@@ -66,7 +94,7 @@ def test_backtest_requires_literal_true_before_path_or_model_access(
     monkeypatch,
     enablement,
 ):
-    import lotto649.cli as cli
+    from lotto649 import cli
 
     backtest_cfg = {
         "test_start": "2025-01-01",
@@ -84,14 +112,65 @@ def test_backtest_requires_literal_true_before_path_or_model_access(
         raise AssertionError("disabled backtest reached an execution boundary")
 
     monkeypatch.setattr(cli, "load_config", lambda _path: cfg)
-    monkeypatch.setattr(cli, "resolve_path", forbidden)
-    monkeypatch.setattr(cli, "load_draws", forbidden)
+    monkeypatch.setattr(cli, "resolve_path", forbidden, raising=False)
+    monkeypatch.setattr(cli, "load_draws", forbidden, raising=False)
     monkeypatch.setattr(cli, "run_backtest", forbidden)
     monkeypatch.setattr(cli, "summarize", forbidden)
     monkeypatch.setattr(sys, "argv", ["lotto649", "backtest"])
 
     with pytest.raises(SystemExit, match="backtest execution is disabled"):
         cli.main()
+
+
+def test_cli_backtest_delegates_to_verified_operational_boundary(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    from lotto649 import cli
+
+    cfg = {
+        "_root": str(tmp_path),
+        "backtest": {
+            "enabled": True,
+            "test_start": "2025-01-01",
+            "test_end": "2025-01-08",
+        },
+    }
+    frame = object()
+    calls = []
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("CLI backtest reached the legacy processed CSV")
+
+    def fake_run_backtest(received_cfg, start, end, output_dir):
+        calls.append((received_cfg, start, end, output_dir))
+        return frame
+
+    monkeypatch.setattr(cli, "load_config", lambda _path: cfg)
+    monkeypatch.setattr(cli, "resolve_path", forbidden, raising=False)
+    monkeypatch.setattr(cli, "load_draws", forbidden, raising=False)
+    monkeypatch.setattr(cli, "run_backtest", fake_run_backtest)
+    monkeypatch.setattr(
+        cli,
+        "summarize",
+        lambda received: SimpleNamespace(
+            to_string=lambda *, index: "verified" if received is frame else "wrong"
+        ),
+    )
+    monkeypatch.setattr(sys, "argv", ["lotto649", "backtest"])
+
+    cli.main()
+
+    assert calls == [
+        (
+            cfg,
+            date(2025, 1, 1),
+            date(2025, 1, 8),
+            tmp_path / "reports",
+        )
+    ]
+    assert capsys.readouterr().out.strip() == "verified"
 
 
 @pytest.mark.parametrize("live_enabled", [_MISSING, False, None, 1, "true"])
@@ -111,18 +190,20 @@ def test_live_entry_points_require_literal_true_before_side_effects(
         },
         "live": live_cfg,
     }
-    draws = [Draw(date(2026, 8, 15), (1, 2, 3, 4, 5, 6), 7)]
 
     def forbidden(*_args, **_kwargs):
         raise AssertionError("disabled live entry point reached a side effect")
 
-    monkeypatch.setattr(live_module, "resolve_path", forbidden)
     monkeypatch.setattr(live_module, "build_models", forbidden)
+    monkeypatch.setattr(
+        live_module, "load_operational_history", forbidden, raising=False
+    )
+    monkeypatch.setattr(live_module, "operational_history_provenance", forbidden)
 
     for entry_point, args in (
         (live_module.refresh_data, (cfg,)),
-        (live_module.evaluate_due_predictions, (cfg, draws)),
-        (live_module.generate_next_predictions, (cfg, draws)),
+        (live_module.evaluate_due_predictions, (cfg,)),
+        (live_module.generate_next_predictions, (cfg,)),
     ):
         with pytest.raises(RuntimeError, match="live execution is disabled"):
             entry_point(*args)
@@ -150,7 +231,9 @@ def test_live_refresh_and_cycle_require_literal_refresh_true_first(
     def forbidden(*_args, **_kwargs):
         raise AssertionError("disabled refresh reached a side effect")
 
-    monkeypatch.setattr(live_module, "resolve_path", forbidden)
+    monkeypatch.setattr(
+        live_module, "load_operational_history", forbidden, raising=False
+    )
     with pytest.raises(RuntimeError, match="data refresh is disabled"):
         live_module.refresh_data(cfg)
 
@@ -166,15 +249,19 @@ def test_literal_true_allows_main_live_cycle_contract(monkeypatch):
         "live": {"enabled": True},
     }
 
-    monkeypatch.setattr(live_module, "refresh_data", lambda _cfg: draws)
     monkeypatch.setattr(
         live_module,
-        "evaluate_due_predictions",
+        "refresh_data",
+        lambda _cfg: SimpleNamespace(draws=tuple(draws)),
+    )
+    monkeypatch.setattr(
+        live_module,
+        "_evaluate_due_predictions",
         lambda _cfg, _draws: [{"ok": True}],
     )
     monkeypatch.setattr(
         live_module,
-        "generate_next_predictions",
+        "_generate_next_predictions",
         lambda _cfg, _draws: [Path("prediction.json")],
     )
 
@@ -184,6 +271,33 @@ def test_literal_true_allows_main_live_cycle_contract(monkeypatch):
         "evaluations_created": 1,
         "predictions_created": ["prediction.json"],
     }
+
+
+def test_live_refresh_stays_blocked_until_verified_suffix_writer_exists(
+    tmp_path,
+    monkeypatch,
+):
+    cfg = {
+        "_root": str(tmp_path),
+        "data": {
+            "refresh_enabled": True,
+            "processed_csv": "data/processed/draws.csv",
+        },
+        "live": {"enabled": True},
+    }
+
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("live refresh reached the legacy mutable data path")
+
+    monkeypatch.setattr(
+        live_module, "load_operational_history", forbidden, raising=False
+    )
+
+    with pytest.raises(RuntimeError, match="verified history append writer"):
+        live_module.refresh_data(cfg)
+
+    with pytest.raises(RuntimeError, match="verified history append writer"):
+        live_module.run_live_cycle(cfg)
 
 
 @pytest.mark.parametrize(
@@ -208,10 +322,11 @@ def test_direct_backtest_requires_literal_true_before_model_or_report_access(
         raise AssertionError("disabled direct backtest reached model construction")
 
     monkeypatch.setattr(backtest_module, "build_models", forbidden)
+    monkeypatch.setattr(backtest_module, "load_operational_history", forbidden)
+    monkeypatch.setattr(backtest_module, "operational_history_provenance", forbidden)
 
     with pytest.raises(RuntimeError, match="backtest execution is disabled"):
         backtest_module.run_backtest(
-            [],
             cfg,
             date(2025, 1, 1),
             date(2025, 1, 8),
@@ -226,19 +341,39 @@ def test_direct_backtest_accepts_literal_true_without_writing_when_no_output_req
 ):
     import lotto649.backtest as backtest_module
 
+    calls = []
+    provenance_calls = []
+    cfg = {
+        "_root": "/verified-repository",
+        "backtest": {"enabled": True, "min_history_draws": 300},
+        "project": {"model_version": "v1.0.0"},
+    }
+
+    def fake_history(received_cfg):
+        calls.append(received_cfg)
+        return SimpleNamespace(draws=())
+
+    def fake_provenance(history):
+        provenance_calls.append(history)
+        return {"epoch": "verified"}
+
     monkeypatch.setattr(backtest_module, "build_models", lambda _cfg: {})
+    monkeypatch.setattr(backtest_module, "load_operational_history", fake_history)
+    monkeypatch.setattr(
+        backtest_module,
+        "operational_history_provenance",
+        fake_provenance,
+    )
 
     frame = backtest_module.run_backtest(
-        [],
-        {
-            "backtest": {"enabled": True, "min_history_draws": 300},
-            "project": {"model_version": "v1.0.0"},
-        },
+        cfg,
         date(2025, 1, 1),
         date(2025, 1, 8),
     )
 
     assert frame.empty
+    assert calls == [cfg]
+    assert len(provenance_calls) == 1
 
 
 @pytest.mark.parametrize(
@@ -341,30 +476,42 @@ def test_evaluation_and_generation_require_literal_refresh_true_before_side_effe
         "live": {"enabled": True},
         "project": {"model_version": "v1.0.0"},
     }
-    draws = [Draw(date(2026, 8, 22), (11, 13, 21, 31, 34, 45), 5)]
 
     def forbidden(*_args, **_kwargs):
         raise AssertionError("partial live enablement reached a side effect")
 
     monkeypatch.setattr(live_module, "Path", forbidden)
     monkeypatch.setattr(live_module, "build_models", forbidden)
+    monkeypatch.setattr(
+        live_module, "load_operational_history", forbidden, raising=False
+    )
+    monkeypatch.setattr(live_module, "operational_history_provenance", forbidden)
 
     with pytest.raises(RuntimeError, match="data refresh is disabled"):
-        getattr(live_module, entry_point_name)(cfg, draws)
+        getattr(live_module, entry_point_name)(cfg)
 
 
-def test_evaluation_and_generation_accept_both_literal_true_gates(
-    tmp_path,
+def test_evaluation_and_generation_stay_blocked_until_verified_suffix_writer_exists(
     monkeypatch,
 ):
     cfg = {
-        "_root": str(tmp_path),
+        "_root": "/must-not-be-read",
         "data": {"refresh_enabled": True},
         "live": {"enabled": True},
         "project": {"model_version": "v1.0.0"},
     }
-    draws = [Draw(date(2026, 8, 22), (11, 13, 21, 31, 34, 45), 5)]
-    monkeypatch.setattr(live_module, "build_models", lambda _cfg, requested: {})
 
-    assert live_module.evaluate_due_predictions(cfg, draws) == []
-    assert live_module.generate_next_predictions(cfg, draws) == []
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("public live helper bypassed the suffix writer")
+
+    monkeypatch.setattr(
+        live_module, "load_operational_history", forbidden, raising=False
+    )
+    monkeypatch.setattr(live_module, "build_models", forbidden)
+
+    for entry_point in (
+        live_module.evaluate_due_predictions,
+        live_module.generate_next_predictions,
+    ):
+        with pytest.raises(RuntimeError, match="verified history append writer"):
+            entry_point(cfg)
