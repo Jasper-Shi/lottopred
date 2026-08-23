@@ -1,0 +1,2 @@
+# Preserve downloaded source receipts byte-for-byte and suppress text cleanup.
+evidence/live_sources/**/*.html -text -diff

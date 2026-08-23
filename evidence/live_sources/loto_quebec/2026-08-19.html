@@ -1,0 +1,1567 @@
+
+
+<!DOCTYPE html>
+<html class="no-js" lang="en-CA">	
+	<!-- #### DEBUT page-originale - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	<head>        <style>
+#didomi-host #didomi-popup .didomi-popup-view p, 
+#didomi-host #didomi-popup .didomi-popup-view span, 
+#didomi-host #didomi-popup .didomi-popup-view a, 
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-body__explanation p.lq-texte,
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-categories .didomi-components-accordion div p span,
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-categories .didomi-components-accordion .label-click.didomi-consent-popup-data-processing__purpose span#didomi-purpose-1LQMandatoryCookies span,
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-categories .didomi-components-accordion .label-click.didomi-consent-popup-data-processing__purpose span#didomi-purpose-2LQPersonalization span,
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-categories .didomi-components-accordion .label-click.didomi-consent-popup-data-processing__purpose span#didomi-purpose-3LQStatsAnalytic span,
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences .didomi-consent-popup-categories .didomi-components-accordion .label-click.didomi-consent-popup-data-processing__purpose span#didomi-purpose-4LQAdvertising span {
+    line-height: 24px;
+}
+
+
+#didomi-host #didomi-popup .didomi-popup-view a, 
+#didomi-host #didomi-popup .didomi-popup-view p em, 
+#didomi-host #didomi-consent-popup .didomi-consent-popup-preferences p.didomi-consent-popup-body__explanation span p.lq-texte em 
+{
+    font-family: arial;
+}
+
+#didomi-host #didomi-popup .didomi-popup-view p h1.heading2 {
+    font-family: gordita, Tahoma, Century gothic, Arial, sans-serif;
+}
+</style>
+        <!-- Via Marketing Tags Magnolia -->
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-T7WLTZB');</script>
+<!-- End Google Tag Manager -->
+<!-- #### DEBUT head - _2A - Aug 20, 2026 3:35:06 PM #### -->
+
+
+
+
+
+
+
+
+<script type="text/javascript">var enregistrerURL = true;
+							
+	
+var LTApp = (function(d, w, cl){
+
+	"hack42";"use strict";
+	var 
+	
+	w=window,
+	isNull = function (obj) {
+		return (obj === undefined) || obj === null;
+	},
+	ecrireCookie = function (nom, valeur, expires, path, domain, secure) {
+		var
+			date;
+
+		/******************************************************/
+		// On peut maintenant changer la date d'expiration du cookie (au lieu de la fin de la session)
+		// Si on entre "never", le cookie expire dans un an.
+		if (!isNull(expires) && expires.length > 0) {
+
+			if (expires.indexOf("never") >= 0) {
+
+				date=new Date();
+				date.setYear(date.getFullYear()+1);
+				expires=date;
+			}
+			else {
+
+				expires = new Date(expires);  // mm/dd/yyyy [IE, FF]
+			}
+		}
+		/******************************************************/
+
+		d.cookie=nom+"="+encodeURI(valeur)+
+		((isNull(expires)) ? "" : ("; expires="+expires.toGMTString()))+
+		((isNull(path)) ? "; path=/" : ("; path="+path))+
+		((isNull(domain)) ? "" : ("; domain="+domain))+
+		((secure===true) ? "; secure" : "");
+
+		return null;
+	},
+	gup = function ( name ) {
+		var
+			regexS = "[\\?&]"+name+"=([^&#]*)",
+			regex = new RegExp( regexS ),
+			results = regex.exec( window.location.href );
+	
+		if(isNull(results)){
+			return null;
+		}
+	
+		return results[1];
+	},
+	
+	setCl = function(val){
+		cl = val;
+	},
+	
+	preTraitement = function(){				
+		var
+			currentLocation = cl,
+			param_widget = gup('widget'),
+			hasParam = currentLocation.indexOf("?"),
+			hasHash = currentLocation.indexOf("#"),
+			cleanReferrer=document.referrer;
+
+		if(currentLocation.indexOf("ej.loteries.") != -1 || currentLocation.indexOf("ej-loteries.") != -1 ) {		
+			// Si l'url en cours est "https://ej-loteries.lotoquebec", on la remplace par https://loteries.espacejeux
+			currentLocation = currentLocation.replace("ej.", "").replace("ej-", "").replace(".lotoquebec", ".espacejeux");
+			// On recalcule les index des separateurs
+			hasParam = currentLocation.indexOf("?");
+			hasHash = currentLocation.indexOf("#");
+		}
+		
+		if(!isNull(param_widget)&&(param_widget=='btn-medias-sociaux')){
+			//console.log(w.location.href, "(7) param_widget : ", param_widget);
+			if(hasParam==-1){
+				//console.log(w.location.href, "(8) hasParam : ", hasParam);
+				if(hasHash!=-1){
+					//console.log(w.location.href, "(9) hasHash : ", hasHash);
+					currentLocation = currentLocation.substring(0,hasHash);
+					//console.log(w.location.href, "(10) currentLocation : ", currentLocation);
+					cleanReferrer = cleanReferrer.substring(0,hasHash);
+					//console.log(w.location.href, "(11) cleanReferrer : ", cleanReferrer);
+				}
+			}else{
+				//console.log(w.location.href, "(12) hasParam : ", hasParam);
+				currentLocation = currentLocation.substring(0,hasParam);
+				//console.log(w.location.href, "(13) currentLocation : ", currentLocation);
+				cleanReferrer = cleanReferrer.substring(0,hasParam);
+				//console.log(w.location.href, "(14) cleanReferrer : ", cleanReferrer);
+			}
+			if(currentLocation!=cleanReferrer){
+				//console.log(w.location.href, "(15) cleanReferrer : ", cleanReferrer);
+				//console.log(w.location.href, "(16) currentLocation : ", currentLocation);
+				//console.log(w.location.href, "(17) w00t!!! : ", currentLocation);
+				w.location.href=currentLocation;
+			}
+		}
+		//console.log(w.location.href, "(18) param_widget : ", param_widget);
+	},
+	
+	//------- écrire cookie URL redireccion.----//
+	postTraitement = function(){
+		enregistrerCookie();
+	},
+		
+	enregistrerCookie = function(){		
+		var 
+			currentLocation = cl,
+			setCookie=true;
+		
+		if(
+			currentLocation=="/fr/jeux/inscription" ||
+			currentLocation=="/fr/jeux/completer-inscription" ||
+			currentLocation=="/en/games/registration" ||
+			currentLocation=="/en/games/complete-registration"
+		){
+			setCookie=false;
+		}
+		
+		if(
+			currentLocation=="/fr/jeux/abonnement-infolettre"
+		){
+			currentLocation="/lel/fr/avis-par-courriel";
+		}
+		if(
+			currentLocation=="/en/games/newsletter-subscription"
+		){
+			currentLocation="/lel/en/e-mail-notices";
+		}
+		
+		if (typeof enregistrerURL !== 'undefined' && enregistrerURL && setCookie) {
+			ecrireCookie("urlRedirection", currentLocation, null, null, null, false);
+		}
+	};
+	
+	return {
+		preTraitementRedirection: preTraitement,
+		postTraitementRedirectionTransactionnel: postTraitement,
+		setCurrentLocation: setCl
+    };
+	
+}(document, window, document.href));
+
+var preTraitementRedirection = function (lc){
+	LTApp.setCurrentLocation(lc);
+	LTApp.preTraitementRedirection();
+};
+var postTraitementRedirectionTransactionnel = function (lc){
+	LTApp.setCurrentLocation(lc);
+	LTApp.postTraitementRedirectionTransactionnel();
+};
+
+
+	if (window.location.hostname.indexOf("ej.loteries.lotoquebec") < 0 || window.location.hostname.indexOf("ej-loteries.lotoquebec") < 0) {
+		console.log("window.location.hostname: ", window.location.hostname);
+		var posDebut = window.location.hostname.indexOf("loteries.") + 9;
+		//if(window.location.hostname.indexOf("loteries.dev-") != -1){
+		//	posDebut += 7;
+		//}
+		var posFin = (window.location.hostname).length;
+		var urlDocumentDomaine = window.location.hostname.substring(posDebut, posFin);
+		console.log("urlDocumentDomaine: ", urlDocumentDomaine);
+		document.domain = urlDocumentDomaine;
+	}
+	
+</script>
+
+<script src="https://loteries.lotoquebec.com/mel/.resources/lq-entete-commun/webresources/js/redirect-commun.js"></script>
+
+
+<meta charset="utf-8">
+
+
+<title>Lotto 6/49 - Results - Lotteries - Loto-Québec</title>
+
+    <meta name="robots" content="index, follow" />
+
+
+<meta property="og:title" content="Lotto 6/49 Results" />
+
+<meta property="og:description" content="Lotto 6/49 - Play this Loto-Qu&eacute;bec draw game online and at retailers. Announced jackpot plus a guaranteed $1,000,000 prize to win. Draws on Wednesdays &amp; Saturdays." />
+
+<meta property="og:image" content="https://loteries.lotoquebec.com/loteries/___W0ccd7a0b-5eb7-4eb0-bdc7-af03090221fd___.png" />
+
+<meta name="description" content="Lotto 6/49 - Play this Loto-Qu&eacute;bec draw game online and at retailers. Announced jackpot plus a guaranteed $1,000,000 prize to win. Draws on Wednesdays &amp; Saturdays.">
+
+<meta name="keywords" content="Lotto 649, loto 6/49, Loto 649, loto 649, 649, 6/49, loto, lotto, draw game, draw, ticket, lotteries, lottery, lotery, résultats, results, resultats">
+<meta property="og:url" content='https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats' />
+
+<meta name="viewport" content="width=device-width">
+<meta name="format-detection" content="telephone=no" />
+
+
+
+<link rel="canonical" href="https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats" />
+
+	<link rel="alternate" href="https://loteries.lotoquebec.com/fr/loteries/lotto-6-49-resultats" hreflang="fr-CA" />
+	<link rel="alternate" href="https://loteries.lotoquebec.com/en/lotteries/lotto-6-49-resultats" hreflang="en-CA" />
+
+<link rel="apple-touch-icon" sizes="180x180" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/apple-touch-icon~2023-05-17-16-00-00-000~cache.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/favicon-32x32~2023-05-17-16-00-00-000~cache.png">
+<link rel="icon" type="image/png" sizes="16x16" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/favicon-16x16~2023-05-17-16-00-00-000~cache.png">
+<link rel="icon" type="image/svg+xml" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/favicon~2023-05-17-16-00-00-000~cache.svg">
+<link rel="manifest" href="/loteries/.resources/loteries/webresources/site~2023-05-17-16-00-00-000~cache.webmanifest">
+
+
+  <link rel="stylesheet" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/css/ate4legacy~2026-05-11-14-41-43-000~cache.css" />
+  <link rel="stylesheet" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/css/01.min~2026-05-11-14-41-43-000~cache.css" />
+  <link rel="stylesheet" href="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/css/02.min~2026-05-11-14-41-43-000~cache.css" />
+
+
+
+	<script src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/lib.entete.min~2026-05-11-14-41-43-000~cache.js"></script>
+	<script src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/connexion.min~2026-05-11-14-41-43-000~cache.js"></script>
+	<script src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/barrePortailCommune.min~2026-05-11-14-41-43-000~cache.js"></script>
+
+<!-- Didomi - DÉBUT -->
+<script type="text/javascript" src="/mel/.resources/lq-entete-commun/webresources/js/sdk-privacy.js"></script>
+
+<script type="text/javascript">
+    function gtmCustomEventByVendor(vendorId, eventObjToPush) {
+        window.dataLayer = window.dataLayer || [];
+        window.didomiOnReady = window.didomiOnReady || [];
+        window.didomiOnReady.push(function (Didomi) {
+            const consentStatus = Didomi.getUserStatus().vendors.global_consent.enabled.includes(vendorId);
+            
+            const vendorsWithKnownConsentStatus = Object.values(
+                Didomi.getUserStatus().vendors.global_consent
+            ).flat();
+
+            if (consentStatus === true) {
+                console.log('consentement autorise pour le vendeur :', vendorId, ' event ->', eventObjToPush);
+                dataLayer.push(eventObjToPush);
+            } else if (!vendorsWithKnownConsentStatus.includes(vendorId)) {
+                console.log('consentement NON autorise pour :', vendorId, ' event ->', eventObjToPush);
+                Didomi.on('consent.changed', function () {
+                    if (Didomi.getUserStatus().vendors.global_consent.enabled.includes(vendorId) === true) {
+                        dataLayer.push(eventObjToPush);
+                    }
+                });
+            }
+        });
+    }
+</script>
+<!-- Didomi - FIN -->
+<!-- #### FIN head - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	</head>
+
+<body lang="en-CA" >        <!-- Via Tag manager -- Google Tag Manager (noscript) -->
+<noscript style="color:#767676"><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T7WLTZB"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+        <style>
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .main
+{margin-bottom:0}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .logo,
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .zoneLogo
+{float:left;margin-left:12%;margin-right:4%;width:30%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .zoneLogo
+{width:46%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .zoneLogo .logo
+{float:none;margin-left:0;margin-right:0;width:100%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .jour,
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .date 
+{float:left;width:100%;margin-top:5px}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .jour,
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .date
+{font-family:'Lato Light'}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-max .dateComplete .date
+{margin-top:5px}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-max .dateComplete
+{float:left;font-size:.8125em;padding-top:7%;text-align:left;width:45%;
+font-family:'Lato Light';text-transform:uppercase;position:relative;top:0}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .date
+{margin-top:0}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete
+{font-size:.8125em;padding-top:7%;text-align:left;width:45%;font-family:'Lato Light';
+text-transform:uppercase;position:absolute;left:60%;top:27%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage
+{position:relative;height:auto;left:auto;right:2.5%;top:0;width:auto;padding-top:30px}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage .superTiragePlus
+{top:0;height:11px;width:auto}
+
+@media only screen and (max-width:440px){
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete
+{top:12%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage
+{padding-top:8%}
+}
+@media only screen and (min-width:440px) and (max-width:725px)
+{
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .montant
+{font-size:2.25em}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete
+{font-size:1.125em;}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .date
+{margin-top:0}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete
+{top:20%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage
+{padding-top:5%; top:25px;}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage .superTiragePlus
+{height:18px;width:150px}
+}
+@media only screen and (min-width:726px) and (max-width:990px){
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .logo,
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .zoneLogo
+{margin-left:4%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .zoneLogo .logo
+{margin-left:0}
+#accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .superTirage
+{padding-top:5px}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete
+{left:53%; top:20%}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .montant
+{font-size:1.5em}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .lotsGarantis
+{font-size:.8125em}
+.accueilGroupes .lqZoneAvisGrosLots #lqZoneAvisGrosLots-lotto-6-49 .dateComplete .date
+{font-size:.8375em}
+}
+</style>
+	
+
+	<style>
+		@media only screen and (min-width: 991px){
+			div#lqConteneurSite{
+			}
+
+	</style>
+
+		<div id="menuBarre"></div>
+	    
+		<div id="ate-layout" data-locale="en" data-graphql-url="https://loteries.assets.lotoquebec.com/api/exp/loteries">
+			<div id="lqConteneurSite" >	
+				<div class="lqConteneur ate4legacy" id="lqConteneurPage">
+				<div id='lqConfigTirageSpecial' data-id-prod-tirage-special='241' data-ecoute-srv-tirage-special='true' data-pourcent-diff-srv-tirage-special='25'></div>
+
+<!-- #### DEBUT entete - _2A - Aug 20, 2026 3:35:06 PM #### -->
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" type="text/css" href="/mel/.resources/lq-entete-commun/webresources/css/barreportail-app.css" media="all" /><!--theme.cssFiles -->
+
+<div id="conteneurMessage" role="alert">
+	<h2>Redirection to Espacejeux.com web site</h2><p>To return to the Lotteries web site, click on your browser’s "Back" button or click on "Lotteries" in the games menu of the Espacejeux.com web site.</p>
+	<a href="#" id="boutonSuite">OK</a>
+	<a href="#" id="boutonSuiteAnnuler">Cancel</a>
+</div>
+<div id="greyBoxSiteLoteries"></div>
+
+
+
+<script type="text/javascript">
+	var
+		domaineEJ = "espacejeux.com",
+		versionLoteries = "20260511144143",
+		versionSiteAware = "~2026-05-11-14-41-43-000~cache";
+</script>
+<noscript><!-- Chrome bypass --></noscript>
+<div class="lqZone" id="lqZoneEntete">
+	<noscript>
+		<div class="lqZoneMessageErreurNonJavaScriptOuCookies">
+			<div class="lqZoneConteneurMessageErreurNonJavaScriptOuCookies versionEn messageJavaScript">
+				<div class="lqTitreMessageErreurNonJavaScriptOuCookies">
+					<img src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/images/general/avertissementEntete.png" alt="" />
+					Warning
+				</div>
+				<div class="lqMessageErreurNonJavaScriptOuCookies">Some functions on this website require JavaScript to be enabled in your web browser.</div>
+			</div>
+		</div>
+	</noscript>
+	<div id="lqZoneNonCookies" >
+		<div class="lqZoneMessageErreurNonJavaScriptOuCookies">
+			<div class="lqZoneConteneurMessageErreurNonJavaScriptOuCookies versionEn">
+				<div class="lqTitreMessageErreurNonJavaScriptOuCookies">
+					<img src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/images/general/avertissementEntete.png" alt="" />
+					Warning
+				</div>
+				<div class="lqMessageErreurNonJavaScriptOuCookies">For you to enjoy certain functions on this site, your browser must be set to accept cookies. <a href="/en/technical-help">Find out more</a>.</div>
+			</div>
+		</div>
+	</div>
+	<div id="lqExtraPetitsEcrans"></div>
+	<div id="lqTresPetitsEcrans"></div>
+	<div id="lqPetitsEcrans"></div>
+	<div id="lqMoyensEcrans"></div>
+	<div id="lqGrandsEcrans"></div>
+	<div id="lqTresGrandsEcrans"></div>
+</div>
+
+<div class="wrapperLienResultatsFloating" id="wrapperLienResultatsFloating">
+	<div class="lienResultats inner">
+	</div>
+	
+</div>
+
+<!-- #### FIN entete - _2A - Aug 20, 2026 3:35:06 PM #### -->					
+					
+					<section id="maincontent" tabindex="-1" class="lqZoneContenu">	
+
+						<div class="spinner spinnerToutesLesBannieres" >
+							<img class="img-spinner" src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/images/general/ajax-loader-3.gif" alt="Loading"/>
+						</div>	
+
+						<div class="awaiting-content" >
+
+<!-- #### DEBUT area-list-marge-sans - _2A - Aug 20, 2026 3:35:06 PM #### -->
+<!-- #### FIN area-list-marge-sans - _2A - Aug 20, 2026 3:35:06 PM #### -->
+			
+
+
+
+
+
+<section>
+	<h1 class="lqTitrePage" >Lotto 6/49 Results</h1>
+</section>
+
+						
+<!-- #### DEBUT area-list-marge-sans - _2A - Aug 20, 2026 3:35:06 PM #### -->
+<!-- #### DEBUT contenu-deux-colonnes-un-tier-deux-tiers - _2A - Aug 20, 2026 3:35:06 PM #### -->
+
+	<div class="lqZoneUnTierDeuxTiersColonne1">
+<!-- #### DEBUT area-list-marge-avec - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	
+	
+	
+
+
+
+
+
+	<div class="magnoliaComponent sansMarge">
+<!-- #### DEBUT blocContenu-regulier - _2A - Aug 20, 2026 3:35:06 PM #### -->
+
+
+
+
+
+
+
+	
+
+		
+	<div>
+
+		<div class="lqBlocContenu " style="background-color: white;">
+			<div class="lqBlocContenuTexte lqBlocContenuTexteRegulier dernier">
+					<div class="lqBlocContenuRegulierDescriptif lqBlocContenuDescriptif" >
+						<div class='lqChampRiche'><p><a href="https://loteries.lotoquebec.com/en/lotteries/game/draw-based/lotto-6-49"><img alt="" src="/dam/jcr:09f079f1-cf37-4563-8b56-1143269a7f33/fleche-retour-noir.png" style="height:12px; width:11px">&nbsp;</a><a href="/en/lotteries/lotto-6-49">Lotto&nbsp;6/49</a></p></div>
+					</div>
+			</div>
+		</div>
+	</div>
+	
+<!-- #### FIN blocContenu-regulier - _2A - Aug 20, 2026 3:35:06 PM #### -->	</div>
+<!-- #### FIN area-list-marge-avec - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	</div>
+	<div class="lqZoneUnTierDeuxTiersColonne2">
+<!-- #### DEBUT area-list-marge-avec - _2A - Aug 20, 2026 3:35:06 PM #### -->
+<!-- #### FIN area-list-marge-avec - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	</div>
+<!-- #### FIN contenu-deux-colonnes-un-tier-deux-tiers - _2A - Aug 20, 2026 3:35:06 PM #### -->
+<!-- #### DEBUT contenu-une-colonne - _2A - Aug 20, 2026 3:35:06 PM #### -->
+<div class="lqZoneUneSeuleColonne">
+<!-- #### DEBUT area-list-marge-avec - _2A - Aug 20, 2026 3:35:06 PM #### -->
+	
+	
+	
+
+
+
+
+
+	<div class="magnoliaComponent sansMarge">
+
+
+	
+			
+		<!-- /* #### DEBUT (placeholder post rendering RESULTAT) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+		
+
+<!-- /* #### DEBUT RESULTAT - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+<!-- #### DEBUT outils - _2A - 23 août 2026 12:26:23 #### -->
+
+
+<div class="lqZoneOutilsResultatsUnTierDeuxTiers">
+<!-- #### DEBUT resultats-detailles - _2A - 23 août 2026 12:26:23 #### -->
+
+
+<style>		
+		
+
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.principal .lqZoneResultatsProduit {
+		background-color: #00538a;
+		color: #fff;
+	}
+	
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.principal .lqZoneResultatsProduit .lqZoneNotesLegales {
+        background-color: #00538a;
+        color: #fff;
+        margin-bottom: 0;
+    }
+	
+		#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneStructureDeLots .numeros {
+			border-top-color: #fff;
+		}
+	
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.secondaire.la-quotidienne .lqZoneResultatsProduit {
+		background-color: #00538a;
+		color: #fff;
+	}
+	
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .principal .lqZoneImage img.noir {
+		display: none;
+	}
+	
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .principal .lqZoneImage img.blanc {
+		display: block;
+	}
+
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .principal .lqZoneImage.doublejeu img.noir {
+		display: none;
+	}
+	
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .principal .lqZoneImage.doublejeu img.blanc {
+		display: inline-block;
+	}
+
+	#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProvenancesGagnants h3 {
+		background-color: #a4c7de;
+	}
+
+
+#lqZoneOutputOutilsResultats .principal .lqZoneDetailsStructuresLots {
+	display: block;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.banco .lqZoneDetailsStructuresLots {
+	display: block;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneEntetePretirages .lqZoneEntete {
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .la-poule-aux-oeufs-dor-gala-country-2015 .lqZoneEntetePretirages .lqZoneEntete {
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor div.lqConteneurStructureDeLots,
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor div.lqConteneurStructuresDeLots {
+	border: 1px solid #fff;
+}
+
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor .structure1 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor .structure2 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor .structure3 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .la-poule-aux-oeufs-dor .structure4 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .structure1 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .structure2 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .structure3 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .structure4 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .structure1 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .structure2 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .structure3 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .structure4 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .structure1 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .structure2 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .structure3 div.lqZoneDescriptionLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .structure4 div.lqZoneDescriptionLots {
+	border-bottom: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .lqZoneStructureDeLots { 
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor .lqZoneStructureDeLots.structure2,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-gala-2014 .lqZoneStructureDeLotsPrincipal.structure2,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-special-bal-masque-2015 .lqZoneStructureDeLotsPrincipal.structure2,
+#lqZoneOutputOutilsResultats .lqZoneProduit.la-poule-aux-oeufs-dor-gala-country-2014 .lqZoneStructureDeLotsPrincipal.structure2 {
+	border-left: 1px dotted #fff;
+	border-right: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.astro .structure1 .numeros {
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .legende.typeAstro .jour,
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .legende.typeAstro .mois,
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .legende.typeAstro .annee,
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .legende.typeAstro .signe {
+	border-left: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles div.numeros.typeAstro div.signe img.signe.blanc {
+	display: block;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.CentMilleALHeure .lqZoneStructureDeLots {
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2014 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2015 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2016 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2017 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2018 .lqZoneStructureDeLots,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2019 .lqZoneStructureDeLots {
+	border-top: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2014 .lqZoneImage img.lot,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2015 .lqZoneImage img.lot,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2016 .lqZoneImage img.lot,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2017 .lqZoneImage img.lot,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2018 .lqZoneImage img.lot,
+#lqZoneOutputOutilsResultats .lqZoneProduit.celebration-2019 .lqZoneImage img.lot {
+	border-bottom: 1px dotted #fff;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.gagnant-a-vie .lqZoneResultatsStructure {
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 15px;
+
+}
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.gagnant-a-vie .lqZoneResultatsStructure.premiere {
+    margin-top: 20px;
+}
+
+#lqZoneOutputOutilsResultats .lqZoneResultatsDetailles .lqZoneProduit.gagnant-a-vie .lqZoneStructureDeLots.premiere {
+    margin-top: 5px;
+}
+
+</style>
+
+<div class="lqZoneOutilsResultatsUnTierDeuxTiersColonne1">
+	<a name="res"></a>
+	<div class="lqZoneOutilsResultatsProduitEnveloppe">
+		
+	</div>
+	<div class="lqZoneOutilResultatsCalendrier">
+		<div id="boutonAfficherCalendrier">
+			<div class="lqZoneConteneurBoutonAfficherCalendrier">
+				<img src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/images/calendrier/icone.png" title="Results for previous draws"/> <span class="lqZoneLibelleBoutonAfficherCalendrier">Results for previous draws</span>
+			</div>
+		</div>
+		<div id="lqZoneCalendrierResultats">
+			<div class="lqZoneEnteteCalendrierResultats">Results for previous draws</div>
+		</div>
+		<div id="lqZoneBoutonFermerCalendrier">
+			<div id="boutonFermerCalendrier" class="lqZoneFermer"></div>
+		</div>
+	</div>
+	
+	<div id="liensRapides">
+		<h3>See the results<br/> for other lotteries</h3>
+		<select class="selecteurLiensProduits" id="selecteurProduits">
+			
+			<option value="default" selected>Select a lottery</option>
+		
+				    <option value="/en/lotteries/100-000-par-annee-a-vie#res">100 000 $ PAR ANNÉE À VIE</option>
+				    <option value="/en/lotteries/astro#res">ASTRO</option>
+				    <option value="/en/lotteries/banco#res">BANCO</option>
+				    <option value="/en/lotteries/celebration-2026-resultats#res">CÉLÉBRATION 2026</option>
+				    <option value="/en/lotteries/extra#res">EXTRA</option>
+				    <option value="/en/lotteries/gagnant-a-vie-edition-speciale-resultats#res">GAGNANT À VIE</option>
+				    <option value="/en/lotteries/grande-vie#res">GRANDE VIE</option>
+				    <option value="/en/lotteries/la-mini#res">LA MINI</option>
+				    <option value="/en/lotteries/la-poule-aux-oeufs-dor#res">LA POULE AUX OEUFS D'OR</option>
+				    <option value="/en/lotteries/lotto-6-49#res">LOTTO 6/49</option>
+				    <option value="/en/lotteries/lottod#res">LOTTO :D</option>
+				    <option value="/en/lotteries/lotto-max#res">LOTTO MAX</option>
+				    <option value="/en/lotteries/lotto-poker#res">LOTTO POKER</option>
+				    <option value="/en/lotteries/la-quotidienne#res">QUOTIDIENNE</option>
+				    <option value="/en/lotteries/quebec-49#res">QUÉBEC 49</option>
+				    <option value="/en/lotteries/quebec-max#res">QUÉBEC MAX</option>
+				    <option value="/en/lotteries/sprinto#res">SPRINTO</option>
+				    <option value="/en/lotteries/special-de-l-ete#res">SPÉCIAL DE L'ÉTÉ</option>
+				    <option value="/en/lotteries/tout-ou-rien#res">TOUT OU RIEN</option>
+				    <option value="/en/lotteries/triplex#res">TRIPLEX</option>
+			
+				
+		</select>	
+
+	</div>
+	
+</div>
+
+<div class="lqZoneOutilsResultatsUnTierDeuxTiersColonne2">
+	<div class="lqZoneOutilsResultats">
+		<div class="lqZoneOutilsResultatsEntete detailles">
+			<div class="lqZoneOutilsResultatsTitre">
+				Draw Results
+			</div>
+<!-- #### DEBUT selecteur-outils-resultats - _2A - 23 août 2026 12:26:23 #### -->
+			
+<div id="lqZoneSelecteurOutilsResultats">
+	<form name="lqZoneFormSelecteurOutilsResultats" action="#res" method="get">
+		<select class="selecteurOutilsResultats" id="selecteurOutilsResultats" name="outil" data-outil-anterieur-present='true'>
+			    <option value="detailles" selected="selected">Results for the past 12 months</option>
+			    <option value="anterieurs" >Results for past years</option>
+			    <option value="statistiques-212" >Statistics</option>
+		</select>
+		<input id="lqBoutonSoumettreOutilsResultats" type="submit" value="">
+	</form>
+</div>
+
+
+
+<!-- #### FIN selecteur-outils-resultats - _2A - 23 août 2026 12:26:23 #### -->		</div>	
+		<div id="lqZoneOutputOutilsResultats">
+				<!-- Aug 23, 2026 12:26:23 p.m. -->
+	
+			<link rel="stylesheet" type="text/css" href="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/styles/loteries.css" property="stylesheet"/>
+		<div class="lqZoneResultatsDetailles lotto-6-49 version-2022-09-14">
+
+<div class="lqZoneDate">
+	<div id="dateCourante">2026-08-23</div>
+	<div id="dateAffichee">2026-08-19</div>
+		<span class="mois">August</span>
+		<span class="jour">19</span>,
+	<span class="annee">2026</span>	
+		<div id="dateProchainTirage">2026-08-22</div>
+</div>
+
+		
+		
+	
+
+			<div class="lqZoneProduits">
+
+																							
+				<div class="lqZoneProduit principal lotto-6-49">
+					<div class="lqZoneResultatsProduit">
+<div class="lqZoneResultatsStructure">
+	<div class="lqZoneImage produit">
+		<div class="positionneur">
+			<img class="logo" src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/logo-212.png" alt="Lotto 6/49"/>
+		</div>
+	</div>
+	<div class="lqZoneStructuresDeLots">
+		<div class="lqZoneStructureDeLots structure1 premiere">
+			<div class="lqZoneDescriptionLots titreTirageClassique">The&nbsp;Classic&nbsp;Draw</div>
+			<hr class="lignePointillee"/>		
+			<div class="numeros tirageClassique">
+<span class="num">06</span><span class="num-sep">-</span><span class="num">07</span><span class="num-sep">-</span><span class="num">10</span><span class="num-sep">-</span><span class="num">32</span><span class="num-sep">-</span><span class="num">33</span><span class="num-sep">-</span><span class="num">36</span>							<span class="libelleComplementaire"><span class="complementaireGauche"></span><span class="complementaireCentre">Bonus&nbsp;(B)</span><span class="complementaireDroite"><span class="deuxPoints">:</span></span></span>
+						<span class="parentheses">(</span><span class="num complementaire">11</span><span class="parentheses">)</span>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="lqZoneResultatsStructure"><div class="lqZoneImage">&nbsp;</div>
+	<div class="lqZoneStructuresDeLots">
+		<div class="lqZoneStructureDeLots structure2 derniere">			
+			<div class="lqZoneDescriptionLots titreBouleOr">The Gold Ball Draw</div>															
+			<div class="lqZoneDescriptionNumeros">
+					Non decomposable complete number
+			</div>
+			<hr class="lignePointillee"/>
+				<div class="bouleOr">
+						<div class="imgBoule"><img src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/boule-blanche.png" alt="WHITE BALL"/></div>
+					<div class="montantGrosLotBouleOr">
+							$1,000,000
+					</div>
+					<div class="numeros bouleOr">
+<span class="num">5</span><span class="num">7</span><span class="num">8</span><span class="num">3</span><span class="num">6</span><span class="num">4</span><span class="num">8</span><span class="num">4</span><span class="num-sep">-</span><span class="num">0</span><span class="num">1</span>					</div>
+		        </div>
+		</div>
+	</div>
+</div>
+							<div class="lqZonePiedResultatsProduit">
+								<div class="lqZoneDetailsResultats">
+									<span class="etiquette">Details</span>									
+								</div>
+									<div class="lqZoneVideoResultats">										
+										<a href="https://www.youtube.com/playlist?list=PLObXvv5ttfGNJ-ZWn0ZFT8RpjXPZe9LWV" target="_blank" class="lienZoneVideo">										
+											<span class="etiquette">Watch the draw</span>											
+										</a>
+								    </div>
+							</div>
+
+					</div>
+						<div class="lqZoneDetailsStructuresLots">
+<div class="lqZoneDetailsStructureLots">
+	<h4 class="titre">Detailed results for the Classic draw</h4>
+	<table>
+		<tr class="lqZoneCategorieLot">
+			<th class="description sur3col titre">Category</th>
+			<th class="gagnants sur3col titre">Winners</th>
+			<th class="valeurLot sur3col titre">Prizes</th>
+		</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						6/6
+					
+				</td>
+				<td class="gagnants sur3col">0</td>
+				<td class="valeurLot sur3col">
+							$5,000,000.00
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						5/6+B
+					
+				</td>
+				<td class="gagnants sur3col">2</td>
+				<td class="valeurLot sur3col">
+							$75,697.80
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						5/6
+					
+				</td>
+				<td class="gagnants sur3col">62</td>
+				<td class="valeurLot sur3col">
+							$1,025.40
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						4/6
+					
+				</td>
+				<td class="gagnants sur3col">3,389</td>
+				<td class="valeurLot sur3col">
+							$75.50
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						3/6
+					
+				</td>
+				<td class="gagnants sur3col">65,504</td>
+				<td class="valeurLot sur3col">
+							$10.00
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						2/6+B
+					
+				</td>
+				<td class="gagnants sur3col">55,128</td>
+				<td class="valeurLot sur3col">
+							$5.00
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						2/6
+					
+				</td>
+				<td class="gagnants sur3col">458,878</td>
+				<td class="valeurLot sur3col">
+							Free Play
+				</td>
+			</tr>
+		<tr class="lqZoneTotal">
+			<td class="description sur3col">TOTAL</td>
+			<td class="gagnants sur3col">582,963</td>
+			<td class="valeurLot sur3col">&nbsp;</td>
+		</tr>
+	</table>
+</div><div class="lqZoneVentesTotales">
+	Total Sales:
+		$11,251,059
+</div>
+<div class="lqPGL en">
+
+		<span class="titrePGL">Next draw:</span>
+		<div class="lqZoneDateProchainTirage">
+			<span class="mois">August</span>
+			<span class="jour">22</span>,
+			<span class="annee">2026</span>
+		</div>
+	<div class="pglTirageClassique">The&nbsp;Classic&nbsp;:&nbsp;<span class="montantClassique gras">$5,000,000</span></div>
+	<div class="pgBouleOr">The&nbsp;Gold&nbsp;Ball&nbsp;:&nbsp;<span class="montantBouleOr gras">$16,000,000</span>*</div>	
+	
+	
+	<div class="chancesBouleOr">Odds of the Gold Ball being drawn are 1&nbsp;in<span class="nbChancesBouleOr gras">&nbsp;27</span>&nbsp;</div>
+	<div class="optionBouleBlanche">*or&nbsp;$1&nbsp;million&nbsp;(white ball)</div>												
+</div>
+<div class="lqZoneDetailsStructureLots">
+<h4 class="titre">Origin of winning tickets</h4>
+	<table class="lqTableauProvenanceGagnants">
+		<tr>
+			<th class="produit sur4col titre"><div class="positionneur"><img class="logo" src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/logo-212.png" alt="Lotto 6/49"/></div></th>
+			<th class="categorie titre">6/6</th>
+				<th class="categorie titre">5/6+B</th>
+			<th class="structure sur4col titre">Gold Ball Draw																						
+			</th>
+		</tr>
+		<tr>
+			<td class="region sur4col">Québec</td>
+			<td class="categorie sur4col">0</td>
+			<td class="categorie sur4col gras">1</td>
+			<td class="structure sur4col">0</td>
+		</tr>
+		<tr>
+			<td class="region sur4col">The Prairies</td>
+			<td class="categorie sur4col">0</td>
+			<td class="categorie sur4col gras">1</td>
+			<td class="structure sur4col">0</td>
+		</tr>
+		<tr>
+			<td class="region sur4col">British Columbia</td>
+			<td class="categorie sur4col">0</td>
+			<td class="categorie sur4col">0</td>
+			<td class="structure sur4col">0</td>
+		</tr>
+		<tr>
+			<td class="region sur4col">Atlantic Provinces</td>
+			<td class="categorie sur4col">0</td>
+			<td class="categorie sur4col">0</td>
+			<td class="structure sur4col">0</td>
+		</tr>
+		<tr>
+			<td class="region sur4col">Ontario</td>
+			<td class="categorie sur4col">0</td>
+			<td class="categorie sur4col">0</td>
+			<td class="structure sur4col gras">1</td>
+		</tr>
+	</table>
+</div>
+
+
+
+						</div>
+				</div>
+		<div class="lqZoneProduit remorque extra">
+			<div class="lqZoneResultatsProduit">
+					<div class="lqZoneImage produit">
+						<div class="positionneur">
+							<img class="logo noir" src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/logo-205_noir.png" alt="Extra"/>
+							<img class="logo blanc" src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/logo-205_blanc.png" alt="Extra"/>
+						</div>
+					</div>
+					<div class="lqZoneStructuresDeLots">
+							<div class="lqZoneStructureDeLots structure1 premiere derniere">
+										<div class="numeros">
+<span class="num">5</span><span class="num">6</span><span class="num">1</span><span class="num">7</span><span class="num">5</span><span class="num">4</span><span class="num">3</span>										</div>
+							</div>
+					</div>
+					<div class="lqZonePiedResultatsProduit">
+						<div class="lqZoneDetailsResultats">
+							<span class="etiquette">Details</span>
+						</div>
+					</div>
+
+			</div>
+				<div class="lqZoneDetailsStructuresLots">
+							<div class="lqZoneDetailsStructureLots">													
+									<h4 class="titre">
+											Detailed results for the Extra draw
+									</h4>
+									<table>
+										<tr class="lqZoneCategorieLot">
+											<th class="description sur3col titre">Category</th>
+											<th class="gagnants sur3col titre">Winners</th>
+											<th class="valeurLot sur3col titre">Prizes</th>
+										</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														Complete number
+														(7&nbsp;digits)
+												</td>
+												<td class="gagnants sur3col">0</td>
+												<td class="valeurLot sur3col">
+															$1,000,000
+														<span class="marqueur">*</span>
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														6 last digits
+												</td>
+												<td class="gagnants sur3col">0</td>
+												<td class="valeurLot sur3col">
+															$25,000
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														5 last digits
+												</td>
+												<td class="gagnants sur3col">7</td>
+												<td class="valeurLot sur3col">
+															$500
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														4 last digits
+												</td>
+												<td class="gagnants sur3col">40</td>
+												<td class="valeurLot sur3col">
+															$50
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														3 last digits
+												</td>
+												<td class="gagnants sur3col">390</td>
+												<td class="valeurLot sur3col">
+															$20
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														2 last digits
+												</td>
+												<td class="gagnants sur3col">4,390</td>
+												<td class="valeurLot sur3col">
+															$5
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														The last digit
+												</td>
+												<td class="gagnants sur3col">43,788</td>
+												<td class="valeurLot sur3col">
+															$2
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														6 first digits
+												</td>
+												<td class="gagnants sur3col">1</td>
+												<td class="valeurLot sur3col">
+															$10,000
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														5 first digits
+												</td>
+												<td class="gagnants sur3col">6</td>
+												<td class="valeurLot sur3col">
+															$500
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														4 first digits
+												</td>
+												<td class="gagnants sur3col">40</td>
+												<td class="valeurLot sur3col">
+															$50
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														3 first digits
+												</td>
+												<td class="gagnants sur3col">407</td>
+												<td class="valeurLot sur3col">
+															$20
+														
+												</td>
+											</tr>
+											<tr class="lqZoneCategorieLot">
+												<td class="description sur3col">
+														2 first digits
+												</td>
+												<td class="gagnants sur3col">4,382</td>
+												<td class="valeurLot sur3col">
+															$5
+														
+												</td>
+											</tr>
+											<tr class="lqZoneTotal">
+												<td class="description sur3col">TOTAL</td>
+												<td class="gagnants sur3col">53,451</td>
+												<td class="valeurLot sur3col">&nbsp;</td>
+											</tr>
+									</table>
+									<div class="lqZoneNotesLegales">
+											<span class="noteLegale">
+												<span class="marqueur">*</span><span class="note">The one million dollar grand prize is divisible.</span>
+											</span>
+									</div>
+							</div>
+
+				</div>
+		</div>
+
+				
+					<div class="lqZoneProduit secondaire quebec-49">
+						<div class="lqZoneResultatsProduit">
+<div class="lqZoneResultatsStructure">
+	<div class="lqZoneImage produit">
+		<div class="positionneur">
+			<img class="logo" src="https://gba.lotoquebec.com/detailles/lotto-6-49/2022-09-14/images/logo-214.png" alt="Québec 49"/>
+		</div>
+	</div>
+	<div class="lqZoneStructuresDeLots">
+		<div class="lqZoneStructureDeLots structure1 premiere derniere">
+				<div class="numeros">
+<span class="num">11</span><span class="num-sep">-</span><span class="num">29</span><span class="num-sep">-</span><span class="num">31</span><span class="num-sep">-</span><span class="num">40</span><span class="num-sep">-</span><span class="num">42</span><span class="num-sep">-</span><span class="num">47</span>							<span class="libelleComplementaire"><span class="complementaireGauche">&nbsp;</span><span class="complementaireCentre">Bonus&nbsp;(B)</span><span class="complementaireDroite"><span class="deuxPoints">:</span></span></span>
+						<span class="parentheses">(</span><span class="num complementaire">43</span><span class="parentheses">)</span>
+				</div>
+		</div>
+	</div>
+</div>								<div class="lqZonePiedResultatsProduit">
+									<div class="lqZoneDetailsResultats">
+										<span class="etiquette">Details</span>										
+									</div>
+								</div>
+						</div>
+							<div class="lqZoneDetailsStructuresLots">
+<div class="lqZoneDetailsStructureLots">	
+	<h4 class="titre">Detailed results for the regular draw</h4>
+	<table>
+		<tr class="lqZoneCategorieLot">
+			<th class="description sur3col titre">Category</th>
+			<th class="gagnants sur3col titre">Winners</th>
+			<th class="valeurLot sur3col titre">Prizes</th>
+		</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						6/6
+				</td>
+				<td class="gagnants sur3col">1</td>
+				<td class="valeurLot sur3col">
+						$2,000,000.00
+						<span class="marqueur">*</span>
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						5/6+B
+				</td>
+				<td class="gagnants sur3col">1</td>
+				<td class="valeurLot sur3col">
+						$75,000.00
+						<span class="marqueur">**</span>
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						5/6
+				</td>
+				<td class="gagnants sur3col">7</td>
+				<td class="valeurLot sur3col">
+						$750.00
+						
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						4/6
+				</td>
+				<td class="gagnants sur3col">347</td>
+				<td class="valeurLot sur3col">
+						$75.00
+						
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						3/6
+				</td>
+				<td class="gagnants sur3col">6,905</td>
+				<td class="valeurLot sur3col">
+						$10.00
+						
+				</td>
+			</tr>
+			<tr class="lqZoneCategorieLot">
+				<td class="description sur3col">
+						2/6+B
+				</td>
+				<td class="gagnants sur3col">4,670</td>
+				<td class="valeurLot sur3col">
+						$5.00
+						
+				</td>
+			</tr>
+		<tr class="lqZoneTotal">
+			<td class="description sur3col">TOTAL</td>
+			<td class="gagnants sur3col">11,931</td>
+			<td class="valeurLot sur3col">&nbsp;</td>
+		</tr>
+	</table>
+	<div class="lqZoneNotesLegales">
+			<span class="noteLegale">
+				<span class="marqueur">*</span><span class="note">The grand prize is divisible.</span>
+			</span>
+			<span class="noteLegale">
+				<span class="marqueur">**</span><span class="note">The total amount payable for prizes in the 5/6&nbsp;+&nbsp;bonus number category is limited to $450,000 per draw. If this limit is reached, the prize amounts will be determined in proportion to the number of winning selections in this category.</span>
+			</span>
+	</div>
+	
+</div><div class="lqZoneVentesTotales">
+	Total Sales:
+		$439,818
+</div>		
+									
+							</div>
+					</div>
+			</div>						
+		</div>	
+	<div id="lqZoneDatesTirages"><div class="dateTirage">2026-08-01</div><div class="dateTirage">2026-08-05</div><div class="dateTirage">2026-08-08</div><div class="dateTirage">2026-08-12</div><div class="dateTirage">2026-08-15</div><div class="dateTirage">2026-08-19</div><div class="dateTirage">2026-08-22</div>	</div>
+
+		</div>
+	</div>
+	
+	<div id="liensRapidesMobile" style="">
+		<h3>See the results<br/> for other lotteries</h3>
+		<select class="selecteurLiensProduits" id="selecteurProduits">
+			
+			<option value="default" selected>Select a lottery</option>
+		
+				    <option value="/en/lotteries/100-000-par-annee-a-vie#res">100 000 $ PAR ANNÉE À VIE</option>
+				    <option value="/en/lotteries/astro#res">ASTRO</option>
+				    <option value="/en/lotteries/banco#res">BANCO</option>
+				    <option value="/en/lotteries/celebration-2026-resultats#res">CÉLÉBRATION 2026</option>
+				    <option value="/en/lotteries/extra#res">EXTRA</option>
+				    <option value="/en/lotteries/gagnant-a-vie-edition-speciale-resultats#res">GAGNANT À VIE</option>
+				    <option value="/en/lotteries/grande-vie#res">GRANDE VIE</option>
+				    <option value="/en/lotteries/la-mini#res">LA MINI</option>
+				    <option value="/en/lotteries/la-poule-aux-oeufs-dor#res">LA POULE AUX OEUFS D'OR</option>
+				    <option value="/en/lotteries/lotto-6-49#res">LOTTO 6/49</option>
+				    <option value="/en/lotteries/lottod#res">LOTTO :D</option>
+				    <option value="/en/lotteries/lotto-max#res">LOTTO MAX</option>
+				    <option value="/en/lotteries/lotto-poker#res">LOTTO POKER</option>
+				    <option value="/en/lotteries/la-quotidienne#res">QUOTIDIENNE</option>
+				    <option value="/en/lotteries/quebec-49#res">QUÉBEC 49</option>
+				    <option value="/en/lotteries/quebec-max#res">QUÉBEC MAX</option>
+				    <option value="/en/lotteries/sprinto#res">SPRINTO</option>
+				    <option value="/en/lotteries/special-de-l-ete#res">SPÉCIAL DE L'ÉTÉ</option>
+				    <option value="/en/lotteries/tout-ou-rien#res">TOUT OU RIEN</option>
+				    <option value="/en/lotteries/triplex#res">TRIPLEX</option>
+			
+				
+		</select>	
+	
+	</div>
+		
+</div>
+
+
+
+
+<!-- #### FIN resultats-detailles - _2A - 23 août 2026 12:26:23 #### -->
+</div>
+<!-- #### FIN outils - _2A - 23 août 2026 12:26:23 #### -->
+
+<!-- /* #### FIN RESULTAT - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+
+		<!-- /* #### FIN (placeholder post rendering RESULTAT) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+
+
+
+
+
+
+
+
+
+	</div>
+<!-- #### FIN area-list-marge-avec - _2A - Aug 20, 2026 3:35:07 PM #### -->
+</div>
+<!-- #### FIN contenu-une-colonne - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<!-- #### DEBUT contenu-deux-colonnes-un-tier-deux-tiers - _2A - Aug 20, 2026 3:35:07 PM #### -->
+
+	<div class="lqZoneDeuxTiersUnTierColonne1 lqInverse">
+<!-- #### DEBUT area-list-marge-avec - _2A - Aug 20, 2026 3:35:07 PM #### -->
+	
+	
+	
+
+
+
+
+
+	<div class="magnoliaComponent sansMarge">
+<!-- #### DEBUT accordeon-non-diffuse - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<!-- #### FIN accordeon-non-diffuse - _2A - Aug 20, 2026 3:35:07 PM #### -->
+	</div>
+<!-- #### FIN area-list-marge-avec - _2A - Aug 20, 2026 3:35:07 PM #### -->
+	</div>
+	<div class="lqZoneDeuxTiersUnTierColonne2 lqInverse">
+<!-- #### DEBUT area-list-marge-avec - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<!-- #### FIN area-list-marge-avec - _2A - Aug 20, 2026 3:35:07 PM #### -->
+	</div>
+<!-- #### FIN contenu-deux-colonnes-un-tier-deux-tiers - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<!-- #### FIN area-list-marge-sans - _2A - Aug 20, 2026 3:35:07 PM #### -->
+						</div>
+					</section>
+				</div>
+			
+			</div>		
+		</div>
+		
+<!-- #### DEBUT fin-body - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<!-- #### FIN fin-body - _2A - Aug 20, 2026 3:35:07 PM #### -->
+
+
+
+	
+			
+		<!-- /* #### DEBUT (placeholder post rendering WIDGET) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+		
+
+<!-- /* #### DEBUT WIDGET - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+<!-- #### DEBUT catfish - _2A - 23 août 2026 12:23:04 #### -->
+
+<!-- #### FIN catfish - _2A - 23 août 2026 12:23:04 #### -->
+
+
+<!-- /* #### FIN WIDGET - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+
+		<!-- /* #### FIN (placeholder post rendering WIDGET) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+
+	<script src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/lib.pied.min~2026-05-11-14-41-43-000~cache.js"></script>
+	<script src="https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/pied.min~2026-05-11-14-41-43-000~cache.js"></script>
+
+<script>
+<!--
+	$("#lqBoutonSoumettreOutilsResultats").remove();$("#selecteurOutilsResultats").css("width","100%");$("#selecteurOutilsResultats").mousedown(function(){$(this).removeClass("selecteurOutilsResultats").addClass("selecteurOutilsResultatsSelect")});$("#selecteurOutilsResultats").blur(function(){if($(this).hasClass("selecteurOutilsResultatsSelect")){$(this).removeClass("selecteurOutilsResultatsSelect").addClass("selecteurOutilsResultats")}});$(function(){var a=0;$("#selecteurOutilsResultats").click(function(){a++;if(a==2){$(this).change()}}).change(function(){if($(this).hasClass("selecteurOutilsResultatsSelect")){$(this).removeClass("selecteurOutilsResultatsSelect").addClass("selecteurOutilsResultats")}a=-1;window.location=window.location.pathname+"?outil="+$(this).val()+"#res"})});$("#lqBoutonSoumettreAnneeResultatsAnterieurs").remove();
+$(function(){var a=0;$("#selecteurAnneeResultatsAnterieurs").click(function(){a++;if(a==2){$(this).change()}}).change(function(){a=-1;if($("#selecteurAnneeResultatsAnterieurs").val()!="---"){$("#formAnneeResultatsAnterieurs").submit()}})});$(".lienZoneVideo").each(function(){var b=$(this);var a=$("<img />",{src:"/loteries/.resources/loteries/webresources/images/general/camera_resultats_clair.png",alt:"Voir le tirage"}).prependTo(b);a.attr("style","width:49px;height:29px;")});$(".lqZoneVideoResultats").each(function(){var a=$(this);a.mouseover(function(){var b=a.find("img");b.css("filter","alpha(opacity=20)");b.css("opacity","0.20")});a.mouseout(function(){var b=a.find("img");b.css("filter","alpha(opacity=100)");b.css("opacity","1")})});$("#selecteurTri").change(function(){if($(this).val()=="dates"){$(".lqZonePretiragesParDates").show();
+$(".lqZonePretiragesParNumeros").hide()}else{if($(this).val()=="numeros"){$(".lqZonePretiragesParDates").hide();$(".lqZonePretiragesParNumeros").show()}}});$(function(){if($("#dateCourante").text().replace(/-/g,"")<$("#dateProchainTirage").text().replace(/-/g,"")){$(".lqZoneOutilsResultatsProduit a.boutonJouer").first().clone().appendTo(".lqZoneResultatsDetailles .lqPGL")}else{if($("#dateCourante").text().replace(/-/g,"")==$("#dateProchainTirage").text().replace(/-/g,"")){$.get(window.location.pathname,{widget:"resultats",action:"detailles",noproduit:"212",date:$("#dateProchainTirage").text()},function(a){if(a.indexOf('<div id="dateAffichee">'+$("#dateProchainTirage").text()+"</div>")<0&&a.indexOf('<div class="lqZoneMessageAVenir">')<0){$(".lqZoneOutilsResultatsProduit a.boutonJouer").first().clone().appendTo(".lqZoneResultatsDetailles .lqPGL")
+}})}}});$("#lqZoneOutputOutilsResultats .lqZoneResultatsProduit").each(function(){var b=$(this);if(b.index()==b.siblings().length-1){var a=$("#lqTemplatePiedResultatsProduit").html();b.append(a)}});$("#lqTemplatePiedResultatsProduit").remove();$("#lqZoneOutputOutilsResultats .principal .lqZoneDetailsResultats").toggleClass("ouvert");$("#lqZoneOutputOutilsResultats .lqZoneDetailsResultats").bind("click",function(){var b=$(this).parents(".lqZoneProduit");var a=$(b).find(".lqZoneDetailsStructuresLots");if(a.css("display")==="block"){$(this).toggleClass("ouvert");$(a).slideUp();if(b.hasClass("banco")){$("#lqZoneOutputOutilsResultats .lqZoneProduit.banco .lqZoneDetailsStructuresLots").slideUp()}}else{$(this).toggleClass("ouvert");$(a).slideDown();if(b.hasClass("banco")){$("#lqZoneOutputOutilsResultats .lqZoneProduit.banco .lqZoneDetailsStructuresLots").slideDown()
+}}});$("#lqZoneOutputOutilsResultats .lqZoneDetailsStructuresLots").each(function(){var a="<div class='lqZoneAccordeonFermer'><button type='button' title='Close'>Close</button></div>";if(!$(this).closest(".lqZoneResultatsDetailles").hasClass("loto-ete")){$(this).append(a)}});$("#lqZoneOutputOutilsResultats .lqZoneDetailsStructuresLots .lqZoneAccordeonFermer").bind("click",function(){var b=$(this).parents(".lqZoneProduit");var a=$(b).find(".lqZoneDetailsStructuresLots");var c=$(b).find(".lqZoneDetailsResultats");if(a.css("display")==="block"){c.toggleClass("ouvert");$(a).slideUp();if(b.hasClass("banco")){$("#lqZoneOutputOutilsResultats .lqZoneProduit.banco .lqZoneDetailsStructuresLots").slideUp()}}});$(function(){var d=$("#dateCourante");var k=$("#dateAffichee");var g=$("#lqZoneDatesTirages");
+var p=g.children();if(d!=null&&k!=null&&g!=null&&p!=null&&p.length>0&&!g.hasClass("editionSpeciale")){var b=d.text();var j=$.datepicker.parseDate("yy-m-d",b);var i=k.text();var o=$.datepicker.parseDate("yy-m-d",i);var n=new Array();p.each(function(q,r){n.push($.datepicker.parseDate("yy-m-d",$(this).text()))});var m=0;function l(q){m++;var r=m;if(r<m){return}$.get(window.location.pathname,{widget:"resultats",action:"historique",noproduit:"212",date:q},function(s){if(s.indexOf("dateTirage")>=0){$("#lqZoneDatesTirages").replaceWith(s);p=$("#lqZoneDatesTirages").children();if(p!=null&&p.length>0){n=new Array();p.each(function(t,u){n.push($.datepicker.parseDate("yy-m-d",$(this).text()))});console.log("historiqueTirages = ");console.log(n)}c(a,e);$("#lqZoneCalendrierResultats").datepicker("refresh");
+h()}})}var f="en"=="en"?"":"en";$.datepicker.setDefaults($.datepicker.regional[f]);var a=$.datepicker.regional[f]["prevText"];var e=$.datepicker.regional[f]["nextText"];$("#lqZoneCalendrierResultats").datepicker({dayNamesMin:["SUN","MON","TUE","WED","THU","FRI","SAT"],defaultDate:o,minDate:new Date(j.getFullYear()-1,j.getMonth(),j.getDate()),maxDate:((j>=o)?j:o),beforeShowDay:function(q){if(n){for(var r=0;r<n.length;r++){if(q.getTime()==n[r].getTime()&&o.getTime()!=n[r].getTime()){return[true,"tirageDisponible",""]}}}return[false,"",""]},onSelect:function(t,r){var s=window.location.href.substr(0,window.location.href.indexOf("?"));if(f=="fr"){var q=$.datepicker.formatDate("yy-mm-dd",$.datepicker.parseDate("d/m/yy",t))}else{var q=$.datepicker.formatDate("yy-mm-dd",$.datepicker.parseDate("m/d/yy",t))
+}c("&#60;","&#62;");window.location.href=s+"?date="+q+"#res"},onChangeMonthYear:function(s,v,r){c("&#60;","&#62;");var x=(v<10)?"0"+v:v,q=s+"-"+x+"-01",t=r.selectedDay,u=j.getMonth();moisPrecedentNb=u==0?"11":u-1,moisProchainNb=u==11?"0":u+1,moisPrecedent=v==1?"12":v-1;setTimeout(function(){$(".ui-datepicker-current-day").addClass("ui-datepicker-days-cell-over")},300);if($("#selecteurOutilsResultats").attr("data-outil-anterieur-present")=="true"){var w=parseInt(j.getFullYear())-1;if(s==w&&v==moisProchainNb){setTimeout(function(){$("a.ui-datepicker-prev").removeClass("ui-state-disabled");$("a.ui-datepicker-prev").addClass("ui-datepicker-prev-before-last");$(".ui-datepicker-prev-before-last").click(function(){$("a.ui-datepicker-prev").addClass("ui-state-disabled");$("a.ui-datepicker-next").addClass("ui-datepicker-next-before-last");
+$("a.ui-datepicker-prev").removeClass("ui-datepicker-prev-before-last");$("#lqZoneCalendrierResultats span.ui-datepicker-month").text($("#lqZoneCalendrierResultats").datepicker("option","monthNames")[moisPrecedentNb]);$("table.ui-datepicker-calendar tbody").hide();$("select#selecteurOutilsResultats>option:eq(1)").prop("selected","selected").trigger("change");$(".ui-datepicker-next-before-last").click(function(){$("a.ui-datepicker-prev").removeClass("ui-datepicker-prev-before-last");$("a.ui-datepicker-next").removeClass("ui-datepicker-next-before-last");setTimeout(function(){$("a.ui-datepicker-prev").click()},100)})})},350)}}l(q)}});$("#boutonAfficherCalendrier").click(function(){$("#lqZoneCalendrierResultats").slideDown();$("#boutonAfficherCalendrier").hide();$("#lqZoneBoutonFermerCalendrier").show()
+});$("#boutonFermerCalendrier").each(function(){var q="<div class='boutonFermerCalendrier'><button type='button' title='Close'>Close</button></div>";$(this).append(q)});$("#boutonFermerCalendrier button").click(function(){$("#lqZoneCalendrierResultats").slideUp();$("#lqZoneBoutonFermerCalendrier").hide();$("#boutonAfficherCalendrier").show()})}else{$(".lqZoneOutilResultatsCalendrier").hide()}h();function h(){if($("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-prev.ui-corner-all.ui-state-disabled").length==0){$("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-prev.ui-corner-all .ui-icon.ui-icon-circle-triangle-w").html('&#60;<em class="lqInvisible">Previous month</em>')
+}else{$("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-prev.ui-corner-all .ui-icon.ui-icon-circle-triangle-w").html('&#60;<em class="lqInvisible"></em>')}if($("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-next.ui-corner-all.ui-state-disabled").length==0){$("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-next.ui-corner-all .ui-icon.ui-icon-circle-triangle-e").html('&#62;<em class="lqInvisible">Next month</em>')
+}else{$("#lqZoneCalendrierResultats .ui-datepicker-inline.ui-datepicker.ui-widget.ui-widget-content.ui-helper-clearfix.ui-corner-all .ui-datepicker-header.ui-widget-header.ui-helper-clearfix.ui-corner-all .ui-datepicker-next.ui-corner-all .ui-icon.ui-icon-circle-triangle-e").html('&#62;<em class="lqInvisible"></em>')}}function c(q,r){$.datepicker.regional[f]["prevText"]=q;$.datepicker.regional[f]["nextText"]=r;$.datepicker.setDefaults($.datepicker.regional[f])}});$("#lqZoneOutputOutilsResultats .plinko .lqZoneDetailsResultats").toggleClass("ouvert");$("#lqZoneOutputOutilsResultats .plinko .principal .lqZoneDetailsStructuresLots").hide();
+
+	
+			
+		<!-- /* #### DEBUT (placeholder post rendering ACCUMULATEUR_JAVASCRIPT) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+		
+		<!-- /* #### FIN (placeholder post rendering ACCUMULATEUR_JAVASCRIPT) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+
+	
+			
+		<!-- /* #### DEBUT (placeholder post rendering WIDGET) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+		
+
+<!-- /* #### DEBUT WIDGET - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+
+
+
+
+<!-- /* #### FIN WIDGET - Aug 23, 2026 12:26:23 PM #### */ // -->
+
+
+		<!-- /* #### FIN (placeholder post rendering WIDGET) - _2A - Aug 20, 2026 3:35:07 PM #### */ // -->
+//-->
+</script>
+
+<!-- Site Loto-Quebec -->
+
+		<script>
+			var barreconnectmodified=false;
+			const observer = new MutationObserver(() => {
+				if(!barreconnectmodified){
+					setTimeout(function() { 
+						connexionLq.gestionMenuJouerEnLigne();
+					}, 500);
+					barreconnectmodified = true;
+				}
+
+				setTimeout(function() { 
+					barreconnectmodified = false;
+				}, 1000);
+			});
+
+			const targetNode = document.getElementById("menuBarre");
+			const config = { attributes: true, childList: true, subtree: true };
+			observer.observe(targetNode, config);
+
+			$(document).on('loteries-main-content-ready', function(){
+				$('#maincontent .spinner.spinnerToutesLesBannieres').css('display','none');
+				$('#maincontent .awaiting-content').css('visibility','visible');
+			});
+
+
+
+			chargementScript("/mel/.resources/lq-entete-commun/webresources/js/charger-entete.js?site_id=LT&lang=en&trx=true&tagid=menuBarre", function(){
+				setUriAutreLangue('/fr/loteries/lotto-6-49-resultats');
+
+				$(document).on("ejEventLogin", function () {
+					lq.loteries.gestionRetargetEvent();
+				});
+			});
+		</script>
+
+		<script>
+    		var script = document.createElement("script");
+   			script.src = "https://loteries.lotoquebec.com/loteries/.resources/loteries/webresources/js/ate4legacy.umd~2026-05-11-14-41-43-000~cache.js";
+    		document.body.appendChild(script);
+		</script>
+
+
+	</body>
+	
+<!--
+
+2026-08-23 12:26:22,666 000000 -0400 - 1787502382666 - 13774340991707989 - 000000000000 - __EV_0000__
+2026-08-23 12:26:22,666 027745 -0400 - 1787502382666 - 13774340991735734 - 000000027745 - __EV_0001__
+2026-08-23 12:26:22,666 029813 -0400 - 1787502382666 - 13774340991737802 - 000000029813 - __EV_0002__
+2026-08-23 12:26:22,666 030029 -0400 - 1787502382666 - 13774340991738018 - 000000030029 - __EV_0028__
+2026-08-23 12:26:22,666 031008 -0400 - 1787502382666 - 13774340991738997 - 000000031008 - __EV_0029__
+2026-08-23 12:26:22,666 032105 -0400 - 1787502382666 - 13774340991740094 - 000000032105 - __EV_0030__
+2026-08-23 12:26:22,666 033202 -0400 - 1787502382666 - 13774340991741191 - 000000033202 - __EV_0033__
+2026-08-23 12:26:22,666 033561 -0400 - 1787502382666 - 13774340991741550 - 000000033561 - __EV_0035__
+2026-08-23 12:26:22,666 033769 -0400 - 1787502382666 - 13774340991741758 - 000000033769 - __EV_0037__
+2026-08-23 12:26:22,666 033945 -0400 - 1787502382666 - 13774340991741934 - 000000033945 - __EV_0039__
+2026-08-23 12:26:22,666 034270 -0400 - 1787502382666 - 13774340991742259 - 000000034270 - __EV_0041__
+2026-08-23 12:26:22,666 034611 -0400 - 1787502382666 - 13774340991742600 - 000000034611 - __EV_0043__
+2026-08-23 12:26:22,666 034977 -0400 - 1787502382666 - 13774340991742966 - 000000034977 - __EV_0045__
+2026-08-23 12:26:22,666 035282 -0400 - 1787502382666 - 13774340991743271 - 000000035282 - __EV_0051__
+2026-08-23 12:26:22,666 035371 -0400 - 1787502382666 - 13774340991743360 - 000000035371 - __EV_0053__
+2026-08-23 12:26:22,666 035467 -0400 - 1787502382666 - 13774340991743456 - 000000035467 - __EV_0054__
+2026-08-23 12:26:22,666 035557 -0400 - 1787502382666 - 13774340991743546 - 000000035557 - __EV_0057__
+2026-08-23 12:26:22,666 035646 -0400 - 1787502382666 - 13774340991743635 - 000000035646 - __EV_0059__
+2026-08-23 12:26:22,666 035736 -0400 - 1787502382666 - 13774340991743725 - 000000035736 - __EV_0061__
+2026-08-23 12:26:22,666 035825 -0400 - 1787502382666 - 13774340991743814 - 000000035825 - __EV_0063__
+2026-08-23 12:26:22,666 035931 -0400 - 1787502382666 - 13774340991743920 - 000000035931 - __EV_0065__
+2026-08-23 12:26:22,666 036115 -0400 - 1787502382666 - 13774340991744104 - 000000036115 - __EV_0067__
+2026-08-23 12:26:22,666 036219 -0400 - 1787502382666 - 13774340991744208 - 000000036219 - __EV_0069__
+2026-08-23 12:26:22,666 036318 -0400 - 1787502382666 - 13774340991744307 - 000000036318 - __EV_0071__
+2026-08-23 12:26:22,666 036404 -0400 - 1787502382666 - 13774340991744393 - 000000036404 - __EV_0073__
+2026-08-23 12:26:22,666 036508 -0400 - 1787502382666 - 13774340991744497 - 000000036508 - __EV_0075__
+2026-08-23 12:26:22,666 036598 -0400 - 1787502382666 - 13774340991744587 - 000000036598 - __EV_0077__
+2026-08-23 12:26:22,666 036688 -0400 - 1787502382666 - 13774340991744677 - 000000036688 - __EV_0079__
+2026-08-23 12:26:22,666 036780 -0400 - 1787502382666 - 13774340991744769 - 000000036780 - __EV_0081__
+2026-08-23 12:26:22,666 036870 -0400 - 1787502382666 - 13774340991744859 - 000000036870 - __EV_0083__
+2026-08-23 12:26:22,666 036959 -0400 - 1787502382666 - 13774340991744948 - 000000036959 - __EV_0085__
+2026-08-23 12:26:22,666 037309 -0400 - 1787502382666 - 13774340991745298 - 000000037309 - __EV_0004__
+2026-08-23 12:26:22,666 037473 -0400 - 1787502382666 - 13774340991745462 - 000000037473 - __EV_0006__
+2026-08-23 12:26:22,666 037754 -0400 - 1787502382666 - 13774340991745743 - 000000037754 - __EV_0008__
+2026-08-23 12:26:22,666 038296 -0400 - 1787502382666 - 13774340991746285 - 000000038296 - __EV_0009__
+2026-08-23 12:26:22,666 038544 -0400 - 1787502382666 - 13774340991746533 - 000000038544 - __EV_0025__
+2026-08-23 12:26:22,666 038693 -0400 - 1787502382666 - 13774340991746682 - 000000038693 - __EV_0028__
+2026-08-23 12:26:22,666 038833 -0400 - 1787502382666 - 13774340991746822 - 000000038833 - __EV_0029__
+2026-08-23 12:26:22,666 039042 -0400 - 1787502382666 - 13774340991747031 - 000000039042 - __EV_0030__
+2026-08-23 12:26:22,666 039193 -0400 - 1787502382666 - 13774340991747182 - 000000039193 - __EV_0033__
+2026-08-23 12:26:22,666 039289 -0400 - 1787502382666 - 13774340991747278 - 000000039289 - __EV_0035__
+2026-08-23 12:26:22,666 039382 -0400 - 1787502382666 - 13774340991747371 - 000000039382 - __EV_0037__
+2026-08-23 12:26:22,666 039474 -0400 - 1787502382666 - 13774340991747463 - 000000039474 - __EV_0039__
+2026-08-23 12:26:22,666 039579 -0400 - 1787502382666 - 13774340991747568 - 000000039579 - __EV_0041__
+2026-08-23 12:26:22,666 039668 -0400 - 1787502382666 - 13774340991747657 - 000000039668 - __EV_0043__
+2026-08-23 12:26:22,666 039777 -0400 - 1787502382666 - 13774340991747766 - 000000039777 - __EV_0045__
+2026-08-23 12:26:22,666 039929 -0400 - 1787502382666 - 13774340991747918 - 000000039929 - __EV_0051__
+2026-08-23 12:26:22,666 040012 -0400 - 1787502382666 - 13774340991748001 - 000000040012 - __EV_0053__
+2026-08-23 12:26:22,666 040098 -0400 - 1787502382666 - 13774340991748087 - 000000040098 - __EV_0054__
+2026-08-23 12:26:22,666 040179 -0400 - 1787502382666 - 13774340991748168 - 000000040179 - __EV_0057__
+2026-08-23 12:26:22,666 040262 -0400 - 1787502382666 - 13774340991748251 - 000000040262 - __EV_0059__
+2026-08-23 12:26:22,666 040347 -0400 - 1787502382666 - 13774340991748336 - 000000040347 - __EV_0061__
+2026-08-23 12:26:22,666 040429 -0400 - 1787502382666 - 13774340991748418 - 000000040429 - __EV_0063__
+2026-08-23 12:26:22,666 040512 -0400 - 1787502382666 - 13774340991748501 - 000000040512 - __EV_0065__
+2026-08-23 12:26:22,666 040607 -0400 - 1787502382666 - 13774340991748596 - 000000040607 - __EV_0067__
+2026-08-23 12:26:22,666 040689 -0400 - 1787502382666 - 13774340991748678 - 000000040689 - __EV_0069__
+2026-08-23 12:26:22,666 040773 -0400 - 1787502382666 - 13774340991748762 - 000000040773 - __EV_0071__
+2026-08-23 12:26:22,666 040854 -0400 - 1787502382666 - 13774340991748843 - 000000040854 - __EV_0073__
+2026-08-23 12:26:22,666 040950 -0400 - 1787502382666 - 13774340991748939 - 000000040950 - __EV_0075__
+2026-08-23 12:26:22,666 041033 -0400 - 1787502382666 - 13774340991749022 - 000000041033 - __EV_0077__
+2026-08-23 12:26:22,666 041116 -0400 - 1787502382666 - 13774340991749105 - 000000041116 - __EV_0079__
+2026-08-23 12:26:22,666 041198 -0400 - 1787502382666 - 13774340991749187 - 000000041198 - __EV_0081__
+2026-08-23 12:26:22,666 041280 -0400 - 1787502382666 - 13774340991749269 - 000000041280 - __EV_0083__
+2026-08-23 12:26:22,666 041364 -0400 - 1787502382666 - 13774340991749353 - 000000041364 - __EV_0085__
+2026-08-23 12:26:22,666 041917 -0400 - 1787502382666 - 13774340991749906 - 000000041917 - __EV_0027__
+2026-08-23 12:26:22,666 042308 -0400 - 1787502382666 - 13774340991750297 - 000000042308 - __EV_0094__
+2026-08-23 12:26:22,666 042808 -0400 - 1787502382666 - 13774340991750797 - 000000042808 - __EV_0095__
+2026-08-23 12:26:22,666 045081 -0400 - 1787502382666 - 13774340991753070 - 000000045081 - __EV_0096__
+2026-08-23 12:26:22,667 045398 -0400 - 1787502382667 - 13774340991753387 - 000000045398 - __EV_0112__
+2026-08-23 12:26:22,667 045566 -0400 - 1787502382667 - 13774340991753555 - 000000045566 - __EV_0098__
+2026-08-23 12:26:22,667 045975 -0400 - 1787502382667 - 13774340991753964 - 000000045975 - __EV_0100__
+2026-08-23 12:26:22,667 046595 -0400 - 1787502382667 - 13774340991754584 - 000000046595 - __EV_0101__
+2026-08-23 12:26:22,667 047433 -0400 - 1787502382667 - 13774340991755422 - 000000047433 - __EV_0103__
+
+-->
+
+	<!-- #### FIN page-originale - _2A - Aug 20, 2026 3:35:07 PM #### -->
+<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1031271490" async></script></html>
