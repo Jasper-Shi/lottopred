@@ -33,11 +33,12 @@ behavioral change, V5 is closed; freeze V5.1/V6 and start a new cohort.
 
 Before any new historical model execution, the runner must load history through
 the reviewed `src/lotto649/operational_history.py` seam, which owns the deployed
-external seal, suffix-file, and suffix-head pins and delegates validation to
-`verified_history.py`. Direct use of the legacy processed CSV is prohibited for
-new evidence. The read consumer is integrated, but the operational kill switch
-remains closed; live also requires the separately reviewed dual-source suffix
-writer and dynamic pin-publication protocol.
+Git-registry genesis and delegates immutable seal/suffix validation to
+`history_registry.py` and `verified_history.py`. Direct use of the legacy
+processed CSV is prohibited for new evidence. The read consumer is integrated,
+but the operational kill switch remains closed; live also requires the
+separately reviewed dual-source suffix writer and `B -> E -> S -> P`
+fast-forward publication protocol.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,
