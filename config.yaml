@@ -4,6 +4,8 @@ project:
   seed: 649
 
 data:
+  # Data-integrity incident kill switch. Re-enable only in a reviewed release.
+  refresh_enabled: false
   history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
   recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
   bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
@@ -11,6 +13,8 @@ data:
   processed_csv: "data/processed/draws.csv"
 
 backtest:
+  # Data-integrity incident kill switch. Missing/non-true remains disabled.
+  enabled: false
   min_history_draws: 300
   test_start: "2020-01-01"
   test_end: "2025-12-31"
@@ -18,6 +22,8 @@ backtest:
   models: [random, ema_gap, v2_statistical, v3_boosting, v4_ensemble]
 
 live:
+  # Data-integrity incident kill switch. Missing/non-true remains disabled.
+  enabled: false
   models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble, v3_boosting]
   shadow_models: [v3_boosting]
 

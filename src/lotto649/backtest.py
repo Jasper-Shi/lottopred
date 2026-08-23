@@ -12,6 +12,17 @@ from .models.factory import build_models
 from .optimizer import rank_numbers, select_combination
 
 
+def _require_backtest_enabled(cfg: dict) -> None:
+    backtest_cfg = cfg.get("backtest")
+    if (
+        not isinstance(backtest_cfg, dict)
+        or backtest_cfg.get("enabled") is not True
+    ):
+        raise RuntimeError(
+            "backtest execution is disabled; backtest.enabled must be explicitly true"
+        )
+
+
 def _prediction_at(model, history, target, cfg, version: str):
     probs = model.predict(history, target.draw_date)
     ranked = rank_numbers(probs)
@@ -34,6 +45,7 @@ def _prediction_at(model, history, target, cfg, version: str):
 
 
 def run_backtest(draws, cfg, start: date, end: date, output_dir: Path | None = None) -> pd.DataFrame:
+    _require_backtest_enabled(cfg)
     models = build_models(cfg)
     min_hist = cfg["backtest"].get("min_history_draws", 300)
     version = cfg["project"].get("model_version", "v1.0.0")

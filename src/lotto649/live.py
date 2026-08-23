@@ -15,6 +15,22 @@ from .predictor import make_prediction
 from .storage import save_prediction, save_evaluation
 
 
+def _require_live_enabled(cfg: dict) -> None:
+    live_cfg = cfg.get("live")
+    if not isinstance(live_cfg, dict) or live_cfg.get("enabled") is not True:
+        raise RuntimeError(
+            "live execution is disabled; live.enabled must be explicitly true"
+        )
+
+
+def _require_data_refresh_enabled(cfg: dict) -> None:
+    data_cfg = cfg.get("data")
+    if not isinstance(data_cfg, dict) or data_cfg.get("refresh_enabled") is not True:
+        raise RuntimeError(
+            "data refresh is disabled; data.refresh_enabled must be explicitly true"
+        )
+
+
 def next_draw_date(after: date) -> date:
     for delta in range(1, 8):
         d = after + timedelta(days=delta)
@@ -24,6 +40,8 @@ def next_draw_date(after: date) -> date:
 
 
 def refresh_data(cfg: dict) -> list[Draw]:
+    _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     csv_path = resolve_path(cfg, cfg["data"]["processed_csv"])
     existing = load_draws(csv_path) if csv_path.exists() else []
     draws = refresh_with_sources(existing, cfg)
@@ -32,6 +50,8 @@ def refresh_data(cfg: dict) -> list[Draw]:
 
 
 def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
+    _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     root = Path(cfg["_root"])
     actual_by_date = {d.draw_date.isoformat(): d for d in draws}
     completed = []
@@ -61,6 +81,8 @@ def evaluate_due_predictions(cfg: dict, draws: list[Draw]) -> list[dict]:
 
 
 def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
+    _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     root = Path(cfg["_root"])
     version = cfg["project"].get("model_version", "v1.0.0")
     target = next_draw_date(draws[-1].draw_date)
@@ -80,6 +102,8 @@ def generate_next_predictions(cfg: dict, draws: list[Draw]) -> list[Path]:
 
 
 def run_live_cycle(cfg: dict) -> dict:
+    _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
     draws = refresh_data(cfg)
     evaluations = evaluate_due_predictions(cfg, draws)
     predictions = generate_next_predictions(cfg, draws)
