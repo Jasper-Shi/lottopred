@@ -1,7 +1,7 @@
 # Codex Handoff
 
 Last verified on 2026-08-23 against operational `main` base
-`e585ae797ddcafa423121bf473d70b177a3bd92c` and corrected-epoch artifact
+`8debb2e13d117124dbf4b7cdf7e8744ee23e0e89` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -32,6 +32,13 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > switches remain false. Re-enable only through the reviewed two-gate release
 > described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
+>
+> The historical OOS opportunity ledger preserves its exact 18,259-event
+> legacy prefix, then appends three governance events bound to this deployed
+> seal. All 18,251 legacy opportunities are `registered_data_only` and
+> ineligible; the governed eligible count is `0`, both high-waters are `null`,
+> and `stop_global_search=false`. See
+> [`HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`](HISTORICAL_OOS_EVIDENCE_PROTOCOL.md).
 
 | Component | Status | Meaning |
 |---|---|---|
@@ -82,8 +89,8 @@ Change version semantics deliberately rather than renaming committed snapshots.
 ## Current committed forward checkpoint
 
 The immutable pre-hold artifacts originated at `main` commit
-`9f16e20c726c7b65eed1d387c4c725d51248f570` and remain present at operational
-base `e585ae797ddcafa423121bf473d70b177a3bd92c`:
+`9f16e20c726c7b65eed1d387c4c725d51248f570` and remain present at current
+operational base `8debb2e13d117124dbf4b7cdf7e8744ee23e0e89`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both

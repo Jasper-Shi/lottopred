@@ -20,6 +20,8 @@ Preserve two properties above headline hit counts:
 - Before changing features, models, backtests, selection metrics, or ensemble
   weights, read `docs/MODEL_PROTOCOL.md`, `docs/V2_V4_RESULTS.md`, and
   `docs/RESEARCH_ROADMAP.md`.
+- For historical opportunity, high-water, or 6/6 evidence claims, read
+  `docs/HISTORICAL_OOS_EVIDENCE_PROTOCOL.md`.
 - For system boundaries and operational recovery, read `docs/ARCHITECTURE.md`
   and `docs/OPERATIONS.md`.
 
