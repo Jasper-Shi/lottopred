@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import NoReturn
 
@@ -9,10 +9,7 @@ from .domain import Prediction
 from .evaluation import evaluate_prediction
 from .models.factory import build_models
 from .notification import send_hit_alert, should_alert
-from .operational_history import (
-    PublishedHistory,
-    operational_history_provenance,
-)
+from .operational_history import operational_history_provenance
 from .predictor import make_prediction
 from .storage import save_evaluation, save_prediction
 from .verified_history import VerifiedHistory
@@ -85,7 +82,10 @@ def _evaluate_due_predictions(cfg: dict, history: VerifiedHistory) -> list[dict]
         ev = evaluate_prediction(pred, actual)
         ev["actual_history"] = source_provenance
         if cfg["notifications"].get("enabled", True) and should_alert(ev, cfg):
-            ev["email_sent"] = send_hit_alert(ev)
+            try:
+                ev["email_sent"] = send_hit_alert(ev)
+            except Exception:  # noqa: BLE001 - SMTP cannot block immutable evidence
+                ev["email_sent"] = False
         save_evaluation(root, ev)
         completed.append(ev)
     return completed
@@ -131,53 +131,6 @@ def _generate_next_predictions(
             continue
         paths.append(save_prediction(root, pred))
     return paths
-
-
-def _run_verified_live_outputs(
-    cfg: dict,
-    history: PublishedHistory,
-    *,
-    generated_at: datetime,
-) -> tuple[str, ...]:
-    """Evaluate and predict from one exact published P history checkout."""
-
-    _require_live_enabled(cfg)
-    _require_data_refresh_enabled(cfg)
-    if type(history) is not PublishedHistory:
-        raise RuntimeError("verified live outputs require exact published history")
-    if (
-        type(generated_at) is not datetime
-        or generated_at.microsecond != 0
-        or generated_at.utcoffset() is None
-        or generated_at.utcoffset().total_seconds() != 0
-    ):
-        raise RuntimeError("verified live output time must be whole-second UTC")
-    root = Path(cfg["_root"]).resolve(strict=True)
-    evaluations = _evaluate_due_predictions(cfg, history)
-    predictions = _generate_next_predictions(
-        cfg,
-        history,
-        generated_at=generated_at.astimezone(UTC),
-    )
-    paths = [
-        (
-            Path("evaluations")
-            / (
-                f"{evaluation['target_draw_date']}__"
-                f"{evaluation['model_name']}__"
-                f"{evaluation['model_version']}.json"
-            )
-        ).as_posix()
-        for evaluation in evaluations
-    ]
-    for path in predictions:
-        candidate = Path(path)
-        try:
-            relative = candidate.relative_to(root)
-        except ValueError as exc:
-            raise RuntimeError("verified live output escaped the P checkout") from exc
-        paths.append(relative.as_posix())
-    return tuple(sorted(paths))
 
 
 def generate_next_predictions(cfg: dict) -> list[Path]:

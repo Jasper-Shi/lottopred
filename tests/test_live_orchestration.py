@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import hashlib
 import io
 import os
@@ -144,7 +144,7 @@ def _artifacts():
     return artifacts
 
 
-def _fixture_ports(events: list[str]):
+def _fixture_ports(events: list[str], monkeypatch):
     base = _base_history()
     published = _published_history(base)
     artifact_history = replace(
@@ -240,33 +240,62 @@ def _fixture_ports(events: list[str]):
         events.append("publish-A")
         return a_receipt
 
-    return orchestration._OrchestrationPorts(
-        load_history=load,
-        collect_sources=collect,
-        prepare_history=prepare,
-        publish_history=publish_history,
-        open_workspace=open_workspace,
-        execute_published_code=execute,
-        freeze_outputs=freeze,
-        publish_artifacts=publish_artifacts,
+    monkeypatch.setattr(
+        orchestration,
+        "_load_production_config",
+        lambda: {
+            "_root": ROOT,
+            "_authority_head": B,
+            "data": {"refresh_enabled": True},
+            "live": {"enabled": True},
+        },
     )
-
-
-def test_full_cycle_success_preserves_order_and_context_through_a_publication():
-    events: list[str] = []
-    ports = _fixture_ports(events)
-    cfg = {
-        "_root": ROOT,
-        "data": {"refresh_enabled": True},
-        "live": {"enabled": True},
+    monkeypatch.setattr(orchestration, "_trusted_utc_now", lambda: CREATED_AT)
+    monkeypatch.setattr(orchestration, "load_operational_history", load)
+    monkeypatch.setattr(
+        orchestration,
+        "RequestsOfficialSourceHttpClient",
+        lambda: object(),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "collect_official_sources",
+        lambda observed_target, *, http_client, clock: collect(
+            observed_target,
+            clock=clock,
+        ),
+    )
+    monkeypatch.setattr(orchestration, "prepare_history_publication", prepare)
+    monkeypatch.setattr(
+        orchestration,
+        "publish_prepared_history_to_github",
+        publish_history,
+    )
+    monkeypatch.setattr(
+        orchestration, "open_github_execution_workspace", open_workspace
+    )
+    monkeypatch.setattr(orchestration, "_execute_published_code", execute)
+    monkeypatch.setattr(orchestration, "freeze_execution_outputs", freeze)
+    monkeypatch.setattr(
+        orchestration,
+        "publish_frozen_execution_artifacts_to_github",
+        publish_artifacts,
+    )
+    return {
+        "base": base,
+        "published": published,
+        "p_receipt": p_receipt,
+        "a_receipt": a_receipt,
     }
 
-    receipt = orchestration._orchestrate_with_ports(
-        cfg,
-        token="secret",
-        clock=lambda: CREATED_AT,
-        ports=ports,
-    )
+
+def test_full_cycle_success_preserves_order_and_context_through_a_publication(
+    monkeypatch,
+):
+    events: list[str] = []
+    _fixture_ports(events, monkeypatch)
+
+    receipt = orchestration.orchestrate_github_live_cycle(token="secret")
 
     assert receipt.history_publication.publication_commit == P
     assert receipt.artifact_publication.artifact_commit == A
@@ -284,47 +313,8 @@ def test_full_cycle_success_preserves_order_and_context_through_a_publication():
     ]
 
 
-def test_p_side_live_seam_returns_exact_sorted_paths_and_uses_supplied_instant(
-    monkeypatch,
-):
-    history = _base_history()
-    generated_at = datetime(2026, 8, 24, 12, tzinfo=UTC)
-    observed: list[datetime] = []
-    evaluation = {
-        "target_draw_date": "2026-08-22",
-        "model_name": "zeta",
-        "model_version": "v1.0.0",
-    }
-
-    monkeypatch.setattr(
-        live,
-        "_evaluate_due_predictions",
-        lambda _cfg, _history: [evaluation],
-    )
-
-    def generate(_cfg, _history, *, generated_at):
-        observed.append(generated_at)
-        return [
-            ROOT / "predictions/2026-08-26__alpha__v1.0.0.json",
-        ]
-
-    monkeypatch.setattr(live, "_generate_next_predictions", generate)
-
-    paths = live._run_verified_live_outputs(
-        {
-            "_root": ROOT,
-            "data": {"refresh_enabled": True},
-            "live": {"enabled": True},
-        },
-        history,
-        generated_at=generated_at,
-    )
-
-    assert paths == (
-        "evaluations/2026-08-22__zeta__v1.0.0.json",
-        "predictions/2026-08-26__alpha__v1.0.0.json",
-    )
-    assert observed == [generated_at]
+def test_live_module_has_no_aggregate_output_bypass():
+    assert not hasattr(live, "_run_verified_live_outputs")
 
 
 def test_prediction_generation_passes_the_frozen_instant_into_predictor(
@@ -461,6 +451,11 @@ def test_published_code_runs_isolated_from_p_with_only_smtp_environment(
         "_require_no_lotto649_bytecode",
         lambda _workspace: None,
     )
+    monkeypatch.setattr(
+        orchestration,
+        "_validate_module_inventory",
+        lambda _workspace, _manifest: None,
+    )
 
     def run(command, **kwargs):
         captured["command"] = command
@@ -482,8 +477,9 @@ def test_published_code_runs_isolated_from_p_with_only_smtp_environment(
         "-I",
         "-S",
         "-B",
-        str(ROOT / "tools/run_verified_live_outputs.py"),
-        "--generated-at",
+        "-c",
+        orchestration._P_BOOTSTRAP,
+        str(ROOT),
         CREATED_AT.isoformat(),
     ]
     assert captured["cwd"] == ROOT
@@ -615,7 +611,7 @@ def test_module_inventory_binds_each_module_name_to_its_p_source_path():
 
 def test_exact_p_worker_rejects_worktree_replacement(tmp_path):
     repository = tmp_path / "repository"
-    script = repository / "tools" / "run_verified_live_outputs.py"
+    script = repository / "src" / "lotto649" / "_live_worker.py"
     script.parent.mkdir(parents=True)
     script.write_bytes(b"print('reviewed')\n")
     subprocess.run(
@@ -624,7 +620,7 @@ def test_exact_p_worker_rejects_worktree_replacement(tmp_path):
         capture_output=True,
     )
     subprocess.run(
-        ["git", "-C", str(repository), "add", "tools/run_verified_live_outputs.py"],
+        ["git", "-C", str(repository), "add", "src/lotto649/_live_worker.py"],
         check=True,
         capture_output=True,
     )
@@ -673,19 +669,22 @@ class _StageFailure(RuntimeError):
 @pytest.mark.parametrize(
     ("stage", "expected_tail"),
     [
-        ("collect_sources", ["load-B", "failed"]),
-        ("publish_history", ["collect", "prepare", "failed"]),
-        ("execute_published_code", ["context-enter", "failed", "context-exit"]),
-        ("publish_artifacts", ["freeze-A", "failed", "context-exit"]),
+        ("collect_official_sources", ["load-B", "failed"]),
+        ("publish_prepared_history_to_github", ["collect", "prepare", "failed"]),
+        ("_execute_published_code", ["context-enter", "failed", "context-exit"]),
+        (
+            "publish_frozen_execution_artifacts_to_github",
+            ["freeze-A", "failed", "context-exit"],
+        ),
     ],
 )
 def test_failure_truncates_cycle_without_retry_and_closes_post_p_context(
     stage,
     expected_tail,
+    monkeypatch,
 ):
     events: list[str] = []
-    ports = _fixture_ports(events)
-    original = getattr(ports, stage)
+    _fixture_ports(events, monkeypatch)
     calls = 0
 
     def fail(*args, **kwargs):
@@ -694,105 +693,76 @@ def test_failure_truncates_cycle_without_retry_and_closes_post_p_context(
         events.append("failed")
         raise _StageFailure(stage)
 
-    ports = replace(ports, **{stage: fail})
-    cfg = {
-        "_root": ROOT,
-        "data": {"refresh_enabled": True},
-        "live": {"enabled": True},
-    }
+    monkeypatch.setattr(orchestration, stage, fail)
 
     with pytest.raises(_StageFailure, match=stage):
-        orchestration._orchestrate_with_ports(
-            cfg,
-            token="secret",
-            clock=lambda: CREATED_AT,
-            ports=ports,
-        )
+        orchestration.orchestrate_github_live_cycle(token="secret")
 
     assert calls == 1
     assert events[-len(expected_tail) :] == expected_tail
-    if stage != "publish_artifacts":
+    if stage != "publish_frozen_execution_artifacts_to_github":
         assert "publish-A" not in events
-    assert original is not fail
 
 
-def test_p_receipt_mismatch_stops_before_execution_context():
+def test_p_receipt_mismatch_stops_before_execution_context(monkeypatch):
     events: list[str] = []
-    ports = _fixture_ports(events)
-    publish = ports.publish_history
+    _fixture_ports(events, monkeypatch)
+    publish = orchestration.publish_prepared_history_to_github
 
     def mismatch(*args, **kwargs):
         receipt = publish(*args, **kwargs)
         return replace(receipt, expected_base="f" * 40)
 
-    ports = replace(ports, publish_history=mismatch)
+    monkeypatch.setattr(
+        orchestration,
+        "publish_prepared_history_to_github",
+        mismatch,
+    )
     with pytest.raises(
         orchestration.LiveOrchestrationError,
         match="receipt is inconsistent",
     ):
-        orchestration._orchestrate_with_ports(
-            {
-                "_root": ROOT,
-                "data": {"refresh_enabled": True},
-                "live": {"enabled": True},
-            },
-            token="secret",
-            clock=lambda: CREATED_AT,
-            ports=ports,
-        )
+        orchestration.orchestrate_github_live_cycle(token="secret")
 
     assert "context-enter" not in events
 
 
-def test_prediction_clock_cannot_predate_collected_draw_or_publication():
+def test_prediction_clock_cannot_predate_collected_draw_or_publication(monkeypatch):
     events: list[str] = []
-    ports = _fixture_ports(events)
+    _fixture_ports(events, monkeypatch)
     too_early = datetime(2026, 8, 27, 9, tzinfo=UTC)
+    monkeypatch.setattr(orchestration, "_trusted_utc_now", lambda: too_early)
 
     with pytest.raises(
         orchestration.LiveOrchestrationError,
         match="predates source collection",
     ):
-        orchestration._orchestrate_with_ports(
-            {
-                "_root": ROOT,
-                "data": {"refresh_enabled": True},
-                "live": {"enabled": True},
-            },
-            token="secret",
-            clock=lambda: too_early,
-            ports=ports,
-        )
+        orchestration.orchestrate_github_live_cycle(token="secret")
 
     assert events[-2:] == ["context-enter", "context-exit"]
     assert "execute-P" not in events
 
 
-def test_a_receipt_history_mismatch_closes_context_and_returns_no_success():
+def test_a_receipt_history_mismatch_closes_context_and_returns_no_success(monkeypatch):
     events: list[str] = []
-    ports = _fixture_ports(events)
-    publish = ports.publish_artifacts
+    _fixture_ports(events, monkeypatch)
+    publish = orchestration.publish_frozen_execution_artifacts_to_github
 
     def mismatch(*args, **kwargs):
         receipt = publish(*args, **kwargs)
         bad_history = replace(receipt.history, draws=receipt.history.draws[:-1])
         return replace(receipt, history=bad_history)
 
-    ports = replace(ports, publish_artifacts=mismatch)
+    monkeypatch.setattr(
+        orchestration,
+        "publish_frozen_execution_artifacts_to_github",
+        mismatch,
+    )
     with pytest.raises(
         orchestration.LiveOrchestrationError,
         match="history differs from P",
     ):
-        orchestration._orchestrate_with_ports(
-            {
-                "_root": ROOT,
-                "data": {"refresh_enabled": True},
-                "live": {"enabled": True},
-            },
-            token="secret",
-            clock=lambda: CREATED_AT,
-            ports=ports,
-        )
+        orchestration.orchestrate_github_live_cycle(token="secret")
 
     assert events[-2:] == ["publish-A", "context-exit"]
 
@@ -851,14 +821,20 @@ def test_no_site_bootstrap_finds_python_311_312_style_venv_packages(tmp_path):
         "VALUE = 'venv-only'\n",
         encoding="utf-8",
     )
-    worker = ROOT / "tools" / "run_verified_live_outputs.py"
     code = "\n".join(
         (
-            "import importlib.util, sys",
-            f"spec = importlib.util.spec_from_file_location('worker', {str(worker)!r})",
-            "module = importlib.util.module_from_spec(spec)",
-            "spec.loader.exec_module(module)",
-            "for value in module._dependency_paths(): sys.path.append(value)",
+            "import pathlib, sys, sysconfig",
+            "paths=[]",
+            "for key in ('purelib','platlib'):",
+            " value=sysconfig.get_path(key)",
+            " if value: paths.append(pathlib.Path(value))",
+            "prefix=pathlib.Path(sys.executable).absolute().parent.parent",
+            "version=f'python{sys.version_info.major}.{sys.version_info.minor}'",
+            "paths.extend((prefix/'lib'/version/'site-packages',prefix/'Lib'/'site-packages'))",
+            "for value in paths:",
+            " try: candidate=str(value.resolve(strict=True))",
+            " except OSError: continue",
+            " if candidate not in sys.path: sys.path.append(candidate)",
             "import only_in_this_venv",
             "assert only_in_this_venv.VALUE == 'venv-only'",
             "assert 'site' not in sys.modules",
@@ -881,6 +857,234 @@ def test_no_site_bootstrap_finds_python_311_312_style_venv_packages(tmp_path):
     assert completed.returncode == 0, completed.stderr.decode("utf-8", "replace")
     assert completed.stdout == b""
     assert completed.stderr == b""
+
+
+def _run_private_worker_fixture(
+    tmp_path,
+    *,
+    generated_at,
+    evaluations,
+    predictions,
+):
+    repository = tmp_path / "published"
+    package = repository / "src" / "lotto649"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "_live_worker.py").write_bytes(
+        (ROOT / "src" / "lotto649" / "_live_worker.py").read_bytes()
+    )
+    (package / "config.py").write_text(
+        """\
+from pathlib import Path
+
+
+def load_config(path):
+    return {
+        "_root": Path(path).resolve().parent,
+        "data": {"refresh_enabled": True},
+        "live": {"enabled": True},
+    }
+""",
+        encoding="utf-8",
+    )
+    (package / "operational_history.py").write_text(
+        """\
+import subprocess
+from types import SimpleNamespace
+
+
+def load_operational_history(cfg):
+    publication = subprocess.run(
+        ["git", "-C", str(cfg["_root"]), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+    ).stdout.decode("ascii").strip()
+    registry = SimpleNamespace(
+        resolved_revision=publication,
+        publication_commit=publication,
+    )
+    return SimpleNamespace(registry=registry)
+""",
+        encoding="utf-8",
+    )
+    live_source = (
+        """\
+from pathlib import Path
+
+"""
+        + f"_EVALUATIONS = {evaluations!r}\n"
+        + f"_PREDICTIONS = {predictions!r}\n"
+        + """
+
+def _evaluate_due_predictions(cfg, history):
+    del history
+    completed = []
+    for relative, raw in sorted(_EVALUATIONS.items()):
+        output = Path(cfg["_root"]) / relative
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(raw)
+        target, model, version = output.stem.split("__")
+        completed.append({
+            "target_draw_date": target,
+            "model_name": model,
+            "model_version": version,
+        })
+    return completed
+
+
+def _generate_next_predictions(cfg, history, *, generated_at):
+    del history, generated_at
+    completed = []
+    for relative, raw in sorted(_PREDICTIONS.items()):
+        output = Path(cfg["_root"]) / relative
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(raw)
+        completed.append(output)
+    return completed
+"""
+    )
+    (package / "live.py").write_text(live_source, encoding="utf-8")
+    (repository / "config.yaml").write_text("fixture: true\n", encoding="utf-8")
+    subprocess.run(
+        ["git", "init", "--quiet", str(repository)],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "add", "."],
+        check=True,
+        capture_output=True,
+    )
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "GIT_AUTHOR_EMAIL": "test@example.invalid",
+            "GIT_AUTHOR_NAME": "Test",
+            "GIT_COMMITTER_EMAIL": "test@example.invalid",
+            "GIT_COMMITTER_NAME": "Test",
+        }
+    )
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-C",
+            str(repository),
+            "commit",
+            "--quiet",
+            "-m",
+            "published fixture",
+        ],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+    publication = (
+        subprocess.run(
+            ["git", "-C", str(repository), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+        )
+        .stdout.decode("ascii")
+        .strip()
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "checkout", "--detach", "--quiet", publication],
+        check=True,
+        capture_output=True,
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            orchestration._P_BOOTSTRAP,
+            str(repository),
+            generated_at.isoformat(),
+        ],
+        check=False,
+        capture_output=True,
+        env=orchestration._FIXED_SUBPROCESS_ENVIRONMENT,
+        timeout=120,
+    )
+
+    assert completed.returncode == 0, completed.stderr.decode("utf-8", "replace")
+    assert completed.stderr == b""
+    manifest = orchestration._parse_worker_manifest(completed.stdout)
+    orchestration._validate_manifest(manifest, publication=publication)
+    workspace = type(
+        "Workspace",
+        (),
+        {"root": repository, "publication_commit": publication},
+    )()
+    orchestration._validate_module_inventory(workspace, manifest)
+    assert "lotto649._live_worker" in {module.name for module in manifest.modules}
+    assert all((repository / path).is_file() for path in manifest.paths)
+    return repository, manifest
+
+
+def test_private_worker_outputs_join_real_freeze_with_proven_p_inventory(tmp_path):
+    from test_history_execution_handoff import (
+        _candidate,
+        _open_execution_workspace,
+        _write_required_predictions,
+        _write_valid_evaluation,
+    )
+
+    handoff_root = tmp_path / "handoff"
+    handoff_root.mkdir()
+    _caller, prepared, receipt, authority = _candidate(handoff_root)
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        generated_at = datetime.combine(
+            workspace.history.draws[-1].draw_date + timedelta(days=1),
+            datetime.min.time(),
+            UTC,
+        ).replace(hour=12)
+        prediction_paths, prediction_raws = _write_required_predictions(
+            workspace,
+            generated_at,
+        )
+        evaluation_path, evaluation_raw = _write_valid_evaluation(workspace)
+        evaluations = {evaluation_path: evaluation_raw}
+        predictions = dict(zip(prediction_paths, prediction_raws, strict=True))
+        expected_raw = {**evaluations, **predictions}
+        expected_paths = tuple(sorted(expected_raw))
+        for relative in expected_paths:
+            (workspace.root / relative).unlink()
+
+        worker_root, manifest = _run_private_worker_fixture(
+            tmp_path,
+            generated_at=generated_at,
+            evaluations=evaluations,
+            predictions=predictions,
+        )
+        assert manifest.paths == expected_paths
+        for relative in manifest.paths:
+            output = workspace.root / relative
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_bytes((worker_root / relative).read_bytes())
+
+        frozen = orchestration.freeze_execution_outputs(
+            workspace,
+            manifest.paths,
+            created_at=generated_at,
+        )
+
+        assert frozen.parent_commit == prepared.publication_commit
+        assert frozen.paths == manifest.paths
+        assert tuple(file.path for file in frozen.files) == manifest.paths
+        assert tuple(file.sha256 for file in frozen.files) == tuple(
+            hashlib.sha256(expected_raw[path]).hexdigest() for path in manifest.paths
+        )
 
 
 def test_bounded_worker_kills_stdout_flood_without_retry():
@@ -1007,3 +1211,62 @@ def test_published_code_transport_failures_are_typed_and_never_retried(
         )
 
     assert calls == 1
+
+
+def test_no_direct_worker_tool_or_injectable_orchestration_bypass_exists():
+    assert not (ROOT / "tools" / "run_verified_live_outputs.py").exists()
+    assert (ROOT / "src" / "lotto649" / "_live_worker.py").is_file()
+    assert not hasattr(live, "_run_verified_live_outputs")
+    assert not hasattr(orchestration, "_OrchestrationPorts")
+    assert not hasattr(orchestration, "_orchestrate_with_ports")
+
+
+def test_smtp_exception_does_not_block_evaluation_or_prediction(
+    tmp_path,
+    monkeypatch,
+):
+    from lotto649.domain import Draw, Prediction
+
+    actual = Draw(orchestration.date(2026, 8, 22), (1, 2, 3, 4, 5, 6), 7)
+    prediction = Prediction(
+        target_draw_date=actual.draw_date,
+        generated_at=datetime(2026, 8, 20, tzinfo=UTC),
+        model_name="candidate",
+        model_version="v1.0.0",
+        probabilities={number: 6 / 49 for number in range(1, 50)},
+        top6=[1, 2, 3, 4, 5, 6],
+        top12=list(range(1, 13)),
+        top18=list(range(1, 19)),
+        final_combination=[1, 2, 3, 4, 5, 6],
+        metadata={},
+    )
+    prediction_path = tmp_path / "predictions/2026-08-22__candidate__v1.0.0.json"
+    prediction_path.parent.mkdir()
+    prediction_path.write_text(
+        orchestration.json.dumps(prediction.to_json_dict()),
+        encoding="utf-8",
+    )
+    saved = []
+    monkeypatch.setattr(live, "operational_history_provenance", lambda _h: {"p": P})
+    monkeypatch.setattr(live, "should_alert", lambda _ev, _cfg: True)
+    monkeypatch.setattr(
+        live,
+        "send_hit_alert",
+        lambda _ev: (_ for _ in ()).throw(OSError("smtp unavailable")),
+    )
+    monkeypatch.setattr(
+        live,
+        "save_evaluation",
+        lambda _root, evaluation: saved.append(evaluation),
+    )
+
+    completed = live._evaluate_due_predictions(
+        {
+            "_root": tmp_path,
+            "notifications": {"enabled": True},
+        },
+        type("History", (), {"draws": (actual,)})(),
+    )
+
+    assert completed[0]["email_sent"] is False
+    assert saved == completed

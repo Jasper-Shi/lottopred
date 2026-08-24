@@ -102,7 +102,19 @@ same P context remains open, fixes `Jasper-Shi/lottopred` `main`,
 uploads and verifies A's required object OIDs, attempts one GraphQL
 `updateRefs` CAS with `force=false`, rereads every acknowledgement outcome, and
 requires a fresh anonymous full fetch plus `load_published_history(A)`. None of
-these seams is connected to a CLI, live entry point, or workflow.
+these component seams is directly connected to a CLI, live entry point, or
+workflow.
+
+The disconnected `live_orchestration` code candidate composes the complete
+fixed sequence: collect, prepare, publish/reload P, open the fresh detached-P
+workspace, run the private exact-P worker, freeze A, then publish/reread/freshly
+reload A before returning success. Its public boundary accepts only a GitHub
+token; it reads literal-B configuration, trusted UTC clocks, fixed repository,
+fixed ref, and concrete adapters internally. The private P worker has no
+standalone module or CLI entry point. The parent verifies the worker and every
+loaded `lotto649` source module against exact P before accepting its bounded
+manifest. This candidate is not imported by any CLI or workflow, changes no
+runtime gate, and is not an execution release.
 
 ### Remote publication release state
 
@@ -119,10 +131,9 @@ remote-safety canary has succeeded. The remaining release blockers are:
 
 1. an authorized disposable-remote exact object-OID/updateRefs canary;
 2. configured and independently verified production protected `main`;
-3. collector/preparer/publisher/handoff orchestration with reviewed P-code
-   provenance;
-4. a real exact `P -> A` canary followed by reread and fresh anonymous reload;
-5. a separate review of the new config bytes and SHA-bound workflow execution
+3. a real exact `P -> A` end-to-end canary followed by reread and fresh
+   anonymous reload;
+4. a separate review of the new config bytes and SHA-bound workflow execution
    plan.
 
 The future live order is fixed: collect both sources, prepare and remotely
@@ -135,8 +146,8 @@ ordinary push.
 Public bootstrap, live refresh, evaluation, and prediction entry points
 therefore still refuse execution after their gates. Before reconsidering those
 gates, complete every blocker in the remote publication release state above.
-The disconnected publisher does not complete the remote operational path or
-reviewed release; all switches remain false. The
+The disconnected orchestration candidate does not prove the remote operational
+path or complete the reviewed release; all switches remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
@@ -161,7 +172,9 @@ not enough.
    network path must retrieve two independent raw-source receipts, append only
    the next canonical suffix and registry events through the exact
    `B -> E -> S -> P` transaction, remotely compare-and-swap `main`, and reload
-   that remote revision successfully before evaluation or prediction.
+   that remote revision successfully before evaluation or prediction. The
+   disconnected orchestration candidate implements this order in code, but the
+   required true-remote canaries must prove it before release.
 3. Offline unit, chronology, integrity, workflow-guard, and lint checks pass.
    Run a network smoke only after source access itself is approved.
 4. The review names exactly which stages are reopening and why, prepares the
@@ -220,9 +233,17 @@ EMAIL_TO = SMTP_USERNAME
 
 So alerts are sent from your Gmail account back to the same inbox. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` remain optional GitHub Secrets if you ever want to override those defaults or send alerts to another address.
 
+The disconnected exact-P orchestration candidate deliberately passes only
+`SMTP_USERNAME` and `SMTP_PASSWORD` into the isolated worker. It always uses the
+Gmail host/port and same-account sender/recipient defaults. The optional
+host/address overrides remain available only to manual or legacy email paths;
+they are outside the reviewed worker boundary.
+
 For `SMTP_PASSWORD`, use a Google **App Password**, not the account's normal sign-in password. Google App Password availability normally requires 2-Step Verification on the Google account.
 
-Missing email secrets do not stop backtesting, evaluation, or prediction; email is a side effect only.
+Missing email secrets or an SMTP exception do not stop backtesting, evaluation,
+prediction, or artifact publication; email is a side effect only. A threshold
+evaluation records `email_sent=false` when delivery raises.
 
 ## Notification defaults
 
@@ -245,7 +266,8 @@ Parser raises rather than proceeding with a suspiciously small or discontinuous 
 
 ### Email failure
 
-The evaluation/prediction state remains valid. SMTP is not part of model state.
+The evaluation/prediction state remains valid. SMTP is not part of model state;
+the evaluation records `email_sent=false` and the isolated worker continues.
 
 ### Git push conflict
 
@@ -253,6 +275,11 @@ The reviewed exact-CAS paths stop on a stale base, third head, unreadable reread
 or indeterminate acknowledgement. They do not retry, merge, force, or fall back
 to an ordinary push. Existing prediction snapshots remain immutable and are
 never regenerated or overwritten.
+
+The orchestration candidate also performs no automatic retry after its private
+P worker starts. An alert may already have left the process before a later
+model, manifest, freeze, or A-publication failure, so retry requires explicit
+operator audit rather than an unattended replay.
 
 ## Scheduled time
 

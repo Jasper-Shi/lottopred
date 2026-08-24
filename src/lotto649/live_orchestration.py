@@ -12,7 +12,6 @@ import subprocess
 import sys
 from threading import Event, Thread
 from collections.abc import Callable
-from contextlib import AbstractContextManager
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -69,7 +68,7 @@ _OUTPUT_PATH_RE = re.compile(
 _MAX_OUTPUTS = 128
 _MAX_MANIFEST_BYTES = 64 * 1024
 _MAX_WORKER_BYTES = 256 * 1024
-_WORKER_PATH = "tools/run_verified_live_outputs.py"
+_WORKER_PATH = "src/lotto649/_live_worker.py"
 _SMTP_ENVIRONMENT = ("SMTP_PASSWORD", "SMTP_USERNAME")
 _TRUSTED_PATH = "/usr/bin:/bin"
 _FIXED_SUBPROCESS_ENVIRONMENT = {
@@ -85,6 +84,24 @@ _FIXED_SUBPROCESS_ENVIRONMENT = {
     "PATH": _TRUSTED_PATH,
     "TMPDIR": "/tmp",
 }
+_P_BOOTSTRAP = """\
+import pathlib,sys,sysconfig
+root=pathlib.Path(sys.argv[1]).resolve(strict=True)
+paths=[]
+for key in ('purelib','platlib'):
+ value=sysconfig.get_path(key)
+ if value: paths.append(pathlib.Path(value))
+prefix=pathlib.Path(sys.executable).absolute().parent.parent
+version=f'python{sys.version_info.major}.{sys.version_info.minor}'
+paths.extend((prefix/'lib'/version/'site-packages',prefix/'Lib'/'site-packages'))
+for value in paths:
+ try: candidate=str(value.resolve(strict=True))
+ except OSError: continue
+ if candidate not in sys.path: sys.path.append(candidate)
+sys.path.insert(0,str((root/'src').resolve(strict=True)))
+from lotto649 import _live_worker
+raise SystemExit(_live_worker._main(root,sys.argv[2]))
+"""
 
 
 class LiveOrchestrationError(RuntimeError):
@@ -124,20 +141,6 @@ class _LiveOutputManifest:
     publication_commit: str
     paths: tuple[str, ...]
     modules: tuple[_PublishedModuleIdentity, ...] = ()
-
-
-@dataclass(frozen=True)
-class _OrchestrationPorts:
-    load_history: Callable[[dict[str, Any]], PublishedHistory]
-    collect_sources: Callable[..., OfficialSourceCollection]
-    prepare_history: Callable[..., PreparedPublication]
-    publish_history: Callable[..., PublicationReceipt]
-    open_workspace: Callable[
-        [PublicationReceipt], AbstractContextManager[ExecutionWorkspace]
-    ]
-    execute_published_code: Callable[..., _LiveOutputManifest]
-    freeze_outputs: Callable[..., FrozenExecutionArtifacts]
-    publish_artifacts: Callable[..., ArtifactPublicationReceipt]
 
 
 def _full_oid(value: object, *, label: str) -> str:
@@ -429,9 +432,12 @@ def _validate_module_inventory(
         not modules
         or names != tuple(sorted(set(names)))
         or len(set(paths)) != len(paths)
-        or not {"lotto649", "lotto649.live", "lotto649.operational_history"}.issubset(
-            names
-        )
+        or not {
+            "lotto649",
+            "lotto649._live_worker",
+            "lotto649.live",
+            "lotto649.operational_history",
+        }.issubset(names)
     ):
         raise PublishedCodeExecutionError(
             "published-code module inventory is incomplete or noncanonical"
@@ -747,28 +753,31 @@ def _validate_a_receipt(
     return receipt
 
 
-def _orchestrate_with_ports(
-    cfg: dict[str, Any],
-    *,
-    token: str,
-    clock: Callable[[], datetime],
-    ports: _OrchestrationPorts,
-) -> LiveCycleReceipt:
-    """Private state-machine seam; production adapters stay fixed by the wrapper."""
+def _trusted_utc_now() -> datetime:
+    return datetime.now(UTC).replace(microsecond=0)
 
+
+def orchestrate_github_live_cycle(*, token: str) -> LiveCycleReceipt:
+    """Run the sole fixed production B/E/S/P/A state machine."""
+
+    cfg = _load_production_config()
     enabled_cfg = _require_enabled(cfg)
     if type(token) is not str or not token:
         raise LiveOrchestrationError("GitHub token must be a nonempty string")
-    if type(ports) is not _OrchestrationPorts:
-        raise LiveOrchestrationError("live-cycle ports have the wrong type")
     root = _repository_root(enabled_cfg)
-    base_history, base, target = _validate_base_history(ports.load_history(enabled_cfg))
-    expected_head = enabled_cfg.get("_authority_head")
-    if expected_head is not None and expected_head != base:
+    base_history, base, target = _validate_base_history(
+        load_operational_history(enabled_cfg)
+    )
+    if enabled_cfg.get("_authority_head") != base:
         raise LiveOrchestrationError(
             "production config and operational history resolved different B commits"
         )
-    collection = ports.collect_sources(target, clock=clock)
+    http_client = RequestsOfficialSourceHttpClient()
+    collection = collect_official_sources(
+        target,
+        http_client=http_client,
+        clock=_trusted_utc_now,
+    )
     if (
         type(collection) is not OfficialSourceCollection
         or type(collection.sources) is not tuple
@@ -780,7 +789,7 @@ def _orchestrate_with_ports(
         lambda: collection.completed_at,
         label="source collection",
     )
-    prepared = ports.prepare_history(
+    prepared = prepare_history_publication(
         root,
         expected_base_commit=base,
         sources=collection.sources,
@@ -794,31 +803,34 @@ def _orchestrate_with_ports(
     ):
         raise LiveOrchestrationError("prepared B/E/S/P identity is inconsistent")
     p_receipt = _validate_p_receipt(
-        ports.publish_history(prepared, token=token),
+        publish_prepared_history_to_github(prepared, token=token),
         prepared=prepared,
         base_history=base_history,
     )
-    with ports.open_workspace(p_receipt) as workspace:
+    with open_github_execution_workspace(p_receipt) as workspace:
         if (
             type(workspace) is not ExecutionWorkspace
             or workspace.publication_commit != prepared.publication_commit
             or workspace.history != p_receipt.history
         ):
             raise LiveOrchestrationError("execution workspace differs from P")
-        generated_at = _utc_second(clock, label="published-code execution")
+        generated_at = _utc_second(
+            _trusted_utc_now,
+            label="published-code execution",
+        )
         if generated_at < collection_time:
             raise LiveOrchestrationError(
                 "published-code execution predates source collection"
             )
         manifest = _validate_manifest(
-            ports.execute_published_code(workspace, generated_at=generated_at),
+            _execute_published_code(workspace, generated_at=generated_at),
             publication=prepared.publication_commit,
         )
-        artifact_time = _utc_second(clock, label="artifact freeze")
+        artifact_time = _utc_second(_trusted_utc_now, label="artifact freeze")
         if artifact_time < generated_at:
             raise LiveOrchestrationError("artifact clock moved backwards")
         artifacts = _validate_artifacts(
-            ports.freeze_outputs(
+            freeze_execution_outputs(
                 workspace,
                 manifest.paths,
                 created_at=artifact_time,
@@ -828,48 +840,15 @@ def _orchestrate_with_ports(
             created_at=artifact_time,
         )
         a_receipt = _validate_a_receipt(
-            ports.publish_artifacts(artifacts, token=token),
+            publish_frozen_execution_artifacts_to_github(artifacts, token=token),
             artifacts=artifacts,
             p_history=p_receipt.history,
         )
-        result = LiveCycleReceipt(
+        return LiveCycleReceipt(
             history_publication=p_receipt,
             artifact_publication=a_receipt,
             output_paths=manifest.paths,
         )
-    return result
-
-
-def orchestrate_github_live_cycle(*, token: str) -> LiveCycleReceipt:
-    """Run one fixed production B/E/S/P/A cycle after both explicit gates."""
-
-    cfg = _load_production_config()
-    _require_enabled(cfg)
-    http_client = RequestsOfficialSourceHttpClient()
-    ports = _OrchestrationPorts(
-        load_history=load_operational_history,
-        collect_sources=lambda target, *, clock: collect_official_sources(
-            target,
-            http_client=http_client,
-            clock=clock,
-        ),
-        prepare_history=prepare_history_publication,
-        publish_history=publish_prepared_history_to_github,
-        open_workspace=open_github_execution_workspace,
-        execute_published_code=_execute_published_code,
-        freeze_outputs=freeze_execution_outputs,
-        publish_artifacts=publish_frozen_execution_artifacts_to_github,
-    )
-
-    def trusted_clock() -> datetime:
-        return datetime.now(UTC).replace(microsecond=0)
-
-    return _orchestrate_with_ports(
-        cfg,
-        token=token,
-        clock=trusted_clock,
-        ports=ports,
-    )
 
 
 def _execute_published_code(
@@ -889,7 +868,7 @@ def _execute_published_code(
         ) from exc
     try:
         root = workspace.root.resolve(strict=True)
-        script = root / "tools" / "run_verified_live_outputs.py"
+        script = root / _WORKER_PATH
         script_stat = script.lstat()
     except (OSError, RuntimeError, TypeError, ValueError) as exc:
         raise PublishedCodeExecutionError(
@@ -912,8 +891,9 @@ def _execute_published_code(
         "-I",
         "-S",
         "-B",
-        str(script),
-        "--generated-at",
+        "-c",
+        _P_BOOTSTRAP,
+        str(root),
         instant.isoformat(),
     ]
     completed = _run_bounded_worker(
