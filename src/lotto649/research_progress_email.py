@@ -6,9 +6,12 @@ import os
 import re
 import subprocess
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Mapping
+from zoneinfo import ZoneInfo
+
+from .operational_history import PublishedHistory, load_published_history
 
 
 _EXPECTED_REPOSITORY = "Jasper-Shi/lottopred"
@@ -34,6 +37,7 @@ _MAX_ARTIFACTS = 1_000
 _MAX_SUBJECT_CHARS = 180
 _MAX_BODY_CHARS = 16_000
 _UNREVIEWED_EMAIL_OVERRIDES = ("SMTP_HOST", "SMTP_PORT", "EMAIL_FROM", "EMAIL_TO")
+_TORONTO = ZoneInfo("America/Toronto")
 _INHERITED_GIT_ENVIRONMENT = {
     "HOME",
     "LANG",
@@ -65,6 +69,7 @@ class _RunContext:
     ref: str
     sha: str
     run_id: str
+    run_number: str
     run_attempt: str
     workflow_ref: str
     workflow_sha: str
@@ -101,18 +106,22 @@ def _parse_run_context(environment: Mapping[str, str]) -> _RunContext:
     sha = environment.get("GITHUB_SHA", "")
     workflow_sha = environment.get("GITHUB_WORKFLOW_SHA", "")
     run_id = environment.get("GITHUB_RUN_ID", "")
+    run_number = environment.get("GITHUB_RUN_NUMBER", "")
     if _SHA1_RE.fullmatch(sha) is None:
         raise _fail("GITHUB_SHA is not a canonical SHA-1")
     if workflow_sha != sha:
         raise _fail("GITHUB_WORKFLOW_SHA does not equal GITHUB_SHA")
     if _RUN_ID_RE.fullmatch(run_id) is None:
         raise _fail("GITHUB_RUN_ID is not a canonical positive decimal id")
+    if _RUN_ID_RE.fullmatch(run_number) is None:
+        raise _fail("GITHUB_RUN_NUMBER is not a canonical positive decimal id")
     return _RunContext(
         repository=_EXPECTED_REPOSITORY,
         event_name=_EXPECTED_EVENT,
         ref=_EXPECTED_REF,
         sha=sha,
         run_id=run_id,
+        run_number=run_number,
         run_attempt="1",
         workflow_ref=_EXPECTED_WORKFLOW_REF,
         workflow_sha=workflow_sha,
@@ -254,6 +263,18 @@ def _integer(value: object, *, name: str, minimum: int, maximum: int) -> int:
     return value
 
 
+def _number_sequence(value: object, *, name: str, size: int) -> tuple[int, ...]:
+    if not isinstance(value, list) or len(value) != size:
+        raise _fail(f"{name} must contain exactly {size} numbers")
+    numbers = tuple(value)
+    if (
+        any(type(number) is not int or not 1 <= number <= 49 for number in numbers)
+        or len(set(numbers)) != size
+    ):
+        raise _fail(f"{name} is not a canonical LOTTO 6/49 number sequence")
+    return numbers
+
+
 def _iso_date(value: object, *, name: str) -> str:
     text = _require_string(value, name=name, maximum=10)
     try:
@@ -274,7 +295,28 @@ def _iso_datetime(value: object, *, name: str) -> str:
         raise _fail(f"{name} is not an ISO timestamp") from exc
     if parsed.tzinfo is None:
         raise _fail(f"{name} must include a timezone")
+    if parsed.isoformat() != candidate:
+        raise _fail(f"{name} is not a canonical ISO timestamp")
     return text
+
+
+def _parsed_iso_datetime(value: object, *, name: str) -> datetime:
+    text = _iso_datetime(value, name=name)
+    candidate = f"{text[:-1]}+00:00" if text.endswith("Z") else text
+    return datetime.fromisoformat(candidate)
+
+
+def _report_instant(value: datetime | None) -> tuple[datetime, str]:
+    instant = datetime.now(UTC).replace(microsecond=0) if value is None else value
+    if (
+        type(instant) is not datetime
+        or instant.tzinfo is None
+        or instant.utcoffset() != timedelta(0)
+        or instant.microsecond != 0
+    ):
+        raise _fail("generated_at must be a whole-second UTC datetime")
+    canonical = instant.isoformat().replace("+00:00", "Z")
+    return instant, canonical
 
 
 def _parse_config(raw: bytes) -> dict[str, object]:
@@ -444,6 +486,10 @@ def _release_facts(root: Path) -> dict[str, object]:
         execution.get("official_source_gate"), name="live-canary-plan.source_gate"
     )
     stage2 = _mapping(plan.get("stage2"), name="live-canary-plan.stage2")
+    legacy_cohort = _mapping(
+        plan.get("legacy_due_prediction_cohort"),
+        name="live-canary-plan.legacy_due_prediction_cohort",
+    )
     plan_status = _require_string(
         plan.get("status"), name="live-canary-plan.status", maximum=80
     )
@@ -471,7 +517,20 @@ def _release_facts(root: Path) -> dict[str, object]:
             stage2.get("unattended_schedule_in_stage_1"),
             name="live-canary-plan.stage1_schedule",
         ),
+        "legacy_classification": _require_string(
+            legacy_cohort.get("classification"),
+            name="live-canary-plan.legacy_classification",
+            maximum=80,
+        ),
+        "legacy_target_draw": _iso_date(
+            legacy_cohort.get("target_draw"),
+            name="live-canary-plan.legacy_target_draw",
+        ),
     }
+    if plan_facts["stage1_unattended_schedule"] is not False:
+        raise _fail("Stage-1 unattended live schedule must remain disabled")
+    if plan_facts["legacy_classification"] != "descriptive_only_nonpromotion":
+        raise _fail("legacy cohort classification is not the reviewed value")
     return {
         "protection": protection_facts,
         "publication_canary": publication_facts,
@@ -479,53 +538,38 @@ def _release_facts(root: Path) -> dict[str, object]:
     }
 
 
-def _history_facts(root: Path) -> dict[str, object]:
-    data_paths = _committed_paths(root, "evidence/data_integrity")
-    seal_path = _single_matching_path(
-        data_paths,
-        re.compile(r"evidence/data_integrity/[^/]{1,100}/seal\.json"),
-        name="data-integrity seal",
+def _history_facts(
+    root: Path, revision: str
+) -> tuple[dict[str, object], PublishedHistory]:
+    try:
+        history = load_published_history(root, revision)
+    except (OSError, ValueError) as exc:
+        raise _fail("production published-history validation failed") from exc
+    if type(history) is not PublishedHistory or not history.draws:
+        raise _fail("production history loader did not return PublishedHistory")
+    draw_dates = tuple(draw.draw_date for draw in history.draws)
+    if any(
+        previous >= current for previous, current in zip(draw_dates, draw_dates[1:])
+    ):
+        raise _fail("published history chronology is not strictly increasing")
+    history_through = draw_dates[-1]
+    if history.suffix.history_through != history_through:
+        raise _fail("published history suffix and draw chronology disagree")
+    if history.registry.resolved_revision != revision:
+        raise _fail("published history was not loaded from the source revision")
+    return (
+        {
+            "epoch": history.epoch,
+            "registry_path": history.registry.registry_path,
+            "registry_sha256": history.registry.file_sha256,
+            "seal_sha256": history.seal.file_sha256,
+            "suffix_sha256": history.suffix.file_sha256,
+            "observed_revision": history.registry.resolved_revision,
+            "draw_count": len(history.draws),
+            "history_through": history_through.isoformat(),
+        },
+        history,
     )
-    seal = _json_blob(root, seal_path)
-    corrected = _mapping(seal.get("corrected_epoch"), name="seal.corrected_epoch")
-    base_count = _integer(
-        corrected.get("draw_count"),
-        name="seal.draw_count",
-        minimum=4_000,
-        maximum=10_000,
-    )
-    _iso_date(corrected.get("history_through"), name="seal.history_through")
-
-    registry_paths = _committed_paths(root, "evidence/operational_history")
-    registry_path = _single_matching_path(
-        registry_paths,
-        re.compile(r"evidence/operational_history/[^/]{1,100}/pin-registry\.jsonl"),
-        name="operational-history registry",
-    )
-    raw_registry = _committed_blob(root, registry_path, maximum=_MAX_JSON_BYTES)
-    lines = raw_registry.splitlines()
-    if not lines or len(lines) > 1_000:
-        raise _fail("operational-history registry has an invalid event count")
-    events = [
-        _parse_json(line, name=f"{registry_path} event {index}")
-        for index, line in enumerate(lines, start=1)
-    ]
-    suffix = _mapping(events[-1].get("suffix"), name="registry suffix")
-    suffix_count = _integer(
-        suffix.get("event_count"),
-        name="registry suffix.event_count",
-        minimum=0,
-        maximum=10_000,
-    )
-    history_through = _iso_date(
-        suffix.get("history_through"), name="registry suffix.history_through"
-    )
-    return {
-        "seal_path": seal_path,
-        "registry_path": registry_path,
-        "draw_count": base_count + suffix_count,
-        "history_through": history_through,
-    }
 
 
 def _artifact_payloads(root: Path, directory: str) -> list[dict[str, object]]:
@@ -559,7 +603,12 @@ def _artifact_payloads(root: Path, directory: str) -> list[dict[str, object]]:
 
 
 def _prediction_and_evaluation_facts(
-    root: Path, config: dict[str, object]
+    root: Path,
+    config: dict[str, object],
+    *,
+    published_history: PublishedHistory,
+    legacy_classification: str,
+    legacy_target_draw: str,
 ) -> dict[str, object]:
     predictions = _artifact_payloads(root, "predictions")
     evaluations = _artifact_payloads(root, "evaluations")
@@ -584,6 +633,9 @@ def _prediction_and_evaluation_facts(
     history_counts: set[int] = set()
     history_dates: set[str] = set()
     seen_models: set[str] = set()
+    latest_target_date = date.fromisoformat(latest_prediction_date)
+    published_history_through = published_history.draws[-1].draw_date.isoformat()
+    published_draw_count = len(published_history.draws)
     for payload in latest_predictions:
         model = str(payload["model_name"])
         if model in seen_models:
@@ -598,19 +650,29 @@ def _prediction_and_evaluation_facts(
         if role not in {"primary", "shadow"}:
             raise _fail("prediction role is not primary or shadow")
         (shadow if role == "shadow" else primary).append(model)
-        history_counts.add(
-            _integer(
-                metadata.get("history_draws"),
-                name="prediction history_draws",
-                minimum=1,
-                maximum=10_000,
-            )
+        history_draws = _integer(
+            metadata.get("history_draws"),
+            name="prediction history_draws",
+            minimum=1,
+            maximum=10_000,
         )
-        history_dates.add(
-            _iso_date(
-                metadata.get("history_through"), name="prediction history_through"
-            )
+        history_counts.add(history_draws)
+        history_through = _iso_date(
+            metadata.get("history_through"), name="prediction history_through"
         )
+        history_dates.add(history_through)
+        generated_at = _parsed_iso_datetime(
+            payload.get("generated_at"), name="prediction generated_at"
+        )
+        if (
+            date.fromisoformat(history_through) >= latest_target_date
+            or history_through > published_history_through
+            or history_draws > published_draw_count
+            or generated_at.astimezone(_TORONTO).date() >= latest_target_date
+        ):
+            raise _fail(
+                "latest prediction chronology exceeds published history or draw time"
+            )
     if (
         versions != {str(config["model_version"])}
         or len(history_counts) != 1
@@ -624,6 +686,10 @@ def _prediction_and_evaluation_facts(
     latest_evaluation_date = max(
         str(payload["target_draw_date"]) for payload in evaluations
     )
+    if latest_evaluation_date > published_history_through:
+        raise _fail("evaluation chronology exceeds published history")
+    if latest_prediction_date <= published_history_through:
+        raise _fail("prediction chronology does not extend published history")
     latest_evaluations = [
         payload
         for payload in evaluations
@@ -637,7 +703,84 @@ def _prediction_and_evaluation_facts(
         ),
         sorted(latest_evaluations, key=lambda item: str(item["model_name"]))[0],
     )
-    top_hits = tuple(
+    matching_predictions = [
+        payload
+        for payload in predictions
+        if payload["target_draw_date"] == preferred["target_draw_date"]
+        and payload["model_name"] == preferred["model_name"]
+        and payload["model_version"] == preferred["model_version"]
+    ]
+    if len(matching_predictions) != 1:
+        raise _fail("latest evaluation does not identify exactly one prediction")
+    metric_prediction = matching_predictions[0]
+    metric_metadata = _mapping(
+        metric_prediction.get("metadata"), name="evaluated prediction metadata"
+    )
+    metric_history_through = _iso_date(
+        metric_metadata.get("history_through"),
+        name="evaluated prediction history_through",
+    )
+    metric_history_draws = _integer(
+        metric_metadata.get("history_draws"),
+        name="evaluated prediction history_draws",
+        minimum=1,
+        maximum=10_000,
+    )
+    corrected_metric_draws = sum(
+        draw.draw_date.isoformat() <= metric_history_through
+        for draw in published_history.draws
+    )
+    metric_target_date = date.fromisoformat(str(preferred["target_draw_date"]))
+    metric_generated_at = _parsed_iso_datetime(
+        metric_prediction.get("generated_at"),
+        name="evaluated prediction generated_at",
+    )
+    if (
+        date.fromisoformat(metric_history_through) >= metric_target_date
+        or metric_generated_at.astimezone(_TORONTO).date() >= metric_target_date
+    ):
+        raise _fail("evaluated prediction chronology is not strictly pre-draw")
+    prediction_source = preferred.get("prediction_source")
+    if prediction_source is None:
+        if (
+            metric_history_draws == corrected_metric_draws
+            or legacy_classification != "descriptive_only_nonpromotion"
+            or str(preferred["target_draw_date"]) >= legacy_target_draw
+        ):
+            raise _fail("latest evaluation lacks explicit prediction provenance")
+        metric_qualification = "legacy_descriptive_only_nonpromotion"
+    else:
+        source = _mapping(prediction_source, name="evaluation.prediction_source")
+        claims = _mapping(
+            source.get("claims"), name="evaluation.prediction_source.claims"
+        )
+        kind = source.get("kind")
+        corrected_claim = _boolean(
+            claims.get("corrected_history"),
+            name="evaluation.prediction_source.claims.corrected_history",
+        )
+        promotion_claim = _boolean(
+            claims.get("promotion_evidence_eligible"),
+            name=("evaluation.prediction_source.claims.promotion_evidence_eligible"),
+        )
+        if (
+            kind == "sealed_legacy_incident_history"
+            and corrected_claim is False
+            and promotion_claim is False
+            and legacy_classification == "descriptive_only_nonpromotion"
+            and preferred["target_draw_date"] == legacy_target_draw
+        ):
+            metric_qualification = "legacy_descriptive_only_nonpromotion"
+        elif (
+            kind == "verified_operational_history"
+            and corrected_claim is True
+            and promotion_claim is True
+            and metric_history_draws == corrected_metric_draws
+        ):
+            metric_qualification = "corrected_operational_promotion_eligible"
+        else:
+            raise _fail("latest evaluation prediction provenance is inconsistent")
+    recorded_top_hits = tuple(
         _integer(
             preferred.get(key),
             name=f"evaluation.{key}",
@@ -646,20 +789,68 @@ def _prediction_and_evaluation_facts(
         )
         for key in ("top_6_hits", "top_12_hits", "top_18_hits")
     )
-    final_hits = _integer(
+    recorded_final_hits = _integer(
         preferred.get("final_6_hits"),
         name="evaluation.final_6_hits",
         minimum=0,
         maximum=6,
     )
-    if final_hits != top_hits[0] or not top_hits[0] <= top_hits[1] <= top_hits[2]:
+    actual_draws = [
+        draw
+        for draw in published_history.draws
+        if draw.draw_date.isoformat() == preferred["target_draw_date"]
+    ]
+    if len(actual_draws) != 1:
+        raise _fail("latest evaluation actual draw is absent from published history")
+    actual_draw = actual_draws[0]
+    evaluation_actual = _number_sequence(
+        preferred.get("actual"), name="evaluation.actual", size=6
+    )
+    evaluation_bonus = _integer(
+        preferred.get("bonus"), name="evaluation.bonus", minimum=1, maximum=49
+    )
+    if (
+        evaluation_actual != actual_draw.numbers
+        or evaluation_bonus != actual_draw.bonus
+    ):
+        raise _fail("latest evaluation actual draw disagrees with published history")
+
+    final_combination = _number_sequence(
+        metric_prediction.get("final_combination"),
+        name="prediction.final_combination",
+        size=6,
+    )
+    top6 = _number_sequence(
+        metric_prediction.get("top6"), name="prediction.top6", size=6
+    )
+    top12 = _number_sequence(
+        metric_prediction.get("top12"), name="prediction.top12", size=12
+    )
+    top18 = _number_sequence(
+        metric_prediction.get("top18"), name="prediction.top18", size=18
+    )
+    if not set(top6) < set(top12) or not set(top12) < set(top18):
+        raise _fail("evaluated prediction candidate pools are inconsistent")
+    actual_numbers = set(actual_draw.numbers)
+    final_hits = len(set(final_combination) & actual_numbers)
+    top_hits = tuple(len(set(pool) & actual_numbers) for pool in (top6, top12, top18))
+    if recorded_final_hits != final_hits or recorded_top_hits != top_hits:
+        raise _fail("latest evaluation hit counts disagree with recomputation")
+    if not top_hits[0] <= top_hits[1] <= top_hits[2]:
         raise _fail("latest evaluation hit counts are inconsistent")
     return {
         "latest_prediction_date": latest_prediction_date,
         "latest_evaluation_date": latest_evaluation_date,
-        "no_new_result": latest_prediction_date > latest_evaluation_date,
+        "latest_prediction_pending_evaluation": (
+            latest_prediction_date > latest_evaluation_date
+        ),
         "metric_model": str(preferred["model_name"]),
         "metric_version": str(preferred["model_version"]),
+        "metric_qualification": metric_qualification,
+        "metric_prediction_path": str(metric_prediction["path"]),
+        "metric_history_draws": metric_history_draws,
+        "metric_corrected_history_draws": corrected_metric_draws,
+        "metric_history_through": metric_history_through,
         "final_hits": final_hits,
         "top_hits": top_hits,
         "models": tuple(models),
@@ -706,7 +897,10 @@ def _enabled(value: object) -> str:
 
 
 def build_research_progress_report(
-    repo_root: Path, run_context: Mapping[str, str]
+    repo_root: Path,
+    run_context: Mapping[str, str],
+    *,
+    generated_at: datetime | None = None,
 ) -> ResearchProgressReport:
     """Build one deterministic Chinese report from the checked-out commit.
 
@@ -718,6 +912,7 @@ def build_research_progress_report(
     if not root.is_dir():
         raise _fail("repository root is not a directory")
     context = _parse_run_context(run_context)
+    _generated_instant, generated_at_text = _report_instant(generated_at)
     _require_full_history(root)
     head = _head(root)
     if head != context.sha:
@@ -729,9 +924,16 @@ def build_research_progress_report(
     commit = _commit_facts(root)
     if commit["sha"] != head:
         raise _fail("commit metadata does not describe checkout HEAD")
-    history = _history_facts(root)
+    history, published_history = _history_facts(root, head)
     release = _release_facts(root)
-    artifacts = _prediction_and_evaluation_facts(root, config)
+    plan = _mapping(release["live_canary_plan"], name="release.live_canary_plan")
+    artifacts = _prediction_and_evaluation_facts(
+        root,
+        config,
+        published_history=published_history,
+        legacy_classification=str(plan["legacy_classification"]),
+        legacy_target_draw=str(plan["legacy_target_draw"]),
+    )
 
     facts: dict[str, object] = {
         "schema": "lotto649.research-progress-email.facts.v1",
@@ -741,39 +943,47 @@ def build_research_progress_report(
             "ref": context.ref,
             "sha": context.sha,
             "run_id": context.run_id,
+            "run_number": context.run_number,
             "run_attempt": context.run_attempt,
             "workflow_ref": context.workflow_ref,
             "workflow_sha": context.workflow_sha,
             "job": context.job,
         },
         "commit": commit,
+        "generated_at": generated_at_text,
         "config": config,
         "history": history,
         "release": release,
         "artifacts": artifacts,
     }
     facts_digest = _digest(facts)
-    commit_date = commit["committed_at"][:10]
     switches = (
         f"data.refresh={_enabled(config['refresh_enabled'])}；"
         f"live={_enabled(config['live_enabled'])}；"
         f"backtest={_enabled(config['backtest_enabled'])}"
     )
-    plan = _mapping(release["live_canary_plan"], name="release.live_canary_plan")
     protection = _mapping(release["protection"], name="release.protection")
     publication = _mapping(
         release["publication_canary"], name="release.publication_canary"
     )
     top6, top12, top18 = artifacts["top_hits"]  # type: ignore[misc]
-    if artifacts["no_new_result"]:
+    metric_identity = f"{artifacts['metric_model']} {artifacts['metric_version']}"
+    if artifacts["metric_qualification"] == "legacy_descriptive_only_nonpromotion":
+        metric_qualification = (
+            "前事故/旧版畸形历史 cohort：descriptive-only、nonpromotion"
+        )
+    else:
+        metric_qualification = (
+            "纠正后 verified operational cohort：promotion evidence eligibility=是，"
+            "但单次结果不构成统计显著性或晋级结论"
+        )
+    if artifacts["latest_prediction_pending_evaluation"]:
         latest_result = (
-            f"无新结果：最新预测目标 {artifacts['latest_prediction_date']} "
-            "尚无同日已提交评估"
+            f"最新预测目标 {artifacts['latest_prediction_date']} 尚待同日已提交评估"
         )
     else:
         latest_result = (
-            f"有新结果：最新预测目标 {artifacts['latest_prediction_date']} "
-            "已有同日已提交评估"
+            f"最新预测目标 {artifacts['latest_prediction_date']} 已有同日已提交评估"
         )
     credential_state = (
         "登记时已安装"
@@ -785,11 +995,14 @@ def build_research_progress_report(
             "LOTTO 6/49 中文小时进度（只读、已提交证据）",
             "",
             "【时间】"
-            f"已提交证据快照时间：{commit['committed_at']}；"
-            f"Actions run id：{context.run_id}；这不是外部实时查询时间。",
+            f"本次报告生成时间：{generated_at_text}；"
+            f"已提交证据截至提交时间：{commit['committed_at']}；"
+            f"Actions run id：{context.run_id}；第 {context.run_number} 次 workflow 更新，"
+            "不代表累计研究小时，也不是 GitHub 服务端开始时间。",
             "【当前阶段】"
             f"Stage-1 配置已提交（{switches}）；production canary 的已提交计划状态："
-            f"{plan['status']}；Stage-1 计划声明无人值守 live 定时为关。",
+            f"{plan['status']}；Stage-1 计划声明无人值守 live 定时为"
+            f"{_enabled(plan['stage1_unattended_schedule'])}。",
             "【已完成事项】"
             f"一次性远端发布 canary 的已提交证据通过：{publication['passed']}；"
             f"main 保护证据记录于 {protection['verified_at']}。",
@@ -822,12 +1035,15 @@ def build_research_progress_report(
             f"最新预测自身记录的旧输入：{artifacts['prediction_history_draws']} 期，"
             f"截至 {artifacts['prediction_history_through']}。",
             "【最近前瞻命中】"
+            "本小时是否新增：未判定（无持久游标）；"
             f"{latest_result}；"
             f"最近已提交评估为 {artifacts['latest_evaluation_date']} 的 "
-            f"{artifacts['metric_model']}，最终组合命中 {artifacts['final_hits']}/6。",
+            f"{metric_identity}，最终组合命中 {artifacts['final_hits']}/6；"
+            f"{metric_qualification}。",
             "【Top-6/12/18】"
-            f"最近已提交 {artifacts['metric_model']} 评估 Top-6/12/18："
-            f"{top6}/{top12}/{top18}；不外推统计显著性。",
+            f"最近已提交 {metric_identity} 评估 Top-6/12/18："
+            f"{top6}/{top12}/{top18}；{metric_qualification}；"
+            "该描述性结果不外推统计显著性。",
             "【模型/版本】"
             f"primary={','.join(artifacts['primary_models'])}；"
             f"shadow={','.join(artifacts['shadow_models'])}；"
@@ -841,7 +1057,10 @@ def build_research_progress_report(
             f"事实摘要 SHA-256：{facts_digest}",
         )
     )
-    subject = f"[LOTTO 6/49] 中文小时进度 — 已提交证据截至 {commit_date}"
+    subject = (
+        f"[LOTTO649研究进度] 第{context.run_number}次更新 — "
+        f"已提交状态/{metric_identity}"
+    )
     if len(subject) > _MAX_SUBJECT_CHARS or len(body) > _MAX_BODY_CHARS:
         raise _fail("rendered progress email exceeds its output limit")
     return ResearchProgressReport(
@@ -854,7 +1073,11 @@ def build_research_progress_report(
 def main() -> int:
     if any(name in os.environ for name in _UNREVIEWED_EMAIL_OVERRIDES):
         raise _fail("unreviewed SMTP routing override is present")
-    report = build_research_progress_report(Path.cwd(), os.environ)
+    report = build_research_progress_report(
+        Path.cwd(),
+        os.environ,
+        generated_at=datetime.now(UTC).replace(microsecond=0),
+    )
     from lotto649.notification import send_email
 
     if not send_email(report.subject, report.body):

@@ -22,9 +22,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install --no-deps --no-build-isolation -e .
+      - name: Install hash-locked loader dependencies
+        run: >-
+          python -m pip install --require-hashes --only-binary=:all:
+          -r requirements/research-progress-email.txt
       - name: Send one committed-state Chinese progress email
         env:
+          PYTHONPATH: src
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: python -m lotto649.research_progress_email

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import ast
+import os
+import subprocess
 import sys
+import tomllib
 from pathlib import Path
 from types import ModuleType
 
@@ -12,6 +15,15 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "email-test.yml"
 HOURLY_WORKFLOW = ROOT / ".github" / "workflows" / "research-progress-email.yml"
+HOURLY_REQUIREMENTS = ROOT / "requirements" / "research-progress-email.txt"
+HOURLY_REQUIREMENTS_TEXT = """\
+beautifulsoup4==4.13.5 \\
+    --hash=sha256:642085eaa22233aceadff9c69651bc51e8bf3f874fb6d7104ece2beb24b47c4a
+soupsieve==2.8.4 \\
+    --hash=sha256:e7e6b0769c8f51ed59acab6e994b00621096cfb1c640a7509295987388fbaf65
+typing_extensions==4.16.0 \\
+    --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+"""
 
 
 def _workflow_payload() -> dict:
@@ -201,11 +213,16 @@ def test_hourly_progress_job_is_read_only_bounded_and_smtp_only() -> None:
         "with": {"python-version": "3.12"},
     }
     assert steps[2] == {
-        "run": "python -m pip install --no-deps --no-build-isolation -e ."
+        "name": "Install hash-locked loader dependencies",
+        "run": (
+            "python -m pip install --require-hashes --only-binary=:all: "
+            "-r requirements/research-progress-email.txt"
+        ),
     }
     assert steps[3] == {
         "name": "Send one committed-state Chinese progress email",
         "env": {
+            "PYTHONPATH": "src",
             "SMTP_USERNAME": "${{ secrets.SMTP_USERNAME }}",
             "SMTP_PASSWORD": "${{ secrets.SMTP_PASSWORD }}",
         },
@@ -219,3 +236,61 @@ def test_hourly_progress_job_is_read_only_bounded_and_smtp_only() -> None:
     assert "lotto649 live" not in workflow_text
     assert "lotto649 backtest" not in workflow_text
     assert "lotto649 bootstrap" not in workflow_text
+    assert "pip install --require-hashes --only-binary=:all:" in workflow_text
+    assert "--no-deps" not in workflow_text
+    assert "--no-build-isolation" not in workflow_text
+
+
+def test_bare_python_cannot_import_the_production_loader_without_dependencies(
+    tmp_path: Path,
+) -> None:
+    environment = {"PATH": os.environ["PATH"], "PYTHONNOUSERSITE": "1"}
+    virtual_environment = tmp_path / "bare-python"
+    subprocess.run(
+        [sys.executable, "-m", "venv", "--without-pip", str(virtual_environment)],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+
+    completed = subprocess.run(
+        [
+            str(virtual_environment / "bin" / "python"),
+            "-I",
+            "-c",
+            (
+                "import sys; sys.path.insert(0, 'src'); "
+                "import lotto649.research_progress_email"
+            ),
+        ],
+        cwd=ROOT,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode != 0
+    assert "No module named 'bs4'" in completed.stderr
+
+
+def test_hash_locked_loader_dependencies_are_exact_and_within_project_scope() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert "beautifulsoup4>=4.12,<5" in project["project"]["dependencies"]
+    assert HOURLY_REQUIREMENTS.read_text(encoding="utf-8") == HOURLY_REQUIREMENTS_TEXT
+    assert ">=" not in HOURLY_REQUIREMENTS_TEXT
+    assert HOURLY_REQUIREMENTS_TEXT.count("--hash=sha256:") == 3
+
+
+def test_hourly_progress_email_operating_contract_is_documented() -> None:
+    handoff = (ROOT / "docs" / "CODEX_HANDOFF.md").read_text(encoding="utf-8")
+    operations = (ROOT / "docs" / "OPERATIONS.md").read_text(encoding="utf-8")
+
+    for document in (handoff, operations):
+        assert "research-progress-email.yml" in document
+        assert "GITHUB_RUN_ATTEMPT" in document
+        assert "descriptive-only" in document
+        assert "nonpromotion" in document
+    assert "configured" in handoff
+    assert "operationally proven" in handoff

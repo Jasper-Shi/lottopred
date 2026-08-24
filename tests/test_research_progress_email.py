@@ -4,11 +4,14 @@ import json
 import os
 import re
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 
+ROOT = Path(__file__).resolve().parents[1]
+GENERATED_AT = datetime(2026, 8, 24, 17, 20, 24, tzinfo=UTC)
 HEADINGS = (
     "时间",
     "当前阶段",
@@ -39,166 +42,42 @@ def _write_json(path: Path, payload: object) -> None:
     )
 
 
-def _committed_repository(
-    tmp_path: Path,
-    *,
-    config_model_version: str = "v1.0.0",
-    evaluation_target: str = "2026-08-22",
-) -> tuple[Path, str]:
-    root = tmp_path / "repo"
-    root.mkdir()
-    (root / "config.yaml").write_text(
-        f"""\
-project:
-  timezone: America/Toronto
-  model_version: {config_model_version}
-data:
-  refresh_enabled: true
-backtest:
-  enabled: false
-live:
-  enabled: true
-  models: [random, ensemble, v3_boosting]
-  shadow_models: [v3_boosting]
-""",
-        encoding="utf-8",
-    )
-    incident = root / "evidence" / "data_integrity" / "incident"
-    _write_json(
-        incident / "seal.json",
-        {
-            "corrected_epoch": {
-                "draw_count": 4442,
-                "history_through": "2026-08-15",
-            },
-            "status": "sealed_closed_corrected_epoch",
-        },
-    )
-    registry = root / "evidence" / "operational_history" / "incident"
-    registry.mkdir(parents=True)
-    (registry / "pin-registry.jsonl").write_text(
-        json.dumps(
-            {
-                "event_kind": "genesis_migration",
-                "suffix": {
-                    "event_count": 2,
-                    "history_through": "2026-08-22",
-                },
-            },
-            sort_keys=True,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    release = root / "evidence" / "release_canaries"
-    _write_json(
-        release / "2026-08-24-production-main-protection.json",
-        {
-            "main": "9" * 40,
-            "protection": {
-                "allow_deletions": False,
-                "allow_force_pushes": False,
-                "enforce_admins": True,
-            },
-            "repository": "Jasper-Shi/lottopred",
-            "verified_at": "2026-08-24T13:08:14Z",
-        },
-    )
-    _write_json(
-        release / "2026-08-24-github-publication-canary.json",
-        {
-            "created_at": "2026-08-24T13:06:51Z",
-            "delete_rejected": True,
-            "exact_blob_tree_commit_oids": True,
-            "force_update_rejected": True,
-            "fresh_anonymous_full_fetch": "8" * 40,
-            "stale_update_refs_rejected": True,
-            "successful_update_refs": True,
-        },
-    )
-    _write_json(
-        release / "2026-08-27-production-live-canary-plan.json",
-        {
-            "credential": {"installed": False},
-            "execution": {
-                "not_before": "2026-08-27T15:15:00Z",
-                "official_source_gate": {
-                    "authorities": ["loto_quebec", "wclc"],
-                    "draw_date": "2026-08-26",
-                    "requirement": "both_authorities_publish_and_agree",
-                },
-            },
-            "legacy_due_prediction_cohort": {
-                "classification": "descriptive_only_nonpromotion",
-                "target_draw": "2026-08-26",
-            },
-            "stage2": {
-                "condition": "stage_1_canary_success_and_independent_review",
-                "unattended_schedule_in_stage_1": False,
-            },
-            "status": "preregistered_not_executed",
-        },
-    )
-
-    predictions = root / "predictions"
-    evaluations = root / "evaluations"
-    for model, role in (
-        ("random", "primary"),
-        ("ensemble", "primary"),
-        ("v3_boosting", "shadow"),
-    ):
-        _write_json(
-            predictions / f"2026-08-26__{model}__v1.0.0.json",
-            {
-                "metadata": {
-                    "history_draws": 4434,
-                    "history_through": "2026-08-22",
-                    "role": role,
-                },
-                "model_name": model,
-                "model_version": "v1.0.0",
-                "target_draw_date": "2026-08-26",
-            },
-        )
-        _write_json(
-            evaluations / f"{evaluation_target}__{model}__v1.0.0.json",
-            {
-                "final_6_hits": 2 if model == "ensemble" else 1,
-                "model_name": model,
-                "model_version": "v1.0.0",
-                "target_draw_date": evaluation_target,
-                "top_6_hits": 2 if model == "ensemble" else 1,
-                "top_12_hits": 3 if model == "ensemble" else 2,
-                "top_18_hits": 3 if model == "ensemble" else 2,
-            },
-        )
-
+def _clone_current_repository(tmp_path: Path) -> tuple[Path, str]:
+    root = tmp_path / "full-repository"
     subprocess.run(
-        ["git", "init", "--quiet", "--initial-branch=main", str(root)],
+        ["git", "clone", "--no-local", "--quiet", str(ROOT), str(root)],
         check=True,
+        capture_output=True,
     )
-    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
-    environment = {
-        **os.environ,
-        "GIT_AUTHOR_DATE": "2026-08-24T16:13:24Z",
-        "GIT_AUTHOR_EMAIL": "test@example.invalid",
-        "GIT_AUTHOR_NAME": "Test",
-        "GIT_COMMITTER_DATE": "2026-08-24T16:13:24Z",
-        "GIT_COMMITTER_EMAIL": "test@example.invalid",
-        "GIT_COMMITTER_NAME": "Test",
-    }
-    subprocess.run(
-        ["git", "-C", str(root), "commit", "--quiet", "-m", "Merge pull request #33"],
-        check=True,
-        env=environment,
-    )
-    head = subprocess.run(
+    return root, _repository_head(root)
+
+
+def _repository_head(root: Path) -> str:
+    return subprocess.run(
         ["git", "-C", str(root), "rev-parse", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
     ).stdout.strip()
-    return root, head
+
+
+def _commit_fixture(root: Path, message: str) -> str:
+    subprocess.run(["git", "-C", str(root), "add", "."], check=True)
+    environment = {
+        **os.environ,
+        "GIT_AUTHOR_DATE": "2026-08-24T17:13:24Z",
+        "GIT_AUTHOR_EMAIL": "test@example.invalid",
+        "GIT_AUTHOR_NAME": "Test",
+        "GIT_COMMITTER_DATE": "2026-08-24T17:13:24Z",
+        "GIT_COMMITTER_EMAIL": "test@example.invalid",
+        "GIT_COMMITTER_NAME": "Test",
+    }
+    subprocess.run(
+        ["git", "-C", str(root), "commit", "--quiet", "-m", message],
+        check=True,
+        env=environment,
+    )
+    return _repository_head(root)
 
 
 def _run_context(head: str) -> dict[str, str]:
@@ -209,6 +88,7 @@ def _run_context(head: str) -> dict[str, str]:
         "GITHUB_REPOSITORY": "Jasper-Shi/lottopred",
         "GITHUB_RUN_ATTEMPT": "1",
         "GITHUB_RUN_ID": "32750000000",
+        "GITHUB_RUN_NUMBER": "327",
         "GITHUB_SHA": head,
         "GITHUB_WORKFLOW_REF": (
             "Jasper-Shi/lottopred/.github/workflows/"
@@ -219,16 +99,116 @@ def _run_context(head: str) -> dict[str, str]:
     }
 
 
+def test_report_ignores_committed_decoy_registry_and_seal(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, _head = _clone_current_repository(tmp_path)
+    decoy = "ZZZ-untrusted-decoy"
+    _write_json(
+        root / "evidence" / "data_integrity" / decoy / "seal.json",
+        {
+            "corrected_epoch": {
+                "draw_count": 9_000,
+                "history_through": "2099-01-01",
+            },
+            "status": "sealed_closed_corrected_epoch",
+        },
+    )
+    registry = root / "evidence" / "operational_history" / decoy
+    registry.mkdir(parents=True)
+    (registry / "pin-registry.jsonl").write_text(
+        json.dumps(
+            {
+                "event_kind": "decoy",
+                "suffix": {"event_count": 1, "history_through": "2099-01-02"},
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    head = _commit_fixture(root, "add untrusted decoy history files")
+
+    report = build_research_progress_report(root, _run_context(head))
+
+    assert "纠正后已提交验证视图：4444 期，截至 2026-08-22" in report.body
+    assert "2099" not in report.body
+
+
+def test_report_rejects_evaluation_beyond_published_history_chronology(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import (
+        ProgressEmailError,
+        build_research_progress_report,
+    )
+
+    root, _head = _clone_current_repository(tmp_path)
+    source = root / "evaluations" / "2026-08-22__ensemble__v1.0.0.json"
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    payload["target_draw_date"] = "2026-08-27"
+    _write_json(
+        root / "evaluations" / "2026-08-27__ensemble__v1.0.0.json",
+        payload,
+    )
+    head = _commit_fixture(root, "add chronologically impossible evaluation")
+
+    with pytest.raises(ProgressEmailError, match="chronology"):
+        build_research_progress_report(root, _run_context(head))
+
+
+@pytest.mark.parametrize("artifact", ["registry", "seal"])
+def test_report_rejects_tampered_published_history_authority(
+    tmp_path: Path, artifact: str
+) -> None:
+    from lotto649.research_progress_email import (
+        ProgressEmailError,
+        build_research_progress_report,
+    )
+
+    root, _head = _clone_current_repository(tmp_path)
+    if artifact == "registry":
+        path = (
+            root
+            / "evidence"
+            / "operational_history"
+            / "DI-2026-08-20-registered-history"
+            / "pin-registry.jsonl"
+        )
+        path.write_bytes(path.read_bytes() + b"tampered\n")
+    else:
+        path = (
+            root
+            / "evidence"
+            / "data_integrity"
+            / "DI-2026-08-20-registered-history"
+            / "seal.json"
+        )
+        seal = json.loads(path.read_text(encoding="utf-8"))
+        seal["status"] = "tampered"
+        _write_json(path, seal)
+    head = _commit_fixture(root, f"tamper published history {artifact}")
+
+    with pytest.raises(ProgressEmailError, match="published-history"):
+        build_research_progress_report(root, _run_context(head))
+
+
 def test_committed_snapshot_builds_truthful_eighteen_part_chinese_report(
     tmp_path: Path,
 ) -> None:
     from lotto649.research_progress_email import build_research_progress_report
 
-    root, head = _committed_repository(tmp_path)
+    root, head = _clone_current_repository(tmp_path)
 
-    report = build_research_progress_report(root, _run_context(head))
+    report = build_research_progress_report(
+        root, _run_context(head), generated_at=GENERATED_AT
+    )
 
-    assert report.subject == "[LOTTO 6/49] 中文小时进度 — 已提交证据截至 2026-08-24"
+    assert report.subject == (
+        "[LOTTO649研究进度] 第327次更新 — 已提交状态/ensemble v1.0.0"
+    )
     assert (
         tuple(
             line[1 : line.index("】")]
@@ -237,15 +217,133 @@ def test_committed_snapshot_builds_truthful_eighteen_part_chinese_report(
         )
         == HEADINGS
     )
-    assert "无新结果" in report.body
+    assert "本小时是否新增：未判定（无持久游标）" in report.body
     assert "当前 PR/CI：未查询" in report.body
     assert "当前远端保护：未查询" in report.body
     assert "Codex 线程内进行中工作：未查询" in report.body
     assert f"来源 SHA：{head}" in report.body
     assert "Actions run id：32750000000" in report.body
+    assert "本次报告生成时间：2026-08-24T17:20:24Z" in report.body
+    assert "第 327 次 workflow 更新，不代表累计研究小时" in report.body
     assert re.search(r"事实摘要 SHA-256：[0-9a-f]{64}", report.body)
     assert "Top-6/12/18：2/3/3" in report.body
     assert "正文生成时尚未调用 SMTP，不声明送达成功" in report.body
+
+
+def test_latest_metrics_name_exact_evaluation_version_and_legacy_qualification(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, head = _clone_current_repository(tmp_path)
+
+    report = build_research_progress_report(root, _run_context(head))
+
+    recent_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【最近前瞻命中】")
+    )
+    top_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【Top-6/12/18】")
+    )
+    assert "ensemble v1.0.0" in recent_hits
+    assert "ensemble v1.0.0" in top_hits
+    assert "前事故/旧版畸形历史 cohort" in top_hits
+    assert "descriptive-only" in top_hits
+    assert "nonpromotion" in top_hits
+
+
+def test_metric_version_is_not_relabelled_by_a_new_prediction_cohort(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, _head = _clone_current_repository(tmp_path)
+    config_path = root / "config.yaml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            "model_version: v1.0.0", "model_version: v2.0.0"
+        ),
+        encoding="utf-8",
+    )
+    for source in sorted((root / "predictions").glob("2026-08-26__*__v1.0.0.json")):
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        payload["target_draw_date"] = "2026-08-29"
+        payload["model_version"] = "v2.0.0"
+        target = source.with_name(
+            source.name.replace("2026-08-26", "2026-08-29").replace("v1.0.0", "v2.0.0")
+        )
+        _write_json(target, payload)
+    head = _commit_fixture(root, "add a new-version prediction cohort")
+
+    report = build_research_progress_report(root, _run_context(head))
+
+    recent_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【最近前瞻命中】")
+    )
+    top_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【Top-6/12/18】")
+    )
+    models = next(
+        line for line in report.body.splitlines() if line.startswith("【模型/版本】")
+    )
+    assert "ensemble v1.0.0" in recent_hits
+    assert "ensemble v1.0.0" in top_hits
+    assert "version=v2.0.0" in models
+
+
+def test_verified_operational_metric_is_not_permanently_labelled_legacy(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, _head = _clone_current_repository(tmp_path)
+    prediction_path = root / "predictions" / "2026-08-22__ensemble__v1.0.0.json"
+    prediction = json.loads(prediction_path.read_text(encoding="utf-8"))
+    prediction["metadata"]["history_draws"] = 4443
+    _write_json(prediction_path, prediction)
+    evaluation_path = root / "evaluations" / "2026-08-22__ensemble__v1.0.0.json"
+    evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["prediction_source"] = {
+        "kind": "verified_operational_history",
+        "claims": {
+            "corrected_history": True,
+            "promotion_evidence_eligible": True,
+        },
+    }
+    _write_json(evaluation_path, evaluation)
+    head = _commit_fixture(root, "classify one corrected operational evaluation")
+
+    report = build_research_progress_report(root, _run_context(head))
+
+    top_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【Top-6/12/18】")
+    )
+    assert "纠正后 verified operational cohort" in top_hits
+    assert "前事故/旧版畸形历史 cohort" not in top_hits
+    assert "不构成统计显著性或晋级结论" in top_hits
+
+
+def test_report_fails_closed_if_stage_one_plan_enables_unattended_live_schedule(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import (
+        ProgressEmailError,
+        build_research_progress_report,
+    )
+
+    root, _head = _clone_current_repository(tmp_path)
+    plan_path = next(
+        (root / "evidence" / "release_canaries").glob(
+            "*-production-live-canary-plan.json"
+        )
+    )
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan["stage2"]["unattended_schedule_in_stage_1"] = True
+    _write_json(plan_path, plan)
+    head = _commit_fixture(root, "enable an unsafe stage-one schedule")
+
+    with pytest.raises(ProgressEmailError, match="schedule"):
+        build_research_progress_report(root, _run_context(head))
 
 
 def test_process_boundary_rejects_unreviewed_email_routing_override(
@@ -254,7 +352,7 @@ def test_process_boundary_rejects_unreviewed_email_routing_override(
     from lotto649 import notification
     from lotto649.research_progress_email import ProgressEmailError, main
 
-    root, head = _committed_repository(tmp_path)
+    root, head = _clone_current_repository(tmp_path)
     monkeypatch.chdir(root)
     for name, value in _run_context(head).items():
         monkeypatch.setenv(name, value)
@@ -281,25 +379,107 @@ def test_report_rejects_model_version_drift_between_config_and_artifacts(
         build_research_progress_report,
     )
 
-    root, head = _committed_repository(tmp_path, config_model_version="v2.0.0")
+    root, _head = _clone_current_repository(tmp_path)
+    config_path = root / "config.yaml"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            "model_version: v1.0.0", "model_version: v2.0.0"
+        ),
+        encoding="utf-8",
+    )
+    head = _commit_fixture(root, "introduce model version drift")
 
     with pytest.raises(ProgressEmailError, match="version"):
         build_research_progress_report(root, _run_context(head))
 
 
-def test_report_does_not_say_a_committed_result_is_missing(tmp_path: Path) -> None:
+def test_report_distinguishes_pending_prediction_from_hourly_novelty(
+    tmp_path: Path,
+) -> None:
     from lotto649.research_progress_email import build_research_progress_report
 
-    root, head = _committed_repository(tmp_path, evaluation_target="2026-08-26")
+    root, head = _clone_current_repository(tmp_path)
 
     report = build_research_progress_report(root, _run_context(head))
 
     recent_hits = next(
         line for line in report.body.splitlines() if line.startswith("【最近前瞻命中】")
     )
-    assert "有新结果" in recent_hits
-    assert "已有同日已提交评估" in recent_hits
-    assert "尚无同日已提交评估" not in recent_hits
+    assert "本小时是否新增：未判定（无持久游标）" in recent_hits
+    assert "最新预测目标 2026-08-26 尚待同日已提交评估" in recent_hits
+    assert "无新结果：" not in recent_hits
+
+
+@pytest.mark.parametrize("field", ["actual", "top_12_hits"])
+def test_report_recomputes_latest_hits_and_rejects_tampered_evaluation(
+    tmp_path: Path, field: str
+) -> None:
+    from lotto649.research_progress_email import (
+        ProgressEmailError,
+        build_research_progress_report,
+    )
+
+    root, _head = _clone_current_repository(tmp_path)
+    evaluation_path = root / "evaluations" / "2026-08-22__ensemble__v1.0.0.json"
+    evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+    if field == "actual":
+        evaluation["actual"] = [1, 2, 3, 4, 5, 6]
+    else:
+        evaluation["top_12_hits"] = 4
+        evaluation["top_18_hits"] = 4
+    _write_json(evaluation_path, evaluation)
+    head = _commit_fixture(root, f"tamper evaluation {field}")
+
+    with pytest.raises(ProgressEmailError, match="actual|hit counts"):
+        build_research_progress_report(root, _run_context(head))
+
+
+def test_final_combination_may_validly_differ_from_ranked_top_six(
+    tmp_path: Path,
+) -> None:
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, _head = _clone_current_repository(tmp_path)
+    prediction_path = root / "predictions" / "2026-08-22__ensemble__v1.0.0.json"
+    prediction = json.loads(prediction_path.read_text(encoding="utf-8"))
+    prediction["final_combination"] = [1, 2, 3, 4, 6, 7]
+    _write_json(prediction_path, prediction)
+    evaluation_path = root / "evaluations" / "2026-08-22__ensemble__v1.0.0.json"
+    evaluation = json.loads(evaluation_path.read_text(encoding="utf-8"))
+    evaluation["final_6_hits"] = 0
+    evaluation["matched_final"] = []
+    _write_json(evaluation_path, evaluation)
+    head = _commit_fixture(root, "use an independent constrained final combination")
+
+    report = build_research_progress_report(root, _run_context(head))
+
+    assert "最终组合命中 0/6" in report.body
+    assert "Top-6/12/18：2/3/3" in report.body
+
+
+@pytest.mark.parametrize("field", ["history_through", "history_draws", "generated_at"])
+def test_latest_prediction_cohort_rejects_future_information(
+    tmp_path: Path, field: str
+) -> None:
+    from lotto649.research_progress_email import (
+        ProgressEmailError,
+        build_research_progress_report,
+    )
+
+    root, _head = _clone_current_repository(tmp_path)
+    for path in sorted((root / "predictions").glob("2026-08-26__*__v1.0.0.json")):
+        prediction = json.loads(path.read_text(encoding="utf-8"))
+        if field == "history_through":
+            prediction["metadata"]["history_through"] = "2026-08-25"
+        elif field == "history_draws":
+            prediction["metadata"]["history_draws"] = 9999
+        else:
+            prediction["generated_at"] = "2026-08-26T00:00:00-04:00"
+        _write_json(path, prediction)
+    head = _commit_fixture(root, f"leak future prediction {field}")
+
+    with pytest.raises(ProgressEmailError, match="chronology|published history"):
+        build_research_progress_report(root, _run_context(head))
 
 
 @pytest.mark.parametrize(
@@ -313,6 +493,8 @@ def test_report_does_not_say_a_committed_result_is_missing(tmp_path: Path) -> No
         ("GITHUB_RUN_ATTEMPT", "01"),
         ("GITHUB_RUN_ID", "032750000000"),
         ("GITHUB_RUN_ID", "0"),
+        ("GITHUB_RUN_NUMBER", "01"),
+        ("GITHUB_RUN_NUMBER", "0"),
         ("GITHUB_SHA", "A" * 40),
     ],
 )
@@ -324,7 +506,8 @@ def test_report_fails_closed_outside_first_scheduled_main_attempt(
         build_research_progress_report,
     )
 
-    root, head = _committed_repository(tmp_path)
+    root = ROOT
+    head = _repository_head(root)
     context = {**_run_context(head), name: value}
 
     with pytest.raises(ProgressEmailError):
@@ -337,7 +520,8 @@ def test_report_rejects_a_different_scheduled_workflow_identity(tmp_path: Path) 
         build_research_progress_report,
     )
 
-    root, head = _committed_repository(tmp_path)
+    root = ROOT
+    head = _repository_head(root)
     context = {
         **_run_context(head),
         "GITHUB_WORKFLOW_REF": (
@@ -352,13 +536,15 @@ def test_report_rejects_a_different_scheduled_workflow_identity(tmp_path: Path) 
 def test_report_uses_committed_blobs_and_never_digests_secrets(tmp_path: Path) -> None:
     from lotto649.research_progress_email import build_research_progress_report
 
-    root, head = _committed_repository(tmp_path)
+    root, head = _clone_current_repository(tmp_path)
     first_context = {
         **_run_context(head),
         "SMTP_USERNAME": "secret-user-marker",
         "SMTP_PASSWORD": "secret-password-marker",
     }
-    first = build_research_progress_report(root, first_context)
+    first = build_research_progress_report(
+        root, first_context, generated_at=GENERATED_AT
+    )
 
     (root / "config.yaml").write_text("malicious: uncommitted\n", encoding="utf-8")
     second = build_research_progress_report(
@@ -368,6 +554,7 @@ def test_report_uses_committed_blobs_and_never_digests_secrets(tmp_path: Path) -
             "SMTP_USERNAME": "different-secret-user-marker",
             "SMTP_PASSWORD": "different-secret-password-marker",
         },
+        generated_at=GENERATED_AT,
     )
 
     assert second == first
@@ -378,8 +565,10 @@ def test_report_uses_committed_blobs_and_never_digests_secrets(tmp_path: Path) -
 def test_report_ignores_local_git_replacement_objects(tmp_path: Path) -> None:
     from lotto649.research_progress_email import build_research_progress_report
 
-    root, original_head = _committed_repository(tmp_path)
-    expected = build_research_progress_report(root, _run_context(original_head))
+    root, original_head = _clone_current_repository(tmp_path)
+    expected = build_research_progress_report(
+        root, _run_context(original_head), generated_at=GENERATED_AT
+    )
     config_path = root / "config.yaml"
     replacement_config = config_path.read_text(encoding="utf-8").replace(
         "refresh_enabled: true", "refresh_enabled: false"
@@ -415,7 +604,9 @@ def test_report_ignores_local_git_replacement_objects(tmp_path: Path) -> None:
         check=True,
     )
 
-    observed = build_research_progress_report(root, _run_context(original_head))
+    observed = build_research_progress_report(
+        root, _run_context(original_head), generated_at=GENERATED_AT
+    )
 
     assert observed == expected
 
@@ -426,7 +617,7 @@ def test_report_requires_a_full_history_checkout(tmp_path: Path) -> None:
         build_research_progress_report,
     )
 
-    root, head = _committed_repository(tmp_path)
+    root, head = _clone_current_repository(tmp_path)
     (root / ".git" / "shallow").write_text(f"{head}\n", encoding="ascii")
 
     with pytest.raises(ProgressEmailError, match="full-history"):
@@ -442,7 +633,7 @@ def test_process_boundary_attempts_exactly_one_email_without_retry(
     from lotto649 import notification
     from lotto649.research_progress_email import ProgressEmailError, main
 
-    root, head = _committed_repository(tmp_path)
+    root, head = _clone_current_repository(tmp_path)
     monkeypatch.chdir(root)
     for name, value in _run_context(head).items():
         monkeypatch.setenv(name, value)
@@ -466,7 +657,7 @@ def test_process_boundary_attempts_exactly_one_email_without_retry(
 
     assert len(calls) == 1
     subject, body = calls[0]
-    assert subject.startswith("[LOTTO 6/49] 中文小时进度")
+    assert subject.startswith("[LOTTO649研究进度] 第327次更新")
     assert "正文生成时尚未调用 SMTP，不声明送达成功" in body
     assert "sender@example.invalid" not in body
     assert "not-a-real-secret" not in body
