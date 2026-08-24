@@ -147,6 +147,33 @@ At the registered checkpoint, promote, continue unchanged, or reject. Publish th
 decision and full comparison set. A change inspired by the cohort begins a new
 model version and a new prospective counter.
 
+## Current registered experiment: V12
+
+V12 is frozen at the registration-only stage as
+[`V12_post_rng_parity_composition_transition`](experiments/V12_post_rng_parity_composition_transition.md).
+It is one exact post-RNG parity-composition transition law, not a search across
+structural-set rules. The registered governed authority is production `main`
+`4a617f2c1575a165b42878600753a01ddf2ced03`, which reconstructs 4,444 draws
+through 2026-08-22. The future one-shot historical lane contains exactly 627
+consumed 2020--2025 targets (314/313); every known 2026 result is excluded.
+
+The next permissible work is an independently reviewed implementation commit
+using synthetic fixtures and closed-form oracles only. It remains
+non-executable. Canary source `S_C` adds only the fixed self-reference-free
+success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
+is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
+and the reviewed implementation merge `I` must be strict ancestors of exact
+protected-main authorization base `K`; I and M_C may occur in either order.
+Non-authoritative authorization source `A_s` is K's auth-JSON-only child. The
+normal merge `M_A` has parents K,A_s and a tree identical to A_s.
+Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
+Before local
+claim or governed-history access, the runner must also acquire the single
+repository-global consumption lease at
+`refs/heads/v12-consumption-v12.0.0`. No successful canary evidence exists.
+No V12 forecast or score exists. No report, live role, or prospective cohort
+exists at this checkpoint.
+
 ## Candidate feature families
 
 Each row is a separate hypothesis family for multiple-testing purposes. Start

@@ -75,6 +75,32 @@ Whenever practical, new models run as shadow models beside old versions rather t
 
 Each hypothesis must prove value out-of-sample and survive multiple-testing correction before receiving material ensemble weight.
 
+## V12 registered research checkpoint
+
+`V12_post_rng_parity_composition_transition` is frozen as an outcome-blind,
+research-only attempt in
+[`docs/experiments/V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md).
+It tests one signed lag-one association between consecutive post-RNG odd-number
+counts, with one fixed pseudo-parity control. Its governed registration input is
+production `main` authority `4a617f2c1575a165b42878600753a01ddf2ced03`,
+whose `PublishedHistory` has 4,444 draws through 2026-08-22. The only historical
+score scope is the 627 consumed targets in 2020--2025, split 314/313; all known
+2026 outcomes are excluded.
+
+V12 is **registered, not implemented, not authorized, not scored, and not
+activated**. Canary source `S_C` must add only the fixed self-reference-free
+success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
+is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
+and reviewed implementation merge `I` must be strict ancestors of exact
+protected-main authorization base `K`; I and M_C may occur in either order. The
+non-authoritative authorization source `A_s` is K's auth-JSON-only child. Its
+normal merge `M_A` must have parents K,A_s and a tree identical to A_s.
+Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
+The repository-global consumption lease at literal ref
+`refs/heads/v12-consumption-v12.0.0` must also be acquired exactly once before
+any local claim or history access. No successful canary evidence exists.
+No V12 forecast or score exists. V1 and V3 roles are unchanged.
+
 ## Planned anti-overfitting checks
 
 - permutation tests
