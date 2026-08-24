@@ -180,6 +180,15 @@ evaluations and froze the 2026-08-26 predictions. Its parent `0ef1883` appended
 the 2026-08-19 evaluations and froze the 2026-08-22 predictions. Those artifacts
 remain immutable during the hold.
 
+The 2026-08-26 cohort is now sealed by
+`evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json`.
+It pins the exact seven prediction blobs and the 4,434-row registered history
+visible at their origin. Once the corrected 2026-08-26 result is published,
+their evaluations must include a recomputed `prediction_source` classified as
+`sealed_legacy_incident_history`; `actual_history` separately identifies the
+corrected result source. These evaluations are descriptive prospective hits,
+not corrected-history training or promotion evidence.
+
 The historical Gmail alert smoke test succeeded on 2026-08-15
 ([Actions run 31887288254](https://github.com/Jasper-Shi/lottopred/actions/runs/31887288254)).
 Secret values are not readable from the repository; that run establishes only

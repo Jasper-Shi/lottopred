@@ -63,7 +63,9 @@ affected documentation in the same change.
   checkout at exact authority `P`, reloads literal `HEAD` through the production
   reader, and can freeze only the complete P-configured live prediction cohort
   plus chronology-proven evaluations into an unattached single-parent artifact
-  commit `A` without changing a ref.
+  commit `A` without changing a ref. Evaluation provenance is resolved from the
+  source prediction's unique immutable origin across the complete `P` ancestry;
+  it must never infer training history from the current registry base alone.
 - `src/lotto649/history_artifact_publication_github.py` is the disconnected
   capability-scoped exact `P -> A` publisher. Its code/tests are independently
   reviewed and merged, but its fixed authority, object-identity, CAS, reread,
