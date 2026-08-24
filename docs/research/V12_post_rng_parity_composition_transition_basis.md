@@ -517,37 +517,50 @@ from the fixed Git authority and the frozen Wednesday/Saturday calendar, not a
 mutable worktree history file.
 
 Before V12 authorization A may be minted or accepted, the currently unrun
-Stage-1 production canary must finish successfully. Its independently reviewed
-evidence commit `C` must be a strict ancestor of the protected-main
-authorization base `K` and final authorization merge `M_A`, remain reachable
-from protected remote `main`, and be bound in the authorization JSON by exact
-commit/path/blob/bytes/SHA-256. The reviewed I merge is also a strict ancestor
-of `K` and `M_A`; I and C may occur in either order, and C does not enter the
+Stage-1 production canary must finish successfully. Let `K_C` be the exact
+protected-main base of source commit `S_C`. `S_C` has sole parent `K_C` and adds
+only the fixed success JSON. Normal reviewed PR merge `M_C` has first parent
+`K_C`, second parent `S_C`, and a tree identical to `S_C`; `M_C`, not `S_C`, is
+the canary integration authority. `M_C` and the reviewed I merge must be strict
+ancestors of protected-main authorization base `K` and final authorization
+merge `M_A`; I and `M_C` may occur in either order, and neither enters the
 R-to-I diff. Authorization source `A_s` branches from exact K, has K as its sole
 parent, and changes only the authorization JSON. The ordinary merge `M_A` has
 first parent K, second parent A_s, and the identical tree. Only protected remote
-`main` at HEAD=M_A may execute. That evidence must bind the fixed Stage-1 plan,
-reviewed production-main SHA, successful manual `live.yml` run ID and
-conclusion, protected-main receipt, production P publication receipt, and fresh
-authoritative A-reload receipt. Here P/A name
-the production publication/reload stages, not V12 authorization A. The V12
-verifier resolves the literal evidence path itself; CLI, environment, path, or
-receipt injection cannot bypass the prerequisite. Until that evidence exists
-and validates, A and historical execution remain prohibited.
+`main` at HEAD=M_A may execute.
 
-Canary-success commit C cannot self-attest. Its evidence and the authorization
-JSON must bind the canary-evidence integration PR number, head SHA, base SHA,
-and merge SHA C; the exact `test` check from `github-actions` with run ID,
-reviewed head, and `success` conclusion; and immutable independent Standards
-and Spec PR comments, each binding its axis, reviewed head, `pass` verdict,
-comment ID, and body SHA-256. The reviewed production-main dispatch SHA needs
-its own immutable independent review binding. An old live run or workflow-file
-hash cannot satisfy either review.
+The success payload is canonical JSON with exactly these top-level keys:
+`canary_result`, `live_workflow`, `plan`, `protected_main`,
+`publication_and_authoritative_reload`, `reviewed_production_main`, and
+`schema_version`. It binds the fixed Stage-1 plan, reviewed production-main SHA,
+successful manual `live.yml` actor/run ID/head/conclusion, protected-main
+receipt digest, production P publication receipt digest, and fresh authoritative
+A-reload receipt digest. Here P/A name the production publication/reload stages,
+not V12 authorization A. The payload is self-reference-free: it contains no
+`S_C`, `M_C`, its own Git
+blob or object ID, PR merge SHA, or review comment ID.
+
+PR/check/review facts are external GitHub attestations. The future authorization
+JSON, not the success payload, binds exact `S_C`, `M_C`, payload
+path/blob/bytes/SHA-256, integration PR number/base `K_C`/head `S_C`/merge
+`M_C`, the exact successful `test` check from `github-actions`, immutable
+independent Standards and Spec review records, and the independent
+reviewed-production-main record. Each review binds its axis or production SHA,
+reviewed head, `pass` verdict, reviewer login, immutable comment ID, and body
+SHA-256; reviewers must differ from the `S_C` source author and live-workflow
+actor. `M_C` must remain reachable from protected remote `main` and a strict
+ancestor of K and M_A. An old live run or workflow-file hash cannot satisfy
+review. The V12
+verifier resolves the literal evidence path itself; CLI, environment, path, or
+receipt injection cannot bypass the prerequisite. Until the payload and all
+external evidence exist and validate, A and historical execution remain
+prohibited.
 
 Let `M_I` be the reviewed implementation merge. The diff from M_I to K is an
 exact allowlist: Stage-1 content-addressed source receipts, operational
 suffix/registry publication, seven fixed 2026-08-26 evaluations, seven fixed
-2026-08-29 predictions, and the registered canary-success evidence path. Every
+2026-08-29 predictions, and the registered canary-success payload integrated
+by `M_C`. Every
 other tree entry remains identical; `src`, config, workflows, and documentation
 semantics cannot drift. I review and the authorization JSON must bind a sorted
 transitive local-import manifest of repository path/Git-blob pairs rooted at

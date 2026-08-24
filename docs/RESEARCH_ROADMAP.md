@@ -159,11 +159,13 @@ consumed 2020--2025 targets (314/313); every known 2026 result is excluded.
 
 The next permissible work is an independently reviewed implementation commit
 using synthetic fixtures and closed-form oracles only. It remains
-non-executable. Both the reviewed implementation merge `I` and successful
-canary-success evidence `C` must be strict ancestors of exact protected-main
-authorization base `K`; I and C may occur in either order. Non-authoritative
-authorization source `A_s` is K's auth-JSON-only child. The normal merge `M_A`
-has parents K,A_s and a tree identical to A_s.
+non-executable. Canary source `S_C` adds only the fixed self-reference-free
+success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
+is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
+and the reviewed implementation merge `I` must be strict ancestors of exact
+protected-main authorization base `K`; I and M_C may occur in either order.
+Non-authoritative authorization source `A_s` is K's auth-JSON-only child. The
+normal merge `M_A` has parents K,A_s and a tree identical to A_s.
 Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
 Before local
 claim or governed-history access, the runner must also acquire the single

@@ -102,49 +102,59 @@ authorities:
    tests. The canonical runner must fail closed *before loading governed
    history, creating a forecast, acquiring a claim, or writing an artifact*
    while A is absent or invalid.
-3. **A — reviewed authorization source and merge.** Let `K` be the exact
-   protected-main authorization base containing both the reviewed I merge and
-   canary-success evidence commit `C`; I and C may occur in either order, but R
-   is a strict ancestor of I and both I and C are strict ancestors of `K` and
-   final authorization merge `M_A`. Branch authorization source `A_s` from
-   exact `K`: its sole parent is `K`, and its only diff is the literal
+3. **A — reviewed authorization source and merge.** Let `K_C` be the exact
+   protected-main base for the canary-success source. Source commit `S_C` has
+   sole parent `K_C` and adds only the fixed success JSON. The ordinary reviewed
+   PR merge `M_C` has first parent `K_C`, second parent `S_C`, and a tree
+   identical to `S_C`; `M_C`, not `S_C`, is the canary integration authority.
+   Let `K` be the exact protected-main authorization base containing both the
+   reviewed I merge and `M_C`. R is a strict ancestor of I, while I and `M_C`
+   are strict ancestors of `K` and final authorization merge `M_A`; I and
+   `M_C` may occur in either order. Branch authorization source `A_s` from exact
+   `K`: its sole parent is `K`, and its only diff is the literal
    authorization JSON at
    `evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json`.
    The ordinary reviewed PR merge `M_A` has first parent `K`, second parent
-   `A_s`, and a tree identical to `A_s`. The JSON binds exact R, I, C, K and
-   their identities, all registered hashes, reviewed CI, and the exact command.
+   `A_s`, and a tree identical to `A_s`. The JSON binds exact R, I, `S_C`,
+   `M_C`, K and their identities, all registered hashes, reviewed CI, and the
+   exact command.
    Only protected remote `main` at HEAD=`M_A` is execution authority. Neither
    `A_s` alone nor any other ref mints the one-shot capability.
 
 There is also a mandatory external prerequisite before V12 A can be minted or
 accepted. The currently unrun Stage-1 production canary must complete
-successfully. Its independently reviewed evidence commit `C` at the
-registration's fixed literal path must be a strict ancestor of `K` and `M_A`,
-remain reachable from protected remote `main`, and be bound literally by the
-authorization JSON with commit/path/blob/bytes/SHA-256. It does not enter the
-R-to-I diff. It must bind the exact Stage-1 plan, independently reviewed
-production-main SHA, successful manual `live.yml`
-workflow run ID and conclusion, protected-main receipt, production publication
-P receipt, and fresh authoritative reload A receipt. Here production P/A are
-the live publication/reload stages, not V12 authorization A. No caller-supplied
-path, receipt, CLI value, or environment value may bypass verification. Until
-the evidence exists and validates, authorization minting, acceptance, and V12
-historical execution are prohibited; this registration does not claim that the
-canary has run.
+successfully. `S_C` adds only a canonical, self-reference-free success payload
+at the registration's fixed literal path. Its exact top-level keys are
+`canary_result`, `live_workflow`, `plan`, `protected_main`,
+`publication_and_authoritative_reload`, `reviewed_production_main`, and
+`schema_version`. The payload binds the exact Stage-1 plan, reviewed
+production-main SHA, successful manual `live.yml` workflow actor/run ID/head/
+conclusion, protected-main receipt digest, production publication P receipt
+digest, and fresh authoritative reload A receipt digest. Here production P/A
+are the live publication/reload stages, not V12 authorization A. It must not contain `S_C`,
+`M_C`, its own Git blob or object ID, a PR merge SHA, or review comment IDs.
 
-`C` cannot self-attest. The success evidence and authorization JSON must bind
-the canary-evidence integration PR number, head SHA, base SHA, and merge SHA C;
-the exact `test` check from `github-actions` with run ID, reviewed head, and
-`success` conclusion; and immutable independent Standards and Spec PR comments,
-each binding its axis, reviewed head, `pass` verdict, comment ID, and body
-SHA-256. The reviewed production-main dispatch SHA needs its own immutable
-independent review binding. An old live run or workflow-file hash cannot satisfy
-either review.
+PR/check/review facts are external GitHub attestations, never assertions inside
+the success payload. The future authorization JSON must bind exact `S_C`,
+`M_C`, payload path/blob/bytes/SHA-256, the integration PR number/base
+`K_C`/head `S_C`/merge `M_C`, the exact successful `test` check from
+`github-actions`, immutable independent Standards and Spec PR comments, and an
+independent reviewed-production-main record. Each review record binds its axis
+or production SHA, reviewed head, `pass` verdict, reviewer login, immutable
+comment ID, and body SHA-256; reviewers must differ from the `S_C` source author
+and live-workflow actor. `M_C` must remain reachable from protected remote
+`main` and be a strict ancestor of `K` and `M_A`. An old live run or
+workflow-file hash cannot
+satisfy review. No caller-supplied path, receipt, CLI value, or environment
+value may bypass verification. Until all payload and external evidence exists
+and validates, authorization minting, acceptance, and V12 historical execution
+are prohibited; this registration does not claim that the canary has run.
 
 Let `M_I` be the reviewed implementation merge. The diff from M_I to K is an
 exact allowlist: the Stage-1 content-addressed source receipts, operational
 suffix/registry publication, seven fixed 2026-08-26 evaluations, seven fixed
-2026-08-29 predictions, and the registered canary-success evidence path. Every
+2026-08-29 predictions, and the registered canary-success payload integrated
+by `M_C`. Every
 other tree entry is identical; `src`, config, workflows, and documentation
 semantics cannot drift. I review and the authorization JSON bind a sorted
 transitive local-import manifest of repository path/Git-blob pairs rooted at

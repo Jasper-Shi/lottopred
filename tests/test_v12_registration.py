@@ -198,7 +198,7 @@ PRODUCTION_CANARY_PREREQUISITE = {
     "acceptance": {
         "authorization_topology": {
             "authorization_base_K": (
-                "exact_protected_main_commit_containing_I_merge_and_C"
+                "exact_protected_main_commit_containing_I_merge_and_M_C"
             ),
             "authorization_merge_M_A": {
                 "first_parent": "K",
@@ -209,16 +209,26 @@ PRODUCTION_CANARY_PREREQUISITE = {
                 "diff_from_K": "execution_authorization_json_only",
                 "sole_parent": "K",
             },
-            "canary_success_C": "strict_ancestor_of_K_and_M_A",
+            "canary_success_integration_M_C": {
+                "first_parent": "K_C",
+                "role": "integration_authority",
+                "second_parent": "S_C",
+                "strict_ancestor_of": ["K", "M_A"],
+                "tree": "identical_to_S_C",
+            },
+            "canary_success_source_S_C": {
+                "diff_from_K_C": "fixed_success_JSON_addition_only",
+                "sole_parent": "K_C",
+            },
             "implementation_I_merge": "strict_ancestor_of_K_and_M_A",
             "registration_R": "strict_ancestor_of_I",
-            "relative_order_I_and_C": "unconstrained",
+            "relative_order_I_and_M_C": "unconstrained",
         },
         "evidence_binding_in_authorization_json": (
-            "commit_path_blob_bytes_sha256_required"
+            "S_C_M_C_path_blob_bytes_sha256_PR_check_review_records_required"
         ),
         "evidence_commit_relation": (
-            "C_strict_ancestor_of_M_A_and_reachable_from_protected_remote_main"
+            "M_C_strict_ancestor_of_K_and_M_A_and_reachable_from_protected_remote_main"
         ),
         "historical_execution": "prohibited_until_valid_completed_evidence",
         "runner_authority": {
@@ -233,13 +243,55 @@ PRODUCTION_CANARY_PREREQUISITE = {
         "evidence_path_override": "prohibited",
         "receipt_injection": "prohibited",
         "verification_source": (
-            "fixed_path_at_C_in_M_A_ancestry_and_protected_remote_main"
+            "fixed_path_at_S_C_and_M_C_in_M_A_ancestry_and_protected_remote_main"
         ),
     },
     "evidence_path": CANARY_SUCCESS_PATH,
-    "evidence_schema": "lotto649.production-live-canary-success.v1",
+    "evidence_schema": "lotto649.production-live-canary-success-payload.v1",
     "registration_observation": "absent_not_run",
+    "success_payload": {
+        "canonical_encoding": "canonical_JSON_UTF-8_with_one_trailing_LF",
+        "exact_keys": [
+            "canary_result",
+            "live_workflow",
+            "plan",
+            "protected_main",
+            "publication_and_authoritative_reload",
+            "reviewed_production_main",
+            "schema_version",
+        ],
+        "exact_nested_contract": "required_bindings_values",
+        "forbidden_fields": [
+            "M_C",
+            "S_C",
+            "integration_commit",
+            "merge_sha",
+            "object_id",
+            "oid",
+            "payload_blob",
+            "payload_blob_sha",
+            "pull_request",
+            "pull_request_number",
+            "review_comment_id",
+            "review_comment_ids",
+            "source_commit",
+            "source_commit_sha",
+        ],
+        "forbidden_value_classes": [
+            "S_C_commit_OID",
+            "M_C_commit_OID",
+            "payload_own_blob_OID",
+            "pull_request_merge_SHA",
+            "review_comment_ID",
+        ],
+        "self_reference": "prohibited",
+    },
     "required_bindings": {
+        "canary_result": {
+            "completed": True,
+            "conclusion": "success",
+            "stage": "Stage1",
+        },
         "plan": {
             "authority_commit": MAIN_AUTHORITY_COMMIT,
             "bytes": 7084,
@@ -249,35 +301,36 @@ PRODUCTION_CANARY_PREREQUISITE = {
                 "16fac454983b714733dcee3996812ae5e0415c27303176aaefdd9cb3ac7feea4"
             ),
         },
-        "protected_main_receipt": {
-            "allow_deletions": False,
-            "allow_force_pushes": False,
-            "enforce_admins": True,
-            "observed_after_successful_run": True,
-            "required": True,
-        },
-        "publication_and_authoritative_reload_receipts": {
-            "authoritative_reload_A": "required",
-            "fresh_full_history_reload": True,
-            "history_draw_count": 4445,
-            "history_through": "2026-08-26",
-            "publication_P": "required",
-            "receipt_digests": "required",
-            "topology": "P -> A",
-        },
-        "reviewed_main_sha": {
-            "binding": "expected_sha_equals_workflow_head_sha_equals_checkout_head",
-            "branch": "main",
-            "format": "lowercase_40_hex_sha1",
-            "repository": "Jasper-Shi/lottopred",
-            "source": "post_merge_independent_review",
-        },
-        "workflow_run": {
+        "live_workflow": {
+            "actor_login": "nonempty_GitHub_login",
             "conclusion": "success",
             "event": "workflow_dispatch",
+            "head_sha": "equals_reviewed_production_main_sha",
             "path": ".github/workflows/live.yml",
             "repository": "Jasper-Shi/lottopred",
             "run_id": "positive_integer",
+        },
+        "protected_main": {
+            "allow_deletions": False,
+            "allow_force_pushes": False,
+            "branch": "main",
+            "enforce_admins": True,
+            "observed_after_live_run_id": "equals_live_workflow_run_id",
+            "receipt_sha256": "lowercase_64_hex",
+            "repository": "Jasper-Shi/lottopred",
+        },
+        "publication_and_authoritative_reload": {
+            "authoritative_reload_A_receipt_sha256": "lowercase_64_hex",
+            "fresh_full_history_reload": True,
+            "history_draw_count": 4445,
+            "history_through": "2026-08-26",
+            "publication_P_receipt_sha256": "lowercase_64_hex",
+            "topology": "P -> A",
+        },
+        "reviewed_production_main": {
+            "branch": "main",
+            "repository": "Jasper-Shi/lottopred",
+            "sha": "canonical_lowercase_40_hex",
         },
     },
 }
@@ -382,35 +435,88 @@ REPOSITORY_GLOBAL_ATTEMPT_LEASE = {
     "scope": "repository_global_not_local_O_EXCL",
 }
 
-CANARY_INTEGRATION_EVIDENCE_CONTRACT = {
-    "independent_review_comments": {
-        "independence": "reviewer_not_C_author_or_canary_workflow_actor",
-        "per_axis_record": {
-            "axis": "exact_required_axis",
-            "body_sha256": "lowercase_64_hex",
-            "comment_id": "positive_integer_immutable",
-            "reviewed_head": "equals_pull_request_head_sha",
-            "verdict": "pass",
+CANARY_AUTHORIZATION_JSON_BINDING = {
+    "external_attestation_verification": {
+        "caller_supplied_records": "prohibited",
+        "required_before_A_acceptance": True,
+        "source": "fresh_GitHub_API_Jasper-Shi_lottopred_exact_PR_check_comments",
+    },
+    "exact_keys": [
+        "M_C",
+        "S_C",
+        "bytes",
+        "git_blob",
+        "path",
+        "pull_request",
+        "required_check",
+        "review_records",
+        "sha256",
+    ],
+    "field": "stage1_canary_evidence",
+    "independence": {
+        "independence": "reviewer_not_S_C_author_or_canary_workflow_actor",
+        "inputs": [
+            "pull_request.source_author_login",
+            "success_payload.live_workflow.actor_login",
+            "review_records.*.reviewer_login",
+        ],
+    },
+    "nested_objects_are_exact": True,
+    "value_contract": {
+        "M_C": "canonical_lowercase_40_hex",
+        "S_C": "canonical_lowercase_40_hex",
+        "bytes": "positive_integer",
+        "git_blob": "canonical_lowercase_40_hex",
+        "path": CANARY_SUCCESS_PATH,
+        "pull_request": {
+            "base_ref": "main",
+            "base_sha": "equals_K_C",
+            "head_sha": "equals_S_C",
+            "merge_sha": "equals_M_C",
+            "number": "positive_integer",
+            "source_author_login": "nonempty_GitHub_login",
+            "state": "merged",
         },
-        "required_axes": ["Standards", "Spec"],
-    },
-    "pull_request": {
-        "base_ref": "main",
-        "base_sha": "canonical_lowercase_40_hex",
-        "head_sha": "canonical_lowercase_40_hex",
-        "merge_sha": "equals_C",
-        "number": "positive_integer",
-        "state": "merged",
-    },
-    "required_check": {
-        "app": "github-actions",
-        "conclusion": "success",
-        "head": "equals_pull_request_head_sha",
-        "name": "test",
-        "run_id": "positive_integer",
+        "required_check": {
+            "app": "github-actions",
+            "conclusion": "success",
+            "head": "equals_S_C",
+            "name": "test",
+            "run_id": "positive_integer",
+        },
+        "review_records": {
+            "production_main": {
+                "body_sha256": "lowercase_64_hex",
+                "comment_id": "positive_integer_immutable",
+                "reviewed_sha": "equals_payload_reviewed_production_main_sha",
+                "reviewer_login": "nonempty_GitHub_login",
+                "verdict": "pass",
+            },
+            "spec": {
+                "axis": "Spec",
+                "body_sha256": "lowercase_64_hex",
+                "comment_id": "positive_integer_immutable",
+                "reviewed_head": "equals_S_C",
+                "reviewer_login": "nonempty_GitHub_login",
+                "verdict": "pass",
+            },
+            "standards": {
+                "axis": "Standards",
+                "body_sha256": "lowercase_64_hex",
+                "comment_id": "positive_integer_immutable",
+                "reviewed_head": "equals_S_C",
+                "reviewer_login": "nonempty_GitHub_login",
+                "verdict": "pass",
+            },
+        },
+        "sha256": "lowercase_64_hex",
     },
     "self_attestation": "prohibited",
 }
+
+PRODUCTION_CANARY_PREREQUISITE["authorization_JSON_binding"] = (
+    CANARY_AUTHORIZATION_JSON_BINDING
+)
 
 K_ALLOWED_STATIC_PATHS = [
     "data/processed/epochs/DI-2026-08-20-registered-history/live_draws.jsonl",
@@ -439,8 +545,8 @@ AUTHORIZATION_BASE_K_INTEGRITY = {
             "evidence/live_sources/wclc/2026-08-26-{sha256}.html",
         ],
         "exact_static_paths": K_ALLOWED_STATIC_PATHS,
-        "path_set_bound_by_C_evidence": True,
-        "scope": "exact_Stage1_canary_publication_artifacts_and_C_only",
+        "path_set_bound_by_future_authorization_JSON_M_C_identity": True,
+        "scope": "exact_Stage1_canary_publication_artifacts_and_M_C_only",
     },
     "base": "reviewed_implementation_merge_M_I",
     "preserve_all_other_tree_entries": True,
@@ -728,7 +834,8 @@ def test_v12_authorization_summaries_defer_execution_to_M_A() -> None:
     for relative_path in AUTHORIZATION_SUMMARY_PATHS:
         summary = (ROOT / relative_path).read_text(encoding="utf-8")
         assert AUTHORIZATION_SUMMARY_SENTENCE in summary, relative_path
-        assert "canary-success evidence `C`" in summary, relative_path
+        assert "canary-success integration `M_C`" in summary, relative_path
+        assert "self-reference-free" in summary, relative_path
         assert "No successful canary evidence exists" in summary, relative_path
         assert "No V12 forecast or score exists" in summary, relative_path
 
@@ -762,24 +869,41 @@ def test_v12_canary_and_runtime_authority_cannot_self_attest_or_drift() -> None:
     prerequisite = registration["production_canary_prerequisite"]
 
     assert prerequisite == config["production_canary_prerequisite"]
-    assert prerequisite["required_bindings"]["canary_success_integration_C"] == (
-        CANARY_INTEGRATION_EVIDENCE_CONTRACT
+    assert prerequisite["authorization_JSON_binding"] == (
+        CANARY_AUTHORIZATION_JSON_BINDING
     )
-    assert prerequisite["required_bindings"]["reviewed_main_sha"] == {
-        "binding": "expected_sha_equals_workflow_head_sha_equals_checkout_head",
+    assert prerequisite["required_bindings"]["reviewed_production_main"] == {
         "branch": "main",
-        "format": "lowercase_40_hex_sha1",
-        "independent_review_evidence": {
-            "body_sha256": "lowercase_64_hex",
-            "comment_id": "positive_integer_immutable",
-            "reviewed_sha": "equals_expected_sha",
-            "reviewer": "independent_not_workflow_actor_or_commit_author",
-            "verdict": "pass",
-        },
-        "not_satisfied_by": "old_live_run_or_workflow_file_hash",
         "repository": "Jasper-Shi/lottopred",
-        "source": "post_merge_independent_review",
+        "sha": "canonical_lowercase_40_hex",
     }
+    payload = prerequisite["success_payload"]
+    assert payload["self_reference"] == "prohibited"
+    assert payload["exact_keys"] == [
+        "canary_result",
+        "live_workflow",
+        "plan",
+        "protected_main",
+        "publication_and_authoritative_reload",
+        "reviewed_production_main",
+        "schema_version",
+    ]
+    assert payload["exact_nested_contract"] == "required_bindings_values"
+    assert set(prerequisite["required_bindings"]) == (
+        set(payload["exact_keys"]) - {"schema_version"}
+    )
+    assert prerequisite["authorization_JSON_binding"]["nested_objects_are_exact"]
+    assert {"S_C", "M_C", "payload_blob", "merge_sha", "review_comment_ids"} <= (
+        set(payload["forbidden_fields"])
+    )
+    assert {
+        "S_C_commit_OID",
+        "M_C_commit_OID",
+        "payload_own_blob_OID",
+        "pull_request_merge_SHA",
+        "review_comment_ID",
+    } == set(payload["forbidden_value_classes"])
+    assert "independent_review_comments" not in prerequisite["required_bindings"]
     assert registration["authorization_base_K_integrity"] == (
         AUTHORIZATION_BASE_K_INTEGRITY
     )

@@ -88,9 +88,11 @@ score scope is the 627 consumed targets in 2020--2025, split 314/313; all known
 2026 outcomes are excluded.
 
 V12 is **registered, not implemented, not authorized, not scored, and not
-activated**. Its frozen topology requires both the reviewed implementation merge
-`I` and successful canary-success evidence `C` to be strict ancestors of exact
-protected-main authorization base `K`; I and C may occur in either order. The
+activated**. Canary source `S_C` must add only the fixed self-reference-free
+success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
+is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
+and reviewed implementation merge `I` must be strict ancestors of exact
+protected-main authorization base `K`; I and M_C may occur in either order. The
 non-authoritative authorization source `A_s` is K's auth-JSON-only child. Its
 normal merge `M_A` must have parents K,A_s and a tree identical to A_s.
 Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
