@@ -64,6 +64,11 @@ affected documentation in the same change.
   reader, and can freeze only the complete P-configured live prediction cohort
   plus chronology-proven evaluations into an unattached single-parent artifact
   commit `A` without changing a ref.
+- `src/lotto649/history_artifact_publication_github.py` is the disconnected
+  capability-scoped exact `P -> A` publisher candidate under review. Its fixed
+  authority, object-identity, CAS, reread, and fresh-reload contract is specified
+  in `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`; it is not an execution
+  release.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -151,10 +156,11 @@ registry publisher, the remote authority reload succeeds, and the execution
 worktree is handed to the published authority head; it must never fall back to
 the legacy processed CSV. The collector, offline preparer, local bare CAS,
 disconnected GitHub publisher, and isolated execution/artifact handoff are
-separately testable components. The remote path still requires protected-main
-configuration, a disposable-repository OID/CAS canary, workflow orchestration,
-and an exact remote `P -> A` artifact CAS plus authority reload; none of these
-components authorizes this execution path.
+separately testable components. A disconnected capability-scoped exact remote
+`P -> A` publisher is under review, but the remote path still requires its
+reviewed code/tests, the prescribed remote canaries, protected `main`,
+P-code-provenance orchestration, and a separately reviewed SHA-bound workflow
+release. None of these components authorizes this execution path.
 
 Live forward cycle:
 

@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from threading import Event, Lock, Thread
 
 import pytest
 
@@ -34,6 +35,32 @@ from lotto649.operational_history import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class _ObservedLock:
+    def __init__(self, lock: Lock, acquire_entered: Event) -> None:
+        self._lock = lock
+        self._acquire_entered = acquire_entered
+
+    def acquire(self, blocking: bool = True) -> bool:
+        self._acquire_entered.set()
+        return self._lock.acquire(blocking=blocking)
+
+    def release(self) -> None:
+        self._lock.release()
+
+
+class _ObservedArtifactRegistry(dict[object, object]):
+    def __init__(self, iteration_started: Event, release_iteration: Event) -> None:
+        super().__init__()
+        self._iteration_started = iteration_started
+        self._release_iteration = release_iteration
+
+    def items(self):
+        iterator = super().items().__iter__()
+        self._iteration_started.set()
+        assert self._release_iteration.wait(timeout=30)
+        yield from iterator
 
 
 def _git(repository: Path, *arguments: str) -> subprocess.CompletedProcess[bytes]:
@@ -835,6 +862,202 @@ def test_freeze_outputs_creates_an_unattached_exact_single_parent_commit(
                 ).stdout
                 == raw_by_path[path]
             )
+
+
+def test_frozen_execution_artifacts_cannot_be_constructed_without_freeze(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(HistoryExecutionHandoffError, match="freeze capability"):
+        history_handoff.FrozenExecutionArtifacts(
+            repository=tmp_path,
+            parent_commit="1" * 40,
+            tree_oid="2" * 40,
+            artifact_commit="3" * 40,
+            paths=("predictions/2026-08-26__model__v1.0.0.json",),
+            files=(),
+            created_at=datetime(2026, 8, 24, 12, tzinfo=UTC),
+        )
+
+
+def test_frozen_artifact_capability_is_exact_and_expires_with_workspace(
+    tmp_path: Path,
+) -> None:
+    _caller, _prepared, receipt, authority = _candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        created_at = datetime.combine(
+            workspace.history.draws[-1].draw_date + timedelta(days=1),
+            datetime.min.time(),
+            UTC,
+        ).replace(hour=12)
+        predictions, _raws = _write_required_predictions(workspace, created_at)
+        evaluation, _raw = _write_valid_evaluation(workspace)
+        frozen = history_handoff.freeze_execution_outputs(
+            workspace,
+            tuple(sorted((evaluation, *predictions))),
+            created_at=created_at,
+        )
+
+        assert (
+            history_handoff._require_frozen_execution_artifacts(frozen).artifacts
+            is frozen
+        )
+        original_tree = frozen.tree_oid
+        object.__setattr__(frozen, "tree_oid", "f" * 40)
+        with pytest.raises(HistoryExecutionHandoffError, match="freeze capability"):
+            history_handoff._require_frozen_execution_artifacts(frozen)
+        object.__setattr__(frozen, "tree_oid", original_tree)
+        with pytest.raises(HistoryExecutionHandoffError, match="freeze capability"):
+            replace(frozen, artifact_commit="f" * 40)
+
+    with pytest.raises(HistoryExecutionHandoffError, match="freeze capability"):
+        history_handoff._require_frozen_execution_artifacts(frozen)
+
+
+def test_workspace_revocation_cannot_miss_a_concurrent_artifact_issuance(
+    tmp_path: Path,
+) -> None:
+    _caller, _prepared, receipt, authority = _candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        created_at = datetime.combine(
+            workspace.history.draws[-1].draw_date + timedelta(days=1),
+            datetime.min.time(),
+            UTC,
+        ).replace(hour=12)
+        predictions, _raws = _write_required_predictions(workspace, created_at)
+        evaluation, _raw = _write_valid_evaluation(workspace)
+        frozen = history_handoff.freeze_execution_outputs(
+            workspace,
+            tuple(sorted((evaluation, *predictions))),
+            created_at=created_at,
+        )
+        binding = history_handoff._require_frozen_execution_artifacts(frozen)
+        blocked_lock = Lock()
+        blocked_lock.acquire()
+        revoke_waiting = Event()
+        binding.publication_lock = _ObservedLock(blocked_lock, revoke_waiting)
+        revoke_errors: list[BaseException] = []
+
+        def revoke() -> None:
+            try:
+                history_handoff._revoke_frozen_artifacts(workspace._capability)
+            except BaseException as exc:  # noqa: BLE001 - thread result capture
+                revoke_errors.append(exc)
+
+        revoker = Thread(target=revoke)
+        revoker.start()
+        assert revoke_waiting.wait(timeout=30)
+        try:
+            with pytest.raises(HistoryExecutionHandoffError, match="closing"):
+                history_handoff._issue_frozen_execution_artifacts(
+                    workspace,
+                    repository=frozen.repository,
+                    parent_commit=frozen.parent_commit,
+                    tree_oid=frozen.tree_oid,
+                    artifact_commit=frozen.artifact_commit,
+                    paths=frozen.paths,
+                    files=frozen.files,
+                    created_at=frozen.created_at,
+                )
+        finally:
+            blocked_lock.release()
+        revoker.join(timeout=30)
+
+        assert not revoker.is_alive()
+        assert revoke_errors == []
+        assert all(
+            candidate.workspace_capability is not workspace._capability
+            for candidate in history_handoff._FROZEN_ARTIFACT_CAPABILITIES.values()
+        )
+
+
+def test_two_workspaces_cannot_mutate_the_artifact_registry_during_revocation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _caller, prepared, receipt, authority = _candidate(tmp_path)
+    iteration_started = Event()
+    release_iteration = Event()
+    registry = _ObservedArtifactRegistry(iteration_started, release_iteration)
+    monkeypatch.setattr(history_handoff, "_FROZEN_ARTIFACT_CAPABILITIES", registry)
+
+    with (
+        _open_execution_workspace(
+            receipt,
+            authority_url=str(authority),
+        ) as first_workspace,
+        _open_execution_workspace(
+            receipt,
+            authority_url=str(authority),
+        ) as second_workspace,
+    ):
+        tree = (
+            _git(
+                first_workspace.root,
+                "rev-parse",
+                f"{prepared.publication_commit}^{{tree}}",
+            )
+            .stdout.decode("ascii")
+            .strip()
+        )
+        created_at = datetime(2026, 8, 24, 12, tzinfo=UTC)
+
+        def issue(workspace: ExecutionWorkspace) -> None:
+            history_handoff._issue_frozen_execution_artifacts(
+                workspace,
+                repository=workspace.root,
+                parent_commit=prepared.publication_commit,
+                tree_oid=tree,
+                artifact_commit=prepared.publication_commit,
+                paths=(),
+                files=(),
+                created_at=created_at,
+            )
+
+        issue(first_workspace)
+        revoke_errors: list[BaseException] = []
+        issue_errors: list[BaseException] = []
+        issue_finished = Event()
+
+        def revoke() -> None:
+            try:
+                history_handoff._revoke_frozen_artifacts(first_workspace._capability)
+            except BaseException as exc:  # noqa: BLE001 - thread result capture
+                revoke_errors.append(exc)
+
+        def issue_second() -> None:
+            try:
+                issue(second_workspace)
+            except BaseException as exc:  # noqa: BLE001 - thread result capture
+                issue_errors.append(exc)
+            finally:
+                issue_finished.set()
+
+        revoker = Thread(target=revoke)
+        issuer = Thread(target=issue_second)
+        revoker.start()
+        assert iteration_started.wait(timeout=30)
+        issuer.start()
+        issue_finished.wait(timeout=1)
+        release_iteration.set()
+        revoker.join(timeout=30)
+        issuer.join(timeout=30)
+
+        assert not revoker.is_alive()
+        assert not issuer.is_alive()
+        assert revoke_errors == []
+        assert issue_errors == []
+        assert all(
+            candidate.workspace_capability is not first_workspace._capability
+            for candidate in registry.values()
+        )
 
 
 def test_freeze_rejects_a_json_object_that_is_not_a_bound_audit_artifact(

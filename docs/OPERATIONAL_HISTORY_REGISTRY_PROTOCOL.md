@@ -7,9 +7,12 @@ Protocol version: `lotto649-history-pin-registry-event-v1`.
 The reader, one-event genesis migration, network source collector, offline
 dual-source preparation seam, local bare-repository compare-and-swap adapter,
 disconnected fixed-repository GitHub publisher, and isolated execution/artifact
-handoff are implemented. They are not workflow-integrated and have not yet
-passed the required disposable-repository object-OID/CAS canary. Exact remote
-publication of the later artifact commit is not implemented. Therefore
+handoff are implemented. A disconnected, capability-scoped exact remote
+`P -> A` artifact publisher is implemented as a review candidate on this branch.
+It fixes production repository/main identity, exact object-OID upload, GraphQL
+`updateRefs` with `force=false`, mandatory ref reread, and a fresh anonymous
+full-fetch production reload. None of these seams is workflow-integrated, and
+neither publisher has passed the required true-remote canary. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
 
@@ -231,8 +234,8 @@ remote publication receipt. It issues one opaque context capability bound to
 the canonical checkout root, its `.git` and object-store directory identities,
 and exact `P`; copied workspaces, replaced directories, external Git controls,
 and use after context exit fail closed. The caller's original B checkout is
-never read or modified. Callers must load configuration through the workspace, which reads
-the authenticated `P:config.yaml` into an independent object and roots all later
+never read or modified. Callers must load configuration through the workspace,
+which reads the authenticated `P:config.yaml` into an independent object and roots all later
 file I/O in the P checkout. The context must span the complete
 evaluate/notify/predict/freeze/publish-A operation; returning only history and
 resuming in the caller's checkout is forbidden. The temporary repository is
@@ -269,14 +272,24 @@ worktree bytes, and all refs unchanged. Its timestamp must be whole-second UTC,
 conservatively post-date the history, not predate P, and remain pre-draw for new
 predictions.
 
-This seam does not publish A. A later reviewed publisher must independently
-freeze and upload A's exact objects, compare-and-swap remote main from P to A,
-reread exact A, and perform a fresh public production reload. It must not use
-the current workflow's broad directory staging or ordinary push. Evaluation,
-prediction, email, or output files that cannot complete that remote publication
-are not committed audit evidence. Because the temporary object store is removed
-when the workspace context exits, that future publisher must complete inside
-the same context.
+The handoff itself does not publish A. The candidate
+`publish_frozen_execution_artifacts_to_github(artifacts, token=...)` accepts
+only the exact freeze-issued `FrozenExecutionArtifacts` while its opaque
+capability and original P workspace remain active. It independently freezes A's
+commit/tree/file identities, fixes `Jasper-Shi/lottopred` `main`, uploads and
+checks every required Git Database object OID, and attempts GraphQL `updateRefs`
+exactly once with `beforeOid=P`, `afterOid=A`, and `force=false`. Every
+acknowledgement, error, or timeout is followed by an authoritative ref reread.
+Success additionally requires public `main=A`, a new anonymous complete bare
+fetch, exact A topology/tree/files, and `load_published_history(A)`. It does not
+push, merge, rebase, force, retry, stage a directory, or touch a workflow or
+runtime gate. Evaluation, prediction, email, or output files that cannot
+complete that remote publication are not committed audit evidence.
+
+This candidate remains disconnected and under review. Its local tests cannot
+prove GitHub serialization, token permission, branch protection, unattached
+object visibility, or read-after-write behavior; those claims require the
+remote canaries and protected-main evidence listed in `OPERATIONS.md`.
 
 ## Reader guarantees
 
@@ -323,9 +336,9 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 Merging the reader, official-source collector, offline/local publication
 components, disconnected GitHub publisher, and execution/artifact handoff does
-not reopen execution. The next implementation phase is the authorized
-disposable-remote canary, protected-main verification, orchestration, and exact
-remote `P -> A` artifact publication/reload. Only a later, independently
-reviewed release may change the exact disabled config bytes and the SHA-bound
-workflow execution plan. Until then all three runtime switches and all workflow
-stages remain false.
+not reopen execution; neither does merging the artifact-publisher candidate.
+Its code/tests must pass independent review, followed by the disposable remote
+OID/CAS canary, protected-main setup, P-code-provenance orchestration, real
+`P -> A` canary/reload, and the separate SHA-bound workflow release review
+specified in `OPERATIONS.md`. Until that later release, all three runtime
+switches and all workflow stages remain false.

@@ -41,10 +41,12 @@ collector, offline preparer, and local bare-repository exact-CAS adapter now
 cover source acquisition plus the `B -> E -> S -> P` transaction and local state
 machine as disconnected seams. A fixed-repository GitHub exact-CAS publisher,
 fresh public reload, and isolated exact-P execution/artifact handoff now also
-exist, still disconnected. Live still requires protected-main verification, a
-disposable-repository OID/CAS canary, orchestration, and exact remote
-publication/reload of the resulting `P -> A` artifact commit before any
-execution switch can be reconsidered.
+exist, still disconnected. A capability-scoped exact remote `P -> A` publisher
+candidate is under review and likewise remains disconnected. Live still
+requires reviewed publisher code/tests, the prescribed remote canaries,
+protected `main`, P-code-provenance orchestration, a real `P -> A` reload, and
+the separate SHA-bound workflow release review in `docs/OPERATIONS.md` before
+any execution switch can be reconsidered.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,
