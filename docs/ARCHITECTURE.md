@@ -95,15 +95,21 @@ the two exact, bounded raw HTML assets without writing repository or operational
 state. The
 `history_publication_cas` module can validate and advance one self-contained
 local bare `refs/heads/main` authority with exact compare-and-swap and mandatory
-reread. None of these modules is connected to a CLI or workflow, and the local
-CAS is not a GitHub/remote publisher.
+reread. The disconnected `history_publication_github` module is the remote
+exact-CAS publisher seam: it fixes the GitHub repository and `main` identities,
+uploads exact Git objects, attempts one
+GraphQL `updateRefs` compare-and-swap, rereads the remote ref, and requires a
+fresh anonymous full fetch through the production reader before success. None
+of these modules is connected to a CLI or workflow. The local CAS is not a
+remote publisher, and the GitHub publisher is not an execution release.
 
 Bootstrap and every public live entry point therefore remain quarantined after
-their gates until the reviewed collector is orchestrated with a remote
-exact-CAS publisher, the remote revision has reloaded successfully, and the
-execution worktree is based on that published authority head. Live refresh
-raises after both gates because that end-to-end remote path is not wired. The
-workflow/config release remains a separate reviewed change. See
+their gates until protected-main policy and a disposable-repository OID/CAS
+canary prove the GitHub adapter, the collector/preparer/publisher are
+orchestrated, the remote revision has reloaded successfully, and the execution
+worktree is based on that published authority head. Live refresh raises after
+both gates because that end-to-end remote path is not wired. The workflow/config
+release remains a separate reviewed change. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 
