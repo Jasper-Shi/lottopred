@@ -1,7 +1,7 @@
 # Codex Handoff
 
-Last verified on 2026-08-23 against operational `main` base
-`6ae59b636dfd2757dad6793eebd2b419ec69ef71` and corrected-epoch artifact
+Last verified on 2026-08-24 against operational `main` base
+`c8c98c5d826daac0e0d87cd653c19f1610388abc` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -39,10 +39,14 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > are orchestrated, an authority reload succeeds, and the execution worktree is
 > handed to that authority head. The dual-source collector, offline preparer,
 > local bare-repository CAS, fixed-repository GitHub publisher, and isolated
-> execution/artifact handoff now exist as disconnected review seams. The remote
-> path still needs protected-main setup, a disposable-repository OID/CAS canary,
-> orchestration, and an exact remote `P -> A` artifact CAS with a fresh reload.
-> It does not authorize execution. Re-enable only through the reviewed
+> execution/artifact handoff now exist as disconnected review seams. A
+> capability-scoped exact remote `P -> A` publisher is implemented as a review
+> candidate on its isolated branch; it remains disconnected from CLI, live, and
+> workflows. Production `main` is currently unprotected, no disposable or real
+> `P -> A` canary has established remote safety, and orchestration/code
+> provenance remains unwired. The complete verified facts and blocker list are
+> in `OPERATIONS.md`. This candidate does not authorize execution. Re-enable
+> only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -75,10 +79,10 @@ lotto649 backtest
 lotto649 live
 ```
 
-After the implemented source collector and disconnected GitHub publisher pass
-the remote canary and are connected to the isolated post-publication authority
-handoff and reviewed artifact publisher, `bootstrap` may append and validate
-independently sourced draws.
+Only after the source/history publisher and capability-scoped artifact publisher
+pass their reviews and prescribed remote canaries, protected `main` is verified,
+and reviewed orchestration preserves P-code provenance may `bootstrap` append
+and validate independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create
 predictions for the next Wednesday or Saturday only inside the isolated
@@ -199,8 +203,9 @@ future refactoring, but they are no longer a valid operational-history write
 path. Live refresh now refuses execution after both gates until a reviewed
 remote canary proves the GitHub publisher, orchestration connects it to the
 collector/offline preparation seam, execution is handed to the reloaded
-authority head, and the resulting exact artifact commit is remotely
-compare-and-swapped and reloaded.
+authority head with P-code provenance, and the capability-scoped publisher
+proves the resulting artifact through exact remote CAS, reread, and fresh
+anonymous reload.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -246,10 +251,12 @@ Do not broaden the fallback to swallow those integrity failures.
    genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. The
    bounded dual-source collector, offline `B -> E -> S -> P` preparer, local bare
    CAS, fixed-repository GitHub publisher, and execution/artifact handoff are
-   disconnected review tools, not an execution release. Run and independently
-   review the disposable GitHub OID/CAS canary, configure protected `main`, then
-   implement orchestration and exact remote artifact publication/reload. Only
-   then re-enable through the
+   disconnected review tools, not an execution release. The capability-scoped
+   exact remote artifact publisher candidate is also disconnected and remains
+   under review. Complete the code/test review, disposable OID/CAS canary,
+   protected-main setup, P-code-provenance orchestration, real `P -> A`
+   canary/reload, and SHA-bound workflow release review listed in
+   `OPERATIONS.md`. Only then re-enable through the
    reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
    matching workflow plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,

@@ -96,8 +96,35 @@ requires a fresh anonymous full fetch through the production reader. It refuses
 an unprotected or non-SHA-1 authority. The handoff independently fetches exact
 authority `P`, reloads it from detached literal `HEAD`, and can freeze only the
 exact new prediction/evaluation files into an unattached single-parent artifact
-commit `A`. None of these seams is connected to a CLI or workflow, and no remote
-`P -> A` artifact publisher exists yet.
+commit `A`. A capability-scoped exact remote `P -> A` publisher candidate is
+under review on its isolated branch. It accepts only the freeze-issued artifact
+while the same P context remains open, fixes `Jasper-Shi/lottopred` `main`,
+uploads and verifies A's required object OIDs, attempts one GraphQL
+`updateRefs` CAS with `force=false`, rereads every acknowledgement outcome, and
+requires a fresh anonymous full fetch plus `load_published_history(A)`. None of
+these seams is connected to a CLI, live entry point, or workflow.
+
+### Remote publication release state
+
+Read-only inspection on 2026-08-24 established these production facts:
+
+- `Jasper-Shi/lottopred` `main` is not protected and the repository has no
+  rulesets (`[]`).
+- GitHub Actions default workflow permissions are read-only.
+- GitHub's GraphQL schema exposes `updateRefs` and the exact `beforeOid` input
+  needed for compare-and-swap.
+
+The schema fact proves interface availability only; no production mutation or
+remote-safety canary has succeeded. The remaining release blockers are:
+
+1. independently reviewed artifact-publisher code and tests;
+2. an authorized disposable-remote exact object-OID/updateRefs canary;
+3. configured and independently verified production protected `main`;
+4. collector/preparer/publisher/handoff orchestration with reviewed P-code
+   provenance;
+5. a real exact `P -> A` canary followed by reread and fresh anonymous reload;
+6. a separate review of the new config bytes and SHA-bound workflow execution
+   plan.
 
 The future live order is fixed: collect both sources, prepare and remotely
 publish P, freshly reload P, keep the isolated detached-P context open while
@@ -108,11 +135,9 @@ ordinary push.
 
 Public bootstrap, live refresh, evaluation, and prediction entry points
 therefore still refuse execution after their gates. Before reconsidering those
-gates, configure and verify protected `main`, run the required disposable GitHub
-OID/CAS canary, orchestrate collector/preparer/publisher/handoff, and implement
-an exact remote `P -> A` artifact CAS plus fresh authority reload.
-This does not complete the remote operational path or reviewed release; all
-switches remain false. The
+gates, complete every blocker in the remote publication release state above.
+The disconnected publisher candidate does not complete the remote operational
+path or reviewed release; all switches remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
@@ -225,7 +250,10 @@ The evaluation/prediction state remains valid. SMTP is not part of model state.
 
 ### Git push conflict
 
-Re-run from current `main`. Existing prediction snapshots are immutable and are not regenerated/overwritten.
+The reviewed exact-CAS paths stop on a stale base, third head, unreadable reread,
+or indeterminate acknowledgement. They do not retry, merge, force, or fall back
+to an ordinary push. Existing prediction snapshots remain immutable and are
+never regenerated or overwritten.
 
 ## Scheduled time
 

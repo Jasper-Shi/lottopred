@@ -16,6 +16,7 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from itertools import islice
 from pathlib import Path
+from threading import Lock
 from zoneinfo import ZoneInfo
 
 from .config import load_config as _load_project_config
@@ -79,7 +80,7 @@ class HistoryExecutionHandoffError(RuntimeError):
     """Raised when an exact detached publication checkout cannot be proven."""
 
 
-@dataclass(frozen=True)
+@dataclass
 class _WorkspaceBinding:
     """Private binding between one handoff checkout and its publication."""
 
@@ -91,9 +92,12 @@ class _WorkspaceBinding:
     objects_device: int
     objects_inode: int
     publication_commit: str
+    closing: bool = False
+    lifecycle_lock: Lock = field(default_factory=Lock, repr=False, compare=False)
 
 
 _WORKSPACE_CAPABILITIES: dict[object, _WorkspaceBinding] = {}
+_CAPABILITY_REGISTRY_LOCK = Lock()
 
 
 @dataclass(frozen=True, init=False)
@@ -113,10 +117,11 @@ class ExecutionWorkspace:
         history: PublishedHistory,
         _capability: object,
     ) -> None:
-        if (
-            type(_capability) is not object
-            or _capability not in _WORKSPACE_CAPABILITIES
-        ):
+        with _CAPABILITY_REGISTRY_LOCK:
+            active_capability = (
+                type(_capability) is object and _capability in _WORKSPACE_CAPABILITIES
+            )
+        if not active_capability:
             raise HistoryExecutionHandoffError(
                 "execution workspace requires the handoff capability"
             )
@@ -157,7 +162,7 @@ class FrozenExecutionFile:
     git_blob: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class FrozenExecutionArtifacts:
     """Unattached exact artifact commit whose sole parent is publication P."""
 
@@ -168,6 +173,43 @@ class FrozenExecutionArtifacts:
     paths: tuple[str, ...]
     files: tuple[FrozenExecutionFile, ...]
     created_at: datetime
+    _capability: object = field(init=False, repr=False, compare=False)
+
+    def __init__(
+        self,
+        *,
+        repository: Path,
+        parent_commit: str,
+        tree_oid: str,
+        artifact_commit: str,
+        paths: tuple[str, ...],
+        files: tuple[FrozenExecutionFile, ...],
+        created_at: datetime,
+    ) -> None:
+        raise HistoryExecutionHandoffError(
+            "frozen execution artifacts require the freeze capability"
+        )
+
+
+@dataclass
+class _FrozenArtifactBinding:
+    """Private active-context authority for one exact frozen artifact."""
+
+    artifacts: FrozenExecutionArtifacts
+    workspace_capability: object
+    history: PublishedHistory
+    repository: Path
+    parent_commit: str
+    tree_oid: str
+    artifact_commit: str
+    paths: tuple[str, ...]
+    files: tuple[FrozenExecutionFile, ...]
+    created_at: datetime
+    cas_attempted: bool = False
+    publication_lock: Lock = field(default_factory=Lock, repr=False, compare=False)
+
+
+_FROZEN_ARTIFACT_CAPABILITIES: dict[object, _FrozenArtifactBinding] = {}
 
 
 @dataclass(frozen=True)
@@ -504,13 +546,16 @@ def _require_clean_detached_workspace(
         )
 
 
-def _require_workspace_capability(workspace: ExecutionWorkspace) -> None:
+def _require_workspace_capability(
+    workspace: ExecutionWorkspace,
+) -> _WorkspaceBinding:
     if type(workspace) is not ExecutionWorkspace:
         raise HistoryExecutionHandoffError(
             "execution workspace does not carry the handoff capability"
         )
     try:
-        binding = _WORKSPACE_CAPABILITIES.get(workspace._capability)
+        with _CAPABILITY_REGISTRY_LOCK:
+            binding = _WORKSPACE_CAPABILITIES.get(workspace._capability)
     except TypeError as exc:
         raise HistoryExecutionHandoffError(
             "execution workspace does not carry the handoff capability"
@@ -541,6 +586,7 @@ def _require_workspace_capability(workspace: ExecutionWorkspace) -> None:
         raise HistoryExecutionHandoffError(
             "execution workspace does not carry the handoff capability"
         )
+    return binding
 
 
 def _require_final_workspace_controls(workspace: ExecutionWorkspace) -> None:
@@ -548,6 +594,165 @@ def _require_final_workspace_controls(workspace: ExecutionWorkspace) -> None:
 
     _require_regular_tree(workspace.root / ".git")
     _require_workspace_capability(workspace)
+
+
+def _require_frozen_execution_artifacts(
+    artifacts: FrozenExecutionArtifacts,
+) -> _FrozenArtifactBinding:
+    """Return the active handoff binding for one exact freeze-issued object."""
+
+    if type(artifacts) is not FrozenExecutionArtifacts:
+        raise HistoryExecutionHandoffError(
+            "frozen execution artifacts do not carry the freeze capability"
+        )
+    try:
+        with _CAPABILITY_REGISTRY_LOCK:
+            binding = _FROZEN_ARTIFACT_CAPABILITIES.get(artifacts._capability)
+    except (AttributeError, TypeError) as exc:
+        raise HistoryExecutionHandoffError(
+            "frozen execution artifacts do not carry the freeze capability"
+        ) from exc
+    if (
+        binding is None
+        or binding.artifacts is not artifacts
+        or artifacts.repository != binding.repository
+        or artifacts.parent_commit != binding.parent_commit
+        or artifacts.tree_oid != binding.tree_oid
+        or artifacts.artifact_commit != binding.artifact_commit
+        or artifacts.paths != binding.paths
+        or artifacts.files != binding.files
+        or artifacts.created_at != binding.created_at
+    ):
+        raise HistoryExecutionHandoffError(
+            "frozen execution artifacts do not carry the freeze capability"
+        )
+    workspace = ExecutionWorkspace(
+        root=artifacts.repository,
+        publication_commit=artifacts.parent_commit,
+        history=binding.history,
+        _capability=binding.workspace_capability,
+    )
+    _require_final_workspace_controls(workspace)
+    return binding
+
+
+@contextmanager
+def _lease_frozen_execution_artifacts(
+    artifacts: FrozenExecutionArtifacts,
+) -> Iterator[_FrozenArtifactBinding]:
+    """Hold one artifact's active context for exactly one publication call."""
+
+    binding = _require_frozen_execution_artifacts(artifacts)
+    with _CAPABILITY_REGISTRY_LOCK:
+        workspace_binding = _WORKSPACE_CAPABILITIES.get(binding.workspace_capability)
+    if workspace_binding is None:
+        raise HistoryExecutionHandoffError(
+            "frozen execution artifacts do not carry the freeze capability"
+        )
+    with workspace_binding.lifecycle_lock:
+        with _CAPABILITY_REGISTRY_LOCK:
+            active_workspace = _WORKSPACE_CAPABILITIES.get(binding.workspace_capability)
+        if workspace_binding.closing or active_workspace is not workspace_binding:
+            raise HistoryExecutionHandoffError(
+                "frozen execution artifact workspace is closing"
+            )
+        if not binding.publication_lock.acquire(blocking=False):
+            raise HistoryExecutionHandoffError(
+                "frozen execution artifacts already have an active publication"
+            )
+    try:
+        active = _require_frozen_execution_artifacts(artifacts)
+        if active is not binding:
+            raise HistoryExecutionHandoffError(
+                "frozen execution artifacts do not carry the freeze capability"
+            )
+        yield binding
+    finally:
+        binding.publication_lock.release()
+
+
+def _issue_frozen_execution_artifacts(
+    workspace: ExecutionWorkspace,
+    *,
+    repository: Path,
+    parent_commit: str,
+    tree_oid: str,
+    artifact_commit: str,
+    paths: tuple[str, ...],
+    files: tuple[FrozenExecutionFile, ...],
+    created_at: datetime,
+) -> FrozenExecutionArtifacts:
+    """Issue one context-scoped artifact value after freeze verification."""
+
+    workspace_binding = _require_workspace_capability(workspace)
+    with workspace_binding.lifecycle_lock:
+        active = _require_workspace_capability(workspace)
+        if active is not workspace_binding or workspace_binding.closing:
+            raise HistoryExecutionHandoffError(
+                "execution workspace is closing and cannot issue artifacts"
+            )
+        capability = object()
+        artifacts = object.__new__(FrozenExecutionArtifacts)
+        for name, value in (
+            ("repository", repository),
+            ("parent_commit", parent_commit),
+            ("tree_oid", tree_oid),
+            ("artifact_commit", artifact_commit),
+            ("paths", paths),
+            ("files", files),
+            ("created_at", created_at),
+            ("_capability", capability),
+        ):
+            object.__setattr__(artifacts, name, value)
+        with _CAPABILITY_REGISTRY_LOCK:
+            _FROZEN_ARTIFACT_CAPABILITIES[capability] = _FrozenArtifactBinding(
+                artifacts=artifacts,
+                workspace_capability=workspace._capability,
+                history=workspace.history,
+                repository=repository,
+                parent_commit=parent_commit,
+                tree_oid=tree_oid,
+                artifact_commit=artifact_commit,
+                paths=paths,
+                files=tuple(
+                    FrozenExecutionFile(
+                        path=file.path,
+                        bytes=file.bytes,
+                        sha256=file.sha256,
+                        git_blob=file.git_blob,
+                    )
+                    for file in files
+                ),
+                created_at=created_at,
+            )
+        return artifacts
+
+
+def _revoke_frozen_artifacts(workspace_capability: object) -> None:
+    with _CAPABILITY_REGISTRY_LOCK:
+        workspace_binding = _WORKSPACE_CAPABILITIES.get(workspace_capability)
+    if workspace_binding is None:
+        return
+    with workspace_binding.lifecycle_lock:
+        with _CAPABILITY_REGISTRY_LOCK:
+            active_workspace = _WORKSPACE_CAPABILITIES.get(workspace_capability)
+        if active_workspace is not workspace_binding:
+            return
+        workspace_binding.closing = True
+        with _CAPABILITY_REGISTRY_LOCK:
+            issued = tuple(
+                (capability, binding)
+                for capability, binding in _FROZEN_ARTIFACT_CAPABILITIES.items()
+                if binding.workspace_capability is workspace_capability
+            )
+    for capability, binding in issued:
+        binding.publication_lock.acquire()
+        try:
+            with _CAPABILITY_REGISTRY_LOCK:
+                if _FROZEN_ARTIFACT_CAPABILITIES.get(capability) is binding:
+                    _FROZEN_ARTIFACT_CAPABILITIES.pop(capability, None)
+        finally:
+            binding.publication_lock.release()
 
 
 def _workspace_binding(
@@ -1453,7 +1658,8 @@ def freeze_execution_outputs(
                 "execution output changed after it was frozen"
             )
     _require_final_workspace_controls(workspace)
-    return FrozenExecutionArtifacts(
+    return _issue_frozen_execution_artifacts(
+        workspace,
         repository=workspace.root,
         parent_commit=publication,
         tree_oid=tree,
@@ -1514,7 +1720,8 @@ def _open_execution_workspace(
         binding = _workspace_binding(repository, publication)
         capability = object()
         try:
-            _WORKSPACE_CAPABILITIES[capability] = binding
+            with _CAPABILITY_REGISTRY_LOCK:
+                _WORKSPACE_CAPABILITIES[capability] = binding
             yield ExecutionWorkspace(
                 root=binding.root,
                 publication_commit=publication,
@@ -1522,7 +1729,9 @@ def _open_execution_workspace(
                 _capability=capability,
             )
         finally:
-            _WORKSPACE_CAPABILITIES.pop(capability, None)
+            _revoke_frozen_artifacts(capability)
+            with _CAPABILITY_REGISTRY_LOCK:
+                _WORKSPACE_CAPABILITIES.pop(capability, None)
 
 
 @contextmanager
