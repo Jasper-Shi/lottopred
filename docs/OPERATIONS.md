@@ -80,11 +80,11 @@ only from immutable Git blobs. Worktree replacements and caller-provided pin
 overrides are not authority. The direct backtest boundary consumes this single
 read seam after its runtime gate.
 
-Official-source collection, offline preparation, local CAS, and the
-fixed-repository remote exact-CAS publisher are implemented as disconnected
-review/test seams. The network collector retrieves exact
-bounded WCLC and Loto-Québec HTML without writing Git or operational state. The
-preparation seam takes those two assets, creates an
+Official-source collection, offline preparation, local CAS, the fixed-repository
+remote exact-CAS publisher, and the isolated execution/artifact handoff are
+implemented as disconnected review/test seams. The network collector retrieves
+exact bounded WCLC and Loto-Québec HTML without writing Git or operational
+state. The preparation seam takes those two assets, creates an
 unattached `B -> E -> S -> P` candidate without changing worktree/index/refs,
 and validates `P` through the production reader. The local adapter can advance
 only a self-contained bare repository whose literal `HEAD` is `main`; it always
@@ -93,14 +93,24 @@ is observed and reloaded. The local adapter is not a GitHub/remote adapter. The
 GitHub adapter uploads only exact-OID objects, attempts one GraphQL
 `updateRefs` CAS, rereads `main` after every acknowledgement outcome, and
 requires a fresh anonymous full fetch through the production reader. It refuses
-an unprotected or non-SHA-1 authority. None of these seams is connected to a CLI
-or workflow.
+an unprotected or non-SHA-1 authority. The handoff independently fetches exact
+authority `P`, reloads it from detached literal `HEAD`, and can freeze only the
+exact new prediction/evaluation files into an unattached single-parent artifact
+commit `A`. None of these seams is connected to a CLI or workflow, and no remote
+`P -> A` artifact publisher exists yet.
+
+The future live order is fixed: collect both sources, prepare and remotely
+publish P, freshly reload P, keep the isolated detached-P context open while
+evaluating/notifying/predicting, freeze exact outputs in A with sole parent P,
+then remotely compare-and-swap and freshly reload A. Do not evaluate before P,
+resume in the caller's old checkout, broadly stage directories, or use an
+ordinary push.
 
 Public bootstrap, live refresh, evaluation, and prediction entry points
 therefore still refuse execution after their gates. Before reconsidering those
 gates, configure and verify protected `main`, run the required disposable GitHub
-OID/CAS canary, orchestrate collector/preparer/publisher, prove the remote
-revision reload, and hand the execution worktree to that exact authority head.
+OID/CAS canary, orchestrate collector/preparer/publisher/handoff, and implement
+an exact remote `P -> A` artifact CAS plus fresh authority reload.
 This does not complete the remote operational path or reviewed release; all
 switches remain false. The
 frozen schema and trust boundary are in

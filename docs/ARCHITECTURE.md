@@ -103,13 +103,30 @@ fresh anonymous full fetch through the production reader before success. None
 of these modules is connected to a CLI or workflow. The local CAS is not a
 remote publisher, and the GitHub publisher is not an execution release.
 
+The disconnected `history_execution_handoff` module consumes only a successful
+publication receipt. It makes a second anonymous fetch of authority `main` into
+a new temporary repository, requires exact `P`, a complete self-contained SHA-1
+object store, a plain-file tree, detached `HEAD=P`, and a literal-HEAD production
+reload equal to the receipt. The caller's original `B` checkout is never read or
+modified. Its configuration loader reads authenticated `P:config.yaml` and
+points later file I/O at the temporary `P` checkout. It can also freeze an exact
+sorted list of newly created
+`predictions/*.json` and `evaluations/*.json` files into an unattached commit
+`A` whose sole parent is `P`; it does not stage directories, change an index or
+ref, publish `A`, or connect to a workflow.
+
+The handoff does not change the current interpreter's import path. Future
+orchestration must execute reviewed P code inside this context, or independently
+prove the loaded code bytes equal P, before it may call the live helpers. A
+P-rooted configuration alone is not code provenance.
+
 Bootstrap and every public live entry point therefore remain quarantined after
 their gates until protected-main policy and a disposable-repository OID/CAS
-canary prove the GitHub adapter, the collector/preparer/publisher are
-orchestrated, the remote revision has reloaded successfully, and the execution
-worktree is based on that published authority head. Live refresh raises after
-both gates because that end-to-end remote path is not wired. The workflow/config
-release remains a separate reviewed change. See
+canary prove the GitHub adapter, the collector/preparer/publisher/handoff are
+orchestrated, and a separate exact remote `P -> A` artifact CAS plus fresh
+authority reload is implemented. Live refresh raises after both gates because
+that end-to-end remote path is not wired. The workflow/config release remains a
+separate reviewed change. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 
@@ -141,25 +158,34 @@ process that can rename arbitrary directory entries between syscalls.
 ## Path A — Live forward prediction
 
 ```text
-refresh sources
+collect WCLC + Loto-Québec assets
+     |
+     v
+prepare B -> E -> S -> P; exact-CAS P; fresh authority reload
+     |
+     v
+open isolated detached P execution workspace
      |
      v
 evaluate due committed snapshots ----> SMTP alert if threshold met
      |
      v
-update historical state
+run the complete P-configured live model cohort and create next-draw files
      |
      v
-run all frozen V1 models
+freeze exact files into A with sole parent P
      |
      v
-create immutable next-draw snapshots
-     |
-     v
-GitHub Actions commit
+exact-CAS P -> A; reread A; fresh authority reload
 ```
 
-The Git commit timestamp creates an external audit trail proving the prediction existed before the result was known.
+Only the remotely published and reloaded A commit creates the external audit
+trail proving the prediction existed before the result was known. The same
+temporary P context must remain open through A publication; returning only a
+history object and resuming execution in the caller's old checkout is forbidden.
+Evaluation also revalidates that its source prediction was added by the prior
+artifact base from a pre-draw, provenance-bound parent; a structurally valid
+post-draw prediction cannot be wrapped in a successful evaluation.
 
 During the data-integrity incident this entire path is dormant; the kill-switch
 boundary takes precedence over the normal unattended schedule.

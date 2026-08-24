@@ -58,6 +58,12 @@ affected documentation in the same change.
   GitHub publisher. It uploads exact content-addressed objects, attempts one
   `updateRefs` compare-and-swap, rereads `main`, and succeeds only after a fresh
   anonymous full fetch passes the production history reader.
+- `src/lotto649/history_execution_handoff.py` is the disconnected
+  post-publication execution boundary. It opens a fresh, temporary, detached
+  checkout at exact authority `P`, reloads literal `HEAD` through the production
+  reader, and can freeze only the complete P-configured live prediction cohort
+  plus chronology-proven evaluations into an unattached single-parent artifact
+  commit `A` without changing a ref.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -143,22 +149,28 @@ only through the verified operational-history seam. `lotto649 bootstrap` remains
 blocked until the reviewed collector is connected to a remote exact-CAS
 registry publisher, the remote authority reload succeeds, and the execution
 worktree is handed to the published authority head; it must never fall back to
-the legacy processed CSV. The collector, offline preparer, local bare CAS, and
-disconnected GitHub publisher are separately testable components. The GitHub
-publisher still requires protected-main configuration, a disposable-repository
-OID/CAS canary, workflow orchestration, and the post-publication worktree
-handoff; none of these components authorizes this execution path.
+the legacy processed CSV. The collector, offline preparer, local bare CAS,
+disconnected GitHub publisher, and isolated execution/artifact handoff are
+separately testable components. The remote path still requires protected-main
+configuration, a disposable-repository OID/CAS canary, workflow orchestration,
+and an exact remote `P -> A` artifact CAS plus authority reload; none of these
+components authorizes this execution path.
 
 Live forward cycle:
 
 ```text
-refresh verified sources
-  -> evaluate previously committed due snapshots
-  -> optionally send threshold email
-  -> write verified history/evaluations
-  -> generate next-draw V1 + V3-shadow snapshots
-  -> GitHub Actions commit the audit trail
+collect two verified source assets
+  -> prepare and exact-CAS history publication P
+  -> fresh authority reload and isolated detached P workspace
+  -> evaluate due snapshots / optionally alert / generate next predictions
+  -> freeze exact evaluation and prediction bytes in A with sole parent P
+  -> exact-CAS A and fresh authority reload
 ```
+
+The isolated P context must span evaluation, notification, prediction, artifact
+freezing, and the later remote A publication. Publishing history after
+evaluation, using the caller's old checkout, broad directory staging, or an
+ordinary Git push is not an acceptable live sequence.
 
 Do not overwrite or regenerate an existing prediction to change its numbers,
 timestamp, model role, or visible-history metadata. Fixes apply to a new version
