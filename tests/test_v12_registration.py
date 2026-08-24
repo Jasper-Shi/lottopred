@@ -34,6 +34,16 @@ CANARY_PLAN_PATH = (
 CANARY_SUCCESS_PATH = (
     "evidence/release_canaries/stage1-production-live-canary-success.json"
 )
+AUTHORIZATION_SUMMARY_PATHS = (
+    "docs/CODEX_HANDOFF.md",
+    "docs/MODEL_PROTOCOL.md",
+    "docs/RESEARCH_ROADMAP.md",
+)
+AUTHORIZATION_SUMMARY_SENTENCE = (
+    "Only normal merge `M_A` at protected remote `main`/HEAD executes; "
+    "`A_s` is non-authoritative."
+)
+GLOBAL_ATTEMPT_LEASE_REF = "refs/heads/v12-consumption-v12.0.0"
 
 REGISTERED_FILES = (
     BASIS_PATH,
@@ -272,6 +282,204 @@ PRODUCTION_CANARY_PREREQUISITE = {
     },
 }
 
+REPOSITORY_GLOBAL_ATTEMPT_LEASE = {
+    "absence_precondition": {
+        "accepted_observation": "exact_GitHub_404_for_literal_ref",
+        "always_fresh_reread": True,
+        "must_precede": [
+            "local_claim",
+            "governed_history_load",
+            "forecast",
+            "outcome_access",
+        ],
+        "ref": GLOBAL_ATTEMPT_LEASE_REF,
+        "ref_resolution": "literal_exact_ref_only",
+        "refuse_observations": [
+            "preexisting_ref",
+            "ref_target_other_than_exact_L",
+            "unreadable",
+            "ambiguous_absence",
+            "transport_or_auth_failure",
+        ],
+    },
+    "attempt_limit": 1,
+    "caller_bypass": "prohibited",
+    "grant": {
+        "post_create_fresh_reread": "required",
+        "required_observation": "literal_ref_targets_exact_L",
+        "sole_grant": "successful_single_createRef_and_exact_reread",
+    },
+    "immutable_ref": {
+        "delete": "prohibited",
+        "update": "prohibited",
+    },
+    "lease_commit_L": {
+        "commit_metadata": {
+            "author": {
+                "email": "lotto649-v12-lease@users.noreply.github.com",
+                "name": "LOTTO649 V12 Consumption Lease",
+            },
+            "committer": {
+                "email": "lotto649-v12-lease@users.noreply.github.com",
+                "name": "LOTTO649 V12 Consumption Lease",
+            },
+            "headers": {
+                "allowed_exact_order": ["tree", "parent", "author", "committer"],
+                "extra": "prohibited",
+                "signature": "prohibited",
+            },
+            "message": {
+                "additional_bytes": "prohibited",
+                "raw_bytes": "canonical_body_exactly",
+                "trailing_LF_count": 1,
+            },
+            "object_format": "sha1",
+            "timestamp": {
+                "author_equals_committer": True,
+                "precision": "whole_seconds",
+                "source": "exact_M_A_committer_timestamp",
+                "timezone": "+0000",
+            },
+        },
+        "canonical_body": {
+            "encoding": "canonical_JSON_UTF-8_with_trailing_LF",
+            "exact_keys": [
+                "authorization_seal_sha256",
+                "canonical_command",
+                "execution_authority_M_A",
+                "nonce_hex",
+                "schema_version",
+            ],
+            "schema_version": "lotto649-v12-consumption-lease-v1",
+        },
+        "nonce": {
+            "encoding": "lowercase_hex_64_characters",
+            "freshness": "new_for_the_single_attempt_never_reused",
+            "source": "cryptographic_OS_random_32_bytes",
+        },
+        "sole_parent": "M_A",
+        "tree": "identical_to_M_A",
+    },
+    "local_artifact_bindings": {
+        "historical_claim": ["lease_ref", "lease_commit_L", "nonce_hex"],
+        "ledger_events": ["lease_ref", "lease_commit_L", "nonce_hex"],
+    },
+    "publication": {
+        "automatic_retry": False,
+        "commit_upload": "GitHub_git_commits_create_exact_L_before_createRef",
+        "create_commit_returned_sha": "must_equal_locally_computed_L",
+        "createRef_attempts": 1,
+        "GET_L_before_createRef": "required_exact_commit_object_verification",
+        "mismatch_action": (
+            "stop_before_createRef_local_claim_history_load_forecast_outcome_access"
+        ),
+        "operation": "GitHub_git_refs_createRef",
+        "ref": GLOBAL_ATTEMPT_LEASE_REF,
+        "required_target": "exact_L",
+    },
+    "ref": GLOBAL_ATTEMPT_LEASE_REF,
+    "repository": "Jasper-Shi/lottopred",
+    "scope": "repository_global_not_local_O_EXCL",
+}
+
+CANARY_INTEGRATION_EVIDENCE_CONTRACT = {
+    "independent_review_comments": {
+        "independence": "reviewer_not_C_author_or_canary_workflow_actor",
+        "per_axis_record": {
+            "axis": "exact_required_axis",
+            "body_sha256": "lowercase_64_hex",
+            "comment_id": "positive_integer_immutable",
+            "reviewed_head": "equals_pull_request_head_sha",
+            "verdict": "pass",
+        },
+        "required_axes": ["Standards", "Spec"],
+    },
+    "pull_request": {
+        "base_ref": "main",
+        "base_sha": "canonical_lowercase_40_hex",
+        "head_sha": "canonical_lowercase_40_hex",
+        "merge_sha": "equals_C",
+        "number": "positive_integer",
+        "state": "merged",
+    },
+    "required_check": {
+        "app": "github-actions",
+        "conclusion": "success",
+        "head": "equals_pull_request_head_sha",
+        "name": "test",
+        "run_id": "positive_integer",
+    },
+    "self_attestation": "prohibited",
+}
+
+K_ALLOWED_STATIC_PATHS = [
+    "data/processed/epochs/DI-2026-08-20-registered-history/live_draws.jsonl",
+    "evaluations/2026-08-26__ema_gap__v1.0.0.json",
+    "evaluations/2026-08-26__ensemble__v1.0.0.json",
+    "evaluations/2026-08-26__logistic__v1.0.0.json",
+    "evaluations/2026-08-26__long_frequency__v1.0.0.json",
+    "evaluations/2026-08-26__random__v1.0.0.json",
+    "evaluations/2026-08-26__recent_frequency__v1.0.0.json",
+    "evaluations/2026-08-26__v3_boosting__v1.0.0.json",
+    "evidence/operational_history/DI-2026-08-20-registered-history/pin-registry.jsonl",
+    CANARY_SUCCESS_PATH,
+    "predictions/2026-08-29__ema_gap__v1.0.0.json",
+    "predictions/2026-08-29__ensemble__v1.0.0.json",
+    "predictions/2026-08-29__logistic__v1.0.0.json",
+    "predictions/2026-08-29__long_frequency__v1.0.0.json",
+    "predictions/2026-08-29__random__v1.0.0.json",
+    "predictions/2026-08-29__recent_frequency__v1.0.0.json",
+    "predictions/2026-08-29__v3_boosting__v1.0.0.json",
+]
+
+AUTHORIZATION_BASE_K_INTEGRITY = {
+    "allowed_changes_from_M_I": {
+        "content_addressed_source_additions": [
+            "evidence/live_sources/loto_quebec/2026-08-26-{sha256}.html",
+            "evidence/live_sources/wclc/2026-08-26-{sha256}.html",
+        ],
+        "exact_static_paths": K_ALLOWED_STATIC_PATHS,
+        "path_set_bound_by_C_evidence": True,
+        "scope": "exact_Stage1_canary_publication_artifacts_and_C_only",
+    },
+    "base": "reviewed_implementation_merge_M_I",
+    "preserve_all_other_tree_entries": True,
+    "prohibited_drift": ["src", "config", "workflows", "documentation_semantics"],
+}
+
+RUNTIME_DEPENDENCY_CLOSURE = {
+    "algorithm": {
+        "dynamic_or_unresolved_local_import": "prohibited",
+        "include_all_transitive_local_imports": True,
+        "local_namespace": "lotto649",
+        "record": "repository_relative_path_and_git_blob",
+        "sort": "path_ascending",
+    },
+    "binding": {
+        "actual_blob_list": "bound_in_I_review_and_authorization_JSON",
+        "checkpoints": ["I", "K", "A_s", "M_A"],
+        "required_equality": "exact_same_path_and_git_blob_manifest",
+        "schema": "lotto649-v12-runtime-dependency-closure-v1",
+    },
+    "seed_paths": [
+        "config.yaml",
+        CONFIG_PATH,
+        REGISTRATION_PATH,
+        RUNTIME_LOCK_PATH,
+        "src/lotto649/config.py",
+        "src/lotto649/domain.py",
+        "src/lotto649/features.py",
+        "src/lotto649/models/factory.py",
+        "src/lotto649/models/v12_parity_transition.py",
+        "src/lotto649/notification.py",
+        "src/lotto649/operational_history.py",
+        "src/lotto649/research_features.py",
+        "src/lotto649/v12_evidence.py",
+        "src/lotto649/v12_registered_attempt.py",
+        "tools/run_v12_historical.py",
+    ],
+}
+
 
 def _canonical_json(value: Any) -> bytes:
     return json.dumps(
@@ -474,10 +682,18 @@ def test_v12_A_requires_completed_stage1_production_canary_evidence() -> None:
     registration = _registration()
     config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
 
-    assert (
-        registration["production_canary_prerequisite"] == PRODUCTION_CANARY_PREREQUISITE
-    )
-    assert config["production_canary_prerequisite"] == PRODUCTION_CANARY_PREREQUISITE
+    prerequisite = registration["production_canary_prerequisite"]
+    assert prerequisite == config["production_canary_prerequisite"]
+    for key, expected in PRODUCTION_CANARY_PREREQUISITE.items():
+        if key != "required_bindings":
+            assert prerequisite[key] == expected
+    for key, expected in PRODUCTION_CANARY_PREREQUISITE["required_bindings"].items():
+        observed = prerequisite["required_bindings"][key]
+        if key == "reviewed_main_sha":
+            for nested_key, nested_expected in expected.items():
+                assert observed[nested_key] == nested_expected
+        else:
+            assert observed == expected
     _assert_absent_at_registration(CANARY_SUCCESS_PATH)
 
     plan_identity = PRODUCTION_CANARY_PREREQUISITE["required_bindings"]["plan"]
@@ -493,6 +709,83 @@ def test_v12_A_requires_completed_stage1_production_canary_evidence() -> None:
     assert plan["stage2"]["condition"] == (
         "stage_1_canary_success_and_independent_review"
     )
+
+
+def test_v12_authorization_summaries_defer_execution_to_M_A() -> None:
+    registration = _registration()
+    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+    expected = {
+        "invariant": (
+            "only_normal_merge_M_A_at_protected_remote_main_HEAD_executes_"
+            "A_s_non_authoritative"
+        ),
+        "paths": list(AUTHORIZATION_SUMMARY_PATHS),
+        "required_sentence": AUTHORIZATION_SUMMARY_SENTENCE,
+    }
+
+    assert registration["authorization_summary_contract"] == expected
+    assert config["authorization_summary_contract"] == expected
+    for relative_path in AUTHORIZATION_SUMMARY_PATHS:
+        summary = (ROOT / relative_path).read_text(encoding="utf-8")
+        assert AUTHORIZATION_SUMMARY_SENTENCE in summary, relative_path
+        assert "canary-success evidence `C`" in summary, relative_path
+        assert "No successful canary evidence exists" in summary, relative_path
+        assert "No V12 forecast or score exists" in summary, relative_path
+
+
+def test_v12_attempt_limit_is_enforced_by_one_repository_global_lease() -> None:
+    registration = _registration()
+    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+
+    assert registration["historical_scope"]["historical_attempt_limit"] == 1
+    assert config["historical_scope"]["historical_attempt_limit"] == 1
+    assert registration["repository_global_attempt_lease"] == (
+        REPOSITORY_GLOBAL_ATTEMPT_LEASE
+    )
+    assert config["repository_global_attempt_lease"] == (
+        REPOSITORY_GLOBAL_ATTEMPT_LEASE
+    )
+    for relative_path in (BASIS_PATH, EXPERIMENT_PATH):
+        specification = (ROOT / relative_path).read_text(encoding="utf-8")
+        assert GLOBAL_ATTEMPT_LEASE_REF in specification, relative_path
+        assert "exactly one atomic GitHub `createRef`" in specification, relative_path
+        assert "Never delete or update the lease ref" in specification, relative_path
+        assert (
+            "GitHub create-commit returned SHA must equal locally computed L"
+            in specification
+        ), relative_path
+
+
+def test_v12_canary_and_runtime_authority_cannot_self_attest_or_drift() -> None:
+    registration = _registration()
+    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+    prerequisite = registration["production_canary_prerequisite"]
+
+    assert prerequisite == config["production_canary_prerequisite"]
+    assert prerequisite["required_bindings"]["canary_success_integration_C"] == (
+        CANARY_INTEGRATION_EVIDENCE_CONTRACT
+    )
+    assert prerequisite["required_bindings"]["reviewed_main_sha"] == {
+        "binding": "expected_sha_equals_workflow_head_sha_equals_checkout_head",
+        "branch": "main",
+        "format": "lowercase_40_hex_sha1",
+        "independent_review_evidence": {
+            "body_sha256": "lowercase_64_hex",
+            "comment_id": "positive_integer_immutable",
+            "reviewed_sha": "equals_expected_sha",
+            "reviewer": "independent_not_workflow_actor_or_commit_author",
+            "verdict": "pass",
+        },
+        "not_satisfied_by": "old_live_run_or_workflow_file_hash",
+        "repository": "Jasper-Shi/lottopred",
+        "source": "post_merge_independent_review",
+    }
+    assert registration["authorization_base_K_integrity"] == (
+        AUTHORIZATION_BASE_K_INTEGRITY
+    )
+    assert config["authorization_base_K_integrity"] == (AUTHORIZATION_BASE_K_INTEGRITY)
+    assert registration["runtime_dependency_closure"] == RUNTIME_DEPENDENCY_CLOSURE
+    assert config["runtime_dependency_closure"] == RUNTIME_DEPENDENCY_CLOSURE
 
 
 def test_v12_authority_is_current_main_published_history_without_2026_scoring() -> None:

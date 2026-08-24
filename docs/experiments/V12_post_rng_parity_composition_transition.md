@@ -132,6 +132,27 @@ the evidence exists and validates, authorization minting, acceptance, and V12
 historical execution are prohibited; this registration does not claim that the
 canary has run.
 
+`C` cannot self-attest. The success evidence and authorization JSON must bind
+the canary-evidence integration PR number, head SHA, base SHA, and merge SHA C;
+the exact `test` check from `github-actions` with run ID, reviewed head, and
+`success` conclusion; and immutable independent Standards and Spec PR comments,
+each binding its axis, reviewed head, `pass` verdict, comment ID, and body
+SHA-256. The reviewed production-main dispatch SHA needs its own immutable
+independent review binding. An old live run or workflow-file hash cannot satisfy
+either review.
+
+Let `M_I` be the reviewed implementation merge. The diff from M_I to K is an
+exact allowlist: the Stage-1 content-addressed source receipts, operational
+suffix/registry publication, seven fixed 2026-08-26 evaluations, seven fixed
+2026-08-29 predictions, and the registered canary-success evidence path. Every
+other tree entry is identical; `src`, config, workflows, and documentation
+semantics cannot drift. I review and the authorization JSON bind a sorted
+transitive local-import manifest of repository path/Git-blob pairs rooted at
+the V12 runtime, operational-history loader, V1 factory/models,
+features/research-features, domain, config, and notification code. That exact
+closure must be identical at I, K, A_s, and M_A; unresolved or dynamic local
+imports refuse authorization.
+
 The paths that must be absent at R are:
 
 ```text
@@ -163,6 +184,29 @@ override them. The command is manual only. No workflow, scheduler, import side
 effect, retry wrapper,
 CLI subcommand, factory registration, live configuration, or network refresh
 may invoke it.
+
+The `historical_attempt_limit: 1` is repository-global, not merely a local
+`O_EXCL` claim. Before any local claim, governed-history load, forecast, or
+outcome access, always freshly read literal ref
+`refs/heads/v12-consumption-v12.0.0` in `Jasper-Shi/lottopred`. Only an exact
+GitHub 404 counts as absent; a pre-existing/other target, unreadable state,
+ambiguous absence, or transport/auth failure refuses execution. From M_A's
+identical tree, upload canonical lease commit L with sole parent M_A. Its
+canonical JSON body binds M_A, authorization-seal SHA-256, the canonical
+command, and a fresh cryptographic 256-bit nonce. L's author and committer both
+use exact name `LOTTO649 V12 Consumption Lease` and exact email
+`lotto649-v12-lease@users.noreply.github.com` at M_A's exact committer instant,
+normalized to whole-second UTC `+0000`. Its only headers, in order, are tree,
+parent, author, and committer; extra headers and signatures are prohibited. The
+raw commit message is exactly the canonical JSON body plus one trailing LF.
+Compute L's SHA-1 locally, upload the exact commit, and GET exact L before any
+ref creation. GitHub create-commit returned SHA must equal locally computed L.
+The GET object must reproduce the exact OID, tree, sole parent, identities,
+timestamp, headers, and raw message; any mismatch stops before `createRef`,
+local claim, history load, forecast, or outcome access.
+Then make exactly one atomic GitHub `createRef` for the literal ref and never retry automatically; freshly reread afterward. Only the exact ref targeting exact L grants the attempt.
+Never delete or update the lease ref. The local claim and every ledger event
+bind the ref, L, and nonce.
 
 ## Sole hypothesis and exact state
 

@@ -134,9 +134,17 @@ implementation/test paths and
 `evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json`
 do not exist at R. A later **I** may implement only the frozen interface and
 synthetic/oracle tests, but must fail before history load or artifact creation.
-Only a separate reviewed authorization-seal commit **A**, with `R < I < A`, may
-mint the one-shot capability. No V12 forecast, score, result artifact,
-notification, shadow activation, or production behavior exists now.
+Both the reviewed implementation merge `I` and successful canary-success evidence `C`
+must be strict ancestors of exact protected-main authorization
+base `K`; I and C may occur in either order. Non-authoritative authorization
+source `A_s` is K's auth-JSON-only child. The normal merge `M_A` has parents
+K,A_s and a tree identical to A_s.
+Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
+The single repository-global
+consumption lease at `refs/heads/v12-consumption-v12.0.0` must be acquired
+before any local claim or history access. No successful canary evidence exists.
+No V12 forecast or score exists. No result artifact, notification, shadow
+activation, or production behavior exists now.
 
 ## How the implemented system runs
 

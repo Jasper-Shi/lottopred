@@ -5,6 +5,47 @@ experiment:
   seed: 649
   status: registered_not_implemented_not_authorized_not_scored
 
+authorization_summary_contract:
+  invariant: only_normal_merge_M_A_at_protected_remote_main_HEAD_executes_A_s_non_authoritative
+  paths:
+    - docs/CODEX_HANDOFF.md
+    - docs/MODEL_PROTOCOL.md
+    - docs/RESEARCH_ROADMAP.md
+  required_sentence: Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
+
+authorization_base_K_integrity:
+  allowed_changes_from_M_I:
+    content_addressed_source_additions:
+      - evidence/live_sources/loto_quebec/2026-08-26-{sha256}.html
+      - evidence/live_sources/wclc/2026-08-26-{sha256}.html
+    exact_static_paths:
+      - data/processed/epochs/DI-2026-08-20-registered-history/live_draws.jsonl
+      - evaluations/2026-08-26__ema_gap__v1.0.0.json
+      - evaluations/2026-08-26__ensemble__v1.0.0.json
+      - evaluations/2026-08-26__logistic__v1.0.0.json
+      - evaluations/2026-08-26__long_frequency__v1.0.0.json
+      - evaluations/2026-08-26__random__v1.0.0.json
+      - evaluations/2026-08-26__recent_frequency__v1.0.0.json
+      - evaluations/2026-08-26__v3_boosting__v1.0.0.json
+      - evidence/operational_history/DI-2026-08-20-registered-history/pin-registry.jsonl
+      - evidence/release_canaries/stage1-production-live-canary-success.json
+      - predictions/2026-08-29__ema_gap__v1.0.0.json
+      - predictions/2026-08-29__ensemble__v1.0.0.json
+      - predictions/2026-08-29__logistic__v1.0.0.json
+      - predictions/2026-08-29__long_frequency__v1.0.0.json
+      - predictions/2026-08-29__random__v1.0.0.json
+      - predictions/2026-08-29__recent_frequency__v1.0.0.json
+      - predictions/2026-08-29__v3_boosting__v1.0.0.json
+    path_set_bound_by_C_evidence: true
+    scope: exact_Stage1_canary_publication_artifacts_and_C_only
+  base: reviewed_implementation_merge_M_I
+  preserve_all_other_tree_entries: true
+  prohibited_drift:
+    - src
+    - config
+    - workflows
+    - documentation_semantics
+
 data:
   base_draw_count: 4442
   base_history_through: '2026-08-15'
@@ -127,6 +168,32 @@ production_canary_prerequisite:
   evidence_schema: lotto649.production-live-canary-success.v1
   registration_observation: absent_not_run
   required_bindings:
+    canary_success_integration_C:
+      independent_review_comments:
+        independence: reviewer_not_C_author_or_canary_workflow_actor
+        per_axis_record:
+          axis: exact_required_axis
+          body_sha256: lowercase_64_hex
+          comment_id: positive_integer_immutable
+          reviewed_head: equals_pull_request_head_sha
+          verdict: pass
+        required_axes:
+          - Standards
+          - Spec
+      pull_request:
+        base_ref: main
+        base_sha: canonical_lowercase_40_hex
+        head_sha: canonical_lowercase_40_hex
+        merge_sha: equals_C
+        number: positive_integer
+        state: merged
+      required_check:
+        app: github-actions
+        conclusion: success
+        head: equals_pull_request_head_sha
+        name: test
+        run_id: positive_integer
+      self_attestation: prohibited
     plan:
       authority_commit: 4a617f2c1575a165b42878600753a01ddf2ced03
       bytes: 7084
@@ -151,6 +218,13 @@ production_canary_prerequisite:
       binding: expected_sha_equals_workflow_head_sha_equals_checkout_head
       branch: main
       format: lowercase_40_hex_sha1
+      independent_review_evidence:
+        body_sha256: lowercase_64_hex
+        comment_id: positive_integer_immutable
+        reviewed_sha: equals_expected_sha
+        reviewer: independent_not_workflow_actor_or_commit_author
+        verdict: pass
+      not_satisfied_by: old_live_run_or_workflow_file_hash
       repository: Jasper-Shi/lottopred
       source: post_merge_independent_review
     workflow_run:
@@ -159,6 +233,129 @@ production_canary_prerequisite:
       path: .github/workflows/live.yml
       repository: Jasper-Shi/lottopred
       run_id: positive_integer
+
+repository_global_attempt_lease:
+  absence_precondition:
+    accepted_observation: exact_GitHub_404_for_literal_ref
+    always_fresh_reread: true
+    must_precede:
+      - local_claim
+      - governed_history_load
+      - forecast
+      - outcome_access
+    ref: refs/heads/v12-consumption-v12.0.0
+    ref_resolution: literal_exact_ref_only
+    refuse_observations:
+      - preexisting_ref
+      - ref_target_other_than_exact_L
+      - unreadable
+      - ambiguous_absence
+      - transport_or_auth_failure
+  attempt_limit: 1
+  caller_bypass: prohibited
+  grant:
+    post_create_fresh_reread: required
+    required_observation: literal_ref_targets_exact_L
+    sole_grant: successful_single_createRef_and_exact_reread
+  immutable_ref:
+    delete: prohibited
+    update: prohibited
+  lease_commit_L:
+    commit_metadata:
+      author:
+        email: lotto649-v12-lease@users.noreply.github.com
+        name: LOTTO649 V12 Consumption Lease
+      committer:
+        email: lotto649-v12-lease@users.noreply.github.com
+        name: LOTTO649 V12 Consumption Lease
+      headers:
+        allowed_exact_order:
+          - tree
+          - parent
+          - author
+          - committer
+        extra: prohibited
+        signature: prohibited
+      message:
+        additional_bytes: prohibited
+        raw_bytes: canonical_body_exactly
+        trailing_LF_count: 1
+      object_format: sha1
+      timestamp:
+        author_equals_committer: true
+        precision: whole_seconds
+        source: exact_M_A_committer_timestamp
+        timezone: '+0000'
+    canonical_body:
+      encoding: canonical_JSON_UTF-8_with_trailing_LF
+      exact_keys:
+        - authorization_seal_sha256
+        - canonical_command
+        - execution_authority_M_A
+        - nonce_hex
+        - schema_version
+      schema_version: lotto649-v12-consumption-lease-v1
+    nonce:
+      encoding: lowercase_hex_64_characters
+      freshness: new_for_the_single_attempt_never_reused
+      source: cryptographic_OS_random_32_bytes
+    sole_parent: M_A
+    tree: identical_to_M_A
+  local_artifact_bindings:
+    historical_claim:
+      - lease_ref
+      - lease_commit_L
+      - nonce_hex
+    ledger_events:
+      - lease_ref
+      - lease_commit_L
+      - nonce_hex
+  publication:
+    automatic_retry: false
+    commit_upload: GitHub_git_commits_create_exact_L_before_createRef
+    create_commit_returned_sha: must_equal_locally_computed_L
+    createRef_attempts: 1
+    GET_L_before_createRef: required_exact_commit_object_verification
+    mismatch_action: stop_before_createRef_local_claim_history_load_forecast_outcome_access
+    operation: GitHub_git_refs_createRef
+    ref: refs/heads/v12-consumption-v12.0.0
+    required_target: exact_L
+  ref: refs/heads/v12-consumption-v12.0.0
+  repository: Jasper-Shi/lottopred
+  scope: repository_global_not_local_O_EXCL
+
+runtime_dependency_closure:
+  algorithm:
+    dynamic_or_unresolved_local_import: prohibited
+    include_all_transitive_local_imports: true
+    local_namespace: lotto649
+    record: repository_relative_path_and_git_blob
+    sort: path_ascending
+  binding:
+    actual_blob_list: bound_in_I_review_and_authorization_JSON
+    checkpoints:
+      - I
+      - K
+      - A_s
+      - M_A
+    required_equality: exact_same_path_and_git_blob_manifest
+    schema: lotto649-v12-runtime-dependency-closure-v1
+  seed_paths:
+    - config.yaml
+    - config/research-v12-post-rng-parity-composition-transition.yaml
+    - evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json
+    - requirements/v12-historical.txt
+    - src/lotto649/config.py
+    - src/lotto649/domain.py
+    - src/lotto649/features.py
+    - src/lotto649/models/factory.py
+    - src/lotto649/models/v12_parity_transition.py
+    - src/lotto649/notification.py
+    - src/lotto649/operational_history.py
+    - src/lotto649/research_features.py
+    - src/lotto649/v12_evidence.py
+    - src/lotto649/v12_registered_attempt.py
+    - tools/run_v12_historical.py
 
 execution:
   authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json

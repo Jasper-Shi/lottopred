@@ -88,10 +88,16 @@ score scope is the 627 consumed targets in 2020--2025, split 314/313; all known
 2026 outcomes are excluded.
 
 V12 is **registered, not implemented, not authorized, not scored, and not
-activated**. It freezes the physical `R < I < A` order: a later implementation
-commit remains unable to load the registered attempt until a separate reviewed
-authorization-seal commit exists. Neither registration nor implementation may
-run a forecast or historical score. V1 and V3 roles are unchanged.
+activated**. Its frozen topology requires both the reviewed implementation merge
+`I` and successful canary-success evidence `C` to be strict ancestors of exact
+protected-main authorization base `K`; I and C may occur in either order. The
+non-authoritative authorization source `A_s` is K's auth-JSON-only child. Its
+normal merge `M_A` must have parents K,A_s and a tree identical to A_s.
+Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
+The repository-global consumption lease at literal ref
+`refs/heads/v12-consumption-v12.0.0` must also be acquired exactly once before
+any local claim or history access. No successful canary evidence exists.
+No V12 forecast or score exists. V1 and V3 roles are unchanged.
 
 ## Planned anti-overfitting checks
 
