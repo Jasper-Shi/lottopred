@@ -45,11 +45,12 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > clocks internally and exposes no caller-injectable configuration, clock, or
 > adapter seam. The private worker has no standalone entry point, and the
 > parent binds the worker plus its imported `lotto649` source modules to P.
-> This candidate remains unimported by every CLI and workflow. Production
-> `main` is currently unprotected, and neither the disposable canary nor a real
-> end-to-end `P -> A` canary has established remote safety. The complete facts
-> and blocker list are in `OPERATIONS.md`. No component or candidate authorizes
-> execution. Re-enable only through the reviewed
+> This candidate remains unimported by every CLI and workflow. The authorized
+> disposable OID/CAS canary succeeded on 2026-08-24, and production `main` now
+> enforces administrator, force-push, and deletion protection. A real production
+> end-to-end `P -> A` canary and the workflow credential/release remain pending.
+> The complete facts and blocker list are in `OPERATIONS.md`. No component or
+> candidate authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -82,9 +83,10 @@ lotto649 backtest
 lotto649 live
 ```
 
-Only after the authorized disposable canary succeeds, protected production
-`main` is independently verified, a real end-to-end `P -> A` canary/reload
-succeeds, and a separate SHA-bound workflow/config release is reviewed may
+The authorized disposable canary and protected production `main` were verified
+on 2026-08-24. Only after the narrow workflow publication credential is
+installed, a real end-to-end production `P -> A` canary/reload succeeds, and a
+separate SHA-bound workflow/config release is reviewed may
 `bootstrap` append and validate independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create

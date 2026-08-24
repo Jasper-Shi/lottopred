@@ -118,22 +118,33 @@ runtime gate, and is not an execution release.
 
 ### Remote publication release state
 
-Read-only inspection on 2026-08-24 established these production facts:
+Remote verification on 2026-08-24 established these facts:
 
-- `Jasper-Shi/lottopred` `main` is not protected and the repository has no
-  rulesets (`[]`).
-- GitHub Actions default workflow permissions are read-only.
-- GitHub's GraphQL schema exposes `updateRefs` and the exact `beforeOid` input
-  needed for compare-and-swap.
+- the public synthetic repository `Jasper-Shi/lottopred-release-canary-20260824`
+  returned the exact local SHA-1 for every uploaded blob, tree, and commit;
+- exact `updateRefs(B, P, force=false)` advanced its protected `main`, while a
+  stale `beforeOid`, a force rollback, and a deletion attempt were rejected;
+- an unauthenticated full clone observed exact `P`, was not shallow, and passed
+  full Git object verification. The canonical evidence is
+  [`2026-08-24-github-publication-canary.json`](../evidence/release_canaries/2026-08-24-github-publication-canary.json);
+- production `Jasper-Shi/lottopred` `main` was then configured and reread with
+  `enforce_admins=true`, `allow_force_pushes=false`, and
+  `allow_deletions=false`. It intentionally has no required-PR, required-check,
+  signed-commit, or linear-history rule that would reject the reviewed
+  non-force exact-CAS publisher. The protection evidence is
+  [`2026-08-24-production-main-protection.json`](../evidence/release_canaries/2026-08-24-production-main-protection.json);
+- the repository still has no rulesets (`[]`), and GitHub Actions default
+  workflow permissions remain read-only.
 
-The schema fact proves interface availability only; no production mutation or
-remote-safety canary has succeeded. The remaining release blockers are:
+The manual canary used the authenticated operator boundary; it did not install
+or expose a workflow credential. The remaining release blockers are:
 
-1. an authorized disposable-remote exact object-OID/updateRefs canary;
-2. configured and independently verified production protected `main`;
-3. a real exact `P -> A` end-to-end canary followed by reread and fresh
-   anonymous reload;
-4. a separate review of the new config bytes and SHA-bound workflow execution
+1. install and verify a repository-scoped publication credential with only the
+   Administration-read, Contents-write, and Metadata-read permissions required
+   by the reviewed publishers;
+2. a real exact production `P -> A` end-to-end canary followed by reread and
+   fresh anonymous reload;
+3. a separate review of the new config bytes and SHA-bound workflow execution
    plan.
 
 The future live order is fixed: collect both sources, prepare and remotely

@@ -172,10 +172,12 @@ separately testable components. A disconnected capability-scoped exact remote
 `P -> A` publisher is independently reviewed and merged. A disconnected local
 orchestration candidate now composes the complete sequence with exact-P code
 provenance, but it has no CLI/workflow connection and all three runtime gates
-remain false. The execution release still requires the authorized disposable
-remote canary, protected production `main`, a real `P -> A` canary plus reload,
-and a separately reviewed SHA-bound workflow/config release. None of these
-components authorizes this execution path.
+remain false. The authorized disposable remote OID/CAS canary succeeded on
+2026-08-24, and production `main` now enforces administrator, force-push, and
+deletion protection. The execution release still requires a repository-scoped
+publication credential, a real production `P -> A` canary plus reload, and a
+separately reviewed SHA-bound workflow/config release. None of these components
+authorizes this execution path.
 
 Live forward cycle:
 

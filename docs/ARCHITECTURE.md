@@ -146,11 +146,12 @@ absent from every CLI and workflow import path.
 
 Bootstrap and every public live entry point therefore remain quarantined after
 their gates. The disconnected orchestration candidate does not reopen them, and
-all three runtime switches remain false. Release still requires an authorized
-disposable-repository OID/CAS canary, verified protected production `main`, a
-real end-to-end `P -> A` publication/reload canary, and a separate reviewed
-SHA-bound workflow/config change. Live refresh raises after both gates because
-the public path remains intentionally unwired. See
+all three runtime switches remain false. The authorized disposable-repository
+OID/CAS canary and production `main` protection were verified on 2026-08-24.
+Release still requires the narrow workflow publication credential, a real
+end-to-end production `P -> A` publication/reload canary, and a separate
+reviewed SHA-bound workflow/config change. Live refresh raises after both gates
+because the public path remains intentionally unwired. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 

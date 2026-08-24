@@ -14,8 +14,10 @@ production repository/main identity, exact object-OID upload, GraphQL
 full-fetch production reload. A disconnected local orchestration candidate now
 composes collect, `B -> E -> S -> P` publication/reload, exact-P execution,
 A freezing, and `P -> A` publication/reload in the required order. No CLI or
-workflow imports it, and neither publisher has passed the required true-remote
-canary. Therefore
+workflow imports it. The shared exact-object/updateRefs boundary passed its
+authorized disposable-remote canary on 2026-08-24, and production `main` now has
+the required administrator, force-push, and deletion protection. No real
+production `P -> A` execution/reload canary has run. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
 
@@ -358,8 +360,9 @@ Merging the reader, official-source collector, offline/local publication
 components, disconnected GitHub publisher, and execution/artifact handoff does
 not reopen execution; neither does the independently reviewed and merged
 artifact publisher or the disconnected local orchestration candidate. The
-remaining release work is the authorized disposable remote OID/CAS canary,
-protected-main setup, a real end-to-end `P -> A` canary/reload, and the separate
-SHA-bound workflow/config release review specified in `OPERATIONS.md`. Until
-that later release, all three runtime switches and all workflow stages remain
-false.
+disposable remote OID/CAS canary and protected-main setup were verified on
+2026-08-24. The remaining release work is the narrow workflow publication
+credential, a real end-to-end production `P -> A` canary/reload, and the
+separate SHA-bound workflow/config release review specified in `OPERATIONS.md`.
+Until that later release, all three runtime switches and all workflow stages
+remain false.
