@@ -75,6 +75,24 @@ Whenever practical, new models run as shadow models beside old versions rather t
 
 Each hypothesis must prove value out-of-sample and survive multiple-testing correction before receiving material ensemble weight.
 
+## V12 registered research checkpoint
+
+`V12_post_rng_parity_composition_transition` is frozen as an outcome-blind,
+research-only attempt in
+[`docs/experiments/V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md).
+It tests one signed lag-one association between consecutive post-RNG odd-number
+counts, with one fixed pseudo-parity control. Its governed registration input is
+production `main` authority `4a617f2c1575a165b42878600753a01ddf2ced03`,
+whose `PublishedHistory` has 4,444 draws through 2026-08-22. The only historical
+score scope is the 627 consumed targets in 2020--2025, split 314/313; all known
+2026 outcomes are excluded.
+
+V12 is **registered, not implemented, not authorized, not scored, and not
+activated**. It freezes the physical `R < I < A` order: a later implementation
+commit remains unable to load the registered attempt until a separate reviewed
+authorization-seal commit exists. Neither registration nor implementation may
+run a forecast or historical score. V1 and V3 roles are unchanged.
+
 ## Planned anti-overfitting checks
 
 - permutation tests

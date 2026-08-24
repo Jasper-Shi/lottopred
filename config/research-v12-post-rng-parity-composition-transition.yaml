@@ -1,0 +1,56 @@
+experiment:
+  id: V12_post_rng_parity_composition_transition
+  model_version: v12.0.0
+  registration_seal: evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json
+  seed: 649
+  status: registered_not_implemented_not_authorized_not_scored
+
+data:
+  base_draw_count: 4442
+  base_history_through: '2026-08-15'
+  base_seal_path: evidence/data_integrity/DI-2026-08-20-registered-history/seal.json
+  draw_count: 4444
+  history_start: '1982-06-12'
+  history_through: '2026-08-22'
+  incident_id: DI-2026-08-20-registered-history
+  kind: PublishedHistory
+  pin_registry_path: evidence/operational_history/DI-2026-08-20-registered-history/pin-registry.jsonl
+  suffix_event_count: 2
+
+historical_scope:
+  evidence_lane: consumed_historical_diagnostic
+  historical_attempt_limit: 1
+  burn_in:
+    first_draw: '2019-05-15'
+    last_draw: '2019-12-28'
+    scored_target_count: 0
+  aggregate:
+    first_target: '2020-01-01'
+    last_target: '2025-12-31'
+    target_count: 627
+  halves:
+    - name: first_half
+      first_target: '2020-01-01'
+      last_target: '2022-12-31'
+      target_count: 314
+    - name: second_half
+      first_target: '2023-01-04'
+      last_target: '2025-12-31'
+      target_count: 313
+  known_2026:
+    start: '2026-01-01'
+    history_through: '2026-08-22'
+    scored_target_count: 0
+    classification: consumed_excluded
+
+execution:
+  authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json
+  authorization: valid_A_required
+  automatic: false
+  pre_A: prohibited
+  required_phase_order: R < I < A
+
+notifications:
+  language: zh-CN
+  pre_A: prohibited
+  post_A: breakthrough_only_required

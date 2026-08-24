@@ -6,6 +6,10 @@ and corrected-epoch artifact commit
 `b04393944ef12f78417dfb6151343c72d4c2a2ac`. This document does not pin the
 mutable post-documentation `main` head.
 
+The V12 registration uses exact production authority baseline
+`4a617f2c1575a165b42878600753a01ddf2ced03`; this identity is a frozen research
+input, not a claim that later mutable `main` still has that head.
+
 ## Current state
 
 This repository is the execution and audit system. Codex develops and reviews the
@@ -107,11 +111,32 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
+| V12 parity transition | Registered only | Outcome-blind `R` checkpoint: not implemented, not authorized, not scored, and absent from factory, CLI, workflows, and live configuration. |
 | 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
 | 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
+
+### V12 registration checkpoint
+
+The formal V12 authority is
+[`V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md),
+with machine-readable config and registration seal at the paths named there.
+It freezes one post-RNG odd-count transition hypothesis and one literal
+pseudo-parity control. The registered source is the governed `PublishedHistory`
+at `4a617f2c1575a165b42878600753a01ddf2ced03`: 4,444 draws through
+2026-08-22. The only future historical diagnostic is exactly 627 consumed
+targets in 2020--2025, split 314/313. All known 2026 outcomes are excluded.
+
+The checkpoint is registration commit **R** only. The six expected
+implementation/test paths and
+`evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json`
+do not exist at R. A later **I** may implement only the frozen interface and
+synthetic/oracle tests, but must fail before history load or artifact creation.
+Only a separate reviewed authorization-seal commit **A**, with `R < I < A`, may
+mint the one-shot capability. No V12 forecast, score, result artifact,
+notification, shadow activation, or production behavior exists now.
 
 ## How the implemented system runs
 
