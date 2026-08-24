@@ -90,15 +90,19 @@ it. Direct backtest execution loads through this seam only after its incident
 gate and no longer accepts a caller-provided draw list. The offline
 `history_publication` module can now validate already-retrieved WCLC and
 Loto-Québec assets and create an unattached `B -> E -> S -> P` candidate. The
+`official_source_collection` module is the network collector seam: it retrieves
+the two exact, bounded raw HTML assets without writing repository or operational
+state. The
 `history_publication_cas` module can validate and advance one self-contained
 local bare `refs/heads/main` authority with exact compare-and-swap and mandatory
-reread. These modules are not a network collector or a GitHub/remote publisher.
+reread. None of these modules is connected to a CLI or workflow, and the local
+CAS is not a GitHub/remote publisher.
 
 Bootstrap and every public live entry point therefore remain quarantined after
-their gates until a reviewed network collector has acquired both source assets,
-a remote exact-CAS publisher has installed the transaction, and the remote
-revision has reloaded successfully. Live refresh raises
-after both gates because that end-to-end remote path is not wired. The
+their gates until the reviewed collector is orchestrated with a remote
+exact-CAS publisher, the remote revision has reloaded successfully, and the
+execution worktree is based on that published authority head. Live refresh
+raises after both gates because that end-to-end remote path is not wired. The
 workflow/config release remains a separate reviewed change. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.

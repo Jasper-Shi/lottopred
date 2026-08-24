@@ -80,20 +80,23 @@ only from immutable Git blobs. Worktree replacements and caller-provided pin
 overrides are not authority. The direct backtest boundary consumes this single
 read seam after its runtime gate.
 
-Offline preparation and local CAS are now implemented for review and testing.
-The preparation seam takes two already-retrieved official assets, creates an
+Official-source collection, offline preparation, and local CAS are implemented
+as disconnected review/test seams. The network collector retrieves exact
+bounded WCLC and Loto-Québec HTML without writing Git or operational state. The
+preparation seam takes those two assets, creates an
 unattached `B -> E -> S -> P` candidate without changing worktree/index/refs,
 and validates `P` through the production reader. The local adapter can advance
 only a self-contained bare repository whose literal `HEAD` is `main`; it always
 rereads authority after a CAS attempt and returns success only after exact `P`
-is observed and reloaded. It is not a GitHub/remote adapter, does not fetch
-official sources, and is not connected to a CLI or workflow.
+is observed and reloaded. The local adapter is not a GitHub/remote adapter, and
+none of these seams is connected to a CLI or workflow.
 
 Public bootstrap, live refresh, evaluation, and prediction entry points
-therefore still refuse execution after their gates until the reviewed network
-collector and remote exact-CAS publisher exist and a remote revision reload
-succeeds. This advances the append implementation but does not complete the
-remote operational path or reviewed release; all switches remain false. The
+therefore still refuse execution after their gates until a remote exact-CAS
+publisher installs the collector/preparer transaction, a remote revision reload
+succeeds, and the execution worktree is handed to that authority head. This does
+not complete the remote operational path or reviewed release; all switches
+remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 

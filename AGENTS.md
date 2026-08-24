@@ -48,6 +48,9 @@ affected documentation in the same change.
   `data/processed/draws.csv`.
 - `src/lotto649/history_publication.py` prepares an offline, unattached
   dual-source `B -> E -> S -> P` candidate without changing caller state.
+- `src/lotto649/official_source_collection.py` retrieves the exact bounded WCLC
+  and Loto-Québec HTML assets for one scheduled draw without writing Git or
+  operational state.
 - `src/lotto649/history_publication_cas.py` proves the exact CAS/reread state
   machine only for a self-contained local bare `main`; it is not a network or
   GitHub publication adapter.
@@ -133,10 +136,11 @@ history before t -> features/train -> frozen prediction for t -> reveal t -> sco
 
 Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads
 only through the verified operational-history seam. `lotto649 bootstrap` remains
-blocked until a reviewed network source collector and remote exact-CAS registry
-publisher exist and the remote authority reload succeeds; it must never fall
-back to the legacy processed CSV. The offline preparer and local bare CAS do not
-authorize this execution path.
+blocked until the reviewed collector is connected to a remote exact-CAS
+registry publisher, the remote authority reload succeeds, and the execution
+worktree is handed to the published authority head; it must never fall back to
+the legacy processed CSV. The collector, offline preparer, and local bare CAS
+are separately testable components and do not authorize this execution path.
 
 Live forward cycle:
 

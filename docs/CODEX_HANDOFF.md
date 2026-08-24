@@ -35,11 +35,12 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > The verified-history read interface is now the sole input to the direct
 > backtest boundary. The kill switches remain false, so it is not authorized to
 > execute. Bootstrap and every public live entry point fail explicitly after
-> their gates until the reviewed network source collector and remote Git
-> compare-and-swap publication protocol exist and an authority reload succeeds.
-> The offline dual-source preparer and local bare-repository CAS now exist for
-> deterministic review, but they do not fetch sources, publish to GitHub, or
-> authorize execution. Re-enable only through the reviewed
+> their gates until the reviewed collector is connected to a remote Git
+> compare-and-swap publisher, an authority reload succeeds, and the execution
+> worktree is handed to that authority head. The dual-source collector, offline
+> preparer, and local bare-repository CAS now exist as disconnected review
+> seams; only the latter two are offline deterministic components. They do not
+> publish to GitHub or authorize execution. Re-enable only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -72,16 +73,16 @@ lotto649 backtest
 lotto649 live
 ```
 
-After the network source collector and remote Git registry publication adapter
-are implemented and reviewed, `bootstrap` may append and validate independently
-sourced draws.
+After the implemented source collector is connected to a reviewed remote Git
+registry publication adapter and post-publication authority handoff, `bootstrap`
+may append and validate independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create
 predictions for the next Wednesday or Saturday only after the remote publisher
 has installed a new registry event and an authority reload succeeds. During the
 incident all three commands fail closed at their disabled runtime gates. A
 direct true-toggle still cannot move `bootstrap` or `live` past the missing
-network/remote-publication interlock. Backtest has no writer dependency, but it
+remote-publication/handoff interlock. Backtest has no writer dependency, but it
 remains unauthorized until its separate reviewed release reopens both the
 workflow and runtime gates.
 
@@ -191,8 +192,9 @@ Top-12 hits `>= 5`.
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
 path. Live refresh now refuses execution after both gates until a reviewed
-network collector and remote Git publication adapter are connected to the
-offline preparation seam. The pre-incident reconciliation policy was:
+remote Git publication adapter connects the implemented collector to the
+offline preparation seam and hands execution to the reloaded authority head.
+The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
 2. Use lotto.net annual HTML as the machine-readable bridge from 2024 onward.
@@ -235,11 +237,12 @@ Do not broaden the fallback to swallow those integrity failures.
    deployed pins from a fresh full-history clone of `main`.
 7. Keep the verified-history consumer as the only read path. Preserve registry
    genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. The
-   offline `B -> E -> S -> P` preparer and local bare CAS are review tools, not
-   an execution release. Implement and independently review the network source
-   collector and remote exact-CAS adapter; only then re-enable through the
-   reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
-   matching workflow plans in the same commit.
+   bounded dual-source collector, offline `B -> E -> S -> P` preparer, and local
+   bare CAS are disconnected review tools, not an execution release. Implement
+   and independently review the remote exact-CAS publisher, remote reload, and
+   post-publication worktree handoff; only then re-enable through the reviewed
+   two-gate release in `OPERATIONS.md`, with new exact config bytes and matching
+   workflow plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
    authorized runtime before that release. Use a new version whenever
