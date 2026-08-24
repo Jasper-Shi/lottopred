@@ -705,6 +705,22 @@ def _legacy_2026_08_26_candidate(
         )
     manifest_destination.write_bytes(manifest_raw)
     _git(repository, "add", manifest_relative)
+    staged_manifest = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "diff",
+            "--cached",
+            "--quiet",
+            "--",
+            manifest_relative,
+        ],
+        check=False,
+        capture_output=True,
+    )
+    if staged_manifest.returncode not in (0, 1) or staged_manifest.stderr:
+        raise RuntimeError("legacy manifest fixture staging could not be inspected")
     manifest_commit_at = datetime(2026, 8, 24, 12, tzinfo=UTC)
     manifest_environment = os.environ.copy()
     manifest_environment.update(
@@ -713,24 +729,25 @@ def _legacy_2026_08_26_candidate(
             "GIT_COMMITTER_DATE": manifest_commit_at.isoformat(),
         }
     )
-    subprocess.run(
-        [
-            "git",
-            "-C",
-            str(repository),
-            "-c",
-            "user.name=handoff-test",
-            "-c",
-            "user.email=handoff-test@lotto649.invalid",
-            "commit",
-            "--quiet",
-            "-m",
-            "install sealed legacy prediction manifest",
-        ],
-        check=True,
-        capture_output=True,
-        env=manifest_environment,
-    )
+    if staged_manifest.returncode == 1:
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "-c",
+                "user.name=handoff-test",
+                "-c",
+                "user.email=handoff-test@lotto649.invalid",
+                "commit",
+                "--quiet",
+                "-m",
+                "install sealed legacy prediction manifest",
+            ],
+            check=True,
+            capture_output=True,
+            env=manifest_environment,
+        )
     base = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
     base_history = load_published_history(repository, base)
     target = _next_draw_date(base_history.draws[-1].draw_date)
