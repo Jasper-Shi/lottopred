@@ -228,9 +228,10 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 ## Release rule
 
-Merging the reader and offline/local publication components does not reopen
-execution. The next implementation phase is the approved network source
-collector plus a remote/GitHub exact-CAS adapter and post-publication authority
-reload. Only a later, independently reviewed release may change the exact
-disabled config bytes and the SHA-bound workflow execution plan. Until then all
-three runtime switches and all workflow stages remain false.
+Merging the reader, official-source collector, and offline/local publication
+components does not reopen execution. The next implementation phase is a
+remote/GitHub exact-CAS publisher, post-publication authority reload, and
+execution-worktree handoff that orchestrate those disconnected seams. Only a
+later, independently reviewed release may change the exact disabled config bytes
+and the SHA-bound workflow execution plan. Until then all three runtime switches
+and all workflow stages remain false.
