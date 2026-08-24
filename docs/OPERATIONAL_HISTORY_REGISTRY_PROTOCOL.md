@@ -6,10 +6,10 @@ Protocol version: `lotto649-history-pin-registry-event-v1`.
 
 The reader, one-event genesis migration, network source collector, offline
 dual-source preparation seam, local bare-repository compare-and-swap adapter,
-and disconnected fixed-repository GitHub publisher are implemented. The GitHub
-publisher is not workflow-integrated and has not yet passed the required
-disposable-repository object-OID/CAS canary or post-publication execution
-handoff. Therefore
+disconnected fixed-repository GitHub publisher, and isolated execution/artifact
+handoff are implemented. They are not workflow-integrated and have not yet
+passed the required disposable-repository object-OID/CAS canary. Exact remote
+publication of the later artifact commit is not implemented. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
 
@@ -213,6 +213,71 @@ not assumed to satisfy that combination. The canary/release review must select
 and prove the narrow credential and permissions without placing it in Git,
 logs, subprocess arguments, receipts, or exception text.
 
+## Execution handoff and artifact commit
+
+The implemented `history_execution_handoff` seam begins only from a successful
+`PublicationReceipt`. Its public context manager fixes the anonymous authority
+to `https://github.com/Jasper-Shi/lottopred.git`; callers cannot provide a
+repository, ref, destination, token, or loader. It fetches
+`refs/heads/main` itself into a newly initialized temporary repository and
+requires that fetched ref to equal exact `P`. Fetching an old P by object ID is
+not sufficient.
+
+Before exposing the workspace it requires a complete self-contained SHA-1
+object store, no shallow/promisor/alternate state, a plain-file tree without
+gitlinks, `.gitmodules`, or symlinks, detached literal `HEAD=P`, a clean index
+and worktree, and a fresh `load_operational_history` result exactly equal to the
+remote publication receipt. It issues one opaque context capability bound to
+the canonical checkout root, its `.git` and object-store directory identities,
+and exact `P`; copied workspaces, replaced directories, external Git controls,
+and use after context exit fail closed. The caller's original B checkout is
+never read or modified. Callers must load configuration through the workspace, which reads
+the authenticated `P:config.yaml` into an independent object and roots all later
+file I/O in the P checkout. The context must span the complete
+evaluate/notify/predict/freeze/publish-A operation; returning only history and
+resuming in the caller's checkout is forbidden. The temporary repository is
+removed on normal exit and on exceptions.
+
+This seam does not itself replace the running Python import path or launch the
+model process. The later orchestration must execute the reviewed code from P
+(or independently prove the loaded code bytes equal P) while keeping this
+context open. Merely changing `cfg["_root"]` is not code provenance and does not
+authorize execution.
+
+After evaluation and prediction code has created files in that isolated
+workspace, `freeze_execution_outputs(...)` accepts only a bounded, sorted,
+unique list of canonical `predictions/*.json` and `evaluations/*.json` paths.
+Every listed path must be a new non-executable regular UTF-8 JSON file with a
+real scheduled date, filename-bound model identity, the exact prediction or
+evaluation schema, and the correct P-derived history provenance. Prediction
+targets must be the next scheduled draw after P; evaluation values are
+recomputed from a prediction added by the prior artifact base B and the
+verified actual draw. That source prediction must itself be bound to B's sole
+parent history, have a generation time between that parent and B, and remain
+strictly pre-draw. The new prediction cohort must exactly match
+`P:config.yaml`'s `live.models` at `project.model_version`; no model may be
+missing or added, and each `primary`/`shadow` role must agree with
+`live.shadow_models`.
+Duplicate keys, non-finite numbers, overwrites, ignored files, or any unlisted
+worktree or index change fail closed. The function revalidates the workspace
+capability, repository controls, complete object store, P history, and exact
+output bytes before and after construction. It uses a private index rooted at P,
+creates an unattached commit `A` with sole parent P, then verifies full object
+integrity, the exact add-only path delta, each A blob against its frozen bytes,
+and unchanged worktree bytes. It leaves literal HEAD, the normal index,
+worktree bytes, and all refs unchanged. Its timestamp must be whole-second UTC,
+conservatively post-date the history, not predate P, and remain pre-draw for new
+predictions.
+
+This seam does not publish A. A later reviewed publisher must independently
+freeze and upload A's exact objects, compare-and-swap remote main from P to A,
+reread exact A, and perform a fresh public production reload. It must not use
+the current workflow's broad directory staging or ordinary push. Evaluation,
+prediction, email, or output files that cannot complete that remote publication
+are not committed audit evidence. Because the temporary object store is removed
+when the workspace context exits, that future publisher must complete inside
+the same context.
+
 ## Reader guarantees
 
 For a selected full revision OID, the reader:
@@ -257,10 +322,10 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 ## Release rule
 
 Merging the reader, official-source collector, offline/local publication
-components, and disconnected GitHub publisher does not reopen execution. The
-next implementation phase is the authorized disposable-remote canary,
-protected-main verification, collector/publisher orchestration, and
-post-publication execution-worktree handoff. Only a later, independently
+components, disconnected GitHub publisher, and execution/artifact handoff does
+not reopen execution. The next implementation phase is the authorized
+disposable-remote canary, protected-main verification, orchestration, and exact
+remote `P -> A` artifact publication/reload. Only a later, independently
 reviewed release may change the exact disabled config bytes and the SHA-bound
 workflow execution plan. Until then all three runtime switches and all workflow
 stages remain false.

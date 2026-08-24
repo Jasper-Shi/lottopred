@@ -1,7 +1,7 @@
 # Codex Handoff
 
 Last verified on 2026-08-23 against operational `main` base
-`ff064ea93bf7dbcc4ba8e30abf9fbc3243e77832` and corrected-epoch artifact
+`6ae59b636dfd2757dad6793eebd2b419ec69ef71` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -38,10 +38,11 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > their gates until the reviewed collector and disconnected GitHub publisher
 > are orchestrated, an authority reload succeeds, and the execution worktree is
 > handed to that authority head. The dual-source collector, offline preparer,
-> local bare-repository CAS, and fixed-repository GitHub publisher now exist as
-> disconnected review seams. The GitHub seam still needs protected-main setup,
-> a disposable-repository OID/CAS canary, and the post-publication handoff. It
-> does not authorize execution. Re-enable only through the reviewed
+> local bare-repository CAS, fixed-repository GitHub publisher, and isolated
+> execution/artifact handoff now exist as disconnected review seams. The remote
+> path still needs protected-main setup, a disposable-repository OID/CAS canary,
+> orchestration, and an exact remote `P -> A` artifact CAS with a fresh reload.
+> It does not authorize execution. Re-enable only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -75,13 +76,16 @@ lotto649 live
 ```
 
 After the implemented source collector and disconnected GitHub publisher pass
-the remote canary and are connected to the post-publication authority handoff,
-`bootstrap` may append and validate independently sourced draws.
+the remote canary and are connected to the isolated post-publication authority
+handoff and reviewed artifact publisher, `bootstrap` may append and validate
+independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create
-predictions for the next Wednesday or Saturday only after the remote publisher
-has installed a new registry event and an authority reload succeeds. During the
-incident all three commands fail closed at their disabled runtime gates. A
+predictions for the next Wednesday or Saturday only inside the isolated
+workspace obtained after the remote publisher installs P and a fresh authority
+reload succeeds. That context must remain open until the exact artifact commit
+A (sole parent P) is remotely compare-and-swapped and freshly reloaded. During
+the incident all three commands fail closed at their disabled runtime gates. A
 direct true-toggle still cannot move `bootstrap` or `live` past the missing
 publication-orchestration/handoff interlock. Backtest has no writer dependency,
 but it remains unauthorized until its separate reviewed release reopens both
@@ -110,7 +114,7 @@ Change version semantics deliberately rather than renaming committed snapshots.
 The immutable pre-hold artifacts originated at `main` commit
 `9f16e20c726c7b65eed1d387c4c725d51248f570`, remained present at ancestor
 `e3c39dda3233cec5933430f22afd6aa8d78a998d`, and remain present at current
-operational base `ff064ea93bf7dbcc4ba8e30abf9fbc3243e77832`:
+operational base `6ae59b636dfd2757dad6793eebd2b419ec69ef71`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -194,8 +198,9 @@ The legacy source adapters remain in `src/lotto649/data_sources.py` for audit an
 future refactoring, but they are no longer a valid operational-history write
 path. Live refresh now refuses execution after both gates until a reviewed
 remote canary proves the GitHub publisher, orchestration connects it to the
-collector/offline preparation seam, and execution is handed to the reloaded
-authority head.
+collector/offline preparation seam, execution is handed to the reloaded
+authority head, and the resulting exact artifact commit is remotely
+compare-and-swapped and reloaded.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -240,10 +245,11 @@ Do not broaden the fallback to swallow those integrity failures.
 7. Keep the verified-history consumer as the only read path. Preserve registry
    genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. The
    bounded dual-source collector, offline `B -> E -> S -> P` preparer, local bare
-   CAS, and fixed-repository GitHub publisher are disconnected review tools, not
-   an execution release. Run and independently review the disposable GitHub
-   OID/CAS canary, configure protected `main`, then implement the orchestration
-   and post-publication worktree handoff. Only then re-enable through the
+   CAS, fixed-repository GitHub publisher, and execution/artifact handoff are
+   disconnected review tools, not an execution release. Run and independently
+   review the disposable GitHub OID/CAS canary, configure protected `main`, then
+   implement orchestration and exact remote artifact publication/reload. Only
+   then re-enable through the
    reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
    matching workflow plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,
