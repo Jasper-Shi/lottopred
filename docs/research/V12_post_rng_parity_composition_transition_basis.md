@@ -14,12 +14,16 @@ Proposed experiment slug: `V12_post_rng_parity_composition_transition`
 ## Registration-lineage correction (2026-08-24)
 
 This basis was written before the corrected operational-history authority was
-available on production `main`. The V12 registration is based on exact parent
-commit `4a617f2c1575a165b42878600753a01ddf2ced03` and its governed
-`PublishedHistory`: **4,444 unique, strictly ordered draws through
-2026-08-22**. Official-calendar reconciliation establishes **627**, not 621,
-targets in 2020--2025: 314 in 2020--2022 and 313 in 2023--2025. Those count
-corrections are source-governance facts, not V12 model results.
+available on production `main`. Exact commit
+`4a617f2c1575a165b42878600753a01ddf2ced03` is the governed-history authority
+and change baseline, **not** the direct parent or identity of formal V12
+registration R. Formal R is the final forward commit that jointly changes the
+final registration seal and config, as discovered by the registration tests.
+The governed `PublishedHistory` at the authority contains **4,444 unique,
+strictly ordered draws through 2026-08-22**. Official-calendar reconciliation
+establishes **627**, not 621, targets in 2020--2025: 314 in 2020--2022 and 313
+in 2023--2025. Those count corrections are source-governance facts, not V12
+model results.
 
 Every outcome in 2026 is already known to the registration process and is
 therefore explicitly consumed and excluded from V12 historical scoring. No V12
@@ -512,10 +516,30 @@ that encoding independently. Registration tests must reconstruct those bytes
 from the fixed Git authority and the frozen Wednesday/Saturday calendar, not a
 mutable worktree history file.
 
-Before the first forecast, a clean, pushed, CI-green implementation commit must
-be a descendant of a separate registration commit. A permanent exclusive
-claim must be acquired before any candidate, pseudo-control, V1, or random
-forecast or score is created. A hash-chained JSONL ledger must append, flush,
+Before V12 authorization A may be minted or accepted, the currently unrun
+Stage-1 production canary must finish successfully. Its independently reviewed
+evidence commit `C` must be a strict ancestor of the protected-main
+authorization base `K` and final authorization merge `M_A`, remain reachable
+from protected remote `main`, and be bound in the authorization JSON by exact
+commit/path/blob/bytes/SHA-256. The reviewed I merge is also a strict ancestor
+of `K` and `M_A`; I and C may occur in either order, and C does not enter the
+R-to-I diff. Authorization source `A_s` branches from exact K, has K as its sole
+parent, and changes only the authorization JSON. The ordinary merge `M_A` has
+first parent K, second parent A_s, and the identical tree. Only protected remote
+`main` at HEAD=M_A may execute. That evidence must bind the fixed Stage-1 plan,
+reviewed production-main SHA, successful manual `live.yml` run ID and
+conclusion, protected-main receipt, production P publication receipt, and fresh
+authoritative A-reload receipt. Here P/A name
+the production publication/reload stages, not V12 authorization A. The V12
+verifier resolves the literal evidence path itself; CLI, environment, path, or
+receipt injection cannot bypass the prerequisite. Until that evidence exists
+and validates, A and historical execution remain prohibited.
+
+After that external prerequisite, before the first forecast, a clean, pushed,
+CI-green implementation commit must be a descendant of a separate registration
+commit. A permanent exclusive claim must be acquired before any candidate,
+pseudo-control, V1, or random forecast or score is created. A hash-chained JSONL
+ledger must append, flush,
 and file-`fsync` each `prediction_frozen` event before the reveal seam can
 return that target's main or bonus fields, then append and `fsync` the paired
 `target_revealed_scored` event before the next forecast. Existing claim,

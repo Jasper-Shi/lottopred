@@ -28,6 +28,12 @@ AUTHORIZATION_PATH = (
     "evidence/research_authorizations/"
     "v12-post-rng-parity-composition-transition-v1.json"
 )
+CANARY_PLAN_PATH = (
+    "evidence/release_canaries/2026-08-27-production-live-canary-plan.json"
+)
+CANARY_SUCCESS_PATH = (
+    "evidence/release_canaries/stage1-production-live-canary-success.json"
+)
 
 REGISTERED_FILES = (
     BASIS_PATH,
@@ -176,6 +182,94 @@ TARGET_DATE_ENCODING = {
     "line_record": "one_canonical_YYYY-MM-DD_date",
     "line_terminator": "LF",
     "trailing_line_terminator": True,
+}
+
+PRODUCTION_CANARY_PREREQUISITE = {
+    "acceptance": {
+        "authorization_topology": {
+            "authorization_base_K": (
+                "exact_protected_main_commit_containing_I_merge_and_C"
+            ),
+            "authorization_merge_M_A": {
+                "first_parent": "K",
+                "second_parent": "A_s",
+                "tree": "identical_to_A_s",
+            },
+            "authorization_source_A_s": {
+                "diff_from_K": "execution_authorization_json_only",
+                "sole_parent": "K",
+            },
+            "canary_success_C": "strict_ancestor_of_K_and_M_A",
+            "implementation_I_merge": "strict_ancestor_of_K_and_M_A",
+            "registration_R": "strict_ancestor_of_I",
+            "relative_order_I_and_C": "unconstrained",
+        },
+        "evidence_binding_in_authorization_json": (
+            "commit_path_blob_bytes_sha256_required"
+        ),
+        "evidence_commit_relation": (
+            "C_strict_ancestor_of_M_A_and_reachable_from_protected_remote_main"
+        ),
+        "historical_execution": "prohibited_until_valid_completed_evidence",
+        "runner_authority": {
+            "branch": "main",
+            "head": "M_A",
+            "repository": "Jasper-Shi/lottopred",
+        },
+        "v12_authorization_seal_minting": ("prohibited_until_valid_completed_evidence"),
+    },
+    "caller_bypass": {
+        "cli_or_environment_override": "prohibited",
+        "evidence_path_override": "prohibited",
+        "receipt_injection": "prohibited",
+        "verification_source": (
+            "fixed_path_at_C_in_M_A_ancestry_and_protected_remote_main"
+        ),
+    },
+    "evidence_path": CANARY_SUCCESS_PATH,
+    "evidence_schema": "lotto649.production-live-canary-success.v1",
+    "registration_observation": "absent_not_run",
+    "required_bindings": {
+        "plan": {
+            "authority_commit": MAIN_AUTHORITY_COMMIT,
+            "bytes": 7084,
+            "git_blob": "88ef58825a5ff4a22c82d7db23a3572557ec672c",
+            "path": CANARY_PLAN_PATH,
+            "sha256": (
+                "16fac454983b714733dcee3996812ae5e0415c27303176aaefdd9cb3ac7feea4"
+            ),
+        },
+        "protected_main_receipt": {
+            "allow_deletions": False,
+            "allow_force_pushes": False,
+            "enforce_admins": True,
+            "observed_after_successful_run": True,
+            "required": True,
+        },
+        "publication_and_authoritative_reload_receipts": {
+            "authoritative_reload_A": "required",
+            "fresh_full_history_reload": True,
+            "history_draw_count": 4445,
+            "history_through": "2026-08-26",
+            "publication_P": "required",
+            "receipt_digests": "required",
+            "topology": "P -> A",
+        },
+        "reviewed_main_sha": {
+            "binding": "expected_sha_equals_workflow_head_sha_equals_checkout_head",
+            "branch": "main",
+            "format": "lowercase_40_hex_sha1",
+            "repository": "Jasper-Shi/lottopred",
+            "source": "post_merge_independent_review",
+        },
+        "workflow_run": {
+            "conclusion": "success",
+            "event": "workflow_dispatch",
+            "path": ".github/workflows/live.yml",
+            "repository": "Jasper-Shi/lottopred",
+            "run_id": "positive_integer",
+        },
+    },
 }
 
 
@@ -374,6 +468,31 @@ def test_v12_status_is_registered_only_and_execution_is_not_authorized() -> None
     assert registration["artifact_paths"] == ARTIFACT_PATHS
     for relative_path in ARTIFACT_PATHS.values():
         _assert_absent_at_registration(relative_path)
+
+
+def test_v12_A_requires_completed_stage1_production_canary_evidence() -> None:
+    registration = _registration()
+    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+
+    assert (
+        registration["production_canary_prerequisite"] == PRODUCTION_CANARY_PREREQUISITE
+    )
+    assert config["production_canary_prerequisite"] == PRODUCTION_CANARY_PREREQUISITE
+    _assert_absent_at_registration(CANARY_SUCCESS_PATH)
+
+    plan_identity = PRODUCTION_CANARY_PREREQUISITE["required_bindings"]["plan"]
+    plan_raw = _git_bytes(MAIN_AUTHORITY_COMMIT, CANARY_PLAN_PATH)
+    assert len(plan_raw) == plan_identity["bytes"]
+    assert sha256(plan_raw).hexdigest() == plan_identity["sha256"]
+    assert (
+        _git_blob(MAIN_AUTHORITY_COMMIT, CANARY_PLAN_PATH) == plan_identity["git_blob"]
+    )
+    plan = json.loads(plan_raw)
+    assert plan["status"] == "merged_armed_not_executed"
+    assert plan["stage"]["deployment_state"] == "merged_armed_not_executed"
+    assert plan["stage2"]["condition"] == (
+        "stage_1_canary_success_and_independent_review"
+    )
 
 
 def test_v12_authority_is_current_main_published_history_without_2026_scoring() -> None:

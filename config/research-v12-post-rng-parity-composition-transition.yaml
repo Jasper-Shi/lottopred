@@ -95,6 +95,71 @@ historical_governance:
     notification_classification_zh: 历史诊断/审计候选、不可晋升
     success_language: prohibited
 
+production_canary_prerequisite:
+  acceptance:
+    authorization_topology:
+      authorization_base_K: exact_protected_main_commit_containing_I_merge_and_C
+      authorization_merge_M_A:
+        first_parent: K
+        second_parent: A_s
+        tree: identical_to_A_s
+      authorization_source_A_s:
+        diff_from_K: execution_authorization_json_only
+        sole_parent: K
+      canary_success_C: strict_ancestor_of_K_and_M_A
+      implementation_I_merge: strict_ancestor_of_K_and_M_A
+      registration_R: strict_ancestor_of_I
+      relative_order_I_and_C: unconstrained
+    evidence_binding_in_authorization_json: commit_path_blob_bytes_sha256_required
+    evidence_commit_relation: C_strict_ancestor_of_M_A_and_reachable_from_protected_remote_main
+    historical_execution: prohibited_until_valid_completed_evidence
+    runner_authority:
+      branch: main
+      head: M_A
+      repository: Jasper-Shi/lottopred
+    v12_authorization_seal_minting: prohibited_until_valid_completed_evidence
+  caller_bypass:
+    cli_or_environment_override: prohibited
+    evidence_path_override: prohibited
+    receipt_injection: prohibited
+    verification_source: fixed_path_at_C_in_M_A_ancestry_and_protected_remote_main
+  evidence_path: evidence/release_canaries/stage1-production-live-canary-success.json
+  evidence_schema: lotto649.production-live-canary-success.v1
+  registration_observation: absent_not_run
+  required_bindings:
+    plan:
+      authority_commit: 4a617f2c1575a165b42878600753a01ddf2ced03
+      bytes: 7084
+      git_blob: 88ef58825a5ff4a22c82d7db23a3572557ec672c
+      path: evidence/release_canaries/2026-08-27-production-live-canary-plan.json
+      sha256: 16fac454983b714733dcee3996812ae5e0415c27303176aaefdd9cb3ac7feea4
+    protected_main_receipt:
+      allow_deletions: false
+      allow_force_pushes: false
+      enforce_admins: true
+      observed_after_successful_run: true
+      required: true
+    publication_and_authoritative_reload_receipts:
+      authoritative_reload_A: required
+      fresh_full_history_reload: true
+      history_draw_count: 4445
+      history_through: '2026-08-26'
+      publication_P: required
+      receipt_digests: required
+      topology: P -> A
+    reviewed_main_sha:
+      binding: expected_sha_equals_workflow_head_sha_equals_checkout_head
+      branch: main
+      format: lowercase_40_hex_sha1
+      repository: Jasper-Shi/lottopred
+      source: post_merge_independent_review
+    workflow_run:
+      conclusion: success
+      event: workflow_dispatch
+      path: .github/workflows/live.yml
+      repository: Jasper-Shi/lottopred
+      run_id: positive_integer
+
 execution:
   authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json
   authorization: valid_A_required

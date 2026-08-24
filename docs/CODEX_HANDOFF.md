@@ -398,8 +398,13 @@ Do not broaden the fallback to swallow those integrity failures.
    Stage-1 succeeds.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
-   authorized runtime before the gated canary. Use a new version whenever
-   statistical behavior changes.
+   authorized runtime before the gated canary. In particular, V12 authorization
+   A may not be minted or accepted until the successful Stage-1 production
+   canary evidence is independently reviewed, committed, and validated against
+   its fixed plan, reviewed main SHA, successful live workflow run, protected
+   main, and production P/A reload receipts. No such production-canary success
+   evidence exists yet. Use a new version whenever statistical behavior
+   changes.
 9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 

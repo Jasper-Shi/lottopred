@@ -37,9 +37,12 @@ integrity failure, never permission to choose a value.
 
 ## Frozen governed history and knowledge boundary
 
-The registration parent is production `main` commit
-`4a617f2c1575a165b42878600753a01ddf2ced03`. Its sole permitted data seam is
-`load_published_history` at that exact authority. It reconstructs a governed
+The governed-history authority and change baseline is production `main` commit
+`4a617f2c1575a165b42878600753a01ddf2ced03`; it is **not** the direct parent or
+identity of formal registration R. Formal R is the final forward commit that
+jointly changes the final registration seal and config, as discovered by the
+registration tests. The sole permitted data seam is `load_published_history`
+at the exact governed-history authority. It reconstructs a governed
 `PublishedHistory` containing exactly **4,444** unique, strictly increasing
 draws through **2026-08-22**. The authority includes:
 
@@ -87,7 +90,8 @@ pre-RNG rescue, sign selection, minimum-state filter, extension, or rerun.
 
 ## Registration, implementation, authorization: `R < I < A`
 
-Execution capability is separated into three ordered commits:
+Execution capability is separated into three ordered phases and exact Git
+authorities:
 
 1. **R — registration only.** The clean, pushed, CI-green commit containing
    this document, the basis, config, runtime manifest, registration
@@ -98,13 +102,35 @@ Execution capability is separated into three ordered commits:
    tests. The canonical runner must fail closed *before loading governed
    history, creating a forecast, acquiring a claim, or writing an artifact*
    while A is absent or invalid.
-3. **A — execution seal only.** A separate reviewed, pushed, CI-green
-   descendant of I may add the literal authorization seal at
+3. **A — reviewed authorization source and merge.** Let `K` be the exact
+   protected-main authorization base containing both the reviewed I merge and
+   canary-success evidence commit `C`; I and C may occur in either order, but R
+   is a strict ancestor of I and both I and C are strict ancestors of `K` and
+   final authorization merge `M_A`. Branch authorization source `A_s` from
+   exact `K`: its sole parent is `K`, and its only diff is the literal
+   authorization JSON at
    `evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json`.
-   It must bind the exact R and I commits, their ancestry, all registered file
-   hashes, the reviewed CI identities, and the exact command. Only a valid A
-   mints the one-shot historical capability. It may not change code, config,
-   formulas, data, scope, tests, or documentation semantics.
+   The ordinary reviewed PR merge `M_A` has first parent `K`, second parent
+   `A_s`, and a tree identical to `A_s`. The JSON binds exact R, I, C, K and
+   their identities, all registered hashes, reviewed CI, and the exact command.
+   Only protected remote `main` at HEAD=`M_A` is execution authority. Neither
+   `A_s` alone nor any other ref mints the one-shot capability.
+
+There is also a mandatory external prerequisite before V12 A can be minted or
+accepted. The currently unrun Stage-1 production canary must complete
+successfully. Its independently reviewed evidence commit `C` at the
+registration's fixed literal path must be a strict ancestor of `K` and `M_A`,
+remain reachable from protected remote `main`, and be bound literally by the
+authorization JSON with commit/path/blob/bytes/SHA-256. It does not enter the
+R-to-I diff. It must bind the exact Stage-1 plan, independently reviewed
+production-main SHA, successful manual `live.yml`
+workflow run ID and conclusion, protected-main receipt, production publication
+P receipt, and fresh authoritative reload A receipt. Here production P/A are
+the live publication/reload stages, not V12 authorization A. No caller-supplied
+path, receipt, CLI value, or environment value may bypass verification. Until
+the evidence exists and validates, authorization minting, acceptance, and V12
+historical execution are prohibited; this registration does not claim that the
+canary has run.
 
 The paths that must be absent at R are:
 
