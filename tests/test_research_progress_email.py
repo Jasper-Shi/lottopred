@@ -99,6 +99,51 @@ def _run_context(head: str) -> dict[str, str]:
     }
 
 
+def _publication_sources(
+    *,
+    draw_date: str,
+    weekday: str,
+    retrieved_at: datetime,
+    numbers: tuple[int, ...],
+    bonus: int,
+):
+    from lotto649.history_publication import RawSource
+
+    classic_numbers = " ".join(f"{number:02d}" for number in numbers)
+    loto_numbers = b"".join(
+        f'<span class="num">{number:02d}</span>'.encode() for number in numbers
+    )
+    return (
+        RawSource(
+            authority="wclc",
+            url="https://www.wclc.com/winning-numbers/lotto-649-extra.htm",
+            retrieved_at=retrieved_at,
+            raw=(
+                f"<!doctype html><html><body>{weekday}, "
+                f"{datetime.fromisoformat(draw_date).strftime('%B %d, %Y')} "
+                f"CLASSIC DRAW {classic_numbers} Bonus {bonus:02d}</body></html>"
+            ).encode(),
+        ),
+        RawSource(
+            authority="loto_quebec",
+            url=(
+                "https://loteries.lotoquebec.com/en/lotteries/"
+                f"lotto-6-49-resultats?date={draw_date}"
+            ),
+            retrieved_at=retrieved_at,
+            raw=(
+                b"<!doctype html><html><body>"
+                + f'<span id="dateAffichee">{draw_date}</span>'.encode()
+                + b'<div class="lqZoneProduit principal lotto-6-49">'
+                + b'<div class="numeros tirageClassique">'
+                + loto_numbers
+                + f'<span class="num complementaire">{bonus:02d}</span>'.encode()
+                + b"</div></div></body></html>"
+            ),
+        ),
+    )
+
+
 def test_report_ignores_committed_decoy_registry_and_seal(
     tmp_path: Path,
 ) -> None:
@@ -157,6 +202,144 @@ def test_report_rejects_evaluation_beyond_published_history_chronology(
 
     with pytest.raises(ProgressEmailError, match="chronology"):
         build_research_progress_report(root, _run_context(head))
+
+
+def test_report_accepts_p_history_before_evaluation_and_a_are_committed(
+    tmp_path: Path,
+) -> None:
+    from lotto649.history_publication import prepare_history_publication
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, base = _clone_current_repository(tmp_path)
+    retrieved_at = datetime(2026, 8, 27, 12, 0, tzinfo=UTC)
+    sources = _publication_sources(
+        draw_date="2026-08-26",
+        weekday="Wednesday",
+        retrieved_at=retrieved_at,
+        numbers=(2, 7, 18, 23, 35, 49),
+        bonus=11,
+    )
+    prepared = prepare_history_publication(
+        root,
+        expected_base_commit=base,
+        sources=sources,
+        created_at=datetime(2026, 8, 27, 12, 5, tzinfo=UTC),
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "switch",
+            "--detach",
+            "--quiet",
+            prepared.publication_commit,
+        ],
+        check=True,
+        capture_output=True,
+    )
+
+    report = build_research_progress_report(
+        root, _run_context(prepared.publication_commit), generated_at=GENERATED_AT
+    )
+
+    recent_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【最近前瞻命中】")
+    )
+    assert "开奖已进入已验证历史，但评估/A 尚未提交" in recent_hits
+    assert "需人工审计，不得自动重试" in recent_hits
+
+
+@pytest.mark.parametrize(
+    ("evaluation_committed", "expected_fault"),
+    [
+        (False, "评估/A 尚未提交"),
+        (True, "评估已提交但缺少后续预测/A"),
+    ],
+)
+def test_report_audits_history_that_advanced_beyond_latest_prediction(
+    tmp_path: Path,
+    evaluation_committed: bool,
+    expected_fault: str,
+) -> None:
+    from lotto649.history_publication import prepare_history_publication
+    from lotto649.research_progress_email import build_research_progress_report
+
+    root, base = _clone_current_repository(tmp_path)
+    first = prepare_history_publication(
+        root,
+        expected_base_commit=base,
+        sources=_publication_sources(
+            draw_date="2026-08-26",
+            weekday="Wednesday",
+            retrieved_at=datetime(2026, 8, 27, 12, 0, tzinfo=UTC),
+            numbers=(2, 7, 18, 23, 35, 49),
+            bonus=11,
+        ),
+        created_at=datetime(2026, 8, 27, 12, 5, tzinfo=UTC),
+    )
+    second = prepare_history_publication(
+        root,
+        expected_base_commit=first.publication_commit,
+        sources=_publication_sources(
+            draw_date="2026-08-29",
+            weekday="Saturday",
+            retrieved_at=datetime(2026, 8, 30, 12, 0, tzinfo=UTC),
+            numbers=(1, 9, 17, 28, 34, 46),
+            bonus=12,
+        ),
+        created_at=datetime(2026, 8, 30, 12, 5, tzinfo=UTC),
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "switch",
+            "--detach",
+            "--quiet",
+            second.publication_commit,
+        ],
+        check=True,
+        capture_output=True,
+    )
+    head = second.publication_commit
+    if evaluation_committed:
+        _write_json(
+            root / "evaluations" / "2026-08-26__ensemble__v1.0.0.json",
+            {
+                "actual": [2, 7, 18, 23, 35, 49],
+                "bonus": 11,
+                "final_6_hits": 0,
+                "model_name": "ensemble",
+                "model_version": "v1.0.0",
+                "prediction_source": {
+                    "claims": {
+                        "corrected_history": False,
+                        "promotion_evidence_eligible": False,
+                    },
+                    "kind": "sealed_legacy_incident_history",
+                },
+                "target_draw_date": "2026-08-26",
+                "top_12_hits": 1,
+                "top_18_hits": 2,
+                "top_6_hits": 0,
+            },
+        )
+        head = _commit_fixture(root, "commit due evaluation without successor")
+
+    report = build_research_progress_report(
+        root,
+        _run_context(head),
+        generated_at=datetime(2026, 8, 30, 13, 0, tzinfo=UTC),
+    )
+
+    recent_hits = next(
+        line for line in report.body.splitlines() if line.startswith("【最近前瞻命中】")
+    )
+    assert "已验证历史已超过最新预测目标 2026-08-26" in recent_hits
+    assert expected_fault in recent_hits
+    assert "需人工审计，不得自动重试" in recent_hits
 
 
 @pytest.mark.parametrize("artifact", ["registry", "seal"])

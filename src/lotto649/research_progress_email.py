@@ -688,8 +688,16 @@ def _prediction_and_evaluation_facts(
     )
     if latest_evaluation_date > published_history_through:
         raise _fail("evaluation chronology exceeds published history")
-    if latest_prediction_date <= published_history_through:
-        raise _fail("prediction chronology does not extend published history")
+    if latest_prediction_date > published_history_through:
+        latest_operational_state = "prediction_awaiting_draw"
+    elif latest_evaluation_date < latest_prediction_date:
+        latest_operational_state = (
+            "draw_published_evaluation_pending"
+            if latest_prediction_date == published_history_through
+            else "history_beyond_prediction_evaluation_pending"
+        )
+    else:
+        latest_operational_state = "successor_prediction_a_pending"
     latest_evaluations = [
         payload
         for payload in evaluations
@@ -844,6 +852,7 @@ def _prediction_and_evaluation_facts(
         "latest_prediction_pending_evaluation": (
             latest_prediction_date > latest_evaluation_date
         ),
+        "latest_operational_state": latest_operational_state,
         "metric_model": str(preferred["model_name"]),
         "metric_version": str(preferred["model_version"]),
         "metric_qualification": metric_qualification,
@@ -977,7 +986,28 @@ def build_research_progress_report(
             "纠正后 verified operational cohort：promotion evidence eligibility=是，"
             "但单次结果不构成统计显著性或晋级结论"
         )
-    if artifacts["latest_prediction_pending_evaluation"]:
+    latest_operational_state = artifacts["latest_operational_state"]
+    if latest_operational_state == "draw_published_evaluation_pending":
+        latest_result = (
+            f"最新预测目标 {artifacts['latest_prediction_date']}："
+            "开奖已进入已验证历史，但评估/A 尚未提交，需人工审计，不得自动重试"
+        )
+    elif latest_operational_state == "history_beyond_prediction_evaluation_pending":
+        latest_result = (
+            f"已验证历史已超过最新预测目标 {artifacts['latest_prediction_date']}，"
+            "但该预测的评估/A 尚未提交，需人工审计，不得自动重试"
+        )
+    elif latest_operational_state == "successor_prediction_a_pending":
+        relation = (
+            "已达到"
+            if artifacts["latest_prediction_date"] == history["history_through"]
+            else "已超过"
+        )
+        latest_result = (
+            f"已验证历史{relation}最新预测目标 {artifacts['latest_prediction_date']}，"
+            "评估已提交但缺少后续预测/A，需人工审计，不得自动重试"
+        )
+    elif artifacts["latest_prediction_pending_evaluation"]:
         latest_result = (
             f"最新预测目标 {artifacts['latest_prediction_date']} 尚待同日已提交评估"
         )
