@@ -18,14 +18,21 @@ Overlapping dates are compared exactly, including bonus. Any disagreement raises
 
 The registered-history reconciliation opened on 2026-08-20 placed the
 operational source-refresh, default historical-backtest, and live-cycle paths
-behind three explicit kill switches. Production `main` at merge
-`60f972b217f7bd23d1b4807e96034db0cfd1fe2e` retains this deployed state:
+behind three explicit kill switches. Pre-Stage-1 ancestor
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e` retained this incident baseline:
 
-| Boundary | Required configuration | Incident value |
+| Boundary | Required configuration | Pre-Stage-1 value |
 |---|---|---|
 | Network/source refresh and processed-data write | `data.refresh_enabled is True` | `false` |
 | Unattended live refresh/evaluation/prediction cycle | `live.enabled is True` **and** `data.refresh_enabled is True` | `false` / `false` |
 | Historical backtest and report generation | `backtest.enabled is True` | `false` |
+
+Production `main` now contains Stage-1 activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Its deployed configuration has
+`data.refresh_enabled=true`, `live.enabled=true`, and
+`backtest.enabled=false`. Those true runtime gates are armed only for the
+manual, digest-bound production canary described below; they do not authorize
+a CLI, scheduled, integration, or backtest run.
 
 These checks deny by default. A missing key, a non-boolean value, or a value
 other than literal boolean `true` does not enable execution. `bootstrap`
@@ -42,20 +49,19 @@ sufficient to reopen a sealed workflow.
 The three affected GitHub Actions workflows have a read-only boundary directly
 after checkout. That boundary reads the committed configuration with the
 runner's standard Python runtime and hashes the complete `config.yaml` byte
-stream with SHA-256; it does not interpret YAML. The incident seal recognizes
-only disabled-config SHA-256
+stream with SHA-256; it does not interpret YAML. The retained incident-disabled
+mode recognizes disabled-config SHA-256
 `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`,
-and even that exact match emits `false` for every execution stage. Every other
-digest also emits only `false`. Runtime setup, dependency installation,
-bootstrap, backtest, live execution, artifact upload, and Git writes therefore
-skip successfully for both the sealed config and any unreviewed byte change.
-The guard writes all-false outputs before hashing; a missing or unreadable
-`config.yaml` produces a warning and a successful sealed exit rather than a
-traceback that could obscure the operational state.
+and even that exact match emits `false` for every execution stage. An
+unrecognized digest also emits only `false`. Integration and backtest likewise
+recognize the Stage-1 digest only to remain all-false no-ops; `live.yml` has the
+separate exact Stage-1 authorization path below. The guard writes all-false
+outputs before hashing; a missing or unreadable `config.yaml` produces a
+warning and a successful sealed exit rather than a traceback that could obscure
+the operational state.
 
-The disconnected-until-reviewed Stage-1 branch changes only the live production
-canary boundary. It sets `data.refresh_enabled=true`, `live.enabled=true`, and
-keeps `backtest.enabled=false`; the exact `config.yaml` SHA-256 is
+The merged Stage-1 release changes only the live production-canary boundary.
+The exact `config.yaml` SHA-256 is
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
 Only a manual `workflow_dispatch`, after a read-only full-history checkout and
 fixed repository/ref/commit/time checks, may call
@@ -64,27 +70,33 @@ is scoped only to that protected step. Integration and backtest remain all-false
 workflow no-ops, the legacy CLI writer interlock remains closed, and there is no
 ordinary Git push or unattended schedule.
 
-The dispatch requires an `expected_sha` input. After the candidate is merged,
-an independent reviewer establishes the exact production `main` SHA; the
-operator supplies that canonical lowercase 40-hex value, and the guard requires
-`expected_sha == GITHUB_SHA == checkout HEAD`. The candidate commit is not a
-post-merge approval SHA, so the plan stores only
+The dispatch requires an `expected_sha` input. An independent reviewer must
+establish the exact production `main` dispatch target; the operator supplies
+that canonical lowercase 40-hex value, and the guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. Neither reviewed candidate
+`5c5dc355ce1bfdae1f467eefa35062aff59d9614` nor activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` is an approved dispatch SHA. The
+plan stores only
 `approved_sha_source=post_merge_review`; the actual value belongs in dispatch
 evidence. Once the exact Stage-1 config digest is present, an invalid or
 mismatched SHA, wrong repository/event/ref, inconsistent checkout, or early
 dispatch writes all-false outputs first and then fails the workflow red.
 
-Stage 1 is preregistered but not executed. It requires independent review,
-installation of the repository-scoped publication credential, and a hard
-not-before of `2026-08-27T15:15:00Z` after both WCLC and Loto-Québec publish and
-agree on the 2026-08-26 draw. Success is exact `B -> E -> S -> P -> A`, a fresh
-reload of 4,445 draws through 2026-08-26, seven descriptive-only legacy
-evaluations, and seven immutable 2026-08-29 predictions. The existing seven
-2026-08-26 snapshots remain byte-identical. A post-worker failure has no
-automatic retry. The first successful P or A authority advance moves `main`, so
-the old independently approved `expected_sha` fails the next dispatch and
-blocks a replay. Stage 2 may add scheduling only in a separate PR after the
-canary succeeds and its evidence is reviewed.
+Stage 1 is `merged_armed_not_executed`. Its final candidate
+`5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
+Spec review with 0 blocker, 0 major, and 0 minor findings. No manual dispatch
+has run, no dispatch SHA is approved, the repository-scoped publication
+credential is not installed, and the hard not-before/source gate remains
+pending. That gate is `2026-08-27T15:15:00Z` after both WCLC and Loto-Québec
+publish and agree on the 2026-08-26 draw. Success is exact
+`B -> E -> S -> P -> A`, a fresh reload of 4,445 draws through 2026-08-26,
+seven descriptive-only legacy evaluations, and seven immutable 2026-08-29
+predictions. The existing seven 2026-08-26 snapshots remain byte-identical. A
+post-worker failure has no automatic retry. The first successful P or A
+authority advance moves `main`, so the old independently approved
+`expected_sha` fails the next dispatch and blocks a replay. Stage 2 may add
+scheduling only in a separate PR after the canary succeeds and its evidence is
+reviewed.
 
 This emergency seal is deliberately scoped to the three execution commands on
 main: `bootstrap`, `backtest`, and `live`. It grants no authority for any other
@@ -163,15 +175,17 @@ SHA-256. The private worker has no standalone module or CLI entry point. Its
 subprocess environment is scrubbed and admits only `SMTP_USERNAME` and
 `SMTP_PASSWORD`; notification therefore uses fixed Gmail defaults rather than
 optional host, port, sender, or recipient overrides. It remains absent from
-every CLI import path. The Stage-1 branch connects only this public function to
-the digest-bound manual workflow.
+every CLI import path. The merged Stage-1 release connects only this public
+function to the digest-bound manual workflow.
 
 Bootstrap and every legacy public live entry point remain quarantined by the
 writer interlock. The disposable remote OID/CAS canary and production `main`
 protection were verified on 2026-08-24. PR #31 merged orchestration as
 `2fe56a40532f7be2586a5cfc004699561556e849`; PR #32 merged the complete-DAG
 prediction-origin proof as
-`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The Stage-1 branch is not a
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`, now a pre-Stage-1 ancestor.
+Production `main` contains activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Stage 1 is armed but is not a
 completed production canary; its remaining gates are recorded above. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
@@ -252,8 +266,9 @@ worker starts is fail closed and receives no automatic retry: notification may
 already have produced an external side effect even when the worker cannot
 return a complete manifest.
 
-This path remains dormant until the Stage-1 branch review, post-merge `main`
-SHA review, credential, and time/source gates pass. Stage 1 permits one manual
+This path remains dormant until an exact production `main` dispatch SHA is
+independently reviewed and approved, and the credential and time/source gates
+pass. The Stage-1 candidate review is satisfied; Stage 1 permits one manual
 attempt and no unattended schedule.
 
 ## Path B — Historical walk-forward simulation

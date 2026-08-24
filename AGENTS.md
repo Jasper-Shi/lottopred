@@ -81,9 +81,9 @@ affected documentation in the same change.
   CLI entry point. The parent launches it only from the detached P workspace,
   verifies its source and imported `lotto649` modules against P, and gives it
   only `SMTP_USERNAME` and `SMTP_PASSWORD` beyond a fixed scrubbed environment.
-  It is not imported by a CLI. The disconnected-until-reviewed Stage-1 branch
-  may call only `orchestrate_github_live_cycle(*, token=...)` from a SHA-bound
-  manual workflow; branch preparation alone does not authorize a dispatch.
+  It is not imported by a CLI. The merged Stage-1 release may call only
+  `orchestrate_github_live_cycle(*, token=...)` from a SHA-bound manual
+  workflow; the armed release alone does not authorize a dispatch.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -174,24 +174,31 @@ reviewed components.
 PR #31 merged orchestration at
 `2fe56a40532f7be2586a5cfc004699561556e849`. PR #32 fixed immutable prediction
 origin validation at head `69d59709dd5f8d9c6d8e761dc84d784af844144d`
-and merged as `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
-The Stage-1 branch sets only `data.refresh_enabled` and `live.enabled` to
-literal `true`, leaves `backtest.enabled=false`, and binds a manual-only
-`live.yml` to config SHA-256
+and merged as pre-Stage-1 ancestor
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The final Stage-1 candidate
+`5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
+Spec review with 0 blocker, 0 major, and 0 minor findings. Production `main`
+now contains Stage-1 activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. The deployed Stage-1 state is
+`merged_armed_not_executed`: `data.refresh_enabled` and `live.enabled` are
+literal `true`, `backtest.enabled=false`, and manual-only `live.yml` is bound
+to config SHA-256
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
 Repository permissions are read-only, checkout does not persist credentials,
 and the dedicated publication credential is exposed only to the protected
 canary step. There is no ordinary Git push or automatic retry after worker
 start. Manual dispatch requires `expected_sha`: the operator supplies the
-canonical 40-hex post-merge production `main` SHA established by independent
-review. The candidate branch commit is not that authority and the unknown
-post-merge SHA must be recorded only in dispatch evidence. For the exact Stage-1
-config, an invalid/mismatched SHA, context mismatch, or early dispatch writes
-all-false outputs and fails red. A successful P or A advance moves `main`, so
-the old approved SHA cannot authorize a rerun. This branch remains disconnected
-until independent review, credential installation, and the hard time/source
-gate. Stage 2 may add scheduling only in a separate PR after the production
-canary succeeds and its evidence is reviewed.
+canonical 40-hex production `main` SHA established by an independent review of
+the exact dispatch target. No dispatch SHA is approved yet; neither the
+candidate commit nor the activation merge ancestor is that authority, and the
+eventual value must be recorded only in dispatch evidence. The publication
+credential is not installed, and the not-before/source gate remains pending.
+For the exact Stage-1 config, an invalid/mismatched SHA, context mismatch, or
+early dispatch writes all-false outputs and fails red. A successful P or A
+advance moves `main`, so the old approved SHA cannot authorize a rerun. No
+manual canary has executed and no schedule exists. Stage 2 may add scheduling
+only in a separate PR after the production canary succeeds and its evidence is
+reviewed.
 
 Live forward cycle:
 
