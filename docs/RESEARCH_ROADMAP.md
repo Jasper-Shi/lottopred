@@ -42,17 +42,28 @@ cover source acquisition plus the `B -> E -> S -> P` transaction and local state
 machine as disconnected seams. A fixed-repository GitHub exact-CAS publisher,
 fresh public reload, and isolated exact-P execution/artifact handoff now also
 exist, still disconnected. A capability-scoped exact remote `P -> A` publisher
-is independently reviewed, merged, and likewise remains disconnected. A local
-code-level orchestration candidate now composes the full collect/P
+is independently reviewed and merged. PR #31 merged orchestration at
+`2fe56a40532f7be2586a5cfc004699561556e849`; it composes the full collect/P
 publication/fresh-P handoff/private exact-P worker/freeze-A/P-to-A
 publication-and-reload sequence without a standalone worker or caller-injected
-configuration, clock, or adapters. It is not imported by a CLI or workflow, and
-all three runtime switches remain false. The authorized disposable remote
+configuration, clock, or adapters. It is not imported by a CLI. PR #32 merged
+the complete-DAG source-prediction origin proof as
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The authorized disposable remote
 OID/CAS canary and protected production `main` were verified on 2026-08-24.
-Live still requires the narrow workflow publication credential, a real
-end-to-end production `P -> A` canary/reload, and the separate SHA-bound
-workflow/config release review in `docs/OPERATIONS.md` before any execution
-switch can be reconsidered.
+Production `main` at that merge retains all three false switches.
+
+The disconnected-until-reviewed Stage-1 branch is a manual-only production
+canary: exact config digest
+`d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`,
+data/live true, backtest false, and no integration, backtest, CLI,
+ordinary-push, automatic post-worker retry, or scheduled execution path. The
+remaining pre-dispatch gates are independent branch review, the narrow workflow
+publication credential, and the hard `2026-08-27T15:15:00Z` plus
+dual-official-source requirement. A separate
+Stage-2 schedule PR is permitted only after the exact production
+`B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed. See
+`docs/OPERATIONS.md`; no Stage-1 preparation or legacy evaluation creates model
+evidence by itself.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,

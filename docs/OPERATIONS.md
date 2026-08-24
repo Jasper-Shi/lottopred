@@ -9,11 +9,11 @@ No local computer needs to stay running.
 
 ## Data-integrity incident kill switch
 
-The 2026-08-20 registered-history reconciliation suspends source refresh, live
+The 2026-08-20 registered-history reconciliation suspended source refresh, live
 execution, and historical backtesting. The registered 4,434-row history through
 2026-08-22 is not strict real-calendar evidence. A reviewed candidate now seals
-the correction, but sealing evidence does not authorize execution. The
-committed incident state remains:
+the correction, but sealing evidence does not authorize execution. Production
+`main` at merge `60f972b217f7bd23d1b4807e96034db0cfd1fe2e` retains:
 
 ```yaml
 data:
@@ -53,6 +53,73 @@ treated as a failed model job and cannot fall through to a Git write or other
 side effect. The guard writes its all-false outputs before attempting the hash;
 a missing or unreadable `config.yaml` emits a warning and exits successfully in
 the same sealed state.
+
+### Stage-1 manual production-canary candidate
+
+Stage 1 is a disconnected-until-reviewed branch, not a completed or authorized
+canary. Its exact preregistration is
+[`2026-08-27-production-live-canary-plan.json`](../evidence/release_canaries/2026-08-27-production-live-canary-plan.json).
+The branch changes only the applicable live boundary:
+
+```yaml
+data:
+  refresh_enabled: true
+backtest:
+  enabled: false
+live:
+  enabled: true
+```
+
+The exact candidate `config.yaml` SHA-256 is:
+
+```text
+d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931
+```
+
+`.github/workflows/live.yml` has only `workflow_dispatch`; it has no schedule
+or push trigger. It uses a full-history checkout with
+`persist-credentials=false` and top-level `contents: read`. Its guard begins
+false and may authorize setup plus one protected canary step only for the exact
+config digest, repository, `main` ref, checked-out commit, manual event, and
+trusted UTC not-before value. That step is the only consumer of
+`LOTTO_GITHUB_PUBLICATION_TOKEN`, and it calls only
+`orchestrate_github_live_cycle(*, token=...)`. The repository-scoped credential
+is not installed at registration. Integration and backtest remain all-false
+workflow no-ops, backtest stays runtime-disabled, and legacy CLI/bootstrap
+writers remain interlocked. Stage 1 contains no ordinary Git push and no
+automatic retry after the private P worker starts.
+
+PR #31 merged the orchestrator at
+`2fe56a40532f7be2586a5cfc004699561556e849`. PR #32 satisfied the former
+due-prediction origin blocker at head
+`69d59709dd5f8d9c6d8e761dc84d784af844144d` and merge
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`: evaluation now proves the source
+prediction's unique immutable origin across the complete commit DAG and keeps
+the exact legacy-manifest exception closed to the seven 2026-08-26 snapshots.
+
+The remaining pre-dispatch blockers are independent review of the exact Stage-1
+branch, installation and verification of the narrow publication credential,
+and the time/source gate. The earliest permitted dispatch is
+`2026-08-27T15:15:00Z`, and both WCLC and Loto-Québec must have independently
+published and agreed on the 2026-08-26 draw. The single attempt must produce
+exact `B -> E -> S -> P -> A` topology. Success requires a fresh authoritative
+reload of 4,445 draws through 2026-08-26, exactly seven evaluations for the due
+2026-08-26 cohort, and exactly seven immutable predictions for 2026-08-29. The
+existing seven 2026-08-26 prediction files must remain byte-identical.
+
+The due evaluations are descriptive only. Their `actual_history` identifies the
+corrected result source, while `prediction_source.kind` is
+`sealed_legacy_incident_history` and both `corrected_history` and
+`promotion_evidence_eligible` claims are false. Their exact source cohort is
+pinned by manifest SHA-256
+`04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02`.
+
+If the protected worker starts and the canary later fails, do not dispatch it
+again automatically. Audit the acknowledged remote state, then use a reviewed
+forward commit to restore false data/live switches and reseal the workflow;
+never reset, force, or rewrite acknowledged commits. Stage 2 may add the
+Thursday/Sunday schedule only in a separate PR after Stage-1 succeeds and its
+exact evidence receives independent review.
 
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:
@@ -105,7 +172,7 @@ requires a fresh anonymous full fetch plus `load_published_history(A)`. None of
 these component seams is directly connected to a CLI, live entry point, or
 workflow.
 
-The disconnected `live_orchestration` code candidate composes the complete
+The merged `live_orchestration` module composes the complete
 fixed sequence: collect, prepare, publish/reload P, open the fresh detached-P
 workspace, run the private exact-P worker, freeze A, then publish/reread/freshly
 reload A before returning success. Its public boundary accepts only a GitHub
@@ -113,8 +180,9 @@ token; it reads literal-B configuration, trusted UTC clocks, fixed repository,
 fixed ref, and concrete adapters internally. The private P worker has no
 standalone module or CLI entry point. The parent verifies the worker and every
 loaded `lotto649` source module against exact P before accepting its bounded
-manifest. This candidate is not imported by any CLI or workflow, changes no
-runtime gate, and is not an execution release.
+manifest. It is not imported by any CLI. The Stage-1 branch connects only its
+public orchestration boundary to the protected manual workflow; the module does
+not itself change a runtime gate or authorize execution.
 
 ### Remote publication release state
 
@@ -136,16 +204,17 @@ Remote verification on 2026-08-24 established these facts:
 - the repository still has no rulesets (`[]`), and GitHub Actions default
   workflow permissions remain read-only.
 
-The manual canary used the authenticated operator boundary; it did not install
-or expose a workflow credential. The remaining release blockers are:
+The disposable canary used the authenticated operator boundary; it did not
+install or expose a workflow credential. The prediction-origin blocker is
+satisfied by PR #32. The remaining Stage-1 pre-dispatch blockers are:
 
 1. install and verify a repository-scoped publication credential with only the
    Administration-read, Contents-write, and Metadata-read permissions required
    by the reviewed publishers;
-2. a real exact production `P -> A` end-to-end canary followed by reread and
-   fresh anonymous reload;
-3. a separate review of the new config bytes and SHA-bound workflow execution
-   plan.
+2. independent review of the exact config bytes, manual-only SHA-bound workflow,
+   preregistration, and documentation;
+3. wait until no earlier than `2026-08-27T15:15:00Z` and verify that WCLC and
+   Loto-Québec have both published and agreed on the 2026-08-26 draw.
 
 The future live order is fixed: collect both sources, prepare and remotely
 publish P, freshly reload P, keep the isolated detached-P context open while
@@ -154,12 +223,11 @@ then remotely compare-and-swap and freshly reload A. Do not evaluate before P,
 resume in the caller's old checkout, broadly stage directories, or use an
 ordinary push.
 
-Public bootstrap, live refresh, evaluation, and prediction entry points
-therefore still refuse execution after their gates. Before reconsidering those
-gates, complete every blocker in the remote publication release state above.
-The disconnected orchestration candidate does not prove the remote operational
-path or complete the reviewed release; all switches remain false. The
-frozen schema and trust boundary are in
+Public bootstrap and legacy live entry points remain interlocked. Production
+`main` at `60f972b` still has all switches false; the disconnected Stage-1
+branch prepares literal-true data/live runtime gates only for its separately
+digest-bound manual orchestration call. That branch has not run and does not
+prove the remote operational path. The frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
 Create or validate the seal only in a permission-isolated repository directory.
@@ -184,8 +252,8 @@ not enough.
    the next canonical suffix and registry events through the exact
    `B -> E -> S -> P` transaction, remotely compare-and-swap `main`, and reload
    that remote revision successfully before evaluation or prediction. The
-   disconnected orchestration candidate implements this order in code, but the
-   required true-remote canaries must prove it before release.
+   merged orchestration implements this order in code, but the production
+   canary must prove it before Stage 2.
 3. Offline unit, chronology, integrity, workflow-guard, and lint checks pass.
    Run a network smoke only after source access itself is approved.
 4. The review names exactly which stages are reopening and why, prepares the
@@ -209,22 +277,27 @@ incident-affected legacy forecasts: their hits may be recorded descriptively,
 but they are excluded from corrected-history promotion evidence. Any other
 legacy-like or ambiguous source fails closed.
 
-Until that release is committed, manual and scheduled dispatches are expected
-to perform only checkout plus the safe guard and then skip.
+Before the Stage-1 candidate is independently reviewed and merged, production
+manual and scheduled dispatches perform only checkout plus the safe guard and
+then skip. After merge, only the explicitly authorized one-time Stage-1 manual
+dispatch may proceed; scheduling remains absent until a separate Stage-2 PR.
 
 ## GitHub Actions workflows
 
 - `test.yml` — runs unit tests on pushes and pull requests.
-- `integration.yml` — verifies real result sources, a short walk-forward run and live snapshot generation.
+- `integration.yml` — remains an all-false no-op in Stage 1; its historical
+  source/model smoke stages are not part of this canary.
 - `backtest.yml` — outside the hold, runs the configured historical walk-forward
   benchmark. Reopening it now requires the reviewed corrected-history consumer;
   no corrected rerun makes the consumed 2020–2025 outcomes blind again.
-- `live.yml` — runs after model deployment and every Thursday/Sunday, evaluates due predictions, generates the next-draw predictions and commits the audit trail.
+- `live.yml` — in Stage 1, exposes only a manual digest-bound call to
+  `orchestrate_github_live_cycle`; it has no schedule or push trigger.
 
-During the data-integrity incident the last three workflows remain sealed as
-described above. The live workflow retains `contents: write` permission for its
-ordinary role, but every Git-writing step is conditioned on the sealed cycle
-output and cannot run while the incident guard emits `false`.
+During Stage 1, integration and backtest remain sealed. `live.yml` has read-only
+repository permissions, does not persist checkout credentials, begins with
+false guard outputs, and may proceed only for the exact Stage-1 identity/time
+gates. The narrow publication token, rather than an ordinary Git push, is the
+only remote write capability passed to the orchestrator.
 
 The backtest, integration, and live workflows use full Git history so the
 verified-history loader can resolve its pinned artifact/evidence ancestry if a
@@ -253,7 +326,7 @@ EMAIL_TO = SMTP_USERNAME
 
 So alerts are sent from your Gmail account back to the same inbox. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` remain optional GitHub Secrets if you ever want to override those defaults or send alerts to another address.
 
-The disconnected exact-P orchestration candidate deliberately passes only
+The exact-P orchestration deliberately passes only
 `SMTP_USERNAME` and `SMTP_PASSWORD` into the isolated worker. It always uses the
 Gmail host/port and same-account sender/recipient defaults. The optional
 host/address overrides remain available only to manual or legacy email paths;
@@ -296,11 +369,14 @@ or indeterminate acknowledgement. They do not retry, merge, force, or fall back
 to an ordinary push. Existing prediction snapshots remain immutable and are
 never regenerated or overwritten.
 
-The orchestration candidate also performs no automatic retry after its private
+The orchestration also performs no automatic retry after its private
 P worker starts. An alert may already have left the process before a later
 model, manifest, freeze, or A-publication failure, so retry requires explicit
 operator audit rather than an unattended replay.
 
 ## Scheduled time
 
-The live workflow runs at `15:15 UTC` Thursday and Sunday, well after the preceding Wednesday/Saturday draw. This reduces the chance of querying before official results have propagated.
+Stage 1 has no schedule. Its one manual production-canary dispatch is permitted
+no earlier than `2026-08-27T15:15:00Z` and only after both official sources have
+published and agreed on the 2026-08-26 draw. A separate Stage-2 PR may add a
+`15:15 UTC` Thursday/Sunday schedule after the canary evidence passes review.

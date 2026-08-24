@@ -15,13 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 _MISSING = object()
 
 
-def test_incident_config_explicitly_disables_mutating_execution():
+def test_stage1_config_enables_only_live_refresh_and_keeps_backtest_disabled():
     from lotto649.config import load_config
 
     cfg = load_config(ROOT / "config.yaml")
 
-    assert cfg["data"]["refresh_enabled"] is False
-    assert cfg["live"]["enabled"] is False
+    assert cfg["data"]["refresh_enabled"] is True
+    assert cfg["live"]["enabled"] is True
     assert cfg["backtest"]["enabled"] is False
 
 

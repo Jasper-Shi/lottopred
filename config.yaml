@@ -5,7 +5,7 @@ project:
 
 data:
   # Data-integrity incident kill switch. Re-enable only in a reviewed release.
-  refresh_enabled: false
+  refresh_enabled: true
   history_url: "https://www.wclc.com/display-on/display-on-downloads/lotto-649-since-inception.htm?channel=print"
   recent_url: "https://www.wclc.com/winning-numbers/lotto-649-extra.htm?channel=print"
   bridge_year_url: "https://www.lotto.net/canada-lotto-6-49/numbers/{year}"
@@ -23,7 +23,7 @@ backtest:
 
 live:
   # Data-integrity incident kill switch. Missing/non-true remains disabled.
-  enabled: false
+  enabled: true
   models: [random, long_frequency, recent_frequency, ema_gap, logistic, ensemble, v3_boosting]
   shadow_models: [v3_boosting]
 

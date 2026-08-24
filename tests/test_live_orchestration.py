@@ -431,6 +431,7 @@ def test_published_code_runs_isolated_from_p_with_only_smtp_environment(
     monkeypatch.setenv("SMTP_USERNAME", "sender@example.test")
     monkeypatch.setenv("SMTP_PASSWORD", "app-password")
     monkeypatch.setenv("GITHUB_TOKEN", "must-not-cross")
+    monkeypatch.setenv("LOTTO_GITHUB_PUBLICATION_TOKEN", "must-not-cross")
     monkeypatch.setenv("PYTHONPATH", "/hostile")
     monkeypatch.setattr(
         ExecutionWorkspace,
@@ -499,6 +500,7 @@ def test_published_code_runs_isolated_from_p_with_only_smtp_environment(
         "SMTP_PASSWORD": "app-password",
     }
     assert "GITHUB_TOKEN" not in captured["env"]
+    assert "LOTTO_GITHUB_PUBLICATION_TOKEN" not in captured["env"]
     assert "PYTHONPATH" not in captured["env"]
 
 
@@ -546,19 +548,28 @@ def test_public_wrapper_reads_real_disabled_config_before_any_adapter(
         raise AssertionError("public wrapper accepted forged cfg/clock")
 
 
-def test_committed_false_gates_disconnect_public_wrapper(monkeypatch):
+def test_stage1_committed_config_reaches_the_protected_history_boundary(monkeypatch):
+    from lotto649.config import load_config
+
+    cfg = load_config(ROOT / "config.yaml")
+    cfg["_root"] = ROOT
+    cfg["_authority_head"] = B
     reached = []
 
-    def forbidden():
-        reached.append("adapter")
-        raise AssertionError("network adapter reached")
+    class ReachedProtectedBoundary(RuntimeError):
+        pass
 
-    monkeypatch.setattr(orchestration, "RequestsOfficialSourceHttpClient", forbidden)
+    def stop_at_history(received):
+        reached.append(received)
+        raise ReachedProtectedBoundary
 
-    with pytest.raises(RuntimeError, match="live execution is disabled"):
+    monkeypatch.setattr(orchestration, "_load_production_config", lambda: cfg)
+    monkeypatch.setattr(orchestration, "load_operational_history", stop_at_history)
+
+    with pytest.raises(ReachedProtectedBoundary):
         orchestration.orchestrate_github_live_cycle(token="unused-secret")
 
-    assert reached == []
+    assert reached == [cfg]
 
 
 @pytest.mark.parametrize(

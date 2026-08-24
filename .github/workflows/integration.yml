@@ -18,6 +18,9 @@ on:
       - 'config.yaml'
       - '.github/workflows/integration.yml'
 
+permissions:
+  contents: read
+
 jobs:
   source-and-model-smoke:
     runs-on: ubuntu-latest
@@ -26,7 +29,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Read incident execution guards
+          persist-credentials: false
+      - name: Read Stage-1 execution guards
         id: execution_guard
         shell: bash
         run: |
@@ -36,6 +40,7 @@ jobs:
           from pathlib import Path
 
           disabled_sha256 = "ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6"
+          stage1_sha256 = "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931"
           values = {
               "refresh": False,
               "backtest": False,
@@ -61,6 +66,10 @@ jobs:
           else:
               if observed_sha256 == disabled_sha256:
                   print("Verified incident-disabled config; execution remains sealed")
+              elif observed_sha256 == stage1_sha256:
+                  print(
+                      "Verified Stage-1 live config; this workflow remains sealed"
+                  )
               else:
                   print(
                       "::warning::Unapproved config SHA-256; "

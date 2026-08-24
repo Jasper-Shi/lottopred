@@ -71,9 +71,9 @@ affected documentation in the same change.
   reviewed and merged, but its fixed authority, object-identity, CAS, reread,
   and fresh-reload contract still requires the remote canaries specified in
   `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`; it is not an execution release.
-- `src/lotto649/live_orchestration.py` is the disconnected code-level candidate
-  for the sole fixed GitHub live state machine. It reads literal-`HEAD` B
-  configuration and trusted UTC time internally, composes collection through
+- `src/lotto649/live_orchestration.py` is the merged implementation of the sole
+  fixed GitHub live state machine. It reads literal-`HEAD` B configuration and
+  trusted UTC time internally, composes collection through
   remote P publication/reload, runs the private exact-P worker, freezes A, and
   keeps the P workspace open through remote A publication/reload. It accepts no
   caller-supplied configuration, clock, adapters, repository, or ref.
@@ -81,8 +81,9 @@ affected documentation in the same change.
   CLI entry point. The parent launches it only from the detached P workspace,
   verifies its source and imported `lotto649` modules against P, and gives it
   only `SMTP_USERNAME` and `SMTP_PASSWORD` beyond a fixed scrubbed environment.
-  The orchestration candidate is not imported by a CLI or workflow and does not
-  authorize execution.
+  It is not imported by a CLI. The disconnected-until-reviewed Stage-1 branch
+  may call only `orchestrate_github_live_cycle(*, token=...)` from a SHA-bound
+  manual workflow; branch preparation alone does not authorize a dispatch.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -164,22 +165,27 @@ history before t -> features/train -> frozen prediction for t -> reveal t -> sco
 ```
 
 Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads
-only through the verified operational-history seam. `lotto649 bootstrap` remains
-blocked until the reviewed collector is connected to a remote exact-CAS
-registry publisher, the remote authority reload succeeds, and the execution
-worktree is handed to the published authority head; it must never fall back to
-the legacy processed CSV. The collector, offline preparer, local bare CAS,
-disconnected GitHub publisher, and isolated execution/artifact handoff are
-separately testable components. A disconnected capability-scoped exact remote
-`P -> A` publisher is independently reviewed and merged. A disconnected local
-orchestration candidate now composes the complete sequence with exact-P code
-provenance, but it has no CLI/workflow connection and all three runtime gates
-remain false. The authorized disposable remote OID/CAS canary succeeded on
-2026-08-24, and production `main` now enforces administrator, force-push, and
-deletion protection. The execution release still requires a repository-scoped
-publication credential, a real production `P -> A` canary plus reload, and a
-separately reviewed SHA-bound workflow/config release. None of these components
-authorizes this execution path.
+only through the verified operational-history seam. The legacy `lotto649
+bootstrap` and `lotto649 live` commands retain their writer interlock and must
+never fall back to the legacy processed CSV. The collector, preparer, exact-CAS
+publishers, isolated execution handoff, and merged orchestration are separately
+reviewed components.
+
+PR #31 merged orchestration at
+`2fe56a40532f7be2586a5cfc004699561556e849`. PR #32 fixed immutable prediction
+origin validation at head `69d59709dd5f8d9c6d8e761dc84d784af844144d`
+and merged as `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
+The Stage-1 branch sets only `data.refresh_enabled` and `live.enabled` to
+literal `true`, leaves `backtest.enabled=false`, and binds a manual-only
+`live.yml` to config SHA-256
+`d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
+Repository permissions are read-only, checkout does not persist credentials,
+and the dedicated publication credential is exposed only to the protected
+canary step. There is no ordinary Git push or automatic retry after worker
+start. This branch remains
+disconnected until independent review, credential installation, and the hard
+time/source gate. Stage 2 may add scheduling only in a separate PR after the
+production canary succeeds and its evidence is reviewed.
 
 Live forward cycle:
 
