@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -35,6 +36,65 @@ from lotto649.operational_history import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+_LEGACY_2026_08_26_ORIGIN = "9f16e20c726c7b65eed1d387c4c725d51248f570"
+_LEGACY_2026_08_26_PARENT = "0ef18836530ebb7083e0c8e5d557e5cdc3d476a4"
+_LEGACY_2026_08_26_HISTORY = (
+    "9d5d79130c77fb2642069d4b49e8ecc65615ab0f",
+    "f7f47b29cd1281043672784843a06d8a8a0abf8e0bdcf511805f9346e3f37773",
+    136_297,
+)
+_LEGACY_2026_08_26_PREDICTIONS = {
+    "ema_gap": (
+        "a8159032ec7aa47627ac432e5303b1b838843f2c",
+        "803af5c6f56d8b7ce3f75e0052015f9b1030e9d27d67f886af6a213ef26894c2",
+        2_191,
+        "2026-08-23T11:35:59.681632-04:00",
+        "primary",
+    ),
+    "ensemble": (
+        "f2df110923a0f5136a66bb1dcc35376cc3931ed6",
+        "c07e6118a2ed61132626602f7ab74e3baca659aa28a2033656ae2587207ce166",
+        2_188,
+        "2026-08-23T11:36:01.073756-04:00",
+        "primary",
+    ),
+    "logistic": (
+        "ee83fff0fbcd7ce768880a7e3a367486d8553e16",
+        "58032d0b9b6e40314a82039431cb3868468277929c6dfa4d23eb673918f3e270",
+        2_198,
+        "2026-08-23T11:36:00.968438-04:00",
+        "primary",
+    ),
+    "long_frequency": (
+        "73275cbd248fcbac78ed67256e3341a3c7539e34",
+        "7f7cfc90e8e7c8d58117656035975353586e3ceb6f8bde0fc125d3b1778d3622",
+        2_200,
+        "2026-08-23T11:35:59.655183-04:00",
+        "primary",
+    ),
+    "random": (
+        "0df842e837613306f27cdfc2dccc2a852b307154",
+        "d1afd687db881a6a9bbe9eaef5abdca58d973d59bc77ead4ec341998688ba86d",
+        2_193,
+        "2026-08-23T11:35:59.640444-04:00",
+        "primary",
+    ),
+    "recent_frequency": (
+        "7f82f326ec33009eaac4e7c933b5f1abb826fab0",
+        "f0a4fee650f064ec2cf0b243923e645ce93ccb480aefff02d36a450a967473bf",
+        2_182,
+        "2026-08-23T11:35:59.669104-04:00",
+        "primary",
+    ),
+    "v3_boosting": (
+        "3b1547434d6bda7bc9f58d90b270b55631aaf689",
+        "fe51480b5a15b24dcf6551396edafb84c8363f40998a1bc1a53348ec2a65e0f6",
+        2_199,
+        "2026-08-23T11:36:01.458977-04:00",
+        "shadow",
+    ),
+}
 
 
 class _ObservedLock:
@@ -229,6 +289,7 @@ def _write_required_predictions(
 def _write_valid_evaluation(
     workspace: ExecutionWorkspace,
     *,
+    classify_prediction_source: bool = True,
     model_name: str = "handoff_fixture",
 ) -> tuple[str, bytes]:
     target = workspace.history.draws[-1].draw_date
@@ -244,6 +305,15 @@ def _write_valid_evaluation(
         actual,
     )
     evaluation["actual_history"] = operational_history_provenance(workspace.history)
+    if classify_prediction_source:
+        prediction_relative = prediction_path.relative_to(workspace.root).as_posix()
+        evaluation["prediction_source"] = history_handoff.evaluation_prediction_source(
+            workspace.root,
+            workspace.publication_commit,
+            prediction_relative,
+        )
+    else:
+        evaluation["prediction_source"] = {"kind": "unverified-test-fixture"}
     relative = f"evaluations/{target.isoformat()}__{model_name}__v1.0.0.json"
     return relative, _write_json(workspace.root / relative, evaluation)
 
@@ -252,6 +322,9 @@ def _candidate(
     tmp_path: Path,
     *,
     base_symlink: bool = False,
+    intervening_prediction_merge: bool = True,
+    intervening_prediction_history: bool = False,
+    prediction_history_attack: str | None = None,
     source_prediction_after_draw: bool = False,
 ):
     repository = tmp_path / "caller"
@@ -281,6 +354,8 @@ def _candidate(
             capture_output=True,
         )
     initial = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+    if prediction_history_attack in {"side_add", "side_conflict"}:
+        _git(repository, "branch", "handoff-attack-side", initial)
     base_history = load_published_history(repository, initial)
     target = _next_draw_date(base_history.draws[-1].draw_date)
     generated_at = datetime.combine(
@@ -299,7 +374,7 @@ def _candidate(
         / "predictions"
         / f"{target.isoformat()}__handoff_fixture__v1.0.0.json"
     )
-    _write_json(prediction_path, prediction)
+    prediction_raw = _write_json(prediction_path, prediction)
     _git(repository, "add", str(prediction_path.relative_to(repository)))
     prediction_commit_at = generated_at + timedelta(minutes=1)
     commit_environment = os.environ.copy()
@@ -327,6 +402,228 @@ def _candidate(
         capture_output=True,
         env=commit_environment,
     )
+    prediction_origin = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+    main_branch = (
+        _git(repository, "symbolic-ref", "--short", "HEAD").stdout.decode().strip()
+    )
+
+    def commit_staged(message: str, committed_at: datetime) -> None:
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "GIT_AUTHOR_DATE": committed_at.isoformat(),
+                "GIT_COMMITTER_DATE": committed_at.isoformat(),
+            }
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "-c",
+                "user.name=handoff-test",
+                "-c",
+                "user.email=handoff-test@lotto649.invalid",
+                "commit",
+                "--quiet",
+                "-m",
+                message,
+            ],
+            check=True,
+            capture_output=True,
+            env=environment,
+        )
+
+    if prediction_history_attack in {"mutate_restore", "delete_readd", "mode_flip"}:
+        if prediction_history_attack == "mutate_restore":
+            changed = json.loads(prediction_raw)
+            changed["metadata"]["role"] = "shadow"
+            _write_json(prediction_path, changed)
+            _git(repository, "add", str(prediction_path.relative_to(repository)))
+            commit_staged(
+                "mutate committed prediction",
+                prediction_commit_at + timedelta(minutes=1),
+            )
+        elif prediction_history_attack == "delete_readd":
+            prediction_path.unlink()
+            _git(
+                repository,
+                "add",
+                "--update",
+                str(prediction_path.relative_to(repository)),
+            )
+            commit_staged(
+                "delete committed prediction",
+                prediction_commit_at + timedelta(minutes=1),
+            )
+        else:
+            prediction_path.chmod(0o755)
+            _git(repository, "add", str(prediction_path.relative_to(repository)))
+            commit_staged(
+                "change committed prediction mode",
+                prediction_commit_at + timedelta(minutes=1),
+            )
+        prediction_path.write_bytes(prediction_raw)
+        prediction_path.chmod(0o644)
+        _git(repository, "add", str(prediction_path.relative_to(repository)))
+        commit_staged(
+            "restore committed prediction",
+            prediction_commit_at + timedelta(minutes=2),
+        )
+    elif prediction_history_attack in {"side_add", "side_conflict"}:
+        _git(repository, "switch", "--quiet", "handoff-attack-side")
+        if prediction_history_attack == "side_conflict":
+            changed = json.loads(prediction_raw)
+            changed["metadata"]["role"] = "shadow"
+            _write_json(prediction_path, changed)
+        else:
+            prediction_path.write_bytes(prediction_raw)
+        _git(repository, "add", str(prediction_path.relative_to(repository)))
+        commit_staged(
+            "independently add prediction on side branch",
+            prediction_commit_at + timedelta(minutes=1),
+        )
+        _git(repository, "switch", "--quiet", main_branch)
+        merge_environment = os.environ.copy()
+        merge_environment.update(
+            {
+                "GIT_AUTHOR_DATE": (
+                    prediction_commit_at + timedelta(minutes=2)
+                ).isoformat(),
+                "GIT_COMMITTER_DATE": (
+                    prediction_commit_at + timedelta(minutes=2)
+                ).isoformat(),
+            }
+        )
+        merged = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "-c",
+                "user.name=handoff-test",
+                "-c",
+                "user.email=handoff-test@lotto649.invalid",
+                "merge",
+                "--quiet",
+                "--no-ff",
+                "handoff-attack-side",
+                "-m",
+                "merge independent prediction branch",
+            ],
+            check=False,
+            capture_output=True,
+            env=merge_environment,
+        )
+        if prediction_history_attack == "side_conflict":
+            assert merged.returncode == 1
+            prediction_path.write_bytes(prediction_raw)
+            _git(repository, "add", str(prediction_path.relative_to(repository)))
+            commit_staged(
+                "resolve prediction conflict to original bytes",
+                prediction_commit_at + timedelta(minutes=2),
+            )
+        else:
+            assert merged.returncode == 0
+    elif prediction_history_attack is not None:
+        raise AssertionError(
+            f"unknown prediction history attack: {prediction_history_attack}"
+        )
+    if intervening_prediction_history:
+
+        def commit_fixture_file(
+            path: str,
+            contents: str,
+            message: str,
+            committed_at: datetime,
+        ) -> None:
+            (repository / path).write_text(contents, encoding="utf-8")
+            _git(repository, "add", path)
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "GIT_AUTHOR_DATE": committed_at.isoformat(),
+                    "GIT_COMMITTER_DATE": committed_at.isoformat(),
+                }
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repository),
+                    "-c",
+                    "user.name=handoff-test",
+                    "-c",
+                    "user.email=handoff-test@lotto649.invalid",
+                    "commit",
+                    "--quiet",
+                    "-m",
+                    message,
+                ],
+                check=True,
+                capture_output=True,
+                env=environment,
+            )
+
+        commit_fixture_file(
+            "fixture-main.txt",
+            "ordinary main change\n",
+            "ordinary main change after prediction",
+            prediction_commit_at + timedelta(minutes=1),
+        )
+        if intervening_prediction_merge:
+            _git(
+                repository,
+                "switch",
+                "--quiet",
+                "-c",
+                "handoff-side",
+                f"{prediction_origin}^",
+            )
+            commit_fixture_file(
+                "fixture-side.txt",
+                "ordinary side change\n",
+                "ordinary side change after prediction",
+                prediction_commit_at + timedelta(minutes=2),
+            )
+            _git(repository, "switch", "--quiet", main_branch)
+            merge_environment = os.environ.copy()
+            merge_environment.update(
+                {
+                    "GIT_AUTHOR_DATE": (
+                        prediction_commit_at + timedelta(minutes=3)
+                    ).isoformat(),
+                    "GIT_COMMITTER_DATE": (
+                        prediction_commit_at + timedelta(minutes=3)
+                    ).isoformat(),
+                }
+            )
+            subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    str(repository),
+                    "-c",
+                    "user.name=handoff-test",
+                    "-c",
+                    "user.email=handoff-test@lotto649.invalid",
+                    "merge",
+                    "--quiet",
+                    "--no-ff",
+                    "handoff-side",
+                    "-m",
+                    "merge ordinary side change",
+                ],
+                check=True,
+                capture_output=True,
+                env=merge_environment,
+            )
+        commit_fixture_file(
+            "fixture-code.txt",
+            "ordinary code change\n",
+            "ordinary code change after merge",
+            prediction_commit_at + timedelta(minutes=4),
+        )
     base = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
     created_at = datetime.combine(
         target + timedelta(days=2 if source_prediction_after_draw else 1),
@@ -380,6 +677,112 @@ def _candidate(
     )
     _git(authority, "symbolic-ref", "HEAD", "refs/heads/main")
     return repository, prepared, receipt, authority
+
+
+def _legacy_2026_08_26_candidate(
+    tmp_path: Path,
+    *,
+    corrupt_manifest: bool = False,
+):
+    repository = tmp_path / "legacy-caller"
+    subprocess.run(
+        ["git", "clone", "--no-local", "--quiet", str(ROOT), str(repository)],
+        check=True,
+        capture_output=True,
+    )
+    manifest_relative = (
+        "evidence/data_integrity/DI-2026-08-20-registered-history/"
+        "legacy-2026-08-26-prediction-cohort.json"
+    )
+    manifest_destination = repository / manifest_relative
+    manifest_destination.parent.mkdir(parents=True, exist_ok=True)
+    manifest_raw = (ROOT / manifest_relative).read_bytes()
+    if corrupt_manifest:
+        manifest_raw = manifest_raw.replace(
+            b'"corrected_history_claim": false',
+            b'"corrected_history_claim": true',
+            1,
+        )
+    manifest_destination.write_bytes(manifest_raw)
+    _git(repository, "add", manifest_relative)
+    manifest_commit_at = datetime(2026, 8, 24, 12, tzinfo=UTC)
+    manifest_environment = os.environ.copy()
+    manifest_environment.update(
+        {
+            "GIT_AUTHOR_DATE": manifest_commit_at.isoformat(),
+            "GIT_COMMITTER_DATE": manifest_commit_at.isoformat(),
+        }
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "-c",
+            "user.name=handoff-test",
+            "-c",
+            "user.email=handoff-test@lotto649.invalid",
+            "commit",
+            "--quiet",
+            "-m",
+            "install sealed legacy prediction manifest",
+        ],
+        check=True,
+        capture_output=True,
+        env=manifest_environment,
+    )
+    base = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+    base_history = load_published_history(repository, base)
+    target = _next_draw_date(base_history.draws[-1].draw_date)
+    assert target == date(2026, 8, 26)
+    created_at = datetime(2026, 8, 27, 12, tzinfo=UTC)
+    prepared = prepare_history_publication(
+        repository,
+        expected_base_commit=base,
+        sources=(
+            RawSource(
+                authority="wclc",
+                url="https://www.wclc.com/winning-numbers/lotto-649-extra.htm",
+                retrieved_at=created_at,
+                raw=_wclc_html(target),
+            ),
+            RawSource(
+                authority="loto_quebec",
+                url=(
+                    "https://loteries.lotoquebec.com/en/lotteries/"
+                    f"lotto-6-49-resultats?date={target.isoformat()}"
+                ),
+                retrieved_at=created_at,
+                raw=_loto_quebec_html(target),
+            ),
+        ),
+        created_at=created_at,
+    )
+    published = load_published_history(repository, prepared.publication_commit)
+    receipt = PublicationReceipt(
+        expected_base=prepared.base_commit,
+        publication_commit=prepared.publication_commit,
+        observed_before=prepared.base_commit,
+        observed_after=prepared.publication_commit,
+        cas_ack=CasAck(CasStatus.APPLIED),
+        outcome=PublicationOutcome.ADVANCED,
+        history=published,
+    )
+    authority = tmp_path / "legacy-authority.git"
+    subprocess.run(
+        ["git", "init", "--bare", "--quiet", str(authority)],
+        check=True,
+        capture_output=True,
+    )
+    _git(
+        repository,
+        "push",
+        "--quiet",
+        str(authority),
+        f"{prepared.publication_commit}:refs/heads/main",
+    )
+    _git(authority, "symbolic-ref", "HEAD", "refs/heads/main")
+    return prepared, receipt, authority, created_at
 
 
 def _caller_state(repository: Path) -> tuple[bytes, bytes, bytes]:
@@ -1260,6 +1663,340 @@ def test_freeze_rejects_an_evaluation_not_bound_to_p_actual_history(
             )
 
 
+def test_freeze_recomputes_and_rejects_forged_prediction_source(
+    tmp_path: Path,
+) -> None:
+    _caller, _prepared, receipt, authority = _candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        created_at = datetime.combine(
+            workspace.history.draws[-1].draw_date + timedelta(days=1),
+            datetime.min.time(),
+            UTC,
+        ).replace(hour=12)
+        predictions, _raws = _write_required_predictions(workspace, created_at)
+        relative, _raw = _write_valid_evaluation(workspace)
+        payload = json.loads((workspace.root / relative).read_text(encoding="utf-8"))
+        payload["prediction_source"]["claims"]["promotion_evidence_eligible"] = False
+        _write_json(workspace.root / relative, payload)
+
+        with pytest.raises(HistoryExecutionHandoffError, match="evaluation schema"):
+            history_handoff.freeze_execution_outputs(
+                workspace,
+                tuple(sorted((relative, *predictions))),
+                created_at=created_at,
+            )
+
+
+def test_freeze_accepts_only_exact_legacy_2026_08_26_prediction_cohort(
+    tmp_path: Path,
+) -> None:
+    prepared, receipt, authority, created_at = _legacy_2026_08_26_candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        origin_parents = (
+            _git(
+                workspace.root,
+                "rev-list",
+                "--parents",
+                "-n",
+                "1",
+                _LEGACY_2026_08_26_ORIGIN,
+            )
+            .stdout.decode()
+            .split()
+        )
+        assert origin_parents == [
+            _LEGACY_2026_08_26_ORIGIN,
+            _LEGACY_2026_08_26_PARENT,
+        ]
+        history_blob, history_sha256, history_bytes = _LEGACY_2026_08_26_HISTORY
+        history_raw = _git(
+            workspace.root,
+            "cat-file",
+            "blob",
+            f"{_LEGACY_2026_08_26_ORIGIN}:data/processed/draws.csv",
+        ).stdout
+        assert (
+            _git(
+                workspace.root,
+                "rev-parse",
+                f"{_LEGACY_2026_08_26_ORIGIN}:data/processed/draws.csv",
+            )
+            .stdout.decode()
+            .strip()
+            == history_blob
+        )
+        assert len(history_raw) == history_bytes
+        assert hashlib.sha256(history_raw).hexdigest() == history_sha256
+        assert len(history_raw.splitlines()) - 1 == 4_434
+        assert history_raw.splitlines()[-1].startswith(b"2026-08-22,")
+
+        predictions, _raws = _write_required_predictions(workspace, created_at)
+        evaluations = []
+        for model_name, expected in _LEGACY_2026_08_26_PREDICTIONS.items():
+            blob_oid, raw_sha256, raw_bytes, generated_at, role = expected
+            relative = f"predictions/2026-08-26__{model_name}__v1.0.0.json"
+            raw = _git(
+                workspace.root,
+                "cat-file",
+                "blob",
+                f"{_LEGACY_2026_08_26_ORIGIN}:{relative}",
+            ).stdout
+            assert (
+                _git(
+                    workspace.root,
+                    "rev-parse",
+                    f"{_LEGACY_2026_08_26_ORIGIN}:{relative}",
+                )
+                .stdout.decode()
+                .strip()
+                == blob_oid
+            )
+            assert len(raw) == raw_bytes
+            assert hashlib.sha256(raw).hexdigest() == raw_sha256
+            payload = json.loads(raw)
+            assert payload["generated_at"] == generated_at
+            assert payload["metadata"] == {
+                "history_draws": 4_434,
+                "history_through": "2026-08-22",
+                "role": role,
+            }
+            evaluation, evaluation_raw = _write_valid_evaluation(
+                workspace,
+                model_name=model_name,
+            )
+            prediction_source = json.loads(evaluation_raw)["prediction_source"]
+            assert set(prediction_source) == {
+                "claims",
+                "kind",
+                "legacy_manifest",
+                "origin",
+                "prediction",
+                "schema_version",
+                "training_history",
+            }
+            assert prediction_source["kind"] == "sealed_legacy_incident_history"
+            assert prediction_source["claims"] == {
+                "corrected_history": False,
+                "promotion_evidence_eligible": False,
+            }
+            assert prediction_source["legacy_manifest"]["sha256"] == (
+                "04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02"
+            )
+            evaluations.append(evaluation)
+
+        output_paths = tuple(sorted((*evaluations, *predictions)))
+        frozen = history_handoff.freeze_execution_outputs(
+            workspace,
+            output_paths,
+            created_at=created_at,
+        )
+
+        assert frozen.parent_commit == prepared.publication_commit
+        assert frozen.paths == output_paths
+
+
+def test_prediction_source_rejects_legacy_manifest_byte_substitution_at_b_and_p(
+    tmp_path: Path,
+) -> None:
+    _prepared, receipt, authority, _created_at = _legacy_2026_08_26_candidate(
+        tmp_path,
+        corrupt_manifest=True,
+    )
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        with pytest.raises(
+            HistoryExecutionHandoffError,
+            match="manifest|prediction source",
+        ):
+            history_handoff.evaluation_prediction_source(
+                workspace.root,
+                workspace.publication_commit,
+                "predictions/2026-08-26__logistic__v1.0.0.json",
+            )
+
+
+def test_freeze_accepts_evaluation_from_immutable_prediction_origin_before_merge(
+    tmp_path: Path,
+) -> None:
+    caller, prepared, receipt, authority = _candidate(
+        tmp_path,
+        intervening_prediction_history=True,
+    )
+    base_parents = (
+        _git(caller, "rev-list", "--parents", "-n", "1", prepared.base_commit)
+        .stdout.decode()
+        .split()
+    )
+    merge_parents = (
+        _git(caller, "rev-list", "--parents", "-n", "1", base_parents[1])
+        .stdout.decode()
+        .split()
+    )
+    assert len(base_parents) == 2
+    assert len(merge_parents) == 3
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        target = workspace.history.draws[-1].draw_date
+        prediction_relative = (
+            f"predictions/{target.isoformat()}__handoff_fixture__v1.0.0.json"
+        )
+        prediction_origins = (
+            _git(
+                workspace.root,
+                "log",
+                "--format=%H",
+                "--diff-filter=A",
+                "--",
+                prediction_relative,
+            )
+            .stdout.decode()
+            .splitlines()
+        )
+        assert len(prediction_origins) == 1
+        origin_parents = (
+            _git(
+                workspace.root,
+                "rev-list",
+                "--parents",
+                "-n",
+                "1",
+                prediction_origins[0],
+            )
+            .stdout.decode()
+            .split()
+        )
+        assert len(origin_parents) == 2
+
+        created_at = datetime.combine(
+            target + timedelta(days=1),
+            datetime.min.time(),
+            UTC,
+        ).replace(hour=12)
+        predictions, _raws = _write_required_predictions(workspace, created_at)
+        relative, evaluation_raw = _write_valid_evaluation(workspace)
+        prediction_source = json.loads(evaluation_raw)["prediction_source"]
+        assert set(prediction_source) == {
+            "claims",
+            "kind",
+            "origin",
+            "prediction",
+            "schema_version",
+            "training_history",
+        }
+        assert prediction_source["schema_version"] == (
+            "lotto649-evaluation-prediction-source-v1"
+        )
+        assert prediction_source["kind"] == "verified_operational_history"
+        assert prediction_source["claims"] == {
+            "corrected_history": True,
+            "promotion_evidence_eligible": True,
+        }
+        assert set(prediction_source["origin"]) == {
+            "commit",
+            "commit_raw_sha256",
+            "committed_at",
+            "parent",
+            "resolved_from_base_commit",
+        }
+        assert set(prediction_source["prediction"]) == {
+            "bytes",
+            "generated_at",
+            "git_blob",
+            "mode",
+            "path",
+            "role",
+            "sha256",
+        }
+        output_paths = tuple(sorted((relative, *predictions)))
+
+        frozen = history_handoff.freeze_execution_outputs(
+            workspace,
+            output_paths,
+            created_at=created_at,
+        )
+
+        assert frozen.parent_commit == prepared.publication_commit
+        assert frozen.paths == output_paths
+
+
+@pytest.mark.parametrize(
+    "prediction_history_attack",
+    (
+        "side_add",
+        "side_conflict",
+        "mutate_restore",
+        "delete_readd",
+        "mode_flip",
+    ),
+)
+def test_prediction_source_rejects_any_path_history_after_its_unique_origin(
+    tmp_path: Path,
+    prediction_history_attack: str,
+) -> None:
+    _caller, _prepared, receipt, authority = _candidate(
+        tmp_path,
+        prediction_history_attack=prediction_history_attack,
+    )
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        target = workspace.history.draws[-1].draw_date
+        prediction_relative = (
+            f"predictions/{target.isoformat()}__handoff_fixture__v1.0.0.json"
+        )
+
+        with pytest.raises(HistoryExecutionHandoffError, match="prediction"):
+            history_handoff.evaluation_prediction_source(
+                workspace.root,
+                workspace.publication_commit,
+                prediction_relative,
+            )
+
+
+def test_evaluation_prediction_source_requires_a_real_path_object(
+    tmp_path: Path,
+) -> None:
+    _caller, _prepared, receipt, authority = _candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        target = workspace.history.draws[-1].draw_date
+        prediction_relative = (
+            f"predictions/{target.isoformat()}__handoff_fixture__v1.0.0.json"
+        )
+
+        source = history_handoff.evaluation_prediction_source(
+            workspace.root,
+            workspace.publication_commit,
+            prediction_relative,
+        )
+        assert source["kind"] == "verified_operational_history"
+        with pytest.raises(HistoryExecutionHandoffError, match="must be a Path"):
+            history_handoff.evaluation_prediction_source(
+                str(workspace.root),
+                workspace.publication_commit,
+                prediction_relative,
+            )
+
+
 def test_freeze_rejects_evaluation_of_a_prediction_created_after_the_draw(
     tmp_path: Path,
 ) -> None:
@@ -1272,7 +2009,10 @@ def test_freeze_rejects_evaluation_of_a_prediction_created_after_the_draw(
         receipt,
         authority_url=str(authority),
     ) as workspace:
-        relative, _raw = _write_valid_evaluation(workspace)
+        relative, _raw = _write_valid_evaluation(
+            workspace,
+            classify_prediction_source=False,
+        )
         created_at = datetime.combine(
             workspace.history.draws[-1].draw_date + timedelta(days=3),
             datetime.min.time(),
@@ -1326,6 +2066,47 @@ def test_freeze_rejects_repository_tampering_after_workspace_handoff(
                 workspace,
                 (relative,),
                 created_at=created_at,
+            )
+
+
+@pytest.mark.parametrize("history_substitution", ("graft", "replacement_ref"))
+def test_prediction_source_rejects_git_history_substitution_controls(
+    tmp_path: Path,
+    history_substitution: str,
+) -> None:
+    _caller, prepared, receipt, authority = _candidate(tmp_path)
+
+    with _open_execution_workspace(
+        receipt,
+        authority_url=str(authority),
+    ) as workspace:
+        if history_substitution == "graft":
+            grafts = workspace.root / ".git" / "info" / "grafts"
+            grafts.parent.mkdir(parents=True, exist_ok=True)
+            grafts.write_text(
+                f"{prepared.base_commit} {prepared.base_commit}^\n",
+                encoding="ascii",
+            )
+        else:
+            _git(
+                workspace.root,
+                "replace",
+                prepared.base_commit,
+                f"{prepared.base_commit}^",
+            )
+        target = workspace.history.draws[-1].draw_date
+        prediction_relative = (
+            f"predictions/{target.isoformat()}__handoff_fixture__v1.0.0.json"
+        )
+
+        with pytest.raises(
+            HistoryExecutionHandoffError,
+            match="self-contained|replacement history",
+        ):
+            history_handoff.evaluation_prediction_source(
+                workspace.root,
+                workspace.publication_commit,
+                prediction_relative,
             )
 
 

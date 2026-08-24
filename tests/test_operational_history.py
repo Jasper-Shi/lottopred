@@ -298,7 +298,10 @@ def test_live_evaluation_carries_verified_actual_history(tmp_path, monkeypatch):
     from lotto649 import live
 
     actual = Draw(date(2026, 8, 22), (11, 13, 21, 31, 34, 45), 5)
-    history = SimpleNamespace(draws=(actual,))
+    history = SimpleNamespace(
+        draws=(actual,),
+        registry=SimpleNamespace(resolved_revision=GENESIS_COMMIT),
+    )
     provenance = {"epoch": INCIDENT_ID, "seal_sha256": SEAL_SHA256}
     prediction = Prediction(
         target_draw_date=actual.draw_date,
@@ -324,6 +327,11 @@ def test_live_evaluation_carries_verified_actual_history(tmp_path, monkeypatch):
         live,
         "operational_history_provenance",
         lambda _history: provenance,
+    )
+    monkeypatch.setattr(
+        live,
+        "evaluation_prediction_source",
+        lambda _repository, _publication, _relative: {"kind": "test-fixture"},
     )
     monkeypatch.setattr(
         live,

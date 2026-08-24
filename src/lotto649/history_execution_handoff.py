@@ -227,6 +227,30 @@ class _OutputSnapshot:
     payload: dict[str, object]
 
 
+@dataclass(frozen=True)
+class _PredictionOrigin:
+    commit: str
+    parent: str
+    blob: str
+    raw: bytes
+
+
+@dataclass(frozen=True)
+class _GitPathEntry:
+    mode: str
+    object_type: str
+    oid: str
+
+
+_LEGACY_PREDICTION_MANIFEST_PATH = (
+    "evidence/data_integrity/DI-2026-08-20-registered-history/"
+    "legacy-2026-08-26-prediction-cohort.json"
+)
+_LEGACY_PREDICTION_MANIFEST_SHA256 = (
+    "04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02"
+)
+
+
 def _git_environment() -> dict[str, str]:
     environment = {
         key: value for key, value in os.environ.items() if key in _INHERITED_ENVIRONMENT
@@ -437,6 +461,7 @@ def _require_self_contained_repository(repository: Path) -> None:
                 "execution repository must be self-contained"
             )
         for relative in (
+            "info/grafts",
             "objects/info/alternates",
             "objects/info/http-alternates",
             "shallow",
@@ -481,6 +506,16 @@ def _require_self_contained_repository(repository: Path) -> None:
     if object_format != "sha1":
         raise HistoryExecutionHandoffError(
             "execution repository must use SHA-1 Git objects"
+        )
+    replacement_refs = _git(
+        repository,
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/replace",
+    ).stdout
+    if replacement_refs:
+        raise HistoryExecutionHandoffError(
+            "execution repository may not contain replacement history"
         )
     config_names = (
         _git(
@@ -1144,6 +1179,603 @@ def _validate_prediction_output(
     )
 
 
+def _git_path_entry(
+    repository: Path,
+    commit: str,
+    relative: str,
+) -> _GitPathEntry | None:
+    commit = _full_oid(commit, label="path-history commit")
+    raw = _git(repository, "ls-tree", "-z", commit, "--", relative).stdout
+    if raw == b"":
+        return None
+    try:
+        if not raw.endswith(b"\0") or raw.count(b"\0") != 1:
+            raise ValueError("path entry count")
+        header, observed_path = raw[:-1].split(b"\t", 1)
+        mode_raw, object_type_raw, oid_raw = header.split(b" ", 2)
+        mode = mode_raw.decode("ascii")
+        object_type = object_type_raw.decode("ascii")
+        oid = oid_raw.decode("ascii")
+        if observed_path != relative.encode("ascii"):
+            raise ValueError("path entry name")
+        _full_oid(oid, label="path-history object")
+    except (UnicodeError, ValueError) as exc:
+        raise HistoryExecutionHandoffError(
+            "prediction path history is malformed"
+        ) from exc
+    return _GitPathEntry(mode=mode, object_type=object_type, oid=oid)
+
+
+def _reachable_commit_graph(
+    repository: Path,
+    publication: str,
+) -> dict[str, tuple[str, ...]]:
+    publication = _full_oid(publication, label="prediction publication")
+    raw = _git(repository, "rev-list", "--parents", publication).stdout
+    try:
+        lines = raw.decode("ascii").splitlines()
+    except UnicodeError as exc:
+        raise HistoryExecutionHandoffError(
+            "prediction commit graph is malformed"
+        ) from exc
+    parents_by_commit: dict[str, tuple[str, ...]] = {}
+    for line in lines:
+        fields = line.split()
+        if not fields:
+            raise HistoryExecutionHandoffError("prediction commit graph is malformed")
+        commit, *parents = fields
+        _full_oid(commit, label="prediction graph commit")
+        for parent in parents:
+            _full_oid(parent, label="prediction graph parent")
+        if commit in parents_by_commit:
+            raise HistoryExecutionHandoffError("prediction commit graph is malformed")
+        parents_by_commit[commit] = tuple(parents)
+    if publication not in parents_by_commit or any(
+        parent not in parents_by_commit
+        for parents in parents_by_commit.values()
+        for parent in parents
+    ):
+        raise HistoryExecutionHandoffError("prediction commit graph is incomplete")
+    return parents_by_commit
+
+
+def _resolve_immutable_prediction_origin(
+    repository: Path,
+    *,
+    publication: str,
+    base: str,
+    relative: str,
+) -> _PredictionOrigin:
+    publication = _full_oid(publication, label="prediction publication")
+    base = _full_oid(base, label="prediction publication base")
+    parents_by_commit = _reachable_commit_graph(repository, publication)
+    if base not in parents_by_commit:
+        raise HistoryExecutionHandoffError(
+            "prediction publication base is outside P ancestry"
+        )
+    entries = {
+        commit: _git_path_entry(repository, commit, relative)
+        for commit in parents_by_commit
+    }
+    current = entries[publication]
+    if (
+        current is None
+        or current.mode != "100644"
+        or current.object_type != "blob"
+        or entries[base] != current
+    ):
+        raise HistoryExecutionHandoffError(
+            "prediction was not already immutable at publication base B"
+        )
+    additions = []
+    for commit, parents in parents_by_commit.items():
+        if (
+            entries[commit] is not None
+            and len(parents) == 1
+            and entries[parents[0]] is None
+        ):
+            additions.append(commit)
+    if len(additions) != 1:
+        raise HistoryExecutionHandoffError(
+            "prediction does not have one unique single-parent origin"
+        )
+    origin = additions[0]
+    if entries[origin] != current:
+        raise HistoryExecutionHandoffError(
+            "prediction origin differs from the immutable P bytes"
+        )
+    children: dict[str, list[str]] = {commit: [] for commit in parents_by_commit}
+    for commit, parents in parents_by_commit.items():
+        for parent in parents:
+            children[parent].append(commit)
+    descendants = {origin}
+    pending = [origin]
+    while pending:
+        parent = pending.pop()
+        for child in children[parent]:
+            if child not in descendants:
+                descendants.add(child)
+                pending.append(child)
+    present = {commit for commit, entry in entries.items() if entry is not None}
+    if present != descendants or any(
+        entries[commit] != current for commit in descendants
+    ):
+        raise HistoryExecutionHandoffError(
+            "prediction path changed after its immutable origin"
+        )
+    first_parent = set(
+        _git(repository, "rev-list", "--first-parent", base)
+        .stdout.decode("ascii")
+        .splitlines()
+    )
+    if (
+        origin not in first_parent
+        or base not in descendants
+        or publication not in descendants
+    ):
+        raise HistoryExecutionHandoffError(
+            "prediction origin is not on the production B first-parent history"
+        )
+    parent = parents_by_commit[origin][0]
+    raw = _git(
+        repository,
+        "cat-file",
+        "blob",
+        f"{origin}:{relative}",
+    ).stdout
+    observed_blob = hashlib.sha1(
+        f"blob {len(raw)}\0".encode("ascii") + raw,
+        usedforsecurity=False,
+    ).hexdigest()
+    if observed_blob != current.oid:
+        raise HistoryExecutionHandoffError(
+            "prediction origin blob identity is inconsistent"
+        )
+    return _PredictionOrigin(
+        commit=origin,
+        parent=parent,
+        blob=current.oid,
+        raw=raw,
+    )
+
+
+def _load_legacy_prediction_manifest(
+    repository: Path,
+    publication: str,
+    base: str,
+) -> dict[str, object]:
+    publication_entry = _git_path_entry(
+        repository,
+        publication,
+        _LEGACY_PREDICTION_MANIFEST_PATH,
+    )
+    base_entry = _git_path_entry(
+        repository,
+        base,
+        _LEGACY_PREDICTION_MANIFEST_PATH,
+    )
+    raw = _git(
+        repository,
+        "cat-file",
+        "blob",
+        f"{publication}:{_LEGACY_PREDICTION_MANIFEST_PATH}",
+    ).stdout
+    observed_blob = hashlib.sha1(
+        f"blob {len(raw)}\0".encode("ascii") + raw,
+        usedforsecurity=False,
+    ).hexdigest()
+    if (
+        publication_entry is None
+        or publication_entry.mode != "100644"
+        or publication_entry.object_type != "blob"
+        or base_entry != publication_entry
+        or publication_entry.oid != observed_blob
+        or hashlib.sha256(raw).hexdigest() != _LEGACY_PREDICTION_MANIFEST_SHA256
+    ):
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction manifest identity is invalid"
+        )
+    manifest = _parse_strict_json(raw, label="sealed legacy prediction manifest")
+    if (
+        set(manifest)
+        != {
+            "corrected_history_claim",
+            "history_input",
+            "incident_id",
+            "origin",
+            "predictions",
+            "promotion_eligible",
+            "schema_version",
+            "status",
+        }
+        or manifest.get("schema_version")
+        != "lotto649-sealed-legacy-prediction-cohort-v1"
+        or manifest.get("incident_id") != "DI-2026-08-20-registered-history"
+        or manifest.get("status")
+        != "incident_affected_legacy_registered_malformed_incomplete_non_operational"
+        or manifest.get("corrected_history_claim") is not False
+        or manifest.get("promotion_eligible") is not False
+        or type(manifest.get("origin")) is not dict
+        or type(manifest.get("history_input")) is not dict
+        or type(manifest.get("predictions")) is not dict
+    ):
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction manifest schema is invalid"
+        )
+    return manifest
+
+
+def _prediction_source_identity(
+    repository: Path,
+    *,
+    base: str,
+    relative: str,
+    origin: _PredictionOrigin,
+    prediction: Prediction,
+) -> dict[str, object]:
+    commit_raw = _git(repository, "cat-file", "commit", origin.commit).stdout
+    committed_at = (
+        _commit_instant(repository, origin.commit)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
+    )
+    return {
+        "origin": {
+            "commit": origin.commit,
+            "commit_raw_sha256": hashlib.sha256(commit_raw).hexdigest(),
+            "committed_at": committed_at,
+            "parent": origin.parent,
+            "resolved_from_base_commit": base,
+        },
+        "prediction": {
+            "bytes": len(origin.raw),
+            "generated_at": prediction.generated_at.isoformat(),
+            "git_blob": origin.blob,
+            "mode": "100644",
+            "path": relative,
+            "role": prediction.metadata.get("role"),
+            "sha256": hashlib.sha256(origin.raw).hexdigest(),
+        },
+        "schema_version": "lotto649-evaluation-prediction-source-v1",
+    }
+
+
+def _validated_legacy_prediction_source(
+    repository: Path,
+    *,
+    publication: str,
+    base: str,
+    relative: str,
+    origin: _PredictionOrigin,
+    prediction: Prediction,
+    generated_at: datetime,
+) -> dict[str, object]:
+    manifest = _load_legacy_prediction_manifest(repository, publication, base)
+    manifest_origin = manifest["origin"]
+    history_input = manifest["history_input"]
+    predictions = manifest["predictions"]
+    if (
+        set(manifest_origin)
+        != {
+            "author_at",
+            "commit",
+            "commit_bytes",
+            "commit_raw_sha256",
+            "committer_at",
+            "parent",
+            "tree",
+        }
+        or set(history_input)
+        != {
+            "bytes",
+            "draw_count",
+            "evidence_use",
+            "git_blob",
+            "history_through",
+            "mode",
+            "operational_history",
+            "path",
+            "revision",
+            "sha256",
+        }
+        or len(predictions) != 7
+        or manifest_origin.get("commit") != origin.commit
+        or manifest_origin.get("parent") != origin.parent
+        or history_input.get("revision") != origin.commit
+        or history_input.get("mode") != "100644"
+        or history_input.get("operational_history") is not False
+        or history_input.get("evidence_use")
+        != "descriptive_only_excluded_from_corrected_operational_cohorts"
+    ):
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction manifest contract is invalid"
+        )
+    commit_raw = _git(repository, "cat-file", "commit", origin.commit).stdout
+    commit_tree = (
+        _git(repository, "rev-parse", f"{origin.commit}^{{tree}}")
+        .stdout.decode("ascii")
+        .strip()
+    )
+    if (
+        type(manifest_origin.get("commit_bytes")) is not int
+        or len(commit_raw) != manifest_origin["commit_bytes"]
+        or hashlib.sha256(commit_raw).hexdigest()
+        != manifest_origin.get("commit_raw_sha256")
+        or commit_tree != manifest_origin.get("tree")
+    ):
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction origin identity is invalid"
+        )
+    history_path = history_input.get("path")
+    if type(history_path) is not str:
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction history identity is invalid"
+        )
+    history_entry = _git_path_entry(repository, origin.commit, history_path)
+    history_raw = _git(
+        repository,
+        "cat-file",
+        "blob",
+        f"{origin.commit}:{history_path}",
+    ).stdout
+    history_lines = history_raw.splitlines()
+    if (
+        history_entry
+        != _GitPathEntry(
+            mode="100644",
+            object_type="blob",
+            oid=history_input.get("git_blob"),
+        )
+        or type(history_input.get("bytes")) is not int
+        or len(history_raw) != history_input["bytes"]
+        or hashlib.sha256(history_raw).hexdigest() != history_input.get("sha256")
+        or type(history_input.get("draw_count")) is not int
+        or len(history_lines) - 1 != history_input["draw_count"]
+        or not history_lines
+        or history_lines[-1].split(b",", 1)[0].decode("ascii")
+        != history_input.get("history_through")
+    ):
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction history identity is invalid"
+        )
+    manifest_paths = set(predictions)
+    observed_paths = {
+        raw_path.decode("ascii")
+        for raw_path in _git(
+            repository,
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "-z",
+            origin.commit,
+            "--",
+            "predictions",
+        ).stdout.split(b"\0")
+        if raw_path.startswith(b"predictions/2026-08-26__")
+    }
+    if manifest_paths != observed_paths or relative not in manifest_paths:
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction cohort is incomplete"
+        )
+    origin_instant = _commit_instant(repository, origin.commit)
+    parent_instant = _commit_instant(repository, origin.parent)
+    for prediction_path, expected in predictions.items():
+        if type(prediction_path) is not str or type(expected) is not dict:
+            raise HistoryExecutionHandoffError(
+                "sealed legacy prediction entry is invalid"
+            )
+        identity = _parse_output_identity(prediction_path)
+        entry = _git_path_entry(repository, origin.commit, prediction_path)
+        raw = _git(
+            repository,
+            "cat-file",
+            "blob",
+            f"{origin.commit}:{prediction_path}",
+        ).stdout
+        payload = _parse_strict_json(raw, label="sealed legacy prediction")
+        parsed, observed_generated_at = _validated_prediction(payload, identity)
+        if (
+            set(expected)
+            != {
+                "bytes",
+                "generated_at",
+                "git_blob",
+                "mode",
+                "model_name",
+                "model_version",
+                "role",
+                "sha256",
+                "target_draw_date",
+            }
+            or expected.get("mode") != "100644"
+            or entry
+            != _GitPathEntry(
+                mode="100644",
+                object_type="blob",
+                oid=expected.get("git_blob"),
+            )
+            or type(expected.get("bytes")) is not int
+            or len(raw) != expected["bytes"]
+            or hashlib.sha256(raw).hexdigest() != expected.get("sha256")
+            or payload.get("generated_at") != expected.get("generated_at")
+            or identity.draw_date.isoformat() != expected.get("target_draw_date")
+            or identity.model_name != expected.get("model_name")
+            or identity.model_version != expected.get("model_version")
+            or payload.get("metadata")
+            != {
+                "history_draws": history_input.get("draw_count"),
+                "history_through": history_input.get("history_through"),
+                "role": expected.get("role"),
+            }
+            or observed_generated_at.astimezone(_DRAW_TIME_ZONE).date()
+            >= identity.draw_date
+            or origin_instant.astimezone(_DRAW_TIME_ZONE).date() >= identity.draw_date
+            or observed_generated_at.astimezone(UTC).replace(microsecond=0)
+            > origin_instant
+            or observed_generated_at.astimezone(UTC) < parent_instant
+        ):
+            raise HistoryExecutionHandoffError(
+                "sealed legacy prediction entry is invalid"
+            )
+        if prediction_path == relative and (
+            parsed != prediction or observed_generated_at != generated_at
+        ):
+            raise HistoryExecutionHandoffError(
+                "sealed legacy prediction selection is inconsistent"
+            )
+    source = _prediction_source_identity(
+        repository,
+        base=base,
+        relative=relative,
+        origin=origin,
+        prediction=prediction,
+    )
+    manifest_entry = _git_path_entry(
+        repository,
+        publication,
+        _LEGACY_PREDICTION_MANIFEST_PATH,
+    )
+    manifest_raw = _git(
+        repository,
+        "cat-file",
+        "blob",
+        f"{publication}:{_LEGACY_PREDICTION_MANIFEST_PATH}",
+    ).stdout
+    if manifest_entry is None:
+        raise HistoryExecutionHandoffError(
+            "sealed legacy prediction manifest identity is invalid"
+        )
+    source.update(
+        {
+            "claims": {
+                "corrected_history": False,
+                "promotion_evidence_eligible": False,
+            },
+            "kind": "sealed_legacy_incident_history",
+            "legacy_manifest": {
+                "bytes": len(manifest_raw),
+                "git_blob": manifest_entry.oid,
+                "mode": manifest_entry.mode,
+                "path": _LEGACY_PREDICTION_MANIFEST_PATH,
+                "sha256": _LEGACY_PREDICTION_MANIFEST_SHA256,
+            },
+            "training_history": {
+                "incident_id": manifest["incident_id"],
+                "status": manifest["status"],
+                **history_input,
+            },
+        }
+    )
+    return source
+
+
+def _validated_prediction_and_source(
+    repository: Path,
+    history: PublishedHistory,
+    prediction_relative: str,
+) -> tuple[Prediction, dict[str, object]]:
+    identity = _parse_output_identity(prediction_relative)
+    if identity.directory != "predictions":
+        raise HistoryExecutionHandoffError(
+            "evaluation source must be an immutable prediction"
+        )
+    publication = _full_oid(
+        history.registry.publication_commit,
+        label="evaluation publication",
+    )
+    if history.registry.resolved_revision != publication:
+        raise HistoryExecutionHandoffError(
+            "evaluation publication history identity is invalid"
+        )
+    base = _full_oid(
+        history.registry_transaction.base_commit,
+        label="evaluation publication base",
+    )
+    origin = _resolve_immutable_prediction_origin(
+        repository,
+        publication=publication,
+        base=base,
+        relative=prediction_relative,
+    )
+    payload = _parse_strict_json(origin.raw, label="source prediction")
+    prediction, generated_at = _validated_prediction(payload, identity)
+    try:
+        source_history = load_published_history(repository, origin.parent)
+    except Exception:  # noqa: BLE001 - exact legacy fallback only
+        try:
+            source = _validated_legacy_prediction_source(
+                repository,
+                publication=publication,
+                base=base,
+                relative=prediction_relative,
+                origin=origin,
+                prediction=prediction,
+                generated_at=generated_at,
+            )
+        except Exception as legacy_error:  # noqa: BLE001 - fail closed at union seam
+            raise HistoryExecutionHandoffError(
+                "prediction source is neither verified operational nor sealed legacy"
+            ) from legacy_error
+        return prediction, source
+    _validate_prediction_against_history(
+        source_history,
+        _OutputSnapshot(
+            path=prediction_relative,
+            raw=origin.raw,
+            payload=payload,
+        ),
+        identity,
+        created_at=_commit_instant(repository, origin.commit),
+        publication_at=_commit_instant(repository, origin.parent),
+    )
+    source = _prediction_source_identity(
+        repository,
+        base=base,
+        relative=prediction_relative,
+        origin=origin,
+        prediction=prediction,
+    )
+    source.update(
+        {
+            "claims": {
+                "corrected_history": True,
+                "promotion_evidence_eligible": True,
+            },
+            "kind": "verified_operational_history",
+            "training_history": operational_history_provenance(source_history),
+        }
+    )
+    return prediction, source
+
+
+def evaluation_prediction_source(
+    repository: Path,
+    publication_commit: str,
+    prediction_relative: str,
+) -> dict[str, object]:
+    """Classify one due prediction from exact Git history for its evaluation."""
+
+    if not isinstance(repository, Path):
+        raise HistoryExecutionHandoffError(
+            "evaluation prediction repository must be a Path"
+        )
+    publication = _full_oid(
+        publication_commit,
+        label="evaluation publication commit",
+    )
+    _require_repository_integrity(repository, publication)
+    history = load_published_history(repository, publication)
+    _prediction, source = _validated_prediction_and_source(
+        repository,
+        history,
+        prediction_relative,
+    )
+    return source
+
+
 def _validate_evaluation_output(
     workspace: ExecutionWorkspace,
     snapshot: _OutputSnapshot,
@@ -1158,82 +1790,20 @@ def _validate_evaluation_output(
         f"{identity.model_name}__{identity.model_version}.json"
     )
     try:
-        base_commit = workspace.history.registry_transaction.base_commit
-        base_parents = (
-            _git(
-                workspace.root,
-                "rev-list",
-                "--parents",
-                "-n",
-                "1",
-                base_commit,
-            )
-            .stdout.decode("ascii")
-            .split()
-        )
-        if len(base_parents) != 2 or base_parents[0] != base_commit:
-            raise ValueError("source prediction base")
-        source_history_commit = base_parents[1]
-        if (
-            _git(
-                workspace.root,
-                "cat-file",
-                "-e",
-                f"{source_history_commit}:{prediction_relative}",
-                check=False,
-            ).returncode
-            == 0
-        ):
-            raise ValueError("source prediction is not a new immutable artifact")
-        prediction_raw = _git(
+        prediction, prediction_source = _validated_prediction_and_source(
             workspace.root,
-            "cat-file",
-            "blob",
-            f"{base_commit}:{prediction_relative}",
-        ).stdout
-        prediction_payload = _parse_strict_json(
-            prediction_raw,
-            label="source prediction",
-        )
-        prediction, _generated_at = _validated_prediction(
-            prediction_payload,
-            _OutputIdentity(
-                directory="predictions",
-                draw_date=identity.draw_date,
-                model_name=identity.model_name,
-                model_version=identity.model_version,
-            ),
-        )
-        source_history = load_published_history(
-            workspace.root,
-            source_history_commit,
-        )
-        _validate_prediction_against_history(
-            source_history,
-            _OutputSnapshot(
-                path=prediction_relative,
-                raw=prediction_raw,
-                payload=prediction_payload,
-            ),
-            _OutputIdentity(
-                directory="predictions",
-                draw_date=identity.draw_date,
-                model_name=identity.model_name,
-                model_version=identity.model_version,
-            ),
-            created_at=_commit_instant(workspace.root, base_commit),
-            publication_at=_commit_instant(
-                workspace.root,
-                source_history_commit,
-            ),
+            workspace.history,
+            prediction_relative,
         )
         expected = evaluate_prediction(prediction, actual)
-        required_keys = set(expected) | {"actual_history"}
+        required_keys = set(expected) | {"actual_history", "prediction_source"}
         allowed_keys = required_keys | {"email_sent"}
         if set(snapshot.payload) not in (required_keys, allowed_keys):
             raise ValueError("evaluation keys")
         if any(snapshot.payload.get(key) != value for key, value in expected.items()):
             raise ValueError("evaluation metrics")
+        if snapshot.payload.get("prediction_source") != prediction_source:
+            raise ValueError("evaluation prediction source")
         if snapshot.payload.get("actual_history") != operational_history_provenance(
             workspace.history
         ):

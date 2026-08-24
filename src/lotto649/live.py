@@ -7,6 +7,7 @@ from typing import NoReturn
 
 from .domain import Prediction
 from .evaluation import evaluate_prediction
+from .history_execution_handoff import evaluation_prediction_source
 from .models.factory import build_models
 from .notification import send_hit_alert, should_alert
 from .operational_history import operational_history_provenance
@@ -81,6 +82,11 @@ def _evaluate_due_predictions(cfg: dict, history: VerifiedHistory) -> list[dict]
         )
         ev = evaluate_prediction(pred, actual)
         ev["actual_history"] = source_provenance
+        ev["prediction_source"] = evaluation_prediction_source(
+            root,
+            history.registry.resolved_revision,
+            path.relative_to(root).as_posix(),
+        )
         if cfg["notifications"].get("enabled", True) and should_alert(ev, cfg):
             try:
                 ev["email_sent"] = send_hit_alert(ev)
