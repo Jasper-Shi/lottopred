@@ -17,31 +17,38 @@ full-fetch production reload. PR #31 merged the fixed orchestration at
 `P -> A` publication/reload in the required order. No CLI imports it. PR #32
 fixed source-prediction origin proof across the complete commit DAG at head
 `69d59709dd5f8d9c6d8e761dc84d784af844144d`, merged as
-`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The shared exact-object/updateRefs
-boundary passed its authorized disposable-remote canary on 2026-08-24, and
-production `main` now has
+pre-Stage-1 ancestor `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
+The shared exact-object/updateRefs boundary passed its authorized
+disposable-remote canary on 2026-08-24, and production `main` now has
 the required administrator, force-push, and deletion protection. No real
-production `P -> A` execution/reload canary has run. Therefore
-`data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
-this protocol does not authorize execution or claim remote publication safety.
+production `P -> A` execution/reload canary has run. Production `main` contains
+Stage-1 activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`; its configuration has
+`data.refresh_enabled=true`, `live.enabled=true`, and
+`backtest.enabled=false`. This protocol still does not authorize execution or
+claim remote publication safety.
 
-The disconnected-until-reviewed Stage-1 branch binds only the public
-`orchestrate_github_live_cycle(*, token=...)` boundary to a manual workflow. Its
-exact config digest is
+Stage 1 binds only the public `orchestrate_github_live_cycle(*, token=...)`
+boundary to a manual workflow. Its exact config digest is
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`;
 data/live are true and backtest is false. Repository permissions are read-only,
 checkout does not persist credentials, and the dedicated publication secret is
-scoped only to the protected canary step. This preregistration is not execution
-authority, and the production canary remains unrun. Manual dispatch requires
-`expected_sha`, a canonical lowercase 40-hex post-merge production `main` SHA
-established by independent review. The candidate commit is not that authority;
-the plan stores `approved_sha_source=post_merge_review` and dispatch evidence
-must record the actual value. The guard requires
+scoped only to the protected canary step. Stage 1 is
+`merged_armed_not_executed`. Final candidate
+`5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
+Spec review with 0 blocker, 0 major, and 0 minor findings, but the production
+canary remains unrun. Manual dispatch requires `expected_sha`, a canonical
+lowercase 40-hex production `main` target established by independent review.
+No dispatch SHA is approved yet; neither the candidate nor the activation merge
+ancestor is that authority. The plan stores
+`approved_sha_source=post_merge_review` and dispatch evidence must record the
+eventual value. The guard requires
 `expected_sha == GITHUB_SHA == checkout HEAD`. With the exact Stage-1 config,
 an invalid/mismatched SHA, context mismatch, checkout mismatch, or early time
-writes all-false outputs and fails red. Independent review, credential
-installation, and the hard `2026-08-27T15:15:00Z` plus dual-source gate remain.
-Stage 2 is a separate PR after successful canary evidence review.
+writes all-false outputs and fails red. The credential is not installed, and
+the hard `2026-08-27T15:15:00Z` plus dual-source gate remains pending. No
+schedule exists. Stage 2 is a separate PR after successful canary evidence
+review.
 
 ## Purpose
 
@@ -269,8 +276,8 @@ resuming in the caller's checkout is forbidden. The temporary repository is
 removed on normal exit and on exceptions.
 
 The handoff seam itself does not replace the running Python import path or
-launch the model process. The disconnected `live_orchestration` candidate does
-so through private `src/lotto649/_live_worker.py` in the detached P workspace.
+launch the model process. The merged `live_orchestration` module does so through
+private `src/lotto649/_live_worker.py` in the detached P workspace.
 The parent verifies that worker before and after execution, launches isolated
 Python with P/src first, and accepts a bounded canonical manifest only after
 every loaded `lotto649` source module is bound to its exact P Git blob and
@@ -350,8 +357,8 @@ continues. Once worker execution starts, no failure is retried automatically
 because notification may already have caused an external side effect.
 
 The publishers and orchestration remain disconnected from CLI entry points.
-The Stage-1 branch exposes only the composed public orchestrator through its
-digest-bound manual workflow. Local tests cannot prove GitHub serialization,
+Stage 1 exposes only the composed public orchestrator through its digest-bound
+manual workflow. Local tests cannot prove GitHub serialization,
 token permission, branch protection, unattached object visibility, or
 read-after-write behavior; those claims require the unrun production canary and
 protected-main evidence listed in `OPERATIONS.md`.
@@ -402,12 +409,14 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 Merging the reader, collectors, publishers, execution handoff, orchestration,
 and prediction-origin fix did not reopen execution. The disposable remote
 OID/CAS canary and protected-main setup were verified on 2026-08-24; the real
-production canary has not run. The Stage-1 branch is a SHA-bound manual-canary
-release candidate, disconnected until its independent review. It retains a
-false backtest switch and has no schedule. The remaining Stage-1 work is the
-narrow publication credential, branch review approval, independent post-merge
-`main` SHA approval, the hard time/source gate, and one real end-to-end
-production `B -> E -> S -> P -> A` canary/reload. Any failure after worker start
-has no automatic retry. The first successful P or A advance makes the approved
-SHA stale, so it cannot authorize a replay. A separate Stage-2 PR may add
-scheduling only after the exact canary evidence passes review.
+production canary has not run. Stage 1 is a SHA-bound, manual-only release in
+state `merged_armed_not_executed`; backtest remains false and no schedule
+exists. Candidate review is satisfied at
+`5c5dc355ce1bfdae1f467eefa35062aff59d9614` with Standards/Spec findings
+0/0/0. The remaining Stage-1 work is the narrow publication credential,
+independent approval of the exact production `main` dispatch SHA, the hard
+time/source gate, and one real end-to-end production
+`B -> E -> S -> P -> A` canary/reload. Any failure after worker start has no
+automatic retry. The first successful P or A advance makes the approved SHA
+stale, so it cannot authorize a replay. A separate Stage-2 PR may add scheduling
+only after the exact canary evidence passes review.
