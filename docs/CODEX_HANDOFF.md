@@ -212,10 +212,12 @@ Top-12 hits `>= 5`.
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
 path. Live refresh now refuses execution after both gates until a reviewed
-release proves the GitHub publishers and complete disconnected orchestration by
-the required disposable and real `P -> A` canaries, protects production `main`,
-and binds the path to exact reviewed workflow/config bytes. The existing
-code-level candidate is not a CLI connection or remote-safety proof.
+release installs the narrow workflow publication credential, proves the
+complete orchestration with a real production `P -> A` canary/reload, and binds
+the path to exact reviewed workflow/config bytes. The disposable OID/CAS canary
+and production-main protection were completed on 2026-08-24. The existing
+code-level candidate is not a CLI connection or production execution
+authorization.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -265,10 +267,10 @@ Do not broaden the fallback to swallow those integrity failures.
    exact remote artifact publisher is independently reviewed, merged, and still
    disconnected. Preserve the local orchestration candidate's fixed literal-B,
    exact-P worker, freeze-A, and P-to-A sequence; do not add a standalone worker
-   or caller-injectable configuration/clock/adapter path. Complete the
-   disposable OID/CAS canary, protected-main setup, real `P -> A`
-   canary/reload, and SHA-bound workflow release review listed in
-   `OPERATIONS.md`. Only then re-enable through the
+   or caller-injectable configuration/clock/adapter path. Install the narrow
+   workflow publication credential, complete the real production `P -> A`
+   canary/reload, and complete the SHA-bound workflow/config release review
+   listed in `OPERATIONS.md`. Only then re-enable through the
    reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
    matching workflow plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,
