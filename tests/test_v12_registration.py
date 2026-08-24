@@ -135,6 +135,7 @@ HISTORICAL_GOVERNANCE = {
         "attempt_action": "stop_current_attempt_pending_audit",
         "global_research_action": "continue",
         "global_stop_search": "prohibited",
+        "notification_action": "send_once_after_durable_detection",
         "notification_classification_zh": "历史诊断/审计候选、不可晋升",
         "success_language": "prohibited",
     },
@@ -144,6 +145,7 @@ HISTORICAL_GOVERNANCE = {
     "top12": {
         "attempt_action": "continue",
         "global_stop_search": "prohibited",
+        "notification_action": "send_once_after_durable_detection",
         "notification_classification_zh": "历史诊断/审计候选、不可晋升",
         "success_language": "prohibited",
     },
