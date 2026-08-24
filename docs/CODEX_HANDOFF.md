@@ -59,13 +59,21 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > backtest `false`, and binds only `live.yml` `workflow_dispatch` to exact config
 > SHA-256
 > `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
-> Checkout and repository permissions are read-only. Only the protected canary
-> step receives the dedicated publication credential, and it calls only
+> Repository permissions are read-only and checkout does not persist
+> credentials. Only the protected canary step receives the dedicated
+> publication credential, and it calls only
 > `orchestrate_github_live_cycle(*, token=...)`; no CLI, ordinary Git push,
-> automatic retry after worker start, or schedule is present. The branch is not
-> dispatchable until independent review, credential installation, and the hard
-> `2026-08-27T15:15:00Z` plus dual-official-source gate pass. Stage 2 is a
-> separate PR after canary success and evidence review.
+> automatic retry after worker start, or schedule is present. `workflow_dispatch`
+> requires `expected_sha`, the canonical 40-hex post-merge production `main` SHA
+> established by independent review. The candidate commit is not that SHA; the
+> plan stores only `approved_sha_source=post_merge_review`, and dispatch evidence
+> must record the value. On the exact Stage-1 config, invalid/mismatched SHA,
+> repository/event/ref/checkout mismatch, or early time writes all-false outputs
+> and fails red. The branch is not dispatchable until branch review, post-merge
+> SHA review, credential installation, and the hard `2026-08-27T15:15:00Z` plus
+> dual-official-source gate pass. A first successful P or A advance invalidates
+> the approved SHA and blocks rerun. Stage 2 is a separate PR after canary
+> success and evidence review.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
 > preparation authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
@@ -112,8 +120,8 @@ A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
 legacy CLI `bootstrap` and `live` commands remain stopped by the writer
 interlock even on the Stage-1 true-toggle branch. Backtest remains false and
 unauthorized. The Stage-1 workflow can reach only the public orchestrator after
-its exact digest, repository, ref, commit, event, review, credential, time, and
-source gates all pass.
+its exact digest, repository, ref, event, independently approved post-merge
+`expected_sha`, checkout, credential, time, and source gates all pass.
 
 `config.yaml` deliberately separates two selections:
 
@@ -185,8 +193,8 @@ The configured workflows are:
   and an all-false guard.
 - `live.yml`: the Stage-1 branch exposes only a manual, digest-bound production
   canary. Repository permissions are read-only, checkout does not persist
-  credentials, and only the protected canary step receives the dedicated
-  publication secret.
+  credentials, `expected_sha` is a required input, and only the protected canary
+  step receives the dedicated publication secret.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
 - `research-v2-fast.yml` and `research-v2-v4.yml`: historical branch-specific
   research workflows retained for auditability.
@@ -239,10 +247,10 @@ The legacy source adapters remain in `src/lotto649/data_sources.py` for audit an
 future refactoring, but they are no longer a valid operational-history write
 path. Legacy live refresh remains behind its writer interlock. The Stage-1
 branch binds the merged orchestrator to exact reviewed workflow/config bytes,
-but remains disconnected until its independent review and credential are
-complete and the hard time/source gate passes. The disposable OID/CAS canary
-and production-main protection were completed on 2026-08-24; the production
-`P -> A` canary has not run.
+but remains disconnected until branch review, exact post-merge `main` SHA
+review, and credential installation are complete and the hard time/source gate
+passes. The disposable OID/CAS canary and production-main protection were
+completed on 2026-08-24; the production `P -> A` canary has not run.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -277,7 +285,10 @@ Do not broaden the fallback to swallow those integrity failures.
    Stage-1 release. On the Stage-1 branch, keep exactly data/live true and
    backtest false, bind `live.yml` to the exact config digest, and keep the
    branch disconnected until independent review. Call only the public
-   orchestrator; preserve the CLI writer interlock.
+   orchestrator; preserve the CLI writer interlock. After merge, independently
+   review exact `main` and use its canonical 40-hex SHA as required
+   `expected_sha`; never substitute a candidate-branch commit or an unreviewed
+   current head.
 4. Preserve and independently review the sealed corrected epoch and append-only
    suffix identities above. Do not replace them with worktree CSV bytes or
    caller-supplied metadata.
@@ -297,8 +308,10 @@ Do not broaden the fallback to swallow those integrity failures.
    configuration/clock/adapter path. The prediction-origin fix is satisfied by
    PR #32. Complete the remaining Stage-1 independent review, credential, and
    hard time/source gates; run at most one production canary and verify exact
-   reload evidence. Add scheduling only through the separate Stage-2 PR in
-   `OPERATIONS.md` after Stage-1 succeeds.
+   reload evidence. Record the approved SHA in dispatch evidence, not this plan.
+   A successful P or A advance makes that SHA stale and blocks rerun. Add
+   scheduling only through the separate Stage-2 PR in `OPERATIONS.md` after
+   Stage-1 succeeds.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
    authorized runtime before that release. Use a new version whenever

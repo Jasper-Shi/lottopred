@@ -182,10 +182,16 @@ literal `true`, leaves `backtest.enabled=false`, and binds a manual-only
 Repository permissions are read-only, checkout does not persist credentials,
 and the dedicated publication credential is exposed only to the protected
 canary step. There is no ordinary Git push or automatic retry after worker
-start. This branch remains
-disconnected until independent review, credential installation, and the hard
-time/source gate. Stage 2 may add scheduling only in a separate PR after the
-production canary succeeds and its evidence is reviewed.
+start. Manual dispatch requires `expected_sha`: the operator supplies the
+canonical 40-hex post-merge production `main` SHA established by independent
+review. The candidate branch commit is not that authority and the unknown
+post-merge SHA must be recorded only in dispatch evidence. For the exact Stage-1
+config, an invalid/mismatched SHA, context mismatch, or early dispatch writes
+all-false outputs and fails red. A successful P or A advance moves `main`, so
+the old approved SHA cannot authorize a rerun. This branch remains disconnected
+until independent review, credential installation, and the hard time/source
+gate. Stage 2 may add scheduling only in a separate PR after the production
+canary succeeds and its evidence is reviewed.
 
 Live forward cycle:
 

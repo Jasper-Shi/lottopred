@@ -32,9 +32,16 @@ exact config digest is
 data/live are true and backtest is false. Repository permissions are read-only,
 checkout does not persist credentials, and the dedicated publication secret is
 scoped only to the protected canary step. This preregistration is not execution
-authority, and the production canary remains unrun. Independent review,
-credential installation, and the hard `2026-08-27T15:15:00Z` plus dual-source
-gate remain. Stage 2 is a separate PR after successful canary evidence review.
+authority, and the production canary remains unrun. Manual dispatch requires
+`expected_sha`, a canonical lowercase 40-hex post-merge production `main` SHA
+established by independent review. The candidate commit is not that authority;
+the plan stores `approved_sha_source=post_merge_review` and dispatch evidence
+must record the actual value. The guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. With the exact Stage-1 config,
+an invalid/mismatched SHA, context mismatch, checkout mismatch, or early time
+writes all-false outputs and fails red. Independent review, credential
+installation, and the hard `2026-08-27T15:15:00Z` plus dual-source gate remain.
+Stage 2 is a separate PR after successful canary evidence review.
 
 ## Purpose
 
@@ -398,7 +405,9 @@ OID/CAS canary and protected-main setup were verified on 2026-08-24; the real
 production canary has not run. The Stage-1 branch is a SHA-bound manual-canary
 release candidate, disconnected until its independent review. It retains a
 false backtest switch and has no schedule. The remaining Stage-1 work is the
-narrow publication credential, review approval, the hard time/source gate, and
-one real end-to-end production `B -> E -> S -> P -> A` canary/reload. Any
-failure after worker start has no automatic retry. A separate Stage-2 PR may
-add scheduling only after the exact canary evidence passes review.
+narrow publication credential, branch review approval, independent post-merge
+`main` SHA approval, the hard time/source gate, and one real end-to-end
+production `B -> E -> S -> P -> A` canary/reload. Any failure after worker start
+has no automatic retry. The first successful P or A advance makes the approved
+SHA stale, so it cannot authorize a replay. A separate Stage-2 PR may add
+scheduling only after the exact canary evidence passes review.

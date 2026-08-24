@@ -24,6 +24,7 @@ LEGACY_MANIFEST_PATH = (
     / "legacy-2026-08-26-prediction-cohort.json"
 )
 ARMED_CONFIG_SHA256 = "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931"
+UNMERGED_STAGE1_CANDIDATE_SHA = "4f778662697dab353d4dee98d517c45dd29cd2a5"
 MODELS = [
     "random",
     "long_frequency",
@@ -47,9 +48,23 @@ def _workflow() -> dict:
 
 def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
     plan = _plan()
+    plan_text = PLAN_PATH.read_text(encoding="utf-8")
     config_bytes = (ROOT / "config.yaml").read_bytes()
     config = yaml.safe_load(config_bytes)
 
+    assert plan["schema"] == "lotto649.production-live-canary-plan.v2"
+    assert plan["dispatch_authorization"] == {
+        "approved_sha_source": "post_merge_review",
+        "approved_sha_state": "unknown_until_post_merge_review",
+        "approved_sha_stored_in_plan": False,
+        "binding": "expected_sha_equals_github_sha_equals_checkout_head",
+        "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+        "dispatch_evidence_field": "expected_sha",
+        "input_name": "expected_sha",
+        "required": True,
+    }
+    assert '"approved_sha":' not in plan_text
+    assert UNMERGED_STAGE1_CANDIDATE_SHA not in plan_text
     assert hashlib.sha256(config_bytes).hexdigest() == ARMED_CONFIG_SHA256
     assert plan["config"] == {
         "backtest_enabled": False,
@@ -63,7 +78,9 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
     assert config["backtest"]["enabled"] is False
 
     baseline = plan["production_baseline"]
-    assert baseline["main_commit"] == ("60f972b217f7bd23d1b4807e96034db0cfd1fe2e")
+    assert baseline["pre_stage1_main_commit"] == (
+        "60f972b217f7bd23d1b4807e96034db0cfd1fe2e"
+    )
     assert baseline["live_orchestration"] == {
         "merge_commit": "2fe56a40532f7be2586a5cfc004699561556e849",
         "pull_request": 31,
@@ -79,6 +96,13 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
         if gate["id"] == "source_prediction_ancestor_origin_fix"
     )
     assert origin_gate["state"] == "satisfied"
+    post_merge_gate = next(
+        gate
+        for gate in plan["prerequisites"]
+        if gate["id"] == "post_merge_main_sha_review"
+    )
+    assert post_merge_gate["approved_sha_source"] == "post_merge_review"
+    assert post_merge_gate["state"] == "required_before_dispatch"
 
 
 def test_plan_preregisters_exact_history_and_complete_model_cohorts() -> None:
@@ -142,10 +166,24 @@ def test_stage1_workflow_is_manual_read_only_and_capability_scoped() -> None:
     workflow = _workflow()
     workflow_text = LIVE_WORKFLOW_PATH.read_text(encoding="utf-8")
 
+    assert UNMERGED_STAGE1_CANDIDATE_SHA not in workflow_text
     assert set(workflow["on"]) == {"workflow_dispatch"}
     assert workflow["permissions"] == {"contents": "read"}
     assert plan["workflow"]["triggers"] == ["workflow_dispatch"]
     assert plan["workflow"]["permissions"] == {"contents": "read"}
+    dispatch = workflow["on"]["workflow_dispatch"]
+    assert set(dispatch) == {"inputs"}
+    assert set(dispatch["inputs"]) == {"expected_sha"}
+    expected_sha_input = dispatch["inputs"]["expected_sha"]
+    assert expected_sha_input["required"] == "true"
+    assert expected_sha_input["type"] == "string"
+    assert "default" not in expected_sha_input
+    assert plan["workflow"]["required_dispatch_input"] == {
+        "approved_sha_source": "post_merge_review",
+        "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+        "name": "expected_sha",
+        "required": True,
+    }
 
     steps = workflow["jobs"]["live"]["steps"]
     checkout = steps[0]
@@ -154,6 +192,18 @@ def test_stage1_workflow_is_manual_read_only_and_capability_scoped() -> None:
         "fetch-depth": "0",
         "persist-credentials": "false",
     }
+    guard_step = steps[1]
+    assert guard_step["env"] == {"STAGE1_EXPECTED_SHA": "${{ inputs.expected_sha }}"}
+    guard_script = guard_step["run"]
+    assert 're.fullmatch(r"[0-9a-f]{40}", expected_sha)' in guard_script
+    assert "expected_sha != workflow_sha" in guard_script
+    assert "workflow_sha != checkout_head" in guard_script
+    assert guard_script.index("write_outputs()") < guard_script.index("def deny(")
+    assert 'print(f"::error::{message}; execution remains sealed")' in guard_script
+    assert "raise SystemExit(1)" in guard_script
+    assert 'deny("Stage-1 workflow context is not authorized")' in guard_script
+    assert 'deny("Checkout HEAD is unavailable")' in guard_script
+    assert 'deny("Stage-1 source publication window is not open")' in guard_script
 
     canary_step = next(
         step
@@ -217,6 +267,11 @@ def test_stage1_has_no_schedule_and_stage2_requires_separate_reviewed_pr() -> No
     }
     assert plan["failure_policy"]["automatic_retry_after_worker_start"] is False
     assert plan["failure_policy"]["ordinary_git_push"] is False
+    assert plan["failure_policy"]["approved_sha_after_authority_advance"] == {
+        "old_sha_reusable": False,
+        "reason": "first_successful_P_or_A_advance_moves_main",
+        "retry_authorized": False,
+    }
     assert plan["failure_policy"]["forward_reseal"] == {
         "data_refresh_enabled": False,
         "live_enabled": False,
@@ -224,6 +279,21 @@ def test_stage1_has_no_schedule_and_stage2_requires_separate_reviewed_pr() -> No
         "workflow": "sealed_no_op",
     }
     assert plan["failure_policy"]["rewrite_acknowledged_commits"] is False
+    assert plan["failure_policy"]["stage1_guard_rejection"] == {
+        "all_false_outputs_written_first": True,
+        "applies_only_when_config_sha256": ARMED_CONFIG_SHA256,
+        "rejected_conditions": [
+            "invalid_or_mismatched_expected_sha",
+            "unauthorized_repository_event_or_ref",
+            "checkout_head_unavailable",
+            "github_sha_or_checkout_head_mismatch",
+            "before_not_before",
+        ],
+        "workflow_result": "failure",
+    }
+    assert plan["failure_policy"]["unapproved_or_unavailable_config_result"] == (
+        "green_all_false_no_op"
+    )
     assert plan["stage2"] == {
         "condition": "stage_1_canary_success_and_independent_review",
         "separate_pull_request": True,

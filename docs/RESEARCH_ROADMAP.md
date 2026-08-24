@@ -58,9 +58,14 @@ canary: exact config digest
 data/live true, backtest false, and no integration, backtest, CLI,
 ordinary-push, automatic post-worker retry, or scheduled execution path. The
 remaining pre-dispatch gates are independent branch review, the narrow workflow
-publication credential, and the hard `2026-08-27T15:15:00Z` plus
-dual-official-source requirement. A separate
-Stage-2 schedule PR is permitted only after the exact production
+publication credential, independent review of exact post-merge production
+`main`, and the hard `2026-08-27T15:15:00Z` plus dual-official-source
+requirement. Manual dispatch requires that reviewed canonical 40-hex SHA as
+`expected_sha`; the candidate commit is not the approval value, and the plan
+stores only `approved_sha_source=post_merge_review`; dispatch evidence records
+the reviewed value. The guard binds it to both `GITHUB_SHA` and checkout HEAD.
+A successful P or A advance makes the approved SHA stale and prevents replay.
+A separate Stage-2 schedule PR is permitted only after the exact production
 `B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed. See
 `docs/OPERATIONS.md`; no Stage-1 preparation or legacy evaluation creates model
 evidence by itself.

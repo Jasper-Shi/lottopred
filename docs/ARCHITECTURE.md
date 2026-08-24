@@ -64,6 +64,16 @@ is scoped only to that protected step. Integration and backtest remain all-false
 workflow no-ops, the legacy CLI writer interlock remains closed, and there is no
 ordinary Git push or unattended schedule.
 
+The dispatch requires an `expected_sha` input. After the candidate is merged,
+an independent reviewer establishes the exact production `main` SHA; the
+operator supplies that canonical lowercase 40-hex value, and the guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. The candidate commit is not a
+post-merge approval SHA, so the plan stores only
+`approved_sha_source=post_merge_review`; the actual value belongs in dispatch
+evidence. Once the exact Stage-1 config digest is present, an invalid or
+mismatched SHA, wrong repository/event/ref, inconsistent checkout, or early
+dispatch writes all-false outputs first and then fails the workflow red.
+
 Stage 1 is preregistered but not executed. It requires independent review,
 installation of the repository-scoped publication credential, and a hard
 not-before of `2026-08-27T15:15:00Z` after both WCLC and Loto-Québec publish and
@@ -71,7 +81,9 @@ agree on the 2026-08-26 draw. Success is exact `B -> E -> S -> P -> A`, a fresh
 reload of 4,445 draws through 2026-08-26, seven descriptive-only legacy
 evaluations, and seven immutable 2026-08-29 predictions. The existing seven
 2026-08-26 snapshots remain byte-identical. A post-worker failure has no
-automatic retry. Stage 2 may add scheduling only in a separate PR after the
+automatic retry. The first successful P or A authority advance moves `main`, so
+the old independently approved `expected_sha` fails the next dispatch and
+blocks a replay. Stage 2 may add scheduling only in a separate PR after the
 canary succeeds and its evidence is reviewed.
 
 This emergency seal is deliberately scoped to the three execution commands on
@@ -240,8 +252,9 @@ worker starts is fail closed and receives no automatic retry: notification may
 already have produced an external side effect even when the worker cannot
 return a complete manifest.
 
-This path remains dormant until the Stage-1 review, credential, and time/source
-gates pass. Stage 1 permits one manual attempt and no unattended schedule.
+This path remains dormant until the Stage-1 branch review, post-merge `main`
+SHA review, credential, and time/source gates pass. Stage 1 permits one manual
+attempt and no unattended schedule.
 
 ## Path B — Historical walk-forward simulation
 

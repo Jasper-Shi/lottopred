@@ -17,6 +17,16 @@
     "secret_name": "LOTTO_GITHUB_PUBLICATION_TOKEN",
     "workflow_scope": "protected_production_canary_step_only"
   },
+  "dispatch_authorization": {
+    "approved_sha_source": "post_merge_review",
+    "approved_sha_state": "unknown_until_post_merge_review",
+    "approved_sha_stored_in_plan": false,
+    "binding": "expected_sha_equals_github_sha_equals_checkout_head",
+    "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+    "dispatch_evidence_field": "expected_sha",
+    "input_name": "expected_sha",
+    "required": true
+  },
   "execution": {
     "entrypoint": "orchestrate_github_live_cycle(*, token=...)",
     "not_before": "2026-08-27T15:15:00Z",
@@ -92,6 +102,11 @@
     }
   },
   "failure_policy": {
+    "approved_sha_after_authority_advance": {
+      "old_sha_reusable": false,
+      "reason": "first_successful_P_or_A_advance_moves_main",
+      "retry_authorized": false
+    },
     "automatic_retry_after_worker_start": false,
     "forward_reseal": {
       "data_refresh_enabled": false,
@@ -100,7 +115,20 @@
       "workflow": "sealed_no_op"
     },
     "ordinary_git_push": false,
-    "rewrite_acknowledged_commits": false
+    "rewrite_acknowledged_commits": false,
+    "stage1_guard_rejection": {
+      "all_false_outputs_written_first": true,
+      "applies_only_when_config_sha256": "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931",
+      "rejected_conditions": [
+        "invalid_or_mismatched_expected_sha",
+        "unauthorized_repository_event_or_ref",
+        "checkout_head_unavailable",
+        "github_sha_or_checkout_head_mismatch",
+        "before_not_before"
+      ],
+      "workflow_result": "failure"
+    },
+    "unapproved_or_unavailable_config_result": "green_all_false_no_op"
   },
   "legacy_due_prediction_cohort": {
     "classification": "descriptive_only_nonpromotion",
@@ -126,6 +154,12 @@
       "state": "required_before_merge_and_dispatch"
     },
     {
+      "approved_sha_source": "post_merge_review",
+      "detail": "independently review exact post-merge production main, then supply its canonical 40-hex SHA as expected_sha and record it in dispatch evidence",
+      "id": "post_merge_main_sha_review",
+      "state": "required_before_dispatch"
+    },
+    {
       "detail": "install and verify the narrow repository-scoped workflow credential",
       "id": "publication_credential",
       "state": "required_unmet_at_registration"
@@ -141,7 +175,7 @@
       "merge_commit": "2fe56a40532f7be2586a5cfc004699561556e849",
       "pull_request": 31
     },
-    "main_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
+    "pre_stage1_main_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
     "prediction_origin_fix": {
       "head_commit": "69d59709dd5f8d9c6d8e761dc84d784af844144d",
       "merge_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
@@ -152,7 +186,7 @@
     "contains_recipient_addresses": false,
     "contains_secret_values": false
   },
-  "schema": "lotto649.production-live-canary-plan.v1",
+  "schema": "lotto649.production-live-canary-plan.v2",
   "stage": {
     "branch_state": "disconnected_until_independent_review",
     "id": "stage-1",
@@ -179,6 +213,12 @@
       "contents": "read"
     },
     "publication_secret_scope": "protected_production_canary_step_only",
+    "required_dispatch_input": {
+      "approved_sha_source": "post_merge_review",
+      "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+      "name": "expected_sha",
+      "required": true
+    },
     "triggers": [
       "workflow_dispatch"
     ]

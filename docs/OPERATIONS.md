@@ -76,18 +76,28 @@ The exact candidate `config.yaml` SHA-256 is:
 d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931
 ```
 
-`.github/workflows/live.yml` has only `workflow_dispatch`; it has no schedule
-or push trigger. It uses a full-history checkout with
-`persist-credentials=false` and top-level `contents: read`. Its guard begins
-false and may authorize setup plus one protected canary step only for the exact
-config digest, repository, `main` ref, checked-out commit, manual event, and
-trusted UTC not-before value. That step is the only consumer of
-`LOTTO_GITHUB_PUBLICATION_TOKEN`, and it calls only
+`.github/workflows/live.yml` has only `workflow_dispatch` and requires its
+`expected_sha` input; it has no schedule or push trigger. It uses a full-history
+checkout with `persist-credentials=false` and top-level `contents: read`. Its
+guard begins false and may authorize setup plus one protected canary step only
+for the exact config digest, repository, `main` ref, manual event, approved SHA,
+checked-out commit, and trusted UTC not-before value. That step is the only
+consumer of `LOTTO_GITHUB_PUBLICATION_TOKEN`, and it calls only
 `orchestrate_github_live_cycle(*, token=...)`. The repository-scoped credential
 is not installed at registration. Integration and backtest remain all-false
 workflow no-ops, backtest stays runtime-disabled, and legacy CLI/bootstrap
 writers remain interlocked. Stage 1 contains no ordinary Git push and no
 automatic retry after the private P worker starts.
+
+`expected_sha` is not the candidate-branch commit and this plan does not guess
+its value. After merge, an independent reviewer establishes exact production
+`main`; the operator supplies its canonical lowercase 40-hex SHA and records it
+in dispatch evidence. The guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. With the exact Stage-1 config,
+an invalid or mismatched SHA, unauthorized repository/event/ref, checkout
+mismatch, or early time writes the all-false outputs first and then fails the
+job red. The plan records `approved_sha_source=post_merge_review`, not an
+unknown approval value.
 
 PR #31 merged the orchestrator at
 `2fe56a40532f7be2586a5cfc004699561556e849`. PR #32 satisfied the former
@@ -98,8 +108,9 @@ prediction's unique immutable origin across the complete commit DAG and keeps
 the exact legacy-manifest exception closed to the seven 2026-08-26 snapshots.
 
 The remaining pre-dispatch blockers are independent review of the exact Stage-1
-branch, installation and verification of the narrow publication credential,
-and the time/source gate. The earliest permitted dispatch is
+branch, independent approval of the exact post-merge production `main` SHA,
+installation and verification of the narrow publication credential, and the
+time/source gate. The earliest permitted dispatch is
 `2026-08-27T15:15:00Z`, and both WCLC and Loto-Québec must have independently
 published and agreed on the 2026-08-26 draw. The single attempt must produce
 exact `B -> E -> S -> P -> A` topology. Success requires a fresh authoritative
@@ -117,9 +128,11 @@ pinned by manifest SHA-256
 If the protected worker starts and the canary later fails, do not dispatch it
 again automatically. Audit the acknowledged remote state, then use a reviewed
 forward commit to restore false data/live switches and reseal the workflow;
-never reset, force, or rewrite acknowledged commits. Stage 2 may add the
-Thursday/Sunday schedule only in a separate PR after Stage-1 succeeds and its
-exact evidence receives independent review.
+never reset, force, or rewrite acknowledged commits. The first successful P or
+A authority advance changes production `main`, so the old reviewed
+`expected_sha` no longer matches and cannot authorize a replay. Stage 2 may add
+the Thursday/Sunday schedule only in a separate PR after Stage-1 succeeds and
+its exact evidence receives independent review.
 
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:
@@ -213,7 +226,10 @@ satisfied by PR #32. The remaining Stage-1 pre-dispatch blockers are:
    by the reviewed publishers;
 2. independent review of the exact config bytes, manual-only SHA-bound workflow,
    preregistration, and documentation;
-3. wait until no earlier than `2026-08-27T15:15:00Z` and verify that WCLC and
+3. after merge, independently review exact production `main`, supply its
+   canonical 40-hex SHA as required `expected_sha`, and record it in dispatch
+   evidence;
+4. wait until no earlier than `2026-08-27T15:15:00Z` and verify that WCLC and
    Loto-Québec have both published and agreed on the 2026-08-26 draw.
 
 The future live order is fixed: collect both sources, prepare and remotely
@@ -279,8 +295,9 @@ legacy-like or ambiguous source fails closed.
 
 Before the Stage-1 candidate is independently reviewed and merged, production
 manual and scheduled dispatches perform only checkout plus the safe guard and
-then skip. After merge, only the explicitly authorized one-time Stage-1 manual
-dispatch may proceed; scheduling remains absent until a separate Stage-2 PR.
+then skip. After merge and post-merge SHA review, only the explicitly authorized
+one-time Stage-1 manual dispatch may proceed; scheduling remains absent until a
+separate Stage-2 PR.
 
 ## GitHub Actions workflows
 
@@ -290,14 +307,17 @@ dispatch may proceed; scheduling remains absent until a separate Stage-2 PR.
 - `backtest.yml` — outside the hold, runs the configured historical walk-forward
   benchmark. Reopening it now requires the reviewed corrected-history consumer;
   no corrected rerun makes the consumed 2020–2025 outcomes blind again.
-- `live.yml` — in Stage 1, exposes only a manual digest-bound call to
-  `orchestrate_github_live_cycle`; it has no schedule or push trigger.
+- `live.yml` — in Stage 1, requires manual `expected_sha` and exposes only a
+  digest-bound call to `orchestrate_github_live_cycle`; it has no schedule or
+  push trigger.
 
 During Stage 1, integration and backtest remain sealed. `live.yml` has read-only
 repository permissions, does not persist checkout credentials, begins with
 false guard outputs, and may proceed only for the exact Stage-1 identity/time
-gates. The narrow publication token, rather than an ordinary Git push, is the
-only remote write capability passed to the orchestrator.
+gates, including canonical `expected_sha == GITHUB_SHA == checkout HEAD`.
+Stage-1 identity/time rejection fails red after the false outputs are written.
+The narrow publication token, rather than an ordinary Git push, is the only
+remote write capability passed to the orchestrator.
 
 The backtest, integration, and live workflows use full Git history so the
 verified-history loader can resolve its pinned artifact/evidence ancestry if a

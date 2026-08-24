@@ -31,6 +31,8 @@ VERIFIED_HISTORY_WORKFLOWS = [
     "research-v2-v4.yml",
     "test.yml",
 ]
+_MATCH_CHECKOUT = object()
+OLD_REVIEWED_SHA = "4f778662697dab353d4dee98d517c45dd29cd2a5"
 
 
 def _workflow(workflow_name: str) -> dict:
@@ -96,7 +98,8 @@ def _run_guard(
     config_bytes: bytes | None,
     github_env: dict[str, str] | None = None,
     frozen_now: str | None = None,
-) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
+    expected_sha: str | None | object = _MATCH_CHECKOUT,
+) -> tuple[subprocess.CompletedProcess[str], dict[str, str], list[str]]:
     if config_bytes is not None:
         head = _initialize_git_checkout(tmp_path, config_bytes)
     else:
@@ -118,6 +121,10 @@ def _run_guard(
             "GITHUB_SHA": head,
         }
     )
+    if expected_sha is _MATCH_CHECKOUT:
+        environment["STAGE1_EXPECTED_SHA"] = head
+    elif expected_sha is not None:
+        environment["STAGE1_EXPECTED_SHA"] = expected_sha
     if github_env:
         environment.update(github_env)
     completed = subprocess.run(
@@ -128,11 +135,9 @@ def _run_guard(
         text=True,
         check=False,
     )
-    observed = dict(
-        line.split("=", 1)
-        for line in output_path.read_text(encoding="utf-8").splitlines()
-    )
-    return completed, observed
+    output_lines = output_path.read_text(encoding="utf-8").splitlines()
+    observed = dict(line.split("=", 1) for line in output_lines)
+    return completed, observed, output_lines
 
 
 def test_committed_stage1_config_changes_only_the_two_live_gates():
@@ -171,8 +176,17 @@ def test_stage1_workflows_have_read_only_repository_permission(workflow_name):
     assert _workflow(workflow_name)["permissions"] == {"contents": "read"}
 
 
-def test_live_stage1_has_only_manual_dispatch_trigger():
-    assert _workflow("live.yml")[True] == {"workflow_dispatch": None}
+def test_live_stage1_requires_operator_supplied_expected_sha():
+    dispatch = _workflow("live.yml")[True]
+
+    assert set(dispatch) == {"workflow_dispatch"}
+    expected_sha = dispatch["workflow_dispatch"]["inputs"]["expected_sha"]
+    assert expected_sha["required"] is True
+    assert expected_sha["type"] == "string"
+    assert "default" not in expected_sha
+    assert _steps("live.yml")[1]["env"] == {
+        "STAGE1_EXPECTED_SHA": "${{ inputs.expected_sha }}"
+    }
 
 
 def test_integration_runs_when_operational_history_boundaries_change():
@@ -217,15 +231,17 @@ def test_disabled_config_is_recognized_and_remains_fully_sealed(
     tmp_path,
     workflow_name,
 ):
-    completed, observed = _run_guard(
+    completed, observed, output_lines = _run_guard(
         tmp_path,
         workflow_name,
         config_bytes=_disabled_config_bytes(),
+        expected_sha=None,
     )
 
     assert completed.returncode == 0, completed.stderr
     assert "Verified incident-disabled config" in completed.stdout
     assert observed == FALSE_OUTPUTS[workflow_name]
+    assert output_lines == [f"{name}=false" for name in FALSE_OUTPUTS[workflow_name]]
 
 
 @pytest.mark.parametrize("workflow_name", ["integration.yml", "backtest.yml"])
@@ -233,7 +249,7 @@ def test_non_live_workflows_recognize_stage1_config_but_remain_fully_sealed(
     tmp_path,
     workflow_name,
 ):
-    completed, observed = _run_guard(
+    completed, observed, _output_lines = _run_guard(
         tmp_path,
         workflow_name,
         config_bytes=(ROOT / "config.yaml").read_bytes(),
@@ -249,44 +265,131 @@ def test_non_live_workflows_recognize_stage1_config_but_remain_fully_sealed(
 def test_live_guard_allows_exact_stage1_manual_main_dispatch_after_not_before(
     tmp_path,
 ):
-    completed, observed = _run_guard(
+    completed, observed, output_lines = _run_guard(
         tmp_path,
         "live.yml",
         config_bytes=(ROOT / "config.yaml").read_bytes(),
         frozen_now="datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        expected_sha=_MATCH_CHECKOUT,
     )
 
     assert completed.returncode == 0, completed.stderr
     assert "Authorized exact Stage-1 production canary" in completed.stdout
     assert observed == {"refresh": "true", "live": "true", "cycle": "true"}
+    assert output_lines[:3] == ["refresh=false", "live=false", "cycle=false"]
+
+
+def test_live_guard_rejects_missing_expected_sha_after_writing_false_outputs(
+    tmp_path,
+):
+    completed, observed, output_lines = _run_guard(
+        tmp_path,
+        "live.yml",
+        config_bytes=(ROOT / "config.yaml").read_bytes(),
+        frozen_now="datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        expected_sha=None,
+    )
+
+    assert completed.returncode != 0
+    assert observed == FALSE_OUTPUTS["live.yml"]
+    assert output_lines == ["refresh=false", "live=false", "cycle=false"]
+
+
+def test_old_reviewed_sha_cannot_authorize_an_arbitrary_future_commit(tmp_path):
+    assert OLD_REVIEWED_SHA not in _steps("live.yml")[1]["run"]
+    completed, observed, output_lines = _run_guard(
+        tmp_path,
+        "live.yml",
+        config_bytes=(ROOT / "config.yaml").read_bytes(),
+        frozen_now="datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        expected_sha=OLD_REVIEWED_SHA,
+    )
+
+    assert completed.returncode != 0
+    assert observed == FALSE_OUTPUTS["live.yml"]
+    assert output_lines == ["refresh=false", "live=false", "cycle=false"]
 
 
 @pytest.mark.parametrize(
-    ("github_env", "frozen_now"),
+    ("github_env", "expected_sha", "frozen_now"),
     [
-        ({"GITHUB_REPOSITORY": "attacker/fork"}, None),
-        ({"GITHUB_EVENT_NAME": "push"}, None),
-        ({"GITHUB_REF": "refs/heads/feature"}, None),
-        ({"GITHUB_SHA": "f" * 40}, None),
-        ({}, "datetime(2026, 8, 27, 15, 14, 59, tzinfo=UTC)"),
+        (
+            {"GITHUB_REPOSITORY": "attacker/fork"},
+            _MATCH_CHECKOUT,
+            "datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        ),
+        (
+            {"GITHUB_EVENT_NAME": "push"},
+            _MATCH_CHECKOUT,
+            "datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        ),
+        (
+            {"GITHUB_REF": "refs/heads/feature"},
+            _MATCH_CHECKOUT,
+            "datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        ),
+        (
+            {"GITHUB_SHA": "f" * 40},
+            _MATCH_CHECKOUT,
+            "datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        ),
+        (
+            {"GITHUB_SHA": OLD_REVIEWED_SHA},
+            OLD_REVIEWED_SHA,
+            "datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        ),
+        (
+            {},
+            _MATCH_CHECKOUT,
+            "datetime(2026, 8, 27, 15, 14, 59, tzinfo=UTC)",
+        ),
     ],
-    ids=["repository", "event", "ref", "checkout-head", "not-before"],
+    ids=[
+        "repository",
+        "event",
+        "ref",
+        "github-sha",
+        "checkout-head",
+        "not-before",
+    ],
 )
 def test_live_guard_fails_closed_when_any_context_gate_mismatches(
     tmp_path,
     github_env,
+    expected_sha,
     frozen_now,
 ):
-    completed, observed = _run_guard(
+    completed, observed, output_lines = _run_guard(
         tmp_path,
         "live.yml",
         config_bytes=(ROOT / "config.yaml").read_bytes(),
         github_env=github_env,
         frozen_now=frozen_now,
+        expected_sha=expected_sha,
     )
 
-    assert completed.returncode == 0, completed.stderr
+    assert completed.returncode != 0
     assert observed == FALSE_OUTPUTS["live.yml"]
+    assert output_lines == ["refresh=false", "live=false", "cycle=false"]
+
+
+@pytest.mark.parametrize(
+    "expected_sha",
+    ["0" * 39, "0" * 41, "g" * 40, "A" * 40, "  " + "0" * 40],
+    ids=["short", "long", "non-hex", "uppercase", "leading-space"],
+)
+def test_live_guard_rejects_noncanonical_expected_sha(tmp_path, expected_sha):
+    completed, observed, output_lines = _run_guard(
+        tmp_path,
+        "live.yml",
+        config_bytes=(ROOT / "config.yaml").read_bytes(),
+        frozen_now="datetime(2026, 8, 27, 15, 15, tzinfo=UTC)",
+        expected_sha=expected_sha,
+    )
+
+    assert completed.returncode != 0
+    assert observed == FALSE_OUTPUTS["live.yml"]
+    assert output_lines == ["refresh=false", "live=false", "cycle=false"]
 
 
 @pytest.mark.parametrize("workflow_name", FALSE_OUTPUTS)
@@ -319,7 +422,7 @@ def test_workflow_guard_unavailable_config_outputs_false_and_exits_successfully(
 
 @pytest.mark.parametrize("workflow_name", FALSE_OUTPUTS)
 def test_workflow_guard_rejects_any_unapproved_config_bytes(tmp_path, workflow_name):
-    completed, observed = _run_guard(
+    completed, observed, _output_lines = _run_guard(
         tmp_path,
         workflow_name,
         config_bytes=(ROOT / "config.yaml").read_bytes() + b"\n",

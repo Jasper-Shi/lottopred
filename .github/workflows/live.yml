@@ -2,6 +2,11 @@ name: lotto649-live-cycle
 
 on:
   workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed main commit SHA to execute
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -21,10 +26,13 @@ jobs:
       - name: Read Stage-1 execution guards
         id: execution_guard
         shell: bash
+        env:
+          STAGE1_EXPECTED_SHA: ${{ inputs.expected_sha }}
         run: |
           python - <<'PY'
           import hashlib
           import os
+          import re
           import subprocess
           from datetime import UTC, datetime
           from pathlib import Path
@@ -46,6 +54,11 @@ jobs:
                       output.write(f"{name}={'true' if enabled else 'false'}\n")
 
           write_outputs()
+
+          def deny(message):
+              print(f"::error::{message}; execution remains sealed")
+              raise SystemExit(1)
+
           try:
               observed_sha256 = hashlib.sha256(
                   Path("config.yaml").read_bytes()
@@ -64,6 +77,9 @@ jobs:
                       "execution remains sealed"
                   )
               else:
+                  expected_sha = os.environ.get("STAGE1_EXPECTED_SHA", "")
+                  if re.fullmatch(r"[0-9a-f]{40}", expected_sha) is None:
+                      deny("Stage-1 expected SHA is not canonical")
                   expected_context = {
                       "GITHUB_REPOSITORY": "Jasper-Shi/lottopred",
                       "GITHUB_EVENT_NAME": "workflow_dispatch",
@@ -75,10 +91,7 @@ jobs:
                       if os.environ.get(name) != expected
                   ]
                   if mismatches:
-                      print(
-                          "::warning::Stage-1 workflow context is not authorized; "
-                          "execution remains sealed"
-                      )
+                      deny("Stage-1 workflow context is not authorized")
                   else:
                       try:
                           completed = subprocess.run(
@@ -88,26 +101,22 @@ jobs:
                               text=True,
                           )
                       except (OSError, subprocess.SubprocessError, ValueError):
-                          print(
-                              "::warning::Checkout HEAD is unavailable; "
-                              "execution remains sealed"
-                          )
+                          deny("Checkout HEAD is unavailable")
                       else:
                           checkout_head = completed.stdout.strip()
+                          workflow_sha = os.environ.get("GITHUB_SHA", "")
                           if (
                               completed.returncode != 0
                               or completed.stderr
-                              or os.environ.get("GITHUB_SHA") != checkout_head
+                              or expected_sha != workflow_sha
+                              or workflow_sha != checkout_head
                           ):
-                              print(
-                                  "::warning::Workflow SHA differs from checkout HEAD; "
-                                  "execution remains sealed"
+                              deny(
+                                  "Stage-1 expected, workflow, and checkout "
+                                  "SHAs differ"
                               )
                           elif datetime.now(UTC) < not_before:
-                              print(
-                                  "::warning::Stage-1 source publication window is not open; "
-                                  "execution remains sealed"
-                              )
+                              deny("Stage-1 source publication window is not open")
                           else:
                               values.update(
                                   refresh=True,
