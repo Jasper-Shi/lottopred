@@ -96,9 +96,9 @@ requires a fresh anonymous full fetch through the production reader. It refuses
 an unprotected or non-SHA-1 authority. The handoff independently fetches exact
 authority `P`, reloads it from detached literal `HEAD`, and can freeze only the
 exact new prediction/evaluation files into an unattached single-parent artifact
-commit `A`. A capability-scoped exact remote `P -> A` publisher candidate is
-under review on its isolated branch. It accepts only the freeze-issued artifact
-while the same P context remains open, fixes `Jasper-Shi/lottopred` `main`,
+commit `A`. The independently reviewed and merged capability-scoped exact
+remote `P -> A` publisher accepts only the freeze-issued artifact while the
+same P context remains open, fixes `Jasper-Shi/lottopred` `main`,
 uploads and verifies A's required object OIDs, attempts one GraphQL
 `updateRefs` CAS with `force=false`, rereads every acknowledgement outcome, and
 requires a fresh anonymous full fetch plus `load_published_history(A)`. None of
@@ -117,13 +117,12 @@ Read-only inspection on 2026-08-24 established these production facts:
 The schema fact proves interface availability only; no production mutation or
 remote-safety canary has succeeded. The remaining release blockers are:
 
-1. independently reviewed artifact-publisher code and tests;
-2. an authorized disposable-remote exact object-OID/updateRefs canary;
-3. configured and independently verified production protected `main`;
-4. collector/preparer/publisher/handoff orchestration with reviewed P-code
+1. an authorized disposable-remote exact object-OID/updateRefs canary;
+2. configured and independently verified production protected `main`;
+3. collector/preparer/publisher/handoff orchestration with reviewed P-code
    provenance;
-5. a real exact `P -> A` canary followed by reread and fresh anonymous reload;
-6. a separate review of the new config bytes and SHA-bound workflow execution
+4. a real exact `P -> A` canary followed by reread and fresh anonymous reload;
+5. a separate review of the new config bytes and SHA-bound workflow execution
    plan.
 
 The future live order is fixed: collect both sources, prepare and remotely
@@ -136,8 +135,8 @@ ordinary push.
 Public bootstrap, live refresh, evaluation, and prediction entry points
 therefore still refuse execution after their gates. Before reconsidering those
 gates, complete every blocker in the remote publication release state above.
-The disconnected publisher candidate does not complete the remote operational
-path or reviewed release; all switches remain false. The
+The disconnected publisher does not complete the remote operational path or
+reviewed release; all switches remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 

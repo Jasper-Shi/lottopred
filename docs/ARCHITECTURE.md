@@ -123,7 +123,7 @@ the exact object identities needed by A; attempts one GraphQL `updateRefs`
 `P -> A` with `force=false`; rereads `main` for every acknowledgement outcome;
 and returns success only after a fresh anonymous full fetch of exact A passes
 `load_published_history(A)`. It has no CLI, live, or workflow connection and is
-still awaiting review and true-remote proof.
+independently reviewed, but still awaits true-remote proof.
 
 The handoff does not change the current interpreter's import path. Future
 orchestration must execute reviewed P code inside this context, or independently
@@ -133,10 +133,10 @@ P-rooted configuration alone is not code provenance.
 Bootstrap and every public live entry point therefore remain quarantined after
 their gates until protected-main policy and a disposable-repository OID/CAS
 canary prove the GitHub adapter, the collector/preparer/publisher/handoff are
-orchestrated with P-code provenance, and the artifact publisher passes its
-review plus a real `P -> A` publication/reload canary. Live refresh raises after
-both gates because that end-to-end remote path is not wired. The workflow/config
-release remains a separate reviewed change. See
+orchestrated with P-code provenance, and the artifact publisher passes a real
+`P -> A` publication/reload canary. Live refresh raises after both gates because
+that end-to-end remote path is not wired. The workflow/config release remains a
+separate reviewed change. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 

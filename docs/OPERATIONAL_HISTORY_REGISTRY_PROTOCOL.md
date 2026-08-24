@@ -8,8 +8,8 @@ The reader, one-event genesis migration, network source collector, offline
 dual-source preparation seam, local bare-repository compare-and-swap adapter,
 disconnected fixed-repository GitHub publisher, and isolated execution/artifact
 handoff are implemented. A disconnected, capability-scoped exact remote
-`P -> A` artifact publisher is implemented as a review candidate on this branch.
-It fixes production repository/main identity, exact object-OID upload, GraphQL
+`P -> A` artifact publisher is independently reviewed and merged. It fixes
+production repository/main identity, exact object-OID upload, GraphQL
 `updateRefs` with `force=false`, mandatory ref reread, and a fresh anonymous
 full-fetch production reload. None of these seams is workflow-integrated, and
 neither publisher has passed the required true-remote canary. Therefore
@@ -272,7 +272,7 @@ worktree bytes, and all refs unchanged. Its timestamp must be whole-second UTC,
 conservatively post-date the history, not predate P, and remain pre-draw for new
 predictions.
 
-The handoff itself does not publish A. The candidate
+The handoff itself does not publish A. The disconnected
 `publish_frozen_execution_artifacts_to_github(artifacts, token=...)` accepts
 only the exact freeze-issued `FrozenExecutionArtifacts` while its opaque
 capability and original P workspace remain active. It independently freezes A's
@@ -286,10 +286,10 @@ push, merge, rebase, force, retry, stage a directory, or touch a workflow or
 runtime gate. Evaluation, prediction, email, or output files that cannot
 complete that remote publication are not committed audit evidence.
 
-This candidate remains disconnected and under review. Its local tests cannot
-prove GitHub serialization, token permission, branch protection, unattached
-object visibility, or read-after-write behavior; those claims require the
-remote canaries and protected-main evidence listed in `OPERATIONS.md`.
+This publisher remains disconnected. Its independently reviewed local tests
+cannot prove GitHub serialization, token permission, branch protection,
+unattached object visibility, or read-after-write behavior; those claims require
+the remote canaries and protected-main evidence listed in `OPERATIONS.md`.
 
 ## Reader guarantees
 
@@ -336,9 +336,9 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 Merging the reader, official-source collector, offline/local publication
 components, disconnected GitHub publisher, and execution/artifact handoff does
-not reopen execution; neither does merging the artifact-publisher candidate.
-Its code/tests must pass independent review, followed by the disposable remote
-OID/CAS canary, protected-main setup, P-code-provenance orchestration, real
-`P -> A` canary/reload, and the separate SHA-bound workflow release review
-specified in `OPERATIONS.md`. Until that later release, all three runtime
-switches and all workflow stages remain false.
+not reopen execution; neither does the independently reviewed and merged
+artifact publisher. The remaining release work is the disposable remote OID/CAS
+canary, protected-main setup, P-code-provenance orchestration, real `P -> A`
+canary/reload, and the separate SHA-bound workflow release review specified in
+`OPERATIONS.md`. Until that later release, all three runtime switches and all
+workflow stages remain false.
