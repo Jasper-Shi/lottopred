@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import NoReturn
 
@@ -9,7 +9,10 @@ from .domain import Prediction
 from .evaluation import evaluate_prediction
 from .models.factory import build_models
 from .notification import send_hit_alert, should_alert
-from .operational_history import operational_history_provenance
+from .operational_history import (
+    PublishedHistory,
+    operational_history_provenance,
+)
 from .predictor import make_prediction
 from .storage import save_evaluation, save_prediction
 from .verified_history import VerifiedHistory
@@ -94,7 +97,12 @@ def evaluate_due_predictions(cfg: dict) -> list[dict]:
     _require_verified_history_append_writer()
 
 
-def _generate_next_predictions(cfg: dict, history: VerifiedHistory) -> list[Path]:
+def _generate_next_predictions(
+    cfg: dict,
+    history: VerifiedHistory,
+    *,
+    generated_at: datetime | None = None,
+) -> list[Path]:
     root = Path(cfg["_root"])
     draws = history.draws
     source_provenance = operational_history_provenance(history)
@@ -103,7 +111,14 @@ def _generate_next_predictions(cfg: dict, history: VerifiedHistory) -> list[Path
     paths = []
     requested = cfg.get("live", {}).get("models")
     for model in build_models(cfg, requested=requested).values():
-        pred = make_prediction(model, draws, target, cfg, version)
+        pred = make_prediction(
+            model,
+            draws,
+            target,
+            cfg,
+            version,
+            generated_at=generated_at,
+        )
         if model.name in cfg.get("live", {}).get("shadow_models", []):
             pred.metadata["role"] = "shadow"
         else:
@@ -116,6 +131,53 @@ def _generate_next_predictions(cfg: dict, history: VerifiedHistory) -> list[Path
             continue
         paths.append(save_prediction(root, pred))
     return paths
+
+
+def _run_verified_live_outputs(
+    cfg: dict,
+    history: PublishedHistory,
+    *,
+    generated_at: datetime,
+) -> tuple[str, ...]:
+    """Evaluate and predict from one exact published P history checkout."""
+
+    _require_live_enabled(cfg)
+    _require_data_refresh_enabled(cfg)
+    if type(history) is not PublishedHistory:
+        raise RuntimeError("verified live outputs require exact published history")
+    if (
+        type(generated_at) is not datetime
+        or generated_at.microsecond != 0
+        or generated_at.utcoffset() is None
+        or generated_at.utcoffset().total_seconds() != 0
+    ):
+        raise RuntimeError("verified live output time must be whole-second UTC")
+    root = Path(cfg["_root"]).resolve(strict=True)
+    evaluations = _evaluate_due_predictions(cfg, history)
+    predictions = _generate_next_predictions(
+        cfg,
+        history,
+        generated_at=generated_at.astimezone(UTC),
+    )
+    paths = [
+        (
+            Path("evaluations")
+            / (
+                f"{evaluation['target_draw_date']}__"
+                f"{evaluation['model_name']}__"
+                f"{evaluation['model_version']}.json"
+            )
+        ).as_posix()
+        for evaluation in evaluations
+    ]
+    for path in predictions:
+        candidate = Path(path)
+        try:
+            relative = candidate.relative_to(root)
+        except ValueError as exc:
+            raise RuntimeError("verified live output escaped the P checkout") from exc
+        paths.append(relative.as_posix())
+    return tuple(sorted(paths))
 
 
 def generate_next_predictions(cfg: dict) -> list[Path]:
