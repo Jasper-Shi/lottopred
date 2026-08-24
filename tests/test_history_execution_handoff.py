@@ -403,9 +403,21 @@ def _candidate(
         env=commit_environment,
     )
     prediction_origin = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
-    main_branch = (
-        _git(repository, "symbolic-ref", "--short", "HEAD").stdout.decode().strip()
+    symbolic_head = subprocess.run(
+        ["git", "-C", str(repository), "symbolic-ref", "-q", "--short", "HEAD"],
+        check=False,
+        capture_output=True,
     )
+    assert symbolic_head.returncode in {0, 1}
+    main_branch = (
+        symbolic_head.stdout.decode().strip() if symbolic_head.returncode == 0 else None
+    )
+
+    def restore_mainline(detached_commit: str) -> None:
+        if main_branch is None:
+            _git(repository, "switch", "--detach", "--quiet", detached_commit)
+        else:
+            _git(repository, "switch", "--quiet", main_branch)
 
     def commit_staged(message: str, committed_at: datetime) -> None:
         environment = os.environ.copy()
@@ -483,7 +495,7 @@ def _candidate(
             "independently add prediction on side branch",
             prediction_commit_at + timedelta(minutes=1),
         )
-        _git(repository, "switch", "--quiet", main_branch)
+        restore_mainline(prediction_origin)
         merge_environment = os.environ.copy()
         merge_environment.update(
             {
@@ -572,6 +584,9 @@ def _candidate(
             prediction_commit_at + timedelta(minutes=1),
         )
         if intervening_prediction_merge:
+            detached_mainline = (
+                _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+            )
             _git(
                 repository,
                 "switch",
@@ -586,7 +601,7 @@ def _candidate(
                 "ordinary side change after prediction",
                 prediction_commit_at + timedelta(minutes=2),
             )
-            _git(repository, "switch", "--quiet", main_branch)
+            restore_mainline(detached_mainline)
             merge_environment = os.environ.copy()
             merge_environment.update(
                 {
@@ -807,6 +822,59 @@ def _caller_state(repository: Path) -> tuple[bytes, bytes, bytes]:
         _git(repository, "rev-parse", "HEAD").stdout,
         _git(repository, "write-tree").stdout,
         _git(repository, "status", "--porcelain=v1", "-z").stdout,
+    )
+
+
+def test_candidate_fixture_preserves_a_detached_source_head(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    detached_source = tmp_path / "detached-source"
+    subprocess.run(
+        ["git", "clone", "--no-local", "--quiet", str(ROOT), str(detached_source)],
+        check=True,
+        capture_output=True,
+    )
+    _git(detached_source, "switch", "--detach", "--quiet", "HEAD")
+    _git(
+        detached_source,
+        "-c",
+        "user.name=handoff-test",
+        "-c",
+        "user.email=handoff-test@lotto649.invalid",
+        "commit",
+        "--quiet",
+        "--allow-empty",
+        "-m",
+        "detached CI merge fixture",
+    )
+    assert (
+        subprocess.run(
+            ["git", "-C", str(detached_source), "symbolic-ref", "-q", "HEAD"],
+            check=False,
+            capture_output=True,
+        ).returncode
+        == 1
+    )
+    monkeypatch.setitem(globals(), "ROOT", detached_source)
+    candidate_root = tmp_path / "candidate"
+    candidate_root.mkdir()
+
+    caller, prepared, _receipt, _authority = _candidate(
+        candidate_root,
+        intervening_prediction_history=True,
+    )
+
+    assert (
+        subprocess.run(
+            ["git", "-C", str(caller), "symbolic-ref", "-q", "HEAD"],
+            check=False,
+            capture_output=True,
+        ).returncode
+        == 1
+    )
+    assert _git(caller, "rev-parse", "HEAD").stdout.decode().strip() == (
+        prepared.base_commit
     )
 
 
