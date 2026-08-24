@@ -11,10 +11,17 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "email-test.yml"
+HOURLY_WORKFLOW = ROOT / ".github" / "workflows" / "research-progress-email.yml"
 
 
 def _workflow_payload() -> dict:
     return yaml.load(WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+
+
+def _hourly_workflow_payload() -> dict:
+    return yaml.load(
+        HOURLY_WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader
+    )
 
 
 def _send_step() -> dict:
@@ -162,3 +169,53 @@ def test_smtp_credentials_are_secret_references_and_never_printed() -> None:
         all(isinstance(argument, ast.Constant) for argument in call.args)
         for call in print_calls
     )
+
+
+def test_repo_native_progress_email_is_an_hourly_schedule_only() -> None:
+    triggers = _hourly_workflow_payload()["on"]
+
+    assert set(triggers) == {"schedule"}
+    assert triggers["schedule"] == [{"cron": "17 * * * *"}]
+
+
+def test_hourly_progress_job_is_read_only_bounded_and_smtp_only() -> None:
+    workflow = _hourly_workflow_payload()
+
+    assert workflow["permissions"] == {"contents": "read"}
+    assert set(workflow["jobs"]) == {"progress-email"}
+    job = workflow["jobs"]["progress-email"]
+    assert job["timeout-minutes"] == "8"
+    assert job["concurrency"] == {
+        "group": "lotto649-hourly-research-progress-email",
+        "cancel-in-progress": "false",
+    }
+    assert job["runs-on"] == "ubuntu-latest"
+
+    steps = job["steps"]
+    assert steps[0] == {
+        "uses": "actions/checkout@v4",
+        "with": {"fetch-depth": "0", "persist-credentials": "false"},
+    }
+    assert steps[1] == {
+        "uses": "actions/setup-python@v5",
+        "with": {"python-version": "3.12"},
+    }
+    assert steps[2] == {
+        "run": "python -m pip install --no-deps --no-build-isolation -e ."
+    }
+    assert steps[3] == {
+        "name": "Send one committed-state Chinese progress email",
+        "env": {
+            "SMTP_USERNAME": "${{ secrets.SMTP_USERNAME }}",
+            "SMTP_PASSWORD": "${{ secrets.SMTP_PASSWORD }}",
+        },
+        "run": "python -m lotto649.research_progress_email",
+    }
+    workflow_text = HOURLY_WORKFLOW.read_text(encoding="utf-8")
+    assert "LOTTO_GITHUB_PUBLICATION_TOKEN" not in workflow_text
+    assert "workflow_dispatch" not in workflow_text
+    assert "curl " not in workflow_text
+    assert "gh " not in workflow_text
+    assert "lotto649 live" not in workflow_text
+    assert "lotto649 backtest" not in workflow_text
+    assert "lotto649 bootstrap" not in workflow_text

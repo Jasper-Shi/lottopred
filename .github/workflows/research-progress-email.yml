@@ -1,0 +1,30 @@
+name: lotto649-hourly-research-progress-email
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  progress-email:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: lotto649-hourly-research-progress-email
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --no-deps --no-build-isolation -e .
+      - name: Send one committed-state Chinese progress email
+        env:
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: python -m lotto649.research_progress_email
