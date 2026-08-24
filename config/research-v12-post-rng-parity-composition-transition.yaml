@@ -43,6 +43,56 @@ historical_scope:
     scored_target_count: 0
     classification: consumed_excluded
 
+canonical_command:
+  - python3.12
+  - tools/run_v12_historical.py
+  - --consume-v12-once
+
+artifact_paths:
+  historical_attempt_ledger: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.ledger.jsonl
+  historical_claim: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.claim
+  historical_report_json: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.json
+  historical_report_json_staging: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.json.staging
+  historical_report_markdown: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.md
+  historical_report_markdown_staging: reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.md.staging
+
+control_null_contract:
+  candidate_minus_pseudo:
+    bootstrap: fixed_seed_649_10000_two_sided_95_linear_percentile
+    metric: paired_top12_hit_difference
+    requirement: lower_endpoint_strictly_positive_in_every_scope
+  control_models:
+    - v12_pseudo_parity_composition_transition_control
+    - random_v1.0.0
+  each_control:
+    bootstrap: fixed_seed_649_10000_two_sided_95_linear_percentile
+    bootstrap_top12_lift_requirement: interval_includes_zero
+    conjunction: exact_p_and_bootstrap_both_required
+    exact_one_sided_fair_top12_p_requirement: strictly_greater_than_0.05
+  no_control_or_scope_selection: true
+  scopes:
+    - aggregate
+    - first_half
+    - second_half
+
+historical_governance:
+  evidence_classification: consumed_historical_diagnostic_only
+  eligible_evidence: prohibited
+  exact_final6:
+    attempt_action: stop_current_attempt_pending_audit
+    global_research_action: continue
+    global_stop_search: prohibited
+    notification_classification_zh: 历史诊断/审计候选、不可晋升
+    success_language: prohibited
+  global_historical_oos_ledger_write: prohibited
+  opportunity_ledger: v12_local_attempt_ledger_only
+  promotion_from_historical_lane: prohibited
+  top12:
+    attempt_action: continue
+    global_stop_search: prohibited
+    notification_classification_zh: 历史诊断/审计候选、不可晋升
+    success_language: prohibited
+
 execution:
   authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json
   authorization: valid_A_required
@@ -51,6 +101,9 @@ execution:
   required_phase_order: R < I < A
 
 notifications:
+  classification_zh: 历史诊断/审计候选、不可晋升
   language: zh-CN
   pre_A: prohibited
-  post_A: breakthrough_only_required
+  post_A: historical_diagnostic_audit_candidate_only
+  promotion_language: prohibited
+  success_language: prohibited

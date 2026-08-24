@@ -495,11 +495,22 @@ The only historical diagnostic permitted for an eventually registered
 | Second half | 2023-01-04 through 2025-12-31 | 313 | mandatory stability scope |
 | Known 2026 | through 2026-08-22 | 0 scored | consumed and excluded |
 
-All 627 targets are mandatory unless an audited exact Final-6 6/6 branch stops
-the run early. There is no development lane, alternative era, best year,
-pre-RNG rescue, selected sign, minimum-state-count exclusion, skipped loss,
-rolling window, or second historical attempt. The 2020--2025 outcomes are
-already consumed and can reject or describe V12, never confirm it.
+All 627 targets are mandatory unless an exact Final-6 branch stops **this V12
+attempt** pending audit. That pause never stops the global research program,
+never creates eligible historical-OOS evidence, and never permits a rerun.
+There is no development lane, alternative era, best year, pre-RNG rescue,
+selected sign, minimum-state-count exclusion, skipped loss, rolling window, or
+second historical attempt. The 2020--2025 outcomes are already consumed and
+can reject or describe V12, never confirm it, create eligibility, or authorize
+promotion.
+
+For each scored scope, the target-date identity is encoded as UTF-8 with one
+canonical zero-padded `YYYY-MM-DD` date per line, LF (`0x0a`) line terminators,
+strictly increasing order, and a required trailing LF after the final date.
+The aggregate, first-half, and second-half byte counts and SHA-256 digests bind
+that encoding independently. Registration tests must reconstruct those bytes
+from the fixed Git authority and the frozen Wednesday/Saturday calendar, not a
+mutable worktree history file.
 
 Before the first forecast, a clean, pushed, CI-green implementation commit must
 be a descendant of a separate registration commit. A permanent exclusive
@@ -600,10 +611,12 @@ The historical scientific decision is one conjunction. Every gate must pass:
 4. Candidate Top-12 lift is strictly positive in both fixed halves.
 5. Paired candidate-minus-V1 Top-12 bootstrap lower endpoint is strictly
    positive in the aggregate and both halves.
-6. Paired candidate-minus-pseudo-control Top-12 bootstrap lower endpoint is
-   strictly positive in all three scopes, and both the pseudo-parity control
-   and target-date random control behave as null in every scope (`p>0.05` or
-   the relevant interval includes zero).
+6. In each of aggregate, first half, and second half, the paired
+   candidate-minus-pseudo-control Top-12 bootstrap lower endpoint is strictly
+   positive; and, with no control or scope selection, **each** of pseudo-parity
+   and random has both (a) its exact one-sided fair Top-12 p-value strictly
+   greater than `0.05` and (b) its own fresh-seed-`649`, 10,000-resample,
+   two-sided 95% linear-percentile Top-12-lift interval including zero.
 7. Candidate Top-6 lift is strictly positive in the aggregate and both halves.
 8. Candidate Brier and log-loss deltas versus both fair and V1 are each at most
    `1e-9` in the aggregate and both halves.
@@ -616,9 +629,10 @@ The historical scientific decision is one conjunction. Every gate must pass:
     claim, ledger, opportunity, output, or other audit warning exists.
 
 A valid scientific failure is **Reject**. An integrity failure is **Archive**.
-Passing all ten gates makes the unchanged version eligible only for a separate
-reviewed shadow-activation decision. It does not activate V12, replace V1,
-change V3, or turn consumed history into confirmation.
+Passing all ten gates is a consumed historical diagnostic finding only. It
+cannot make the unchanged version eligible, trigger promotion, activate V12,
+replace V1, change V3, enter the global historical-OOS evidence ledger, or turn
+consumed history into confirmation.
 
 ## Four-model Final-6 opportunity ledger
 
@@ -650,15 +664,20 @@ through the processed targets is
 The durable scored event must bind the target, actual main set, every unique
 Final-6, primary and all producer names, per-model forecast digests, hits,
 chronology status, `u_t`, cumulative unique opportunity count, and cumulative
-fair probability. Only full pre-reveal snapshots are eligible for the global
-historical-OOS evidence ledger. Missing legacy tickets may not be reconstructed
-after reveal or silently counted as new opportunities.
+fair probability. Every opportunity and scored record from this consumed lane
+remains exclusively in the V12-local attempt ledger. **No V12 record from
+2020--2025 may be written to the existing global historical-OOS evidence
+ledger**, even when its pre-reveal ordering is audit-clear. Missing legacy
+tickets may not be reconstructed after reveal or silently counted as new
+opportunities.
 
 ## Exact 6/6 and Top-12 breakthrough handling
 
-If a frozen Top-12 contains all six actual main labels, record it and send the
-required immediate Chinese historical-alert email. It is **not** a Final-6
-6/6 success and does not stop the run.
+If a frozen Top-12 contains all six actual main labels, record it in the
+V12-local attempt ledger and send one immediate Chinese notification classified
+exactly **“历史诊断/审计候选、不可晋升”**. Success or promotion language is
+prohibited. It is not eligible evidence, does not write the global
+historical-OOS ledger, and does not stop either this attempt or global research.
 
 If any new unique frozen Final-6 equals the target main set:
 
@@ -674,23 +693,25 @@ If any new unique frozen Final-6 equals the target main set:
    training cutoff and digest, source/registration/implementation commits,
    config, seed, runtime/dependency manifest, claim/ledger hashes, producer
    names, opportunity count/chance, and every audit result; and
-5. only if the audit is clear, send the immediate Chinese 6/6 success email and
-   set the global stop-search flag.
+5. whether the audit passes or fails, classify the bundle only as consumed
+   historical diagnostic or Archive material; send at most one Chinese
+   notification classified exactly **“历史诊断/审计候选、不可晋升”**; prohibit
+   success/promotion language; never write the global historical-OOS ledger or
+   set its stop-search flag; and never rerun `v12.0.0`.
 
-A pseudo-control, V1, or random ticket can constitute an audit-clear historical
-Final-6 opportunity and therefore satisfy the ticket-level global stopping
-condition, but it cannot support the V12 parity mechanism. If the audit fails,
-preserve the candidate bundle as Archive evidence, send the audit-failure
-alert, prohibit success language, and never rerun `v12.0.0`. An email failure
-does not erase an otherwise valid bundle; it is recorded as an operational
-warning and retried without changing the model evidence.
+An exact Final-6 stops only the current V12 attempt pending audit. Global
+research continues. Candidate, pseudo-control, V1, and random tickets share
+this governance and none can support promotion or ticket-level global
+stopping. An email failure is recorded as an operational warning without
+recomputing or reclassifying model evidence.
 
 An early valid 6/6 branch does not fabricate the missing remainder of the 627
 targets or a ten-gate scientific report.
 
 ## Prospective boundary
 
-Historical success short of an audit-clear Final-6 6/6 is not confirmation.
+No result in this consumed historical lane—including an audit-clear exact
+Final-6—is success, confirmation, eligible evidence, or promotion authority.
 If a separate review elects to activate unchanged `v12.0.0` as shadow, its
 freeze, activation, release, and first-snapshot commits must satisfy the
 project's strict `F < A < R < S` order. V1 remains production and V3 remains

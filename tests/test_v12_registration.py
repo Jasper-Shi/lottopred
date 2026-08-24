@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 import subprocess
+from datetime import date, timedelta
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -54,7 +57,21 @@ ARTIFACT_PATHS = {
     "historical_report_markdown": (
         "reports/v12_post_rng_parity_composition_transition_v12.0.0_historical.md"
     ),
+    "historical_report_json_staging": (
+        "reports/v12_post_rng_parity_composition_transition_"
+        "v12.0.0_historical.json.staging"
+    ),
+    "historical_report_markdown_staging": (
+        "reports/v12_post_rng_parity_composition_transition_"
+        "v12.0.0_historical.md.staging"
+    ),
 }
+
+CANONICAL_COMMAND = [
+    "python3.12",
+    "tools/run_v12_historical.py",
+    "--consume-v12-once",
+]
 
 PSEUDO_PARITY_SET = [
     1,
@@ -94,9 +111,9 @@ SCIENTIFIC_GATES = [
         "positive_aggregate_and_halves"
     ),
     (
-        "paired_candidate_minus_pseudo_control_top12_bootstrap_lower_"
-        "strictly_positive_and_pseudo_and_random_controls_null_"
-        "aggregate_and_halves"
+        "candidate_minus_pseudo_top12_bootstrap_lower_strictly_positive_and_"
+        "pseudo_and_random_each_exact_fair_top12_p_strictly_above_0.05_and_"
+        "fixed_seed_bootstrap_top12_lift_interval_includes_zero_in_every_scope"
     ),
     "candidate_top6_lift_strictly_positive_aggregate_and_halves",
     (
@@ -110,6 +127,54 @@ SCIENTIFIC_GATES = [
     ),
     "no_audit_warning",
 ]
+
+HISTORICAL_GOVERNANCE = {
+    "evidence_classification": "consumed_historical_diagnostic_only",
+    "eligible_evidence": "prohibited",
+    "exact_final6": {
+        "attempt_action": "stop_current_attempt_pending_audit",
+        "global_research_action": "continue",
+        "global_stop_search": "prohibited",
+        "notification_classification_zh": "历史诊断/审计候选、不可晋升",
+        "success_language": "prohibited",
+    },
+    "global_historical_oos_ledger_write": "prohibited",
+    "opportunity_ledger": "v12_local_attempt_ledger_only",
+    "promotion_from_historical_lane": "prohibited",
+    "top12": {
+        "attempt_action": "continue",
+        "global_stop_search": "prohibited",
+        "notification_classification_zh": "历史诊断/审计候选、不可晋升",
+        "success_language": "prohibited",
+    },
+}
+
+CONTROL_NULL_CONTRACT = {
+    "candidate_minus_pseudo": {
+        "bootstrap": "fixed_seed_649_10000_two_sided_95_linear_percentile",
+        "metric": "paired_top12_hit_difference",
+        "requirement": "lower_endpoint_strictly_positive_in_every_scope",
+    },
+    "control_models": [
+        "v12_pseudo_parity_composition_transition_control",
+        "random_v1.0.0",
+    ],
+    "each_control": {
+        "bootstrap": "fixed_seed_649_10000_two_sided_95_linear_percentile",
+        "bootstrap_top12_lift_requirement": "interval_includes_zero",
+        "conjunction": "exact_p_and_bootstrap_both_required",
+        "exact_one_sided_fair_top12_p_requirement": "strictly_greater_than_0.05",
+    },
+    "no_control_or_scope_selection": True,
+    "scopes": ["aggregate", "first_half", "second_half"],
+}
+
+TARGET_DATE_ENCODING = {
+    "charset": "UTF-8",
+    "line_record": "one_canonical_YYYY-MM-DD_date",
+    "line_terminator": "LF",
+    "trailing_line_terminator": True,
+}
 
 
 def _canonical_json(value: Any) -> bytes:
@@ -127,24 +192,28 @@ def _registration() -> dict[str, Any]:
 
 
 def _registration_commit() -> str | None:
-    completed = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(ROOT),
-            "log",
-            "--diff-filter=A",
-            "--format=%H",
-            "--",
-            REGISTRATION_PATH,
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
+    final_commits: list[str | None] = []
+    for relative_path in (REGISTRATION_PATH, CONFIG_PATH):
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(ROOT),
+                "log",
+                "-1",
+                "--format=%H",
+                "--",
+                relative_path,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        final_commits.append(completed.stdout.strip() or None)
+    assert len(set(final_commits)) == 1, (
+        "the final registration seal and config must change together at R"
     )
-    commits = completed.stdout.splitlines()
-    assert len(commits) <= 1, "the immutable registration seal was added twice"
-    return commits[0] if commits else None
+    return final_commits[0]
 
 
 def _git_path_exists(commit: str, relative_path: str) -> bool:
@@ -163,6 +232,74 @@ def _git_bytes(commit: str, relative_path: str) -> bytes:
         capture_output=True,
     )
     return completed.stdout
+
+
+def _git_blob(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", f"{commit}:{relative_path}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return completed.stdout.strip()
+
+
+def _authority_target_dates_from_git(registration: dict[str, Any]) -> list[date]:
+    authority = registration["authority"]
+    immutable = authority["immutable_objects"]
+    history = authority["published_history"]
+
+    seal_raw = _git_bytes(MAIN_AUTHORITY_COMMIT, history["base_seal_path"])
+    registry_raw = _git_bytes(MAIN_AUTHORITY_COMMIT, history["pin_registry_path"])
+    assert len(seal_raw) == immutable["seal"]["bytes"]
+    assert sha256(seal_raw).hexdigest() == immutable["seal"]["sha256"]
+    assert (
+        _git_blob(MAIN_AUTHORITY_COMMIT, history["base_seal_path"])
+        == immutable["seal"]["git_blob"]
+    )
+    assert len(registry_raw) == immutable["registry"]["bytes"]
+    assert sha256(registry_raw).hexdigest() == immutable["registry"]["sha256"]
+    assert (
+        _git_blob(MAIN_AUTHORITY_COMMIT, history["pin_registry_path"])
+        == immutable["registry"]["git_blob"]
+    )
+
+    pin_events = [json.loads(line) for line in registry_raw.splitlines()]
+    pin = pin_events[-1]
+    suffix_path = pin["suffix"]["path"]
+    suffix_raw = _git_bytes(MAIN_AUTHORITY_COMMIT, suffix_path)
+    assert len(suffix_raw) == immutable["suffix"]["bytes"]
+    assert sha256(suffix_raw).hexdigest() == immutable["suffix"]["sha256"]
+    assert (
+        _git_blob(MAIN_AUTHORITY_COMMIT, suffix_path) == immutable["suffix"]["git_blob"]
+    )
+    suffix_events = [json.loads(line) for line in suffix_raw.splitlines()]
+    assert suffix_events[-1]["event_sha256"] == immutable["suffix"]["head_sha256"]
+
+    seal = json.loads(seal_raw)
+    base_path = seal["corrected_epoch"]["path"]
+    base_raw = _git_bytes(MAIN_AUTHORITY_COMMIT, base_path)
+    assert len(base_raw) == immutable["base"]["bytes"]
+    assert sha256(base_raw).hexdigest() == immutable["base"]["sha256"]
+    assert _git_blob(MAIN_AUTHORITY_COMMIT, base_path) == immutable["base"]["git_blob"]
+
+    rows = csv.DictReader(io.StringIO(base_raw.decode("UTF-8")))
+    dates = [date.fromisoformat(row["draw_date"]) for row in rows]
+    dates.extend(
+        date.fromisoformat(event["draw"]["draw_date"]) for event in suffix_events
+    )
+    return dates
+
+
+def _calendar_bytes(first_target: str, last_target: str) -> bytes:
+    current = date.fromisoformat(first_target)
+    final = date.fromisoformat(last_target)
+    records: list[str] = []
+    while current <= final:
+        if current.weekday() in (2, 5):
+            records.append(current.isoformat())
+        current += timedelta(days=1)
+    return ("\n".join(records) + "\n").encode("UTF-8")
 
 
 def _assert_absent_at_registration(relative_path: str) -> None:
@@ -263,10 +400,12 @@ def test_v12_authority_is_current_main_published_history_without_2026_scoring() 
     }
 
     history = authority["published_history"]
-    base_seal = json.loads((ROOT / history["base_seal_path"]).read_bytes())
+    base_seal = json.loads(_git_bytes(MAIN_AUTHORITY_COMMIT, history["base_seal_path"]))
     pin_events = [
         json.loads(line)
-        for line in (ROOT / history["pin_registry_path"]).read_bytes().splitlines()
+        for line in _git_bytes(
+            MAIN_AUTHORITY_COMMIT, history["pin_registry_path"]
+        ).splitlines()
     ]
     pin = pin_events[-1]
     assert base_seal["corrected_epoch"]["draw_count"] == history["base_draw_count"]
@@ -281,6 +420,7 @@ def test_v12_authority_is_current_main_published_history_without_2026_scoring() 
         == history["draw_count"]
         == 4444
     )
+    assert len(_authority_target_dates_from_git(registration)) == history["draw_count"]
 
     scope = registration["historical_scope"]
     assert scope["known_2026"] == {
@@ -328,6 +468,7 @@ def test_v12_corrected_consumed_historical_scope_is_exactly_627_targets() -> Non
     assert registration["target_date_identities"] == {
         "aggregate": {
             "bytes": 6897,
+            "encoding": TARGET_DATE_ENCODING,
             "first_target": "2020-01-01",
             "last_target": "2025-12-31",
             "sha256": (
@@ -337,6 +478,7 @@ def test_v12_corrected_consumed_historical_scope_is_exactly_627_targets() -> Non
         },
         "first_half": {
             "bytes": 3454,
+            "encoding": TARGET_DATE_ENCODING,
             "first_target": "2020-01-01",
             "last_target": "2022-12-31",
             "sha256": (
@@ -346,6 +488,7 @@ def test_v12_corrected_consumed_historical_scope_is_exactly_627_targets() -> Non
         },
         "second_half": {
             "bytes": 3443,
+            "encoding": TARGET_DATE_ENCODING,
             "first_target": "2023-01-04",
             "last_target": "2025-12-31",
             "sha256": (
@@ -354,6 +497,50 @@ def test_v12_corrected_consumed_historical_scope_is_exactly_627_targets() -> Non
             "target_count": 313,
         },
     }
+
+
+def test_v12_target_date_bytes_match_fixed_git_history_and_calendar() -> None:
+    registration = _registration()
+    registered_dates = _authority_target_dates_from_git(registration)
+
+    for identity in registration["target_date_identities"].values():
+        raw = _calendar_bytes(identity["first_target"], identity["last_target"])
+        calendar_dates = [
+            date.fromisoformat(line.decode("ASCII")) for line in raw.splitlines()
+        ]
+        git_dates = [
+            target
+            for target in registered_dates
+            if identity["first_target"] <= target.isoformat() <= identity["last_target"]
+        ]
+        git_raw = ("\n".join(target.isoformat() for target in git_dates) + "\n").encode(
+            "UTF-8"
+        )
+        assert git_raw == raw
+        assert all(target.weekday() in (2, 5) for target in calendar_dates)
+        assert identity["encoding"] == TARGET_DATE_ENCODING
+        assert len(calendar_dates) == identity["target_count"]
+        assert len(raw) == identity["bytes"]
+        assert sha256(raw).hexdigest() == identity["sha256"]
+
+
+def test_v12_consumed_history_can_never_enter_global_evidence_or_stop_research() -> (
+    None
+):
+    registration = _registration()
+    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+
+    assert registration["historical_governance"] == HISTORICAL_GOVERNANCE
+    assert config["historical_governance"] == HISTORICAL_GOVERNANCE
+    assert config["notifications"] == {
+        "classification_zh": "历史诊断/审计候选、不可晋升",
+        "language": "zh-CN",
+        "post_A": "historical_diagnostic_audit_candidate_only",
+        "pre_A": "prohibited",
+        "promotion_language": "prohibited",
+        "success_language": "prohibited",
+    }
+    assert registration["notifications"] == config["notifications"]
 
 
 def test_v12_model_and_control_identities_are_frozen_without_scoring() -> None:
@@ -417,6 +604,7 @@ def test_v12_multiplicity_and_all_ten_scientific_gates_are_frozen() -> None:
         "count": 10,
         "ordered": SCIENTIFIC_GATES,
     }
+    assert registration["control_null_contract"] == CONTROL_NULL_CONTRACT
 
 
 def test_v12_config_is_registration_bound_and_cannot_enable_execution() -> None:
@@ -432,6 +620,12 @@ def test_v12_config_is_registration_bound_and_cannot_enable_execution() -> None:
     }
     assert config["data"] == registration["authority"]["published_history"]
     assert config["historical_scope"] == registration["historical_scope"]
+    assert config["canonical_command"] == CANONICAL_COMMAND
+    assert config["artifact_paths"] == ARTIFACT_PATHS
+    assert registration["canonical_command"] == CANONICAL_COMMAND
+    assert registration["artifact_paths"] == ARTIFACT_PATHS
+    assert len(registration["artifact_paths"]) == 6
+    assert config["control_null_contract"] == CONTROL_NULL_CONTRACT
     assert config["execution"] == {
         "authorization": "valid_A_required",
         "authorization_seal": AUTHORIZATION_PATH,
@@ -440,7 +634,10 @@ def test_v12_config_is_registration_bound_and_cannot_enable_execution() -> None:
         "required_phase_order": "R < I < A",
     }
     assert config["notifications"] == {
+        "classification_zh": "历史诊断/审计候选、不可晋升",
         "language": "zh-CN",
-        "post_A": "breakthrough_only_required",
+        "post_A": "historical_diagnostic_audit_candidate_only",
         "pre_A": "prohibited",
+        "promotion_language": "prohibited",
+        "success_language": "prohibited",
     }

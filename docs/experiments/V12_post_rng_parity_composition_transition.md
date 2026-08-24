@@ -71,8 +71,18 @@ future append. Only these fixed scopes exist:
 | Second half | 2023-01-04 through 2025-12-31 | 313 | mandatory stability scope |
 | Known 2026 | 2026-01-01 through 2026-08-22 | 0 | consumed and excluded |
 
-All 627 targets are mandatory unless the audited exact Final-6 branch stops the
-run. There is no development lane, best year, alternative split, skipped loss,
+For each scored scope, its registered target-date identity is computed from
+exactly these bytes: UTF-8; one canonical zero-padded `YYYY-MM-DD` date per
+line; LF (`0x0a`) line terminators; strictly increasing order; and a required
+trailing LF after the final date. The aggregate, first-half, and second-half
+byte counts and SHA-256 digests bind that encoding independently. Tests must
+reconstruct the dates from the fixed Git authority and the frozen
+Wednesday/Saturday calendar, never from mutable worktree history.
+
+All 627 targets are mandatory unless an exact Final-6 branch stops **this V12
+attempt** pending audit. That pause never stops the global research program,
+never creates eligible historical-OOS evidence, and never permits a rerun.
+There is no development lane, best year, alternative split, skipped loss,
 pre-RNG rescue, sign selection, minimum-state filter, extension, or rerun.
 
 ## Registration, implementation, authorization: `R < I < A`
@@ -352,9 +362,12 @@ All ten gates must pass as one conjunction:
 4. candidate Top-12 lift is strictly positive in both fixed halves;
 5. paired candidate-minus-V1 Top-12 bootstrap lower endpoint is strictly
    positive in aggregate and both halves;
-6. paired candidate-minus-control Top-12 lower endpoint is strictly positive
-   in all three scopes, while pseudo-parity and random controls behave as null
-   in every scope (`p>0.05` or relevant interval includes zero);
+6. in each of aggregate, first half, and second half, the paired
+   candidate-minus-pseudo-control Top-12 bootstrap lower endpoint is strictly
+   positive; and, with no control or scope selection, **each** of pseudo-parity
+   and random has both (a) its exact one-sided fair Top-12 p-value strictly
+   greater than `0.05` and (b) its own fresh-seed-`649`, 10,000-resample,
+   two-sided 95% linear-percentile Top-12-lift interval including zero;
 7. candidate Top-6 lift is strictly positive in all three scopes;
 8. candidate Brier and log-loss deltas versus both fair and V1 are each at most
    `1e-9` in all three scopes;
@@ -366,9 +379,11 @@ All ten gates must pass as one conjunction:
     ledger, opportunity, output, notification, or other audit warning exists.
 
 A valid scientific failure is **Reject**. An integrity failure is **Archive**.
-Passing all ten only makes unchanged `v12.0.0` eligible for a separately
-reviewed shadow decision. It does not activate V12, replace V1, change V3, or
-turn consumed history into confirmation.
+Passing all ten is a consumed historical diagnostic finding only. It cannot
+make `v12.0.0` eligible, trigger promotion, activate V12, replace V1, change
+V3, enter the global historical-OOS evidence ledger, or turn consumed history
+into confirmation. Any later shadow proposal requires a separate prospective
+registration and decision that does not relabel these outcomes.
 
 ## One-shot claim, forecast-before-reveal, and outputs
 
@@ -422,12 +437,17 @@ chance
     math.log1p(-u_t/13_983_816) in target-date order)).
 ```
 
-Only complete pre-reveal records may enter the global historical-OOS ledger;
-missing tickets are never reconstructed after reveal.
+Every opportunity and scored record from this consumed lane remains exclusively
+in the V12-local attempt ledger named above. **No V12 record from 2020--2025
+may be written to the existing global historical-OOS evidence ledger**, even
+when its pre-reveal ordering is audit-clear. Missing tickets are never
+reconstructed after reveal.
 
-If frozen Top-12 contains all six actual main labels, durably record it and
-send the registered immediate Chinese historical Top-12 alert. It is not a
-Final-6 success and does not stop execution.
+If frozen Top-12 contains all six actual main labels, durably record it in the
+V12-local attempt ledger and send one immediate Chinese notification classified
+exactly **“历史诊断/审计候选、不可晋升”**. Success or promotion language is
+prohibited. It is not eligible evidence, does not write the global
+historical-OOS ledger, and does not stop either this attempt or global research.
 
 If any new unique frozen Final-6 equals the actual main set, first append,
 flush, and `fsync` `historical_6of6_candidate_detected`, then stop before the
@@ -439,12 +459,15 @@ frozen payload, and reveal ordering without changing any value. Publish once:
 reports/historical-6of6-candidate__{target_date}__{model_name}__v12.0.0.json
 ```
 
-Only an audit-clear exact Final-6 may send the immediate Chinese success alert
-and set the global stop-search flag. A control/V1/random ticket is a valid
-auditable opportunity but cannot support the V12 mechanism. Failed audit means
-Archive, audit-failure alert, no success language, and no rerun. Email failure
-does not erase valid evidence; record it as an operational warning without
-recomputing any model evidence.
+An exact Final-6 stops only the current V12 attempt pending audit. Global
+research continues and the global stop-search flag must not be set. Whether the
+audit passes or fails, the bundle remains consumed historical diagnostic or
+Archive material, is never eligible evidence, never enters the global
+historical-OOS ledger, and may send only a Chinese notification classified
+exactly **“历史诊断/审计候选、不可晋升”**. Success or promotion language is
+prohibited for candidate, pseudo-control, V1, and random tickets alike. Failed
+audit means Archive and no rerun. Email failure is an operational warning and
+must not trigger recomputation or change the evidence classification.
 
 ## Tests required before A
 
@@ -474,9 +497,11 @@ attempt, or create a V12 historical forecast/score.
 
 ## Prospective and rescue boundaries
 
-Historical success short of an audit-clear exact Final-6 is not confirmation.
-A separate reviewed `F < A < R < S` shadow release may later activate the
-unchanged version. Its sole formal look is exactly 208 eligible immutable
+No result in this consumed historical lane—including an audit-clear exact
+Final-6—is success, confirmation, eligible evidence, or promotion authority. A
+separate reviewed `F < A < R < S` shadow release may later activate the
+unchanged version only under a new prospective decision. Its sole formal look
+is exactly 208 eligible immutable
 pre-draw snapshots, split positionally 104/104, with the same controls,
 inference, and ten-gate conjunction. There is no interim look, backfill,
 extension, automatic promotion, or reuse of pre-release snapshots.
