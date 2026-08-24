@@ -36,9 +36,12 @@ the reviewed `src/lotto649/operational_history.py` seam, which owns the deployed
 Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
-but the operational kill switch remains closed; live also requires the
-separately reviewed dual-source suffix writer and `B -> E -> S -> P`
-fast-forward publication protocol.
+but the operational kill switch remains closed. The offline dual-source
+preparer and local bare-repository exact-CAS adapter now prove the
+`B -> E -> S -> P` transaction and state machine without networking. Live still
+requires a separately reviewed network collector, a remote exact-CAS adapter,
+and a successful reload from the remote authority before any execution switch
+can be reconsidered.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,

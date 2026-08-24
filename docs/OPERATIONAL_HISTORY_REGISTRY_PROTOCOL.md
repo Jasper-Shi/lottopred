@@ -4,10 +4,12 @@
 
 Protocol version: `lotto649-history-pin-registry-event-v1`.
 
-The reader and one-event genesis migration are implemented. The dual-source
-writer, compare-and-swap publication adapter, and reviewed workflow release are
-not implemented. Therefore `data.refresh_enabled`, `backtest.enabled`, and
-`live.enabled` remain `false`; this protocol does not authorize execution.
+The reader, one-event genesis migration, offline dual-source preparation seam,
+and local bare-repository compare-and-swap adapter are implemented. Network
+source acquisition, a remote/GitHub compare-and-swap adapter, workflow
+integration, and the reviewed execution release are not implemented. Therefore
+`data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
+this protocol does not authorize execution or claim remote publication safety.
 
 ## Purpose
 
@@ -109,7 +111,8 @@ event. Replacing or reserializing any prior registry or suffix byte is forbidden
 
 ## Publication transaction
 
-A future writer must create one transaction per scheduled draw:
+The implemented offline preparer creates one candidate transaction per
+scheduled draw:
 
 ```text
 B -> E -> S -> P
@@ -137,6 +140,50 @@ candidate `P` must pass the production reader before publication. Publication is
 one non-force fast-forward compare-and-swap from `B` to `P`, followed by a remote
 fetch and successful reload. Evaluation, prediction, email, and artifact writes
 remain forbidden before that post-publication reload.
+
+The implemented preparation seam is
+`prepare_history_publication(...) -> PreparedPublication`. It is offline and
+accepts exactly two already-retrieved, immutable `RawSource` values: one WCLC
+asset and one Loto-Québec asset. It freezes the input sequence once; requires
+the exact `RawSource` class and exact built-in `str`/`bytes` identity fields;
+limits each raw asset to 2 MiB; requires distinct bytes; normalizes valid aware
+timestamps to whole-second UTC audit times; and accepts only the exact canonical
+source URLs. WCLC has no query string.
+Loto-Québec has exactly `date=YYYY-MM-DD` for the target draw. The two strict
+parsers must reconstruct the same next scheduled draw before any Git object is
+written.
+
+All preparation Git commands scrub caller-controlled authority variables, use
+a private index, and explicitly disable split-index, untracked-cache,
+filesystem-monitor, and sparse-index behavior. A late candidate-validation
+failure may leave only unreachable content-addressed objects for normal Git
+garbage collection; it never advances a ref or changes the caller's worktree or
+index. Those unreachable objects are not published history and must not be
+treated as a successful preparation.
+
+The implemented local CAS seam is
+`publish_prepared_history(prepared, ref_store) -> PublicationReceipt`, with
+`LocalBareHistoryRefStore` as its only adapter. It is deliberately restricted to
+a self-contained bare repository whose literal `HEAD` is
+`refs/heads/main`. Its Git directory and common directory must be the same
+canonical path; only the `files` ref backend is accepted; and symbolic `main`,
+external config includes, repository-provided `fsck.*` policy overrides,
+unbounded ref-lock timeout overrides, control-file/ref/reflog/object-store
+symlinks or special nodes, reftable, alternates, promisor/partial-clone markers,
+and corrupt or missing reachable objects are rejected. Before CAS it reloads
+`P` through the production reader and verifies the exact
+`B -> E -> S -> P` identities. It then compares `main` with `B` and uses
+`git update-ref --no-deref ... P B`. Once the CAS call starts, every normal
+exception or ambiguous acknowledgement is followed by an authority reread.
+Only observing exact `P`, followed by a fresh successful production reload,
+returns success. Observing `B`, a third head, malformed authority, or an
+unreadable ref returns a typed non-success; there is no retry, merge, or force.
+
+This local adapter proves the state machine against one local bare authority.
+It does not prove GitHub branch-protection, receive-pack, API, credential, or
+remote acknowledgement semantics. A future remote adapter must freeze and test
+its own exact CAS contract rather than treating an ordinary non-force push as
+equivalent.
 
 ## Reader guarantees
 
@@ -181,8 +228,9 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 ## Release rule
 
-Merging this reader does not reopen execution. The next implementation phase is
-the offline two-source writer and fast-forward CAS publisher. Only a later,
-independently reviewed release may change the exact disabled config bytes and
-the SHA-bound workflow execution plan. Until then all three runtime switches and
-all workflow stages remain false.
+Merging the reader and offline/local publication components does not reopen
+execution. The next implementation phase is the approved network source
+collector plus a remote/GitHub exact-CAS adapter and post-publication authority
+reload. Only a later, independently reviewed release may change the exact
+disabled config bytes and the SHA-bound workflow execution plan. Until then all
+three runtime switches and all workflow stages remain false.

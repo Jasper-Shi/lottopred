@@ -9,8 +9,22 @@ from lotto649.official_history import (
     expected_lotto649_draw_dates,
     parse_lotoquebec_annual_html,
     parse_lotoquebec_detail_html,
+    parse_wclc_target_html,
     validate_complete_official_history,
 )
+
+
+def test_parse_wclc_target_html_reads_one_strict_classic_draw():
+    raw = (
+        b"<!doctype html><html><body>Wednesday, August 26, 2026 "
+        b"CLASSIC DRAW 02 07 18 23 35 49 Bonus 11</body></html>"
+    )
+
+    assert parse_wclc_target_html(raw, date(2026, 8, 26)) == Draw(
+        date(2026, 8, 26),
+        (2, 7, 18, 23, 35, 49),
+        11,
+    )
 
 
 def test_parse_lotoquebec_annual_html_reads_one_official_row():

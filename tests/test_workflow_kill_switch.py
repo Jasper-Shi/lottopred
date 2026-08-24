@@ -429,7 +429,9 @@ def test_incident_docs_require_sha_bound_and_runtime_double_approval():
         assert "direct `run_backtest`" in words
         assert "`refresh_with_sources`" in words
         assert "missing or unreadable `config.yaml`" in words
-        assert "dual-source suffix writer" in words
+        assert "Offline preparation" in words
+        assert "network collector" in words
+        assert "remote exact-CAS publisher" in words
 
 
 def test_handoff_matches_current_main_artifacts_and_incident_hold():

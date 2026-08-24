@@ -1,17 +1,16 @@
-"""Offline parsing and coverage checks for official Loto-Québec 6/49 history."""
+"""Strict offline parsing and coverage checks for official LOTTO 6/49 sources."""
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Sequence
 from datetime import date, timedelta
 from hashlib import sha256
-import json
-import re
 
 from bs4 import BeautifulSoup
 
 from .domain import Draw
-
 
 LOTTO649_INCEPTION = date(1982, 6, 12)
 LOTTO649_TWICE_WEEKLY_START = date(1985, 9, 11)
@@ -19,6 +18,14 @@ _CLASSIC_DRAW_TEXT_RE = re.compile(
     r"^([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
     r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s*"
     r"\(\s*([0-9]{1,2})\s*\)$"
+)
+_WCLC_WEEKDAYS = "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
+_WCLC_MONTHS = (
+    "January|February|March|April|May|June|July|August|September|October|"
+    "November|December"
+)
+_NEXT_WCLC_DATE_RE = re.compile(
+    rf"\b(?:{_WCLC_WEEKDAYS}),\s+(?:{_WCLC_MONTHS})\s+\d{{1,2}},\s+\d{{4}}\b"
 )
 
 
@@ -175,6 +182,62 @@ def parse_lotoquebec_detail_html(html: str, expected_date: date) -> Draw:
         raise RuntimeError(
             f"Official detail row {draw_date} has invalid 6/49 values"
         ) from exc
+
+
+def parse_wclc_target_html(raw: bytes, expected_date: date) -> Draw:
+    """Parse exactly one canonical WCLC classic draw for ``expected_date``."""
+    try:
+        html = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("WCLC evidence is not UTF-8") from exc
+    text = re.sub(
+        r"\s+", " ", BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
+    )
+    target = (
+        f"{expected_date.strftime('%A')}, {expected_date.strftime('%B')} "
+        f"{expected_date.day}, {expected_date.year}"
+    )
+    target_start = re.compile(
+        rf"(?<![A-Za-z0-9]){re.escape(target)}(?![A-Za-z0-9])",
+        re.IGNORECASE,
+    )
+    target_matches = list(target_start.finditer(text))
+    if len(target_matches) != 1:
+        raise RuntimeError(
+            "WCLC evidence must contain exactly one target draw occurrence"
+        )
+    match = target_matches[0]
+    next_date = _NEXT_WCLC_DATE_RE.search(text, match.end())
+    end = next_date.start() if next_date is not None else len(text)
+    segment = text[match.end() : end]
+    classic_matches = list(
+        re.finditer(r"\bCLASSIC\s+DRAW\b", segment, flags=re.IGNORECASE)
+    )
+    if len(classic_matches) != 1:
+        raise RuntimeError(
+            "WCLC evidence must contain exactly one target draw occurrence"
+        )
+    result_pattern = (
+        r"(?<![0-9])"
+        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
+        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
+        r"Bonus\s+([0-9]{1,2})(?=\s|$)"
+    )
+    remainder = segment[classic_matches[0].end() :]
+    ball_match = re.match(rf"\s*{result_pattern}", remainder, re.IGNORECASE)
+    if ball_match is None:
+        raise RuntimeError("WCLC target draw is malformed")
+    result_matches = list(re.finditer(result_pattern, remainder, re.IGNORECASE))
+    if len(result_matches) != 1:
+        raise RuntimeError("WCLC evidence must contain exactly one target draw result")
+    balls = [int(value) for value in ball_match.groups()]
+    try:
+        draw = Draw(expected_date, tuple(balls[:6]), balls[6])
+    except ValueError as exc:
+        raise RuntimeError("WCLC target draw is invalid") from exc
+    if tuple(balls[:6]) != draw.numbers:
+        raise RuntimeError("WCLC target draw is not canonical")
+    return draw
 
 
 def parse_lotoquebec_annual_html(html: str, expected_year: int) -> list[Draw]:
