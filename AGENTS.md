@@ -65,10 +65,10 @@ affected documentation in the same change.
   plus chronology-proven evaluations into an unattached single-parent artifact
   commit `A` without changing a ref.
 - `src/lotto649/history_artifact_publication_github.py` is the disconnected
-  capability-scoped exact `P -> A` publisher candidate under review. Its fixed
-  authority, object-identity, CAS, reread, and fresh-reload contract is specified
-  in `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`; it is not an execution
-  release.
+  capability-scoped exact `P -> A` publisher. Its code/tests are independently
+  reviewed and merged, but its fixed authority, object-identity, CAS, reread,
+  and fresh-reload contract still requires the remote canaries specified in
+  `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`; it is not an execution release.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -157,8 +157,8 @@ worktree is handed to the published authority head; it must never fall back to
 the legacy processed CSV. The collector, offline preparer, local bare CAS,
 disconnected GitHub publisher, and isolated execution/artifact handoff are
 separately testable components. A disconnected capability-scoped exact remote
-`P -> A` publisher is under review, but the remote path still requires its
-reviewed code/tests, the prescribed remote canaries, protected `main`,
+`P -> A` publisher is independently reviewed and merged, but the remote path
+still requires the prescribed remote canaries, protected `main`,
 P-code-provenance orchestration, and a separately reviewed SHA-bound workflow
 release. None of these components authorizes this execution path.
 

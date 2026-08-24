@@ -1,7 +1,7 @@
 # Codex Handoff
 
 Last verified on 2026-08-24 against operational `main` base
-`c8c98c5d826daac0e0d87cd653c19f1610388abc` and corrected-epoch artifact
+`bc3ef4b3af17904e91ca3a8b56c26365468dd3d2` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -40,12 +40,12 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > handed to that authority head. The dual-source collector, offline preparer,
 > local bare-repository CAS, fixed-repository GitHub publisher, and isolated
 > execution/artifact handoff now exist as disconnected review seams. A
-> capability-scoped exact remote `P -> A` publisher is implemented as a review
-> candidate on its isolated branch; it remains disconnected from CLI, live, and
-> workflows. Production `main` is currently unprotected, no disposable or real
+> capability-scoped exact remote `P -> A` publisher is independently reviewed,
+> merged, and still disconnected from CLI, live, and workflows. Production
+> `main` is currently unprotected, no disposable or real
 > `P -> A` canary has established remote safety, and orchestration/code
 > provenance remains unwired. The complete verified facts and blocker list are
-> in `OPERATIONS.md`. This candidate does not authorize execution. Re-enable
+> in `OPERATIONS.md`. This merged component does not authorize execution. Re-enable
 > only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
@@ -252,10 +252,10 @@ Do not broaden the fallback to swallow those integrity failures.
    bounded dual-source collector, offline `B -> E -> S -> P` preparer, local bare
    CAS, fixed-repository GitHub publisher, and execution/artifact handoff are
    disconnected review tools, not an execution release. The capability-scoped
-   exact remote artifact publisher candidate is also disconnected and remains
-   under review. Complete the code/test review, disposable OID/CAS canary,
-   protected-main setup, P-code-provenance orchestration, real `P -> A`
-   canary/reload, and SHA-bound workflow release review listed in
+   exact remote artifact publisher is independently reviewed, merged, and still
+   disconnected. Complete the disposable OID/CAS canary, protected-main setup,
+   P-code-provenance orchestration, real `P -> A` canary/reload, and SHA-bound
+   workflow release review listed in
    `OPERATIONS.md`. Only then re-enable through the
    reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
    matching workflow plans in the same commit.
