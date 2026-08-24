@@ -176,7 +176,7 @@ Stage-1 activation merge ancestor
 
 The newest V3 snapshot was generated on 2026-08-23 at 11:36 EDT from 4,434
 registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
-yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed. The
+yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed.
 The Stage-1 plan preregisters exactly seven descriptive-only evaluations of
 this legacy cohort and seven new 2026-08-29 predictions, but none exists until
 the manual canary publishes A. That canary has not run.
