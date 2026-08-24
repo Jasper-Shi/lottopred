@@ -78,11 +78,22 @@ The operational-history read seam fixes the registry genesis in source, resolves
 the selected revision once, and reads the registry, seal, suffix, and evidence
 only from immutable Git blobs. Worktree replacements and caller-provided pin
 overrides are not authority. The direct backtest boundary consumes this single
-read seam after its runtime gate. Public bootstrap, live refresh, evaluation,
-and prediction entry points all refuse execution after their gates until the
-dual-source suffix writer and Git compare-and-swap publisher exist and a remote
-revision reload succeeds. This completes the read half of checklist item 2, but
-not the append half or the reviewed release; all switches remain false. The
+read seam after its runtime gate.
+
+Offline preparation and local CAS are now implemented for review and testing.
+The preparation seam takes two already-retrieved official assets, creates an
+unattached `B -> E -> S -> P` candidate without changing worktree/index/refs,
+and validates `P` through the production reader. The local adapter can advance
+only a self-contained bare repository whose literal `HEAD` is `main`; it always
+rereads authority after a CAS attempt and returns success only after exact `P`
+is observed and reloaded. It is not a GitHub/remote adapter, does not fetch
+official sources, and is not connected to a CLI or workflow.
+
+Public bootstrap, live refresh, evaluation, and prediction entry points
+therefore still refuse execution after their gates until the reviewed network
+collector and remote exact-CAS publisher exist and a remote revision reload
+succeeds. This advances the append implementation but does not complete the
+remote operational path or reviewed release; all switches remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
@@ -102,11 +113,12 @@ not enough.
 1. The corrected historical epoch and its reconciliation evidence are
    committed, independently reviewed, and bound to exact expected identities.
 2. The consuming read path verifies the approved epoch before exposing rows.
-   The historical base remains immutable. Before live can reopen, the write path
-   must commit two independent raw-source receipts, append only the next
-   canonical suffix event, append one canonical registry event through the
-   exact `B -> E -> S -> P` transaction, fast-forward compare-and-swap `main`,
-   and reload the remote revision successfully before evaluation or prediction.
+   The historical base remains immutable. Offline preparation and local bare
+   CAS do not satisfy the remote requirement. Before live can reopen, a reviewed
+   network path must retrieve two independent raw-source receipts, append only
+   the next canonical suffix and registry events through the exact
+   `B -> E -> S -> P` transaction, remotely compare-and-swap `main`, and reload
+   that remote revision successfully before evaluation or prediction.
 3. Offline unit, chronology, integrity, workflow-guard, and lint checks pass.
    Run a network smoke only after source access itself is approved.
 4. The review names exactly which stages are reopening and why, prepares the

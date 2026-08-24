@@ -87,14 +87,28 @@ The currently registered suffix adds 2026-08-19 and 2026-08-22, yielding a
 4,444-draw verified view through 2026-08-22. Registry genesis commit
 `a6857d6b4e6e532062f484bcce4466f76ba4327b` binds that state without rewriting
 it. Direct backtest execution loads through this seam only after its incident
-gate and no longer accepts a caller-provided draw list. Bootstrap and every
-public live entry point remain quarantined after their gates until the
-dual-source suffix writer has appended a two-source transaction, advanced the Git registry by
-fast-forward compare-and-swap, and reloaded the published revision. Live refresh
-raises after both gates because that writer/publisher does not yet exist. The
+gate and no longer accepts a caller-provided draw list. The offline
+`history_publication` module can now validate already-retrieved WCLC and
+Loto-Québec assets and create an unattached `B -> E -> S -> P` candidate. The
+`history_publication_cas` module can validate and advance one self-contained
+local bare `refs/heads/main` authority with exact compare-and-swap and mandatory
+reread. These modules are not a network collector or a GitHub/remote publisher.
+
+Bootstrap and every public live entry point therefore remain quarantined after
+their gates until a reviewed network collector has acquired both source assets,
+a remote exact-CAS publisher has installed the transaction, and the remote
+revision has reloaded successfully. Live refresh raises
+after both gates because that end-to-end remote path is not wired. The
 workflow/config release remains a separate reviewed change. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
+
+Offline preparation uses a single frozen source snapshot, exact
+`RawSource`/string/byte identity types, a 2 MiB per-source limit, canonical
+URLs, private indexes, and Git config overrides that prevent split-index or
+cache files from leaking into the caller's repository state. A failed late
+validation may leave only unreachable Git objects for ordinary garbage
+collection; it never changes an authoritative ref.
 
 Backtest detail and summary rows carry the canonical operational-history
 provenance as serialized JSON. New live prediction metadata carries the verified training

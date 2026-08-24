@@ -345,8 +345,7 @@ def _install_suffix(
                 "source_type": "loto_quebec_detail_html",
                 "url": (
                     "https://loteries.lotoquebec.com/en/lotteries/"
-                    "lotto-6-49-resultats?widget=resultats&action=detailles&"
-                    f"noproduit=212&date={draw_date}"
+                    f"lotto-6-49-resultats?date={draw_date}"
                 ),
                 "retrieved_at": "2026-08-23T12:00:01Z",
                 "evidence_path": evidence[(draw.draw_date, "loto_quebec")][0],
@@ -1074,6 +1073,54 @@ def test_rejects_a_loto_quebec_url_for_a_different_draw_date(tmp_path):
     file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
 
     with pytest.raises(ValueError, match="date query"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+@pytest.mark.parametrize("group", ["wclc", "loto_quebec"])
+def test_rejects_unregistered_receipt_query_parameters(tmp_path, group):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    event = deepcopy(suffix.events[0])
+    receipt = next(
+        item for item in event["source_receipts"] if item["independence_group"] == group
+    )
+    receipt["url"] += "&token=IMMUTABLE_SECRET"
+    event = _rehash_event(event)
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="receipt URL|date query"):
+        load_verified_history(
+            fixture.path,
+            seal_path=SEAL_PATH,
+            expected_seal_sha256=fixture.seal_sha256,
+            suffix_path=SUFFIX_PATH,
+            expected_suffix_sha256=file_pin,
+            expected_suffix_head_sha256=head_pin,
+        )
+
+
+@pytest.mark.parametrize("group", ["wclc", "loto_quebec"])
+def test_rejects_noncanonical_receipt_url_spelling(tmp_path, group):
+    fixture = _sealed_repository(tmp_path)
+    draw = Draw(date(2026, 8, 19), (6, 7, 10, 32, 33, 36), 11)
+    suffix = _install_suffix(fixture, (draw,))
+    event = deepcopy(suffix.events[0])
+    receipt = next(
+        item for item in event["source_receipts"] if item["independence_group"] == group
+    )
+    receipt["url"] = receipt["url"].replace(".com/", ".com:443/", 1)
+    event = _rehash_event(event)
+    file_pin, head_pin = _write_suffix_events(fixture.path, (event,))
+
+    with pytest.raises(ValueError, match="receipt URL|date query"):
         load_verified_history(
             fixture.path,
             seal_path=SEAL_PATH,

@@ -33,6 +33,9 @@ affected documentation in the same change.
 ## Architecture
 
 - `src/lotto649/data.py` parses and validates WCLC and lotto.net payloads.
+- `src/lotto649/official_history.py` owns the strict WCLC target-draw and
+  Loto-Québec official-history parser seam shared by verified readers and
+  offline publication preparation.
 - `src/lotto649/data_sources.py` preserves the legacy reconciliation and bridge
   fallback policy for audit; it is not an operational CLI write path.
 - `src/lotto649/verified_history.py` validates the sealed corrected-history
@@ -43,6 +46,11 @@ affected documentation in the same change.
   resolves `HEAD` once, validates the source-pinned registry genesis and current
   publication, and must never fall back to worktree history bytes or
   `data/processed/draws.csv`.
+- `src/lotto649/history_publication.py` prepares an offline, unattached
+  dual-source `B -> E -> S -> P` candidate without changing caller state.
+- `src/lotto649/history_publication_cas.py` proves the exact CAS/reread state
+  machine only for a self-contained local bare `main`; it is not a network or
+  GitHub publication adapter.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -125,8 +133,10 @@ history before t -> features/train -> frozen prediction for t -> reveal t -> sco
 
 Never shuffle draws or train on a target/future draw. `lotto649 backtest` reads
 only through the verified operational-history seam. `lotto649 bootstrap` remains
-blocked until the reviewed dual-source suffix writer and Git registry
-publication protocol exist; it must never fall back to the legacy processed CSV.
+blocked until a reviewed network source collector and remote exact-CAS registry
+publisher exist and the remote authority reload succeeds; it must never fall
+back to the legacy processed CSV. The offline preparer and local bare CAS do not
+authorize this execution path.
 
 Live forward cycle:
 

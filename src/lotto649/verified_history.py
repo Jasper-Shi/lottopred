@@ -13,15 +13,14 @@ from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import Any
-from urllib.parse import parse_qs, urlsplit
-
-from bs4 import BeautifulSoup
+from urllib.parse import urlsplit
 
 from .domain import Draw
 from .official_history import (
     canonical_official_rows_sha256,
     expected_lotto649_draw_dates,
     parse_lotoquebec_detail_html,
+    parse_wclc_target_html,
 )
 
 _INCIDENT_ID = "DI-2026-08-20-registered-history"
@@ -118,6 +117,7 @@ _CODE_PATHS = {
 _INVENTORY_ENTRY_KEYS = {"git_blob", "bytes", "sha256"}
 _SUFFIX_PATH = f"data/processed/epochs/{_INCIDENT_ID}/live_draws.jsonl"
 _SUFFIX_SCHEMA = "lotto649-history-suffix-event-v1"
+_LEGACY_WCLC_QUERY = "WT.ac=Lottery_Lotto-649_Past-Winning-Numbers-Results-WCLC"
 _SUFFIX_EVENT_KEYS = {
     "schema_version",
     "incident_id",
@@ -157,14 +157,6 @@ _RECEIPT_AUTHORITIES = {
         "evidence_prefix": "evidence/live_sources/loto_quebec/",
     },
 }
-_WEEKDAYS = "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
-_MONTHS = (
-    "January|February|March|April|May|June|July|August|September|October|"
-    "November|December"
-)
-_NEXT_WCLC_DATE_RE = re.compile(
-    rf"\b(?:{_WEEKDAYS}),\s+(?:{_MONTHS})\s+\d{{1,2}},\s+\d{{4}}\b"
-)
 _UTC_TIMESTAMP_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
 )
@@ -729,59 +721,9 @@ def _evidence_commit_changed_paths(
 
 def _strict_wclc_target_draw(raw: bytes, expected_date: date) -> Draw:
     try:
-        html = raw.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise VerifiedHistoryIntegrityError("WCLC evidence is not UTF-8") from exc
-    text = re.sub(
-        r"\s+", " ", BeautifulSoup(html, "html.parser").get_text(" ", strip=True)
-    )
-    target = (
-        f"{expected_date.strftime('%A')}, {expected_date.strftime('%B')} "
-        f"{expected_date.day}, {expected_date.year}"
-    )
-    target_start = re.compile(
-        rf"(?<![A-Za-z0-9]){re.escape(target)}(?![A-Za-z0-9])",
-        re.IGNORECASE,
-    )
-    target_matches = list(target_start.finditer(text))
-    if len(target_matches) != 1:
-        raise VerifiedHistoryIntegrityError(
-            "WCLC evidence must contain exactly one target draw occurrence"
-        )
-    match = target_matches[0]
-    next_date = _NEXT_WCLC_DATE_RE.search(text, match.end())
-    end = next_date.start() if next_date is not None else len(text)
-    segment = text[match.end() : end]
-    classic_matches = list(
-        re.finditer(r"\bCLASSIC\s+DRAW\b", segment, flags=re.IGNORECASE)
-    )
-    if len(classic_matches) != 1:
-        raise VerifiedHistoryIntegrityError(
-            "WCLC evidence must contain exactly one target draw occurrence"
-        )
-    result_pattern = (
-        r"(?<![0-9])"
-        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
-        r"([0-9]{1,2})\s+([0-9]{1,2})\s+([0-9]{1,2})\s+"
-        r"Bonus\s+([0-9]{1,2})(?=\s|$)"
-    )
-    remainder = segment[classic_matches[0].end() :]
-    ball_match = re.match(rf"\s*{result_pattern}", remainder, re.IGNORECASE)
-    if ball_match is None:
-        raise VerifiedHistoryIntegrityError("WCLC target draw is malformed")
-    result_matches = list(re.finditer(result_pattern, remainder, re.IGNORECASE))
-    if len(result_matches) != 1:
-        raise VerifiedHistoryIntegrityError(
-            "WCLC evidence must contain exactly one target draw result"
-        )
-    balls = [int(value) for value in ball_match.groups()]
-    try:
-        draw = Draw(expected_date, tuple(balls[:6]), balls[6])
-    except ValueError as exc:
-        raise VerifiedHistoryIntegrityError("WCLC target draw is invalid") from exc
-    if tuple(balls[:6]) != draw.numbers:
-        raise VerifiedHistoryIntegrityError("WCLC target draw is not canonical")
-    return draw
+        return parse_wclc_target_html(raw, expected_date)
+    except RuntimeError as exc:
+        raise VerifiedHistoryIntegrityError(str(exc)) from exc
 
 
 def _validate_receipt_url(receipt: dict[str, Any], draw: Draw) -> dict[str, str]:
@@ -806,12 +748,17 @@ def _validate_receipt_url(receipt: dict[str, Any], draw: Draw) -> dict[str, str]
         or parsed.fragment
     ):
         raise VerifiedHistoryIntegrityError("suffix receipt URL mismatch")
+    base_url = f"https://{authority['hostname']}{authority['url_path']}"
     if group == "loto_quebec":
-        query = parse_qs(parsed.query, keep_blank_values=True)
-        if query.get("date") != [draw.draw_date.isoformat()]:
+        allowed_urls = {f"{base_url}?date={draw.draw_date.isoformat()}"}
+    else:
+        allowed_urls = {base_url, f"{base_url}?{_LEGACY_WCLC_QUERY}"}
+    if receipt["url"] not in allowed_urls:
+        if group == "loto_quebec":
             raise VerifiedHistoryIntegrityError(
                 "Loto-Québec receipt date query mismatch"
             )
+        raise VerifiedHistoryIntegrityError("suffix receipt URL mismatch")
     return authority
 
 
