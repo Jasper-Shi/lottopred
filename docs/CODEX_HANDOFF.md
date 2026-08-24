@@ -1,7 +1,7 @@
 # Codex Handoff
 
-Last verified on 2026-08-24 against operational `main` base
-`bc3ef4b3af17904e91ca3a8b56c26365468dd3d2` and corrected-epoch artifact
+Last verified on 2026-08-24 against operational `main` merge
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e` and corrected-epoch artifact
 commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
 
 ## Current state
@@ -38,19 +38,44 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > their gates. The dual-source collector, offline preparer, local bare-repository
 > CAS, fixed-repository GitHub publisher, isolated execution/artifact handoff,
 > and capability-scoped exact remote `P -> A` publisher remain disconnected
-> from CLI and workflows. A local code-level orchestration candidate now
+> from CLI. PR #31 merged the fixed code-level orchestration at
+> `2fe56a40532f7be2586a5cfc004699561556e849`; it
 > composes collect through remote P publication/reload, a fresh detached-P
 > handoff, private exact-P worker execution, A freezing, and remote A
 > publication/reread/fresh reload. It reads literal-B configuration and trusted
 > clocks internally and exposes no caller-injectable configuration, clock, or
 > adapter seam. The private worker has no standalone entry point, and the
 > parent binds the worker plus its imported `lotto649` source modules to P.
-> This candidate remains unimported by every CLI and workflow. The authorized
+> It remains unimported by every CLI. PR #32 fixed due-prediction provenance by
+> proving each prediction's unique immutable origin across the complete commit
+> DAG and merged as `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
+> The authorized
 > disposable OID/CAS canary succeeded on 2026-08-24, and production `main` now
 > enforces administrator, force-push, and deletion protection. A real production
-> end-to-end `P -> A` canary and the workflow credential/release remain pending.
+> end-to-end `P -> A` canary has not run.
+>
+> The disconnected-until-reviewed Stage-1 branch is the manual production
+> canary candidate. It sets data refresh and live to literal `true`, leaves
+> backtest `false`, and binds only `live.yml` `workflow_dispatch` to exact config
+> SHA-256
+> `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
+> Repository permissions are read-only and checkout does not persist
+> credentials. Only the protected canary step receives the dedicated
+> publication credential, and it calls only
+> `orchestrate_github_live_cycle(*, token=...)`; no CLI, ordinary Git push,
+> automatic retry after worker start, or schedule is present. `workflow_dispatch`
+> requires `expected_sha`, the canonical 40-hex post-merge production `main` SHA
+> established by independent review. The candidate commit is not that SHA; the
+> plan stores only `approved_sha_source=post_merge_review`, and dispatch evidence
+> must record the value. On the exact Stage-1 config, invalid/mismatched SHA,
+> repository/event/ref/checkout mismatch, or early time writes all-false outputs
+> and fails red. The branch is not dispatchable until branch review, post-merge
+> SHA review, credential installation, and the hard `2026-08-27T15:15:00Z` plus
+> dual-official-source gate pass. A first successful P or A advance invalidates
+> the approved SHA and blocks rerun. Stage 2 is a separate PR after canary
+> success and evidence review.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
-> candidate authorizes execution. Re-enable only through the reviewed
+> preparation authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -84,22 +109,19 @@ lotto649 live
 ```
 
 The authorized disposable canary and protected production `main` were verified
-on 2026-08-24. Only after the narrow workflow publication credential is
-installed, a real end-to-end production `P -> A` canary/reload succeeds, and a
-separate SHA-bound workflow/config release is reviewed may
-`bootstrap` append and validate independently sourced draws.
+on 2026-08-24. The production publication path is the sole public
+`orchestrate_github_live_cycle(*, token=...)` boundary, not a CLI command.
 `backtest` walks forward chronologically over the Git-authenticated verified
-history. `live` may refresh history, evaluate due snapshots, and create
+history. The live cycle may refresh history, evaluate due snapshots, and create
 predictions for the next Wednesday or Saturday only inside the isolated
 workspace obtained after the remote publisher installs P and a fresh authority
 reload succeeds. That context must remain open until the exact artifact commit
-A (sole parent P) is remotely compare-and-swapped and freshly reloaded. During
-the incident all three commands fail closed at their disabled runtime gates. A
-direct true-toggle still cannot move the CLI `bootstrap` or `live` path past its
-writer interlock because the orchestration candidate is intentionally not
-imported there. Backtest has no writer dependency, but it remains unauthorized
-until its separate reviewed release reopens both the workflow and runtime
-gates.
+A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
+legacy CLI `bootstrap` and `live` commands remain stopped by the writer
+interlock even on the Stage-1 true-toggle branch. Backtest remains false and
+unauthorized. The Stage-1 workflow can reach only the public orchestrator after
+its exact digest, repository, ref, event, independently approved post-merge
+`expected_sha`, checkout, credential, time, and source gates all pass.
 
 `config.yaml` deliberately separates two selections:
 
@@ -124,7 +146,7 @@ Change version semantics deliberately rather than renaming committed snapshots.
 The immutable pre-hold artifacts originated at `main` commit
 `9f16e20c726c7b65eed1d387c4c725d51248f570`, remained present at ancestor
 `e3c39dda3233cec5933430f22afd6aa8d78a998d`, and remain present at current
-operational base `6ae59b636dfd2757dad6793eebd2b419ec69ef71`:
+operational `main` `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -137,8 +159,9 @@ operational base `6ae59b636dfd2757dad6793eebd2b419ec69ef71`:
 The newest V3 snapshot was generated on 2026-08-23 at 11:36 EDT from 4,434
 registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
 yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed. The
-incident hold prevents any later cycle from evaluating or generating until a
-reviewed release reopens both runtime and workflow gates.
+Stage-1 branch preregisters exactly seven descriptive-only evaluations of this
+legacy cohort and seven new 2026-08-29 predictions, but none exists until the
+reviewed canary publishes A.
 
 The corrected epoch is separate and append-only. Its sealed base contains 4,442
 draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
@@ -164,12 +187,14 @@ after its result is knowable.
 The configured workflows are:
 
 - `test.yml`: unit tests on every push and pull request.
-- `integration.yml`: source/model smoke checks, currently sealed to checkout and
-  the incident guard only.
+- `integration.yml`: source/model smoke checks, sealed to an all-false guard in
+  Stage 1.
 - `backtest.yml`: configured historical backtest, currently sealed to checkout
-  and the incident guard only.
-- `live.yml`: scheduled/manual live cycle, currently sealed to checkout and the
-  incident guard only. Its write permission does not bypass guarded steps.
+  and an all-false guard.
+- `live.yml`: the Stage-1 branch exposes only a manual, digest-bound production
+  canary. Repository permissions are read-only, checkout does not persist
+  credentials, `expected_sha` is a required input, and only the protected canary
+  step receives the dedicated publication secret.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
 - `research-v2-fast.yml` and `research-v2-v4.yml`: historical branch-specific
   research workflows retained for auditability.
@@ -203,8 +228,8 @@ SMTP_PASSWORD=<Google App Password>
 
 Defaults are `smtp.gmail.com:587`, with sender and recipient both equal to
 `SMTP_USERNAME`. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` are
-optional overrides for manual and legacy paths. The disconnected exact-P
-orchestration candidate deliberately passes only `SMTP_USERNAME` and
+optional overrides for manual and legacy paths. The exact-P orchestration
+deliberately passes only `SMTP_USERNAME` and
 `SMTP_PASSWORD` into its isolated worker, so that boundary always uses the
 Gmail defaults. Missing credentials or an SMTP exception records
 `email_sent=false` and does not block evaluation, prediction, freezing, or A
@@ -220,13 +245,12 @@ Top-12 hits `>= 5`.
 
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
-path. Live refresh now refuses execution after both gates until a reviewed
-release installs the narrow workflow publication credential, proves the
-complete orchestration with a real production `P -> A` canary/reload, and binds
-the path to exact reviewed workflow/config bytes. The disposable OID/CAS canary
-and production-main protection were completed on 2026-08-24. The existing
-code-level candidate is not a CLI connection or production execution
-authorization.
+path. Legacy live refresh remains behind its writer interlock. The Stage-1
+branch binds the merged orchestrator to exact reviewed workflow/config bytes,
+but remains disconnected until branch review, exact post-merge `main` SHA
+review, and credential installation are complete and the hard time/source gate
+passes. The disposable OID/CAS canary and production-main protection were
+completed on 2026-08-24; the production `P -> A` canary has not run.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -257,8 +281,14 @@ Do not broaden the fallback to swallow those integrity failures.
    `RESEARCH_ROADMAP.md`, `ARCHITECTURE.md`, and `OPERATIONS.md` first.
 2. Treat `9f16e20c726c7b65eed1d387c4c725d51248f570` and the artifact facts above as
    the last pre-hold `main` boundary.
-3. Keep all three runtime switches false and preserve the SHA-bound workflow
-   seal. Do not bypass a command guard through a lower-level public function.
+3. On deployed `main`, preserve all three false switches until the reviewed
+   Stage-1 release. On the Stage-1 branch, keep exactly data/live true and
+   backtest false, bind `live.yml` to the exact config digest, and keep the
+   branch disconnected until independent review. Call only the public
+   orchestrator; preserve the CLI writer interlock. After merge, independently
+   review exact `main` and use its canonical 40-hex SHA as required
+   `expected_sha`; never substitute a candidate-branch commit or an unreviewed
+   current head.
 4. Preserve and independently review the sealed corrected epoch and append-only
    suffix identities above. Do not replace them with worktree CSV bytes or
    caller-supplied metadata.
@@ -272,16 +302,16 @@ Do not broaden the fallback to swallow those integrity failures.
    genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. The
    bounded dual-source collector, offline `B -> E -> S -> P` preparer, local bare
    CAS, fixed-repository GitHub publisher, and execution/artifact handoff are
-   disconnected review tools, not an execution release. The capability-scoped
-   exact remote artifact publisher is independently reviewed, merged, and still
-   disconnected. Preserve the local orchestration candidate's fixed literal-B,
-   exact-P worker, freeze-A, and P-to-A sequence; do not add a standalone worker
-   or caller-injectable configuration/clock/adapter path. Install the narrow
-   workflow publication credential, complete the real production `P -> A`
-   canary/reload, and complete the SHA-bound workflow/config release review
-   listed in `OPERATIONS.md`. Only then re-enable through the
-   reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
-   matching workflow plans in the same commit.
+   disconnected review tools, not independent execution paths. Preserve the
+   merged orchestration's fixed literal-B, exact-P worker, freeze-A, and P-to-A
+   sequence; do not add a standalone worker or caller-injectable
+   configuration/clock/adapter path. The prediction-origin fix is satisfied by
+   PR #32. Complete the remaining Stage-1 independent review, credential, and
+   hard time/source gates; run at most one production canary and verify exact
+   reload evidence. Record the approved SHA in dispatch evidence, not this plan.
+   A successful P or A advance makes that SHA stale and blocks rerun. Add
+   scheduling only through the separate Stage-2 PR in `OPERATIONS.md` after
+   Stage-1 succeeds.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
    authorized runtime before that release. Use a new version whenever

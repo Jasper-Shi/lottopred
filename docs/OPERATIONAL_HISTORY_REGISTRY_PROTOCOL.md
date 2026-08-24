@@ -11,15 +11,37 @@ handoff are implemented. A disconnected, capability-scoped exact remote
 `P -> A` artifact publisher is independently reviewed and merged. It fixes
 production repository/main identity, exact object-OID upload, GraphQL
 `updateRefs` with `force=false`, mandatory ref reread, and a fresh anonymous
-full-fetch production reload. A disconnected local orchestration candidate now
-composes collect, `B -> E -> S -> P` publication/reload, exact-P execution,
-A freezing, and `P -> A` publication/reload in the required order. No CLI or
-workflow imports it. The shared exact-object/updateRefs boundary passed its
-authorized disposable-remote canary on 2026-08-24, and production `main` now has
+full-fetch production reload. PR #31 merged the fixed orchestration at
+`2fe56a40532f7be2586a5cfc004699561556e849`; it composes collect,
+`B -> E -> S -> P` publication/reload, exact-P execution, A freezing, and
+`P -> A` publication/reload in the required order. No CLI imports it. PR #32
+fixed source-prediction origin proof across the complete commit DAG at head
+`69d59709dd5f8d9c6d8e761dc84d784af844144d`, merged as
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The shared exact-object/updateRefs
+boundary passed its authorized disposable-remote canary on 2026-08-24, and
+production `main` now has
 the required administrator, force-push, and deletion protection. No real
 production `P -> A` execution/reload canary has run. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
+
+The disconnected-until-reviewed Stage-1 branch binds only the public
+`orchestrate_github_live_cycle(*, token=...)` boundary to a manual workflow. Its
+exact config digest is
+`d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`;
+data/live are true and backtest is false. Repository permissions are read-only,
+checkout does not persist credentials, and the dedicated publication secret is
+scoped only to the protected canary step. This preregistration is not execution
+authority, and the production canary remains unrun. Manual dispatch requires
+`expected_sha`, a canonical lowercase 40-hex post-merge production `main` SHA
+established by independent review. The candidate commit is not that authority;
+the plan stores `approved_sha_source=post_merge_review` and dispatch evidence
+must record the actual value. The guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. With the exact Stage-1 config,
+an invalid/mismatched SHA, context mismatch, checkout mismatch, or early time
+writes all-false outputs and fails red. Independent review, credential
+installation, and the hard `2026-08-27T15:15:00Z` plus dual-source gate remain.
+Stage 2 is a separate PR after successful canary evidence review.
 
 ## Purpose
 
@@ -277,13 +299,16 @@ published-history reader and the prediction metadata and chronology must match
 that history exactly. The only exception is the exact seven-file 2026-08-26
 cohort sealed by
 `evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json`.
+Its SHA-256 is
+`04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02`.
 That manifest pins O/O^, the raw commit, the 4,434-row incident-affected legacy
 history input, and every prediction path, mode, blob, byte count, SHA-256,
 timestamp, model, version, and role. Any mismatch rejects the whole cohort.
-Its evaluation `prediction_source` must state that corrected-history claims and
-promotion-evidence eligibility are false; `actual_history` remains the separate
-corrected source of the revealed draw. The new prediction cohort must exactly match
-`P:config.yaml`'s `live.models` at `project.model_version`; no model may be
+Its evaluation `prediction_source.kind` is `sealed_legacy_incident_history` and
+must state that corrected-history claims and promotion-evidence eligibility are
+false; `actual_history` remains the separate corrected source of the revealed
+draw. The new prediction cohort must exactly match `P:config.yaml`'s
+`live.models` at `project.model_version`; no model may be
 missing or added, and each `primary`/`shadow` role must agree with
 `live.shadow_models`.
 Duplicate keys, non-finite numbers, overwrites, ignored files, or any unlisted
@@ -311,7 +336,7 @@ push, merge, rebase, force, retry, stage a directory, or touch a workflow or
 runtime gate. Evaluation, prediction, email, or output files that cannot
 complete that remote publication are not committed audit evidence.
 
-The sole orchestration candidate public boundary is
+The sole orchestration public boundary is
 `orchestrate_github_live_cycle(*, token=...)`. It loads configuration from
 literal B, obtains trusted whole-second UTC values internally, and fixes all
 adapters, repository, and ref; there is no caller-injectable
@@ -324,11 +349,12 @@ boundary. An SMTP exception records `email_sent=false` and processing
 continues. Once worker execution starts, no failure is retried automatically
 because notification may already have caused an external side effect.
 
-The publishers and orchestration candidate remain disconnected from CLI and
-workflows. Local tests cannot prove GitHub serialization, token permission,
-branch protection, unattached object visibility, or read-after-write behavior;
-those claims require the remote canaries and protected-main evidence listed in
-`OPERATIONS.md`.
+The publishers and orchestration remain disconnected from CLI entry points.
+The Stage-1 branch exposes only the composed public orchestrator through its
+digest-bound manual workflow. Local tests cannot prove GitHub serialization,
+token permission, branch protection, unattached object visibility, or
+read-after-write behavior; those claims require the unrun production canary and
+protected-main evidence listed in `OPERATIONS.md`.
 
 ## Reader guarantees
 
@@ -373,13 +399,15 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 ## Release rule
 
-Merging the reader, official-source collector, offline/local publication
-components, disconnected GitHub publisher, and execution/artifact handoff does
-not reopen execution; neither does the independently reviewed and merged
-artifact publisher or the disconnected local orchestration candidate. The
-disposable remote OID/CAS canary and protected-main setup were verified on
-2026-08-24. The remaining release work is the narrow workflow publication
-credential, a real end-to-end production `P -> A` canary/reload, and the
-separate SHA-bound workflow/config release review specified in `OPERATIONS.md`.
-Until that later release, all three runtime switches and all workflow stages
-remain false.
+Merging the reader, collectors, publishers, execution handoff, orchestration,
+and prediction-origin fix did not reopen execution. The disposable remote
+OID/CAS canary and protected-main setup were verified on 2026-08-24; the real
+production canary has not run. The Stage-1 branch is a SHA-bound manual-canary
+release candidate, disconnected until its independent review. It retains a
+false backtest switch and has no schedule. The remaining Stage-1 work is the
+narrow publication credential, branch review approval, independent post-merge
+`main` SHA approval, the hard time/source gate, and one real end-to-end
+production `B -> E -> S -> P -> A` canary/reload. Any failure after worker start
+has no automatic retry. The first successful P or A advance makes the approved
+SHA stale, so it cannot authorize a replay. A separate Stage-2 PR may add
+scheduling only after the exact canary evidence passes review.

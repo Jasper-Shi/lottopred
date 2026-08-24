@@ -1,0 +1,226 @@
+{
+  "config": {
+    "backtest_enabled": false,
+    "data_refresh_enabled": true,
+    "live_enabled": true,
+    "path": "config.yaml",
+    "sha256": "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931"
+  },
+  "credential": {
+    "installed": false,
+    "permissions": [
+      "Administration:read",
+      "Contents:write",
+      "Metadata:read"
+    ],
+    "repository": "Jasper-Shi/lottopred",
+    "secret_name": "LOTTO_GITHUB_PUBLICATION_TOKEN",
+    "workflow_scope": "protected_production_canary_step_only"
+  },
+  "dispatch_authorization": {
+    "approved_sha_source": "post_merge_review",
+    "approved_sha_state": "unknown_until_post_merge_review",
+    "approved_sha_stored_in_plan": false,
+    "binding": "expected_sha_equals_github_sha_equals_checkout_head",
+    "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+    "dispatch_evidence_field": "expected_sha",
+    "input_name": "expected_sha",
+    "required": true
+  },
+  "execution": {
+    "entrypoint": "orchestrate_github_live_cycle(*, token=...)",
+    "not_before": "2026-08-27T15:15:00Z",
+    "official_source_gate": {
+      "authorities": [
+        "loto_quebec",
+        "wclc"
+      ],
+      "draw_date": "2026-08-26",
+      "requirement": "both_authorities_publish_and_agree"
+    },
+    "topology": [
+      "B",
+      "E",
+      "S",
+      "P",
+      "A"
+    ]
+  },
+  "expected_success": {
+    "evaluations": {
+      "classification": {
+        "actual_history": "corrected_operational_history",
+        "prediction_source": {
+          "claims": {
+            "corrected_history": false,
+            "promotion_evidence_eligible": false
+          },
+          "kind": "sealed_legacy_incident_history"
+        }
+      },
+      "count": 7,
+      "models": {
+        "primary": [
+          "random",
+          "long_frequency",
+          "recent_frequency",
+          "ema_gap",
+          "logistic",
+          "ensemble"
+        ],
+        "shadow": [
+          "v3_boosting"
+        ]
+      },
+      "target_draw": "2026-08-26"
+    },
+    "history": {
+      "draw_count": 4445,
+      "history_through": "2026-08-26"
+    },
+    "predictions": {
+      "count": 7,
+      "models": {
+        "primary": [
+          "random",
+          "long_frequency",
+          "recent_frequency",
+          "ema_gap",
+          "logistic",
+          "ensemble"
+        ],
+        "shadow": [
+          "v3_boosting"
+        ]
+      },
+      "target_draw": "2026-08-29"
+    },
+    "preservation": {
+      "existing_prediction_count": 7,
+      "target_draw": "2026-08-26",
+      "unchanged_bytes": true
+    }
+  },
+  "failure_policy": {
+    "approved_sha_after_authority_advance": {
+      "old_sha_reusable": false,
+      "reason": "first_successful_P_or_A_advance_moves_main",
+      "retry_authorized": false
+    },
+    "automatic_retry_after_worker_start": false,
+    "forward_reseal": {
+      "data_refresh_enabled": false,
+      "live_enabled": false,
+      "required": true,
+      "workflow": "sealed_no_op"
+    },
+    "ordinary_git_push": false,
+    "rewrite_acknowledged_commits": false,
+    "stage1_guard_rejection": {
+      "all_false_outputs_written_first": true,
+      "applies_only_when_config_sha256": "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931",
+      "rejected_conditions": [
+        "invalid_or_mismatched_expected_sha",
+        "unauthorized_repository_event_or_ref",
+        "checkout_head_unavailable",
+        "github_sha_or_checkout_head_mismatch",
+        "before_not_before"
+      ],
+      "workflow_result": "failure"
+    },
+    "unapproved_or_unavailable_config_result": "green_all_false_no_op"
+  },
+  "legacy_due_prediction_cohort": {
+    "classification": "descriptive_only_nonpromotion",
+    "evaluation_count": 7,
+    "manifest_path": "evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json",
+    "manifest_sha256": "04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02",
+    "target_draw": "2026-08-26"
+  },
+  "plan_created_on": "2026-08-24",
+  "prerequisites": [
+    {
+      "evidence": {
+        "head_commit": "69d59709dd5f8d9c6d8e761dc84d784af844144d",
+        "merge_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
+        "pull_request": 32
+      },
+      "id": "source_prediction_ancestor_origin_fix",
+      "state": "satisfied"
+    },
+    {
+      "detail": "independent code and specification review of the exact Stage-1 config, workflow, plan, and documentation",
+      "id": "stage_1_independent_review",
+      "state": "required_before_merge_and_dispatch"
+    },
+    {
+      "approved_sha_source": "post_merge_review",
+      "detail": "independently review exact post-merge production main, then supply its canonical 40-hex SHA as expected_sha and record it in dispatch evidence",
+      "id": "post_merge_main_sha_review",
+      "state": "required_before_dispatch"
+    },
+    {
+      "detail": "install and verify the narrow repository-scoped workflow credential",
+      "id": "publication_credential",
+      "state": "required_unmet_at_registration"
+    },
+    {
+      "detail": "wait for the hard not-before time and require both official sources to publish and agree on the target draw",
+      "id": "time_and_official_sources",
+      "state": "pending"
+    }
+  ],
+  "production_baseline": {
+    "live_orchestration": {
+      "merge_commit": "2fe56a40532f7be2586a5cfc004699561556e849",
+      "pull_request": 31
+    },
+    "pre_stage1_main_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
+    "prediction_origin_fix": {
+      "head_commit": "69d59709dd5f8d9c6d8e761dc84d784af844144d",
+      "merge_commit": "60f972b217f7bd23d1b4807e96034db0cfd1fe2e",
+      "pull_request": 32
+    }
+  },
+  "sanitization": {
+    "contains_recipient_addresses": false,
+    "contains_secret_values": false
+  },
+  "schema": "lotto649.production-live-canary-plan.v2",
+  "stage": {
+    "branch_state": "disconnected_until_independent_review",
+    "id": "stage-1",
+    "purpose": "one_manual_production_canary"
+  },
+  "stage2": {
+    "condition": "stage_1_canary_success_and_independent_review",
+    "separate_pull_request": true,
+    "unattended_schedule_in_stage_1": false
+  },
+  "status": "preregistered_not_executed",
+  "workflow": {
+    "checkout": {
+      "fetch_depth": 0,
+      "persist_credentials": false
+    },
+    "entrypoint": "orchestrate_github_live_cycle(*, token=...)",
+    "other_workflows": {
+      "backtest.yml": "all_false_no_op",
+      "integration.yml": "all_false_no_op"
+    },
+    "path": ".github/workflows/live.yml",
+    "permissions": {
+      "contents": "read"
+    },
+    "publication_secret_scope": "protected_production_canary_step_only",
+    "required_dispatch_input": {
+      "approved_sha_source": "post_merge_review",
+      "canonical_sha1_pattern": "^[0-9a-f]{40}$",
+      "name": "expected_sha",
+      "required": true
+    },
+    "triggers": [
+      "workflow_dispatch"
+    ]
+  }
+}

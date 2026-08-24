@@ -16,9 +16,10 @@ Overlapping dates are compared exactly, including bonus. Any disagreement raises
 
 ## Data-integrity incident execution boundary
 
-The registered-history reconciliation opened on 2026-08-20 places the
+The registered-history reconciliation opened on 2026-08-20 placed the
 operational source-refresh, default historical-backtest, and live-cycle paths
-behind three explicit kill switches:
+behind three explicit kill switches. Production `main` at merge
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e` retains this deployed state:
 
 | Boundary | Required configuration | Incident value |
 |---|---|---|
@@ -52,17 +53,38 @@ The guard writes all-false outputs before hashing; a missing or unreadable
 `config.yaml` produces a warning and a successful sealed exit rather than a
 traceback that could obscure the operational state.
 
-The ordinary paths below describe the system when a later reviewed release has
-reopened them. Re-enablement requires a committed and independently reviewed
-corrected-history epoch, exact identity/integrity verification at its consumer
-boundary, and passing offline tests and source-policy review. The release must
-change the exact config bytes **and**, in the same reviewed commit, replace the
-affected workflow's incident seal with an explicit execution plan bound to the
-new config SHA-256. The CLI/runtime literal-boolean checks remain a second,
-independent approval gate; a config-only toggle or a workflow-only digest
-change cannot enable execution. Live must never be reopened without data
-refresh in that same reviewed release. Existing predictions, evaluations,
-reports, and registered evidence remain immutable.
+The disconnected-until-reviewed Stage-1 branch changes only the live production
+canary boundary. It sets `data.refresh_enabled=true`, `live.enabled=true`, and
+keeps `backtest.enabled=false`; the exact `config.yaml` SHA-256 is
+`d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
+Only a manual `workflow_dispatch`, after a read-only full-history checkout and
+fixed repository/ref/commit/time checks, may call
+`orchestrate_github_live_cycle(*, token=...)`. The dedicated publication secret
+is scoped only to that protected step. Integration and backtest remain all-false
+workflow no-ops, the legacy CLI writer interlock remains closed, and there is no
+ordinary Git push or unattended schedule.
+
+The dispatch requires an `expected_sha` input. After the candidate is merged,
+an independent reviewer establishes the exact production `main` SHA; the
+operator supplies that canonical lowercase 40-hex value, and the guard requires
+`expected_sha == GITHUB_SHA == checkout HEAD`. The candidate commit is not a
+post-merge approval SHA, so the plan stores only
+`approved_sha_source=post_merge_review`; the actual value belongs in dispatch
+evidence. Once the exact Stage-1 config digest is present, an invalid or
+mismatched SHA, wrong repository/event/ref, inconsistent checkout, or early
+dispatch writes all-false outputs first and then fails the workflow red.
+
+Stage 1 is preregistered but not executed. It requires independent review,
+installation of the repository-scoped publication credential, and a hard
+not-before of `2026-08-27T15:15:00Z` after both WCLC and Loto-Québec publish and
+agree on the 2026-08-26 draw. Success is exact `B -> E -> S -> P -> A`, a fresh
+reload of 4,445 draws through 2026-08-26, seven descriptive-only legacy
+evaluations, and seven immutable 2026-08-29 predictions. The existing seven
+2026-08-26 snapshots remain byte-identical. A post-worker failure has no
+automatic retry. The first successful P or A authority advance moves `main`, so
+the old independently approved `expected_sha` fails the next dispatch and
+blocks a replay. Stage 2 may add scheduling only in a separate PR after the
+canary succeeds and its evidence is reviewed.
 
 This emergency seal is deliberately scoped to the three execution commands on
 main: `bootstrap`, `backtest`, and `live`. It grants no authority for any other
@@ -116,18 +138,17 @@ sorted list of newly created
 `A` whose sole parent is `P`; it does not stage directories, change an index or
 ref, publish `A`, or connect to a workflow.
 
-The disconnected `history_artifact_publication_github` candidate is the narrow
+The merged `history_artifact_publication_github` module is the narrow
 remote continuation of that handoff. It accepts only a capability-scoped
 `FrozenExecutionArtifacts` value while the same temporary P context remains
 open; fixes the authority to `Jasper-Shi/lottopred` `main`; uploads and verifies
 the exact object identities needed by A; attempts one GraphQL `updateRefs`
 `P -> A` with `force=false`; rereads `main` for every acknowledgement outcome;
 and returns success only after a fresh anonymous full fetch of exact A passes
-`load_published_history(A)`. It has no CLI, live, or workflow connection and is
-independently reviewed, but still awaits true-remote proof.
+`load_published_history(A)`. It has no CLI or standalone workflow connection.
 
-The disconnected `live_orchestration` candidate composes those seams into one
-fixed code-level state machine: load configuration from literal B, load B
+The merged `live_orchestration` module composes those seams into one fixed
+state machine: load configuration from literal B, load B
 history, collect both sources, prepare and remotely publish `B -> E -> S -> P`,
 freshly reload P, open the isolated detached-P workspace, execute the private
 P worker, freeze its exact outputs in A, publish exact `P -> A`, and require the
@@ -141,17 +162,17 @@ and binds every imported `lotto649` source module to its exact P blob and
 SHA-256. The private worker has no standalone module or CLI entry point. Its
 subprocess environment is scrubbed and admits only `SMTP_USERNAME` and
 `SMTP_PASSWORD`; notification therefore uses fixed Gmail defaults rather than
-optional host, port, sender, or recipient overrides. This candidate remains
-absent from every CLI and workflow import path.
+optional host, port, sender, or recipient overrides. It remains absent from
+every CLI import path. The Stage-1 branch connects only this public function to
+the digest-bound manual workflow.
 
-Bootstrap and every public live entry point therefore remain quarantined after
-their gates. The disconnected orchestration candidate does not reopen them, and
-all three runtime switches remain false. The authorized disposable-repository
-OID/CAS canary and production `main` protection were verified on 2026-08-24.
-Release still requires the narrow workflow publication credential, a real
-end-to-end production `P -> A` publication/reload canary, and a separate
-reviewed SHA-bound workflow/config change. Live refresh raises after both gates
-because the public path remains intentionally unwired. See
+Bootstrap and every legacy public live entry point remain quarantined by the
+writer interlock. The disposable remote OID/CAS canary and production `main`
+protection were verified on 2026-08-24. PR #31 merged orchestration as
+`2fe56a40532f7be2586a5cfc004699561556e849`; PR #32 merged the complete-DAG
+prediction-origin proof as
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The Stage-1 branch is not a
+completed production canary; its remaining gates are recorded above. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 
@@ -231,8 +252,9 @@ worker starts is fail closed and receives no automatic retry: notification may
 already have produced an external side effect even when the worker cannot
 return a complete manifest.
 
-During the data-integrity incident this entire path is dormant; the kill-switch
-boundary takes precedence over the normal unattended schedule.
+This path remains dormant until the Stage-1 branch review, post-merge `main`
+SHA review, credential, and time/source gates pass. Stage 1 permits one manual
+attempt and no unattended schedule.
 
 ## Path B — Historical walk-forward simulation
 
@@ -307,4 +329,6 @@ A single historical 6/6 or 5/6 is not sufficient evidence of predictive skill. A
 
 ## Scheduling
 
-Codex Cloud is for development/agent work. GitHub Actions is the unattended scheduler. The live workflow runs Thursday and Sunday after the prior Wednesday/Saturday draw.
+Codex Cloud is for development and review. Stage 1 has only one manual
+production-canary dispatch. A separate Stage-2 PR may add the Thursday/Sunday
+schedule after the Stage-1 evidence passes independent review.
