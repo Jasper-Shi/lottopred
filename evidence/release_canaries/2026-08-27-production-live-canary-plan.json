@@ -19,7 +19,7 @@
   },
   "dispatch_authorization": {
     "approved_sha_source": "post_merge_review",
-    "approved_sha_state": "unknown_until_post_merge_review",
+    "approved_sha_state": "not_approved_pending_post_merge_review",
     "approved_sha_stored_in_plan": false,
     "binding": "expected_sha_equals_github_sha_equals_checkout_head",
     "canonical_sha1_pattern": "^[0-9a-f]{40}$",
@@ -149,9 +149,21 @@
       "state": "satisfied"
     },
     {
-      "detail": "independent code and specification review of the exact Stage-1 config, workflow, plan, and documentation",
+      "evidence": {
+        "candidate_commit": "5c5dc355ce1bfdae1f467eefa35062aff59d9614",
+        "spec": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0
+        },
+        "standards": {
+          "blocker": 0,
+          "major": 0,
+          "minor": 0
+        }
+      },
       "id": "stage_1_independent_review",
-      "state": "required_before_merge_and_dispatch"
+      "state": "satisfied"
     },
     {
       "approved_sha_source": "post_merge_review",
@@ -162,7 +174,7 @@
     {
       "detail": "install and verify the narrow repository-scoped workflow credential",
       "id": "publication_credential",
-      "state": "required_unmet_at_registration"
+      "state": "required_unmet"
     },
     {
       "detail": "wait for the hard not-before time and require both official sources to publish and agree on the target draw",
@@ -188,7 +200,8 @@
   },
   "schema": "lotto649.production-live-canary-plan.v2",
   "stage": {
-    "branch_state": "disconnected_until_independent_review",
+    "activation_merge_ancestor": "3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee",
+    "deployment_state": "merged_armed_not_executed",
     "id": "stage-1",
     "purpose": "one_manual_production_canary"
   },
@@ -197,7 +210,7 @@
     "separate_pull_request": true,
     "unattended_schedule_in_stage_1": false
   },
-  "status": "preregistered_not_executed",
+  "status": "merged_armed_not_executed",
   "workflow": {
     "checkout": {
       "fetch_depth": 0,

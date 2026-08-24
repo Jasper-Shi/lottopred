@@ -1,8 +1,10 @@
 # Codex Handoff
 
-Last verified on 2026-08-24 against operational `main` merge
-`60f972b217f7bd23d1b4807e96034db0cfd1fe2e` and corrected-epoch artifact
-commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`.
+Last verified on 2026-08-24 against a production history containing Stage-1
+activation merge ancestor `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`
+and corrected-epoch artifact commit
+`b04393944ef12f78417dfb6151343c72d4c2a2ac`. This document does not pin the
+mutable post-documentation `main` head.
 
 ## Current state
 
@@ -13,11 +15,18 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 
 > **Data-integrity incident hold (2026-08-20):** the operational roles in the
 > table below describe the pre-incident system, but execution is currently
-> suspended. `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` are
-> all `false`; the live, integration, and backtest workflows are sealed to
-> safe no-op behavior by disabled-config SHA-256
+> suspended except for the gated Stage-1 manual canary, which is armed but has
+> not executed. Pre-Stage-1 ancestor
+> `60f972b217f7bd23d1b4807e96034db0cfd1fe2e` had
+> `data.refresh_enabled=false`, `backtest.enabled=false`, and
+> `live.enabled=false`. Production now contains activation merge ancestor
+> `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`; its exact deployed config has
+> data refresh and live `true` while backtest remains `false`. Integration and
+> backtest remain safe no-ops, and the disabled mode remains recognized by
+> SHA-256
 > `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`.
-> No refresh, backtest, evaluation, or prediction is authorized. The legacy
+> No refresh, backtest, evaluation, or prediction has run under Stage 1; no
+> manual dispatch is currently authorized. The legacy
 > 4,434-row history through 2026-08-22 is not strict real-calendar evidence.
 > A reviewed candidate now seals a corrected 4,442-draw base through
 > 2026-08-15 and a two-event, dual-source suffix through 2026-08-22. The
@@ -33,9 +42,10 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > The operational reader resolves that registry, seal, suffix, and evidence from
 > immutable Git blobs; local worktree replacements are never history authority.
 > The verified-history read interface is now the sole input to the direct
-> backtest boundary. The kill switches remain false, so it is not authorized to
-> execute. Bootstrap and every public live entry point fail explicitly after
-> their gates. The dual-source collector, offline preparer, local bare-repository
+> backtest boundary. Backtest remains false, and the legacy bootstrap/live
+> writer interlocks remain closed. The Stage-1 data/live true values can be
+> consumed only by the protected manual workflow after every independent gate
+> passes. The dual-source collector, offline preparer, local bare-repository
 > CAS, fixed-repository GitHub publisher, isolated execution/artifact handoff,
 > and capability-scoped exact remote `P -> A` publisher remain disconnected
 > from CLI. PR #31 merged the fixed code-level orchestration at
@@ -48,15 +58,19 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > parent binds the worker plus its imported `lotto649` source modules to P.
 > It remains unimported by every CLI. PR #32 fixed due-prediction provenance by
 > proving each prediction's unique immutable origin across the complete commit
-> DAG and merged as `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
+> DAG and merged as pre-Stage-1 ancestor
+> `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`.
 > The authorized
 > disposable OID/CAS canary succeeded on 2026-08-24, and production `main` now
 > enforces administrator, force-push, and deletion protection. A real production
 > end-to-end `P -> A` canary has not run.
 >
-> The disconnected-until-reviewed Stage-1 branch is the manual production
-> canary candidate. It sets data refresh and live to literal `true`, leaves
-> backtest `false`, and binds only `live.yml` `workflow_dispatch` to exact config
+> Stage 1 is `merged_armed_not_executed`. Final candidate
+> `5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
+> Spec review with 0 blocker, 0 major, and 0 minor findings, and production
+> contains activation merge ancestor
+> `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. It binds only `live.yml`
+> `workflow_dispatch` to exact config
 > SHA-256
 > `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
 > Repository permissions are read-only and checkout does not persist
@@ -64,16 +78,17 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > publication credential, and it calls only
 > `orchestrate_github_live_cycle(*, token=...)`; no CLI, ordinary Git push,
 > automatic retry after worker start, or schedule is present. `workflow_dispatch`
-> requires `expected_sha`, the canonical 40-hex post-merge production `main` SHA
-> established by independent review. The candidate commit is not that SHA; the
-> plan stores only `approved_sha_source=post_merge_review`, and dispatch evidence
-> must record the value. On the exact Stage-1 config, invalid/mismatched SHA,
+> requires `expected_sha`, the canonical 40-hex production `main` dispatch
+> target established by independent review. No dispatch SHA is approved yet;
+> neither the candidate nor activation merge ancestor is that value. The plan
+> stores only `approved_sha_source=post_merge_review`, and dispatch evidence must
+> record the eventual value. On the exact Stage-1 config, invalid/mismatched SHA,
 > repository/event/ref/checkout mismatch, or early time writes all-false outputs
-> and fails red. The branch is not dispatchable until branch review, post-merge
-> SHA review, credential installation, and the hard `2026-08-27T15:15:00Z` plus
-> dual-official-source gate pass. A first successful P or A advance invalidates
-> the approved SHA and blocks rerun. Stage 2 is a separate PR after canary
-> success and evidence review.
+> and fails red. The publication credential is not installed, and the hard
+> `2026-08-27T15:15:00Z` plus dual-official-source gate is pending. No manual
+> dispatch has run and no schedule exists. A first successful P or A advance
+> invalidates the approved SHA and blocks rerun. Stage 2 is a separate PR after
+> canary success and evidence review.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
 > preparation authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
@@ -118,10 +133,11 @@ workspace obtained after the remote publisher installs P and a fresh authority
 reload succeeds. That context must remain open until the exact artifact commit
 A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
 legacy CLI `bootstrap` and `live` commands remain stopped by the writer
-interlock even on the Stage-1 true-toggle branch. Backtest remains false and
+interlock under the Stage-1 true-toggle configuration. Backtest remains false and
 unauthorized. The Stage-1 workflow can reach only the public orchestrator after
-its exact digest, repository, ref, event, independently approved post-merge
-`expected_sha`, checkout, credential, time, and source gates all pass.
+its exact digest, repository, ref, event, future independently approved exact
+production `expected_sha`, checkout, credential, time, and source gates all
+pass.
 
 `config.yaml` deliberately separates two selections:
 
@@ -145,8 +161,10 @@ Change version semantics deliberately rather than renaming committed snapshots.
 
 The immutable pre-hold artifacts originated at `main` commit
 `9f16e20c726c7b65eed1d387c4c725d51248f570`, remained present at ancestor
-`e3c39dda3233cec5933430f22afd6aa8d78a998d`, and remain present at current
-operational `main` `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`:
+`e3c39dda3233cec5933430f22afd6aa8d78a998d`, remained present at pre-Stage-1
+ancestor `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`, and remain present at
+Stage-1 activation merge ancestor
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` and its descendants:
 
 - `data/processed/draws.csv` contains 4,434 registered rows through 2026-08-22;
 - evaluations for all seven pre-hold live models are committed for both
@@ -159,9 +177,9 @@ operational `main` `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`:
 The newest V3 snapshot was generated on 2026-08-23 at 11:36 EDT from 4,434
 registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
 yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed. The
-Stage-1 branch preregisters exactly seven descriptive-only evaluations of this
-legacy cohort and seven new 2026-08-29 predictions, but none exists until the
-reviewed canary publishes A.
+The Stage-1 plan preregisters exactly seven descriptive-only evaluations of
+this legacy cohort and seven new 2026-08-29 predictions, but none exists until
+the manual canary publishes A. That canary has not run.
 
 The corrected epoch is separate and append-only. Its sealed base contains 4,442
 draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
@@ -191,7 +209,7 @@ The configured workflows are:
   Stage 1.
 - `backtest.yml`: configured historical backtest, currently sealed to checkout
   and an all-false guard.
-- `live.yml`: the Stage-1 branch exposes only a manual, digest-bound production
+- `live.yml`: Stage 1 exposes only a manual, digest-bound production
   canary. Repository permissions are read-only, checkout does not persist
   credentials, `expected_sha` is a required input, and only the protected canary
   step receives the dedicated publication secret.
@@ -246,11 +264,12 @@ Top-12 hits `>= 5`.
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
 path. Legacy live refresh remains behind its writer interlock. The Stage-1
-branch binds the merged orchestrator to exact reviewed workflow/config bytes,
-but remains disconnected until branch review, exact post-merge `main` SHA
-review, and credential installation are complete and the hard time/source gate
-passes. The disposable OID/CAS canary and production-main protection were
-completed on 2026-08-24; the production `P -> A` canary has not run.
+release binds the merged orchestrator to exact reviewed workflow/config bytes.
+Its candidate review is satisfied, but no exact production `main` dispatch SHA
+is approved, the publication credential is not installed, and the hard
+time/source gate remains pending. The disposable OID/CAS canary and
+production-main protection were completed on 2026-08-24; the production
+`P -> A` canary has not run.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -281,23 +300,23 @@ Do not broaden the fallback to swallow those integrity failures.
    `RESEARCH_ROADMAP.md`, `ARCHITECTURE.md`, and `OPERATIONS.md` first.
 2. Treat `9f16e20c726c7b65eed1d387c4c725d51248f570` and the artifact facts above as
    the last pre-hold `main` boundary.
-3. On deployed `main`, preserve all three false switches until the reviewed
-   Stage-1 release. On the Stage-1 branch, keep exactly data/live true and
-   backtest false, bind `live.yml` to the exact config digest, and keep the
-   branch disconnected until independent review. Call only the public
-   orchestrator; preserve the CLI writer interlock. After merge, independently
-   review exact `main` and use its canonical 40-hex SHA as required
-   `expected_sha`; never substitute a candidate-branch commit or an unreviewed
-   current head.
+3. Preserve the merged Stage-1 configuration: exactly data/live true and
+   backtest false, with `live.yml` bound to the exact config digest. Call only
+   the public orchestrator and preserve the CLI writer interlock. Do not
+   dispatch until an independent review approves the exact production `main`
+   target and the operator uses its canonical 40-hex SHA as required
+   `expected_sha`; never substitute candidate
+   `5c5dc355ce1bfdae1f467eefa35062aff59d9614`, activation merge ancestor
+   `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`, or another unreviewed head.
 4. Preserve and independently review the sealed corrected epoch and append-only
    suffix identities above. Do not replace them with worktree CSV bytes or
    caller-supplied metadata.
 5. Never rewrite the existing processed history, prediction, evaluation, report,
    or registered evidence artifacts; corrections belong to a new sealed epoch.
-6. Merge the sealed-epoch branch without squash/rebase so artifact commit
-   `b04393944ef12f78417dfb6151343c72d4c2a2ac` and evidence commit
-   `60dbd42a502850091508491f9011f9a08acf894f` remain reachable, then verify the
-   deployed pins from a fresh full-history clone of `main`.
+6. Preserve artifact commit `b04393944ef12f78417dfb6151343c72d4c2a2ac`
+   and evidence commit `60dbd42a502850091508491f9011f9a08acf894f`
+   as reachable ancestors; verify the deployed pins from a fresh full-history
+   clone of `main` before dispatch approval.
 7. Keep the verified-history consumer as the only read path. Preserve registry
    genesis `a6857d6b4e6e532062f484bcce4466f76ba4327b` without squash/rebase. The
    bounded dual-source collector, offline `B -> E -> S -> P` preparer, local bare
@@ -306,7 +325,8 @@ Do not broaden the fallback to swallow those integrity failures.
    merged orchestration's fixed literal-B, exact-P worker, freeze-A, and P-to-A
    sequence; do not add a standalone worker or caller-injectable
    configuration/clock/adapter path. The prediction-origin fix is satisfied by
-   PR #32. Complete the remaining Stage-1 independent review, credential, and
+   PR #32, and final Stage-1 candidate review is satisfied with Standards/Spec
+   findings 0/0/0. Complete the exact dispatch-target review, credential, and
    hard time/source gates; run at most one production canary and verify exact
    reload evidence. Record the approved SHA in dispatch evidence, not this plan.
    A successful P or A advance makes that SHA stale and blocks rerun. Add
@@ -314,7 +334,7 @@ Do not broaden the fallback to swallow those integrity failures.
    Stage-1 succeeds.
 8. Outcome-blind model design and preregistration may continue during the hold,
    but do not score models on the legacy history or treat the sealed epoch as an
-   authorized runtime before that release. Use a new version whenever
+   authorized runtime before the gated canary. Use a new version whenever
    statistical behavior changes.
 9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.

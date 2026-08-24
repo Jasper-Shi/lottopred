@@ -36,10 +36,12 @@ the reviewed `src/lotto649/operational_history.py` seam, which owns the deployed
 Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
-but the operational kill switch remains closed. The bounded dual-source
-collector, offline preparer, and local bare-repository exact-CAS adapter now
-cover source acquisition plus the `B -> E -> S -> P` transaction and local state
-machine as disconnected seams. A fixed-repository GitHub exact-CAS publisher,
+but the historical/backtest gate remains closed. Stage-1 data/live runtime
+gates are armed only for the unrun manual canary described below. The bounded
+dual-source collector, offline preparer, and local bare-repository exact-CAS
+adapter now cover source acquisition plus the `B -> E -> S -> P` transaction
+and local state machine as disconnected seams. A fixed-repository GitHub
+exact-CAS publisher,
 fresh public reload, and isolated exact-P execution/artifact handoff now also
 exist, still disconnected. A capability-scoped exact remote `P -> A` publisher
 is independently reviewed and merged. PR #31 merged orchestration at
@@ -48,27 +50,32 @@ publication/fresh-P handoff/private exact-P worker/freeze-A/P-to-A
 publication-and-reload sequence without a standalone worker or caller-injected
 configuration, clock, or adapters. It is not imported by a CLI. PR #32 merged
 the complete-DAG source-prediction origin proof as
-`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`. The authorized disposable remote
-OID/CAS canary and protected production `main` were verified on 2026-08-24.
-Production `main` at that merge retains all three false switches.
+`60f972b217f7bd23d1b4807e96034db0cfd1fe2e`, now a pre-Stage-1 ancestor. The
+authorized disposable remote OID/CAS canary and protected production `main`
+were verified on 2026-08-24. Production `main` contains Stage-1 activation
+merge ancestor `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`.
 
-The disconnected-until-reviewed Stage-1 branch is a manual-only production
-canary: exact config digest
+Stage 1 is a manual-only production canary in state
+`merged_armed_not_executed`: exact config digest
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`,
 data/live true, backtest false, and no integration, backtest, CLI,
 ordinary-push, automatic post-worker retry, or scheduled execution path. The
-remaining pre-dispatch gates are independent branch review, the narrow workflow
-publication credential, independent review of exact post-merge production
-`main`, and the hard `2026-08-27T15:15:00Z` plus dual-official-source
-requirement. Manual dispatch requires that reviewed canonical 40-hex SHA as
-`expected_sha`; the candidate commit is not the approval value, and the plan
-stores only `approved_sha_source=post_merge_review`; dispatch evidence records
-the reviewed value. The guard binds it to both `GITHUB_SHA` and checkout HEAD.
-A successful P or A advance makes the approved SHA stale and prevents replay.
-A separate Stage-2 schedule PR is permitted only after the exact production
-`B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed. See
-`docs/OPERATIONS.md`; no Stage-1 preparation or legacy evaluation creates model
-evidence by itself.
+final candidate `5c5dc355ce1bfdae1f467eefa35062aff59d9614`
+passed independent Standards and Spec review with 0 blocker, 0 major, and 0
+minor findings. The remaining pre-dispatch gates are the narrow workflow
+publication credential, independent approval of the exact production `main`
+dispatch SHA, and the hard `2026-08-27T15:15:00Z` plus dual-official-source
+requirement. The credential is not installed, the time/source gate is pending,
+and no dispatch SHA is approved. Manual dispatch requires a future reviewed
+canonical 40-hex SHA as `expected_sha`; neither the candidate nor activation
+merge ancestor is the approval value. The plan stores only
+`approved_sha_source=post_merge_review`; dispatch evidence records the reviewed
+value. The guard binds it to both `GITHUB_SHA` and checkout HEAD. No canary has
+run and no schedule exists. A successful P or A advance makes the approved SHA
+stale and prevents replay. A separate Stage-2 schedule PR is permitted only
+after the exact production `B -> E -> S -> P -> A` canary succeeds and its
+evidence is reviewed. See `docs/OPERATIONS.md`; no Stage-1 preparation or legacy
+evaluation creates model evidence by itself.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,

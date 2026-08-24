@@ -24,7 +24,9 @@ LEGACY_MANIFEST_PATH = (
     / "legacy-2026-08-26-prediction-cohort.json"
 )
 ARMED_CONFIG_SHA256 = "d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931"
-UNMERGED_STAGE1_CANDIDATE_SHA = "4f778662697dab353d4dee98d517c45dd29cd2a5"
+PRE_STAGE1_MAIN_COMMIT = "60f972b217f7bd23d1b4807e96034db0cfd1fe2e"
+STAGE1_REVIEWED_CANDIDATE_COMMIT = "5c5dc355ce1bfdae1f467eefa35062aff59d9614"
+STAGE1_ACTIVATION_MERGE_ANCESTOR = "3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee"
 MODELS = [
     "random",
     "long_frequency",
@@ -46,7 +48,7 @@ def _workflow() -> dict:
     )
 
 
-def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
+def test_plan_records_merged_armed_stage1_without_approving_dispatch() -> None:
     plan = _plan()
     plan_text = PLAN_PATH.read_text(encoding="utf-8")
     config_bytes = (ROOT / "config.yaml").read_bytes()
@@ -55,7 +57,7 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
     assert plan["schema"] == "lotto649.production-live-canary-plan.v2"
     assert plan["dispatch_authorization"] == {
         "approved_sha_source": "post_merge_review",
-        "approved_sha_state": "unknown_until_post_merge_review",
+        "approved_sha_state": "not_approved_pending_post_merge_review",
         "approved_sha_stored_in_plan": False,
         "binding": "expected_sha_equals_github_sha_equals_checkout_head",
         "canonical_sha1_pattern": "^[0-9a-f]{40}$",
@@ -64,7 +66,13 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
         "required": True,
     }
     assert '"approved_sha":' not in plan_text
-    assert UNMERGED_STAGE1_CANDIDATE_SHA not in plan_text
+    assert plan["status"] == "merged_armed_not_executed"
+    assert plan["stage"] == {
+        "activation_merge_ancestor": STAGE1_ACTIVATION_MERGE_ANCESTOR,
+        "deployment_state": "merged_armed_not_executed",
+        "id": "stage-1",
+        "purpose": "one_manual_production_canary",
+    }
     assert hashlib.sha256(config_bytes).hexdigest() == ARMED_CONFIG_SHA256
     assert plan["config"] == {
         "backtest_enabled": False,
@@ -78,9 +86,8 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
     assert config["backtest"]["enabled"] is False
 
     baseline = plan["production_baseline"]
-    assert baseline["pre_stage1_main_commit"] == (
-        "60f972b217f7bd23d1b4807e96034db0cfd1fe2e"
-    )
+    assert baseline["pre_stage1_main_commit"] == PRE_STAGE1_MAIN_COMMIT
+    assert "current_main_commit" not in baseline
     assert baseline["live_orchestration"] == {
         "merge_commit": "2fe56a40532f7be2586a5cfc004699561556e849",
         "pull_request": 31,
@@ -96,6 +103,20 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
         if gate["id"] == "source_prediction_ancestor_origin_fix"
     )
     assert origin_gate["state"] == "satisfied"
+    stage1_review = next(
+        gate
+        for gate in plan["prerequisites"]
+        if gate["id"] == "stage_1_independent_review"
+    )
+    assert stage1_review == {
+        "evidence": {
+            "candidate_commit": STAGE1_REVIEWED_CANDIDATE_COMMIT,
+            "spec": {"blocker": 0, "major": 0, "minor": 0},
+            "standards": {"blocker": 0, "major": 0, "minor": 0},
+        },
+        "id": "stage_1_independent_review",
+        "state": "satisfied",
+    }
     post_merge_gate = next(
         gate
         for gate in plan["prerequisites"]
@@ -103,6 +124,10 @@ def test_plan_binds_exact_armed_config_and_reviewed_main() -> None:
     )
     assert post_merge_gate["approved_sha_source"] == "post_merge_review"
     assert post_merge_gate["state"] == "required_before_dispatch"
+    credential_gate = next(
+        gate for gate in plan["prerequisites"] if gate["id"] == "publication_credential"
+    )
+    assert credential_gate["state"] == "required_unmet"
 
 
 def test_plan_preregisters_exact_history_and_complete_model_cohorts() -> None:
@@ -166,7 +191,6 @@ def test_stage1_workflow_is_manual_read_only_and_capability_scoped() -> None:
     workflow = _workflow()
     workflow_text = LIVE_WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    assert UNMERGED_STAGE1_CANDIDATE_SHA not in workflow_text
     assert set(workflow["on"]) == {"workflow_dispatch"}
     assert workflow["permissions"] == {"contents": "read"}
     assert plan["workflow"]["triggers"] == ["workflow_dispatch"]
@@ -249,12 +273,8 @@ def test_stage1_workflow_is_manual_read_only_and_capability_scoped() -> None:
 def test_stage1_has_no_schedule_and_stage2_requires_separate_reviewed_pr() -> None:
     plan = _plan()
 
-    assert plan["status"] == "preregistered_not_executed"
-    assert plan["stage"] == {
-        "branch_state": "disconnected_until_independent_review",
-        "id": "stage-1",
-        "purpose": "one_manual_production_canary",
-    }
+    assert plan["status"] == "merged_armed_not_executed"
+    assert plan["stage"]["deployment_state"] == "merged_armed_not_executed"
     assert plan["execution"] == {
         "entrypoint": "orchestrate_github_live_cycle(*, token=...)",
         "not_before": "2026-08-27T15:15:00Z",
