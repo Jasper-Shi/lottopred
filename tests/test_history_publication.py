@@ -38,6 +38,17 @@ def _git_text(repository: Path, *arguments: str) -> str:
     return _git(repository, *arguments).decode("utf-8").strip()
 
 
+def _symbolic_head_state(repository: Path) -> tuple[int, bytes]:
+    result = subprocess.run(
+        ["git", "-C", str(repository), "symbolic-ref", "-q", "HEAD"],
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode not in {0, 1}:
+        result.check_returncode()
+    return result.returncode, result.stdout
+
+
 def _clone_repository(tmp_path: Path) -> Path:
     repository = tmp_path / "repository"
     subprocess.run(
@@ -140,10 +151,12 @@ def _second_sources() -> tuple[RawSource, RawSource]:
     )
 
 
-def _repository_state(repository: Path) -> tuple[str, str, bytes, str, bytes]:
+def _repository_state(
+    repository: Path,
+) -> tuple[str, tuple[int, bytes], bytes, str, bytes]:
     return (
         _git_text(repository, "rev-parse", "HEAD"),
-        _git_text(repository, "symbolic-ref", "-q", "HEAD"),
+        _symbolic_head_state(repository),
         _git(repository, "for-each-ref", "--format=%(refname) %(objectname)"),
         _git_text(repository, "write-tree"),
         _git(repository, "status", "--porcelain=v1", "--untracked-files=all"),
@@ -258,6 +271,23 @@ def test_prepare_builds_an_unattached_reader_valid_b_e_s_p_transaction(tmp_path:
     assert len(published.draws) == 4_445
     assert published.draws[-1].draw_date == date(2026, 8, 26)
     assert published.registry.publication_commit == prepared.publication_commit
+
+
+def test_prepare_preserves_a_detached_caller_head(tmp_path: Path):
+    repository = _clone_repository(tmp_path)
+    _git(repository, "checkout", "--detach", "HEAD")
+    base_commit = _git_text(repository, "rev-parse", "HEAD")
+    state_before = _repository_state(repository)
+
+    prepared = prepare_history_publication(
+        repository,
+        expected_base_commit=base_commit,
+        sources=_sources(),
+        created_at=datetime(2026, 8, 27, 12, 5, tzinfo=UTC),
+    )
+
+    assert prepared.base_commit == base_commit
+    assert _repository_state(repository) == state_before
 
 
 def test_prepare_rejects_a_non_sequence_source_set_without_changing_repository(
