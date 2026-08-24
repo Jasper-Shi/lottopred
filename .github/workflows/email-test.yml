@@ -2,10 +2,22 @@ name: gmail-alert-smoke-test
 
 on:
   workflow_dispatch:
+    inputs:
+      subject:
+        description: Optional research-progress email subject
+        required: false
+        type: string
+      body:
+        description: Optional research-progress email body
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
       - 'email-test-trigger.txt'
+
+permissions:
+  contents: read
 
 jobs:
   email-test:
@@ -26,12 +38,22 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          RESEARCH_EMAIL_SUBJECT: ${{ inputs.subject }}
+          RESEARCH_EMAIL_BODY: ${{ inputs.body }}
         run: |
           python - <<'PY'
+          import os
+
           from lotto649.notification import send_email
+
+          subject = os.environ.get('RESEARCH_EMAIL_SUBJECT') or 'LOTTO 6/49 alert system is ready'
+          body = os.environ.get('RESEARCH_EMAIL_BODY') or (
+              'Gmail SMTP configuration succeeded. Future configured model-hit alerts '
+              'will be sent automatically.'
+          )
           ok = send_email(
-              'LOTTO 6/49 alert system is ready',
-              'Gmail SMTP configuration succeeded. Future configured model-hit alerts will be sent automatically.'
+              subject,
+              body,
           )
           if not ok:
               raise SystemExit('Required SMTP_USERNAME/SMTP_PASSWORD GitHub Secrets are missing')
