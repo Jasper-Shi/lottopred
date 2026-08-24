@@ -100,8 +100,9 @@ exact-CAS publisher seam: it fixes the GitHub repository and `main` identities,
 uploads exact Git objects, attempts one
 GraphQL `updateRefs` compare-and-swap, rereads the remote ref, and requires a
 fresh anonymous full fetch through the production reader before success. None
-of these modules is connected to a CLI or workflow. The local CAS is not a
-remote publisher, and the GitHub publisher is not an execution release.
+of these component modules is directly connected to a CLI or workflow. The
+local CAS is not a remote publisher, and the GitHub publisher is not an
+execution release.
 
 The disconnected `history_execution_handoff` module consumes only a successful
 publication receipt. It makes a second anonymous fetch of authority `main` into
@@ -125,18 +126,32 @@ and returns success only after a fresh anonymous full fetch of exact A passes
 `load_published_history(A)`. It has no CLI, live, or workflow connection and is
 independently reviewed, but still awaits true-remote proof.
 
-The handoff does not change the current interpreter's import path. Future
-orchestration must execute reviewed P code inside this context, or independently
-prove the loaded code bytes equal P, before it may call the live helpers. A
-P-rooted configuration alone is not code provenance.
+The disconnected `live_orchestration` candidate composes those seams into one
+fixed code-level state machine: load configuration from literal B, load B
+history, collect both sources, prepare and remotely publish `B -> E -> S -> P`,
+freshly reload P, open the isolated detached-P workspace, execute the private
+P worker, freeze its exact outputs in A, publish exact `P -> A`, and require the
+final reread plus fresh A reload before returning success. Its public boundary
+accepts only the GitHub token. Configuration, UTC clocks, adapters, repository,
+and ref are fixed internally rather than supplied by a caller.
+
+The parent launches `src/lotto649/_live_worker.py` with isolated Python flags
+from the detached P workspace, verifies that worker before and after execution,
+and binds every imported `lotto649` source module to its exact P blob and
+SHA-256. The private worker has no standalone module or CLI entry point. Its
+subprocess environment is scrubbed and admits only `SMTP_USERNAME` and
+`SMTP_PASSWORD`; notification therefore uses fixed Gmail defaults rather than
+optional host, port, sender, or recipient overrides. This candidate remains
+absent from every CLI and workflow import path.
 
 Bootstrap and every public live entry point therefore remain quarantined after
-their gates until protected-main policy and a disposable-repository OID/CAS
-canary prove the GitHub adapter, the collector/preparer/publisher/handoff are
-orchestrated with P-code provenance, and the artifact publisher passes a real
-`P -> A` publication/reload canary. Live refresh raises after both gates because
-that end-to-end remote path is not wired. The workflow/config release remains a
-separate reviewed change. See
+their gates. The disconnected orchestration candidate does not reopen them, and
+all three runtime switches remain false. The authorized disposable-repository
+OID/CAS canary and production `main` protection were verified on 2026-08-24.
+Release still requires the narrow workflow publication credential, a real
+end-to-end production `P -> A` publication/reload canary, and a separate
+reviewed SHA-bound workflow/config change. Live refresh raises after both gates
+because the public path remains intentionally unwired. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 
@@ -196,6 +211,12 @@ history object and resuming execution in the caller's old checkout is forbidden.
 Evaluation also revalidates that its source prediction was added by the prior
 artifact base from a pre-draw, provenance-bound parent; a structurally valid
 post-draw prediction cannot be wrapped in a successful evaluation.
+
+An SMTP exception records `email_sent=false` and does not interrupt evaluation,
+prediction, freezing, or A publication. Any other failure after the private P
+worker starts is fail closed and receives no automatic retry: notification may
+already have produced an external side effect even when the worker cannot
+return a complete manifest.
 
 During the data-integrity incident this entire path is dormant; the kill-switch
 boundary takes precedence over the normal unattended schedule.

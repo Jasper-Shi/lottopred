@@ -42,10 +42,16 @@ cover source acquisition plus the `B -> E -> S -> P` transaction and local state
 machine as disconnected seams. A fixed-repository GitHub exact-CAS publisher,
 fresh public reload, and isolated exact-P execution/artifact handoff now also
 exist, still disconnected. A capability-scoped exact remote `P -> A` publisher
-is independently reviewed, merged, and likewise remains disconnected. Live
-still requires the prescribed remote canaries, protected `main`,
-P-code-provenance orchestration, a real `P -> A` reload, and the separate
-SHA-bound workflow release review in `docs/OPERATIONS.md` before any execution
+is independently reviewed, merged, and likewise remains disconnected. A local
+code-level orchestration candidate now composes the full collect/P
+publication/fresh-P handoff/private exact-P worker/freeze-A/P-to-A
+publication-and-reload sequence without a standalone worker or caller-injected
+configuration, clock, or adapters. It is not imported by a CLI or workflow, and
+all three runtime switches remain false. The authorized disposable remote
+OID/CAS canary and protected production `main` were verified on 2026-08-24.
+Live still requires the narrow workflow publication credential, a real
+end-to-end production `P -> A` canary/reload, and the separate SHA-bound
+workflow/config release review in `docs/OPERATIONS.md` before any execution
 switch can be reconsidered.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.

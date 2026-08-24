@@ -82,7 +82,10 @@ def _evaluate_due_predictions(cfg: dict, history: VerifiedHistory) -> list[dict]
         ev = evaluate_prediction(pred, actual)
         ev["actual_history"] = source_provenance
         if cfg["notifications"].get("enabled", True) and should_alert(ev, cfg):
-            ev["email_sent"] = send_hit_alert(ev)
+            try:
+                ev["email_sent"] = send_hit_alert(ev)
+            except Exception:  # noqa: BLE001 - SMTP cannot block immutable evidence
+                ev["email_sent"] = False
         save_evaluation(root, ev)
         completed.append(ev)
     return completed
@@ -94,7 +97,12 @@ def evaluate_due_predictions(cfg: dict) -> list[dict]:
     _require_verified_history_append_writer()
 
 
-def _generate_next_predictions(cfg: dict, history: VerifiedHistory) -> list[Path]:
+def _generate_next_predictions(
+    cfg: dict,
+    history: VerifiedHistory,
+    *,
+    generated_at: datetime | None = None,
+) -> list[Path]:
     root = Path(cfg["_root"])
     draws = history.draws
     source_provenance = operational_history_provenance(history)
@@ -103,7 +111,14 @@ def _generate_next_predictions(cfg: dict, history: VerifiedHistory) -> list[Path
     paths = []
     requested = cfg.get("live", {}).get("models")
     for model in build_models(cfg, requested=requested).values():
-        pred = make_prediction(model, draws, target, cfg, version)
+        pred = make_prediction(
+            model,
+            draws,
+            target,
+            cfg,
+            version,
+            generated_at=generated_at,
+        )
         if model.name in cfg.get("live", {}).get("shadow_models", []):
             pred.metadata["role"] = "shadow"
         else:

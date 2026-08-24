@@ -69,6 +69,18 @@ affected documentation in the same change.
   reviewed and merged, but its fixed authority, object-identity, CAS, reread,
   and fresh-reload contract still requires the remote canaries specified in
   `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`; it is not an execution release.
+- `src/lotto649/live_orchestration.py` is the disconnected code-level candidate
+  for the sole fixed GitHub live state machine. It reads literal-`HEAD` B
+  configuration and trusted UTC time internally, composes collection through
+  remote P publication/reload, runs the private exact-P worker, freezes A, and
+  keeps the P workspace open through remote A publication/reload. It accepts no
+  caller-supplied configuration, clock, adapters, repository, or ref.
+- `src/lotto649/_live_worker.py` is private P code with no standalone module or
+  CLI entry point. The parent launches it only from the detached P workspace,
+  verifies its source and imported `lotto649` modules against P, and gives it
+  only `SMTP_USERNAME` and `SMTP_PASSWORD` beyond a fixed scrubbed environment.
+  The orchestration candidate is not imported by a CLI or workflow and does not
+  authorize execution.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -157,10 +169,15 @@ worktree is handed to the published authority head; it must never fall back to
 the legacy processed CSV. The collector, offline preparer, local bare CAS,
 disconnected GitHub publisher, and isolated execution/artifact handoff are
 separately testable components. A disconnected capability-scoped exact remote
-`P -> A` publisher is independently reviewed and merged, but the remote path
-still requires the prescribed remote canaries, protected `main`,
-P-code-provenance orchestration, and a separately reviewed SHA-bound workflow
-release. None of these components authorizes this execution path.
+`P -> A` publisher is independently reviewed and merged. A disconnected local
+orchestration candidate now composes the complete sequence with exact-P code
+provenance, but it has no CLI/workflow connection and all three runtime gates
+remain false. The authorized disposable remote OID/CAS canary succeeded on
+2026-08-24, and production `main` now enforces administrator, force-push, and
+deletion protection. The execution release still requires a repository-scoped
+publication credential, a real production `P -> A` canary plus reload, and a
+separately reviewed SHA-bound workflow/config release. None of these components
+authorizes this execution path.
 
 Live forward cycle:
 
@@ -177,6 +194,13 @@ The isolated P context must span evaluation, notification, prediction, artifact
 freezing, and the later remote A publication. Publishing history after
 evaluation, using the caller's old checkout, broad directory staging, or an
 ordinary Git push is not an acceptable live sequence.
+
+SMTP failure is a nonblocking notification outcome: record
+`email_sent=false`, preserve the evaluation, and continue prediction and
+artifact publication. The isolated worker uses the Gmail defaults with only
+`SMTP_USERNAME` and `SMTP_PASSWORD`; optional host/address overrides belong to
+manual or legacy paths. Once the worker has started, orchestration failures are
+never retried automatically because notification may already have occurred.
 
 Do not overwrite or regenerate an existing prediction to change its numbers,
 timestamp, model role, or visible-history metadata. Fixes apply to a new version

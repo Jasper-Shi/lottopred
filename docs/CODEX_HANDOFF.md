@@ -35,18 +35,22 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > The verified-history read interface is now the sole input to the direct
 > backtest boundary. The kill switches remain false, so it is not authorized to
 > execute. Bootstrap and every public live entry point fail explicitly after
-> their gates until the reviewed collector and disconnected GitHub publisher
-> are orchestrated, an authority reload succeeds, and the execution worktree is
-> handed to that authority head. The dual-source collector, offline preparer,
-> local bare-repository CAS, fixed-repository GitHub publisher, and isolated
-> execution/artifact handoff now exist as disconnected review seams. A
-> capability-scoped exact remote `P -> A` publisher is independently reviewed,
-> merged, and still disconnected from CLI, live, and workflows. Production
-> `main` is currently unprotected, no disposable or real
-> `P -> A` canary has established remote safety, and orchestration/code
-> provenance remains unwired. The complete verified facts and blocker list are
-> in `OPERATIONS.md`. This merged component does not authorize execution. Re-enable
-> only through the reviewed
+> their gates. The dual-source collector, offline preparer, local bare-repository
+> CAS, fixed-repository GitHub publisher, isolated execution/artifact handoff,
+> and capability-scoped exact remote `P -> A` publisher remain disconnected
+> from CLI and workflows. A local code-level orchestration candidate now
+> composes collect through remote P publication/reload, a fresh detached-P
+> handoff, private exact-P worker execution, A freezing, and remote A
+> publication/reread/fresh reload. It reads literal-B configuration and trusted
+> clocks internally and exposes no caller-injectable configuration, clock, or
+> adapter seam. The private worker has no standalone entry point, and the
+> parent binds the worker plus its imported `lotto649` source modules to P.
+> This candidate remains unimported by every CLI and workflow. The authorized
+> disposable OID/CAS canary succeeded on 2026-08-24, and production `main` now
+> enforces administrator, force-push, and deletion protection. A real production
+> end-to-end `P -> A` canary and the workflow credential/release remain pending.
+> The complete facts and blocker list are in `OPERATIONS.md`. No component or
+> candidate authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
 > [`OPERATIONS.md`](OPERATIONS.md#data-integrity-incident-kill-switch).
 >
@@ -79,10 +83,11 @@ lotto649 backtest
 lotto649 live
 ```
 
-Only after the source/history publisher and capability-scoped artifact publisher
-pass their reviews and prescribed remote canaries, protected `main` is verified,
-and reviewed orchestration preserves P-code provenance may `bootstrap` append
-and validate independently sourced draws.
+The authorized disposable canary and protected production `main` were verified
+on 2026-08-24. Only after the narrow workflow publication credential is
+installed, a real end-to-end production `P -> A` canary/reload succeeds, and a
+separate SHA-bound workflow/config release is reviewed may
+`bootstrap` append and validate independently sourced draws.
 `backtest` walks forward chronologically over the Git-authenticated verified
 history. `live` may refresh history, evaluate due snapshots, and create
 predictions for the next Wednesday or Saturday only inside the isolated
@@ -90,10 +95,11 @@ workspace obtained after the remote publisher installs P and a fresh authority
 reload succeeds. That context must remain open until the exact artifact commit
 A (sole parent P) is remotely compare-and-swapped and freshly reloaded. During
 the incident all three commands fail closed at their disabled runtime gates. A
-direct true-toggle still cannot move `bootstrap` or `live` past the missing
-publication-orchestration/handoff interlock. Backtest has no writer dependency,
-but it remains unauthorized until its separate reviewed release reopens both
-the workflow and runtime gates.
+direct true-toggle still cannot move the CLI `bootstrap` or `live` path past its
+writer interlock because the orchestration candidate is intentionally not
+imported there. Backtest has no writer dependency, but it remains unauthorized
+until its separate reviewed release reopens both the workflow and runtime
+gates.
 
 `config.yaml` deliberately separates two selections:
 
@@ -188,10 +194,15 @@ SMTP_PASSWORD=<Google App Password>
 
 Defaults are `smtp.gmail.com:587`, with sender and recipient both equal to
 `SMTP_USERNAME`. `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO` are
-optional overrides. In the ordinary enabled path, missing credentials do not
-block prediction or evaluation; `send_email` returns false. The dedicated email
-smoke workflow treats that as a failure so configuration can be tested
-explicitly.
+optional overrides for manual and legacy paths. The disconnected exact-P
+orchestration candidate deliberately passes only `SMTP_USERNAME` and
+`SMTP_PASSWORD` into its isolated worker, so that boundary always uses the
+Gmail defaults. Missing credentials or an SMTP exception records
+`email_sent=false` and does not block evaluation, prediction, freezing, or A
+publication. The dedicated email smoke workflow treats a false send as a
+failure so configuration can be tested explicitly. After the private P worker
+starts, any orchestration failure receives no automatic retry because an email
+may already have left the process.
 
 Current alert thresholds in `config.yaml` are final-combination hits `>= 4` or
 Top-12 hits `>= 5`.
@@ -201,11 +212,12 @@ Top-12 hits `>= 5`.
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
 path. Live refresh now refuses execution after both gates until a reviewed
-remote canary proves the GitHub publisher, orchestration connects it to the
-collector/offline preparation seam, execution is handed to the reloaded
-authority head with P-code provenance, and the capability-scoped publisher
-proves the resulting artifact through exact remote CAS, reread, and fresh
-anonymous reload.
+release installs the narrow workflow publication credential, proves the
+complete orchestration with a real production `P -> A` canary/reload, and binds
+the path to exact reviewed workflow/config bytes. The disposable OID/CAS canary
+and production-main protection were completed on 2026-08-24. The existing
+code-level candidate is not a CLI connection or production execution
+authorization.
 The pre-incident reconciliation policy was:
 
 1. Use the WCLC since-inception PDF for years before `bridge_start_year` (2024).
@@ -253,10 +265,12 @@ Do not broaden the fallback to swallow those integrity failures.
    CAS, fixed-repository GitHub publisher, and execution/artifact handoff are
    disconnected review tools, not an execution release. The capability-scoped
    exact remote artifact publisher is independently reviewed, merged, and still
-   disconnected. Complete the disposable OID/CAS canary, protected-main setup,
-   P-code-provenance orchestration, real `P -> A` canary/reload, and SHA-bound
-   workflow release review listed in
-   `OPERATIONS.md`. Only then re-enable through the
+   disconnected. Preserve the local orchestration candidate's fixed literal-B,
+   exact-P worker, freeze-A, and P-to-A sequence; do not add a standalone worker
+   or caller-injectable configuration/clock/adapter path. Install the narrow
+   workflow publication credential, complete the real production `P -> A`
+   canary/reload, and complete the SHA-bound workflow/config release review
+   listed in `OPERATIONS.md`. Only then re-enable through the
    reviewed two-gate release in `OPERATIONS.md`, with new exact config bytes and
    matching workflow plans in the same commit.
 8. Outcome-blind model design and preregistration may continue during the hold,

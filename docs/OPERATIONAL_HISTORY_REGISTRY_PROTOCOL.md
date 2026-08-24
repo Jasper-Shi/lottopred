@@ -11,8 +11,13 @@ handoff are implemented. A disconnected, capability-scoped exact remote
 `P -> A` artifact publisher is independently reviewed and merged. It fixes
 production repository/main identity, exact object-OID upload, GraphQL
 `updateRefs` with `force=false`, mandatory ref reread, and a fresh anonymous
-full-fetch production reload. None of these seams is workflow-integrated, and
-neither publisher has passed the required true-remote canary. Therefore
+full-fetch production reload. A disconnected local orchestration candidate now
+composes collect, `B -> E -> S -> P` publication/reload, exact-P execution,
+A freezing, and `P -> A` publication/reload in the required order. No CLI or
+workflow imports it. The shared exact-object/updateRefs boundary passed its
+authorized disposable-remote canary on 2026-08-24, and production `main` now has
+the required administrator, force-push, and deletion protection. No real
+production `P -> A` execution/reload canary has run. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
 
@@ -241,11 +246,14 @@ evaluate/notify/predict/freeze/publish-A operation; returning only history and
 resuming in the caller's checkout is forbidden. The temporary repository is
 removed on normal exit and on exceptions.
 
-This seam does not itself replace the running Python import path or launch the
-model process. The later orchestration must execute the reviewed code from P
-(or independently prove the loaded code bytes equal P) while keeping this
-context open. Merely changing `cfg["_root"]` is not code provenance and does not
-authorize execution.
+The handoff seam itself does not replace the running Python import path or
+launch the model process. The disconnected `live_orchestration` candidate does
+so through private `src/lotto649/_live_worker.py` in the detached P workspace.
+The parent verifies that worker before and after execution, launches isolated
+Python with P/src first, and accepts a bounded canonical manifest only after
+every loaded `lotto649` source module is bound to its exact P Git blob and
+SHA-256. The worker has no standalone module or CLI entry point. Merely changing
+`cfg["_root"]` remains insufficient code provenance.
 
 After evaluation and prediction code has created files in that isolated
 workspace, `freeze_execution_outputs(...)` accepts only a bounded, sorted,
@@ -286,10 +294,24 @@ push, merge, rebase, force, retry, stage a directory, or touch a workflow or
 runtime gate. Evaluation, prediction, email, or output files that cannot
 complete that remote publication are not committed audit evidence.
 
-This publisher remains disconnected. Its independently reviewed local tests
-cannot prove GitHub serialization, token permission, branch protection,
-unattached object visibility, or read-after-write behavior; those claims require
-the remote canaries and protected-main evidence listed in `OPERATIONS.md`.
+The sole orchestration candidate public boundary is
+`orchestrate_github_live_cycle(*, token=...)`. It loads configuration from
+literal B, obtains trusted whole-second UTC values internally, and fixes all
+adapters, repository, and ref; there is no caller-injectable
+configuration/clock/ports state-machine seam. It keeps the same opaque P
+workspace active across worker execution, exact freeze, artifact publication,
+reread, and fresh A reload. The isolated worker receives a scrubbed environment
+plus only `SMTP_USERNAME` and `SMTP_PASSWORD`, so it uses fixed Gmail defaults;
+manual/legacy SMTP host, port, sender, and recipient overrides do not cross this
+boundary. An SMTP exception records `email_sent=false` and processing
+continues. Once worker execution starts, no failure is retried automatically
+because notification may already have caused an external side effect.
+
+The publishers and orchestration candidate remain disconnected from CLI and
+workflows. Local tests cannot prove GitHub serialization, token permission,
+branch protection, unattached object visibility, or read-after-write behavior;
+those claims require the remote canaries and protected-main evidence listed in
+`OPERATIONS.md`.
 
 ## Reader guarantees
 
@@ -337,8 +359,10 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 Merging the reader, official-source collector, offline/local publication
 components, disconnected GitHub publisher, and execution/artifact handoff does
 not reopen execution; neither does the independently reviewed and merged
-artifact publisher. The remaining release work is the disposable remote OID/CAS
-canary, protected-main setup, P-code-provenance orchestration, real `P -> A`
-canary/reload, and the separate SHA-bound workflow release review specified in
-`OPERATIONS.md`. Until that later release, all three runtime switches and all
-workflow stages remain false.
+artifact publisher or the disconnected local orchestration candidate. The
+disposable remote OID/CAS canary and protected-main setup were verified on
+2026-08-24. The remaining release work is the narrow workflow publication
+credential, a real end-to-end production `P -> A` canary/reload, and the
+separate SHA-bound workflow/config release review specified in `OPERATIONS.md`.
+Until that later release, all three runtime switches and all workflow stages
+remain false.
