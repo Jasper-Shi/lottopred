@@ -262,10 +262,27 @@ Every listed path must be a new non-executable regular UTF-8 JSON file with a
 real scheduled date, filename-bound model identity, the exact prediction or
 evaluation schema, and the correct P-derived history provenance. Prediction
 targets must be the next scheduled draw after P; evaluation values are
-recomputed from a prediction added by the prior artifact base B and the
-verified actual draw. That source prediction must itself be bound to B's sole
-parent history, have a generation time between that parent and B, and remain
-strictly pre-draw. The new prediction cohort must exactly match
+recomputed from an immutable source prediction and the verified actual draw.
+For each source path, the reader traverses the complete commit DAG reachable
+from P, not a path-simplified or first-parent-only history. It requires P and
+the registry transaction base B to contain the same `100644` blob, one unique
+single-parent origin O on B's first-parent history, the exact same blob at every
+reachable descendant of O, and absence at every reachable commit outside that
+origin cone. Side-branch copies, merge-introduced origins, modifications,
+deletions, re-additions, mode changes, replace refs, grafts, shallow history,
+and missing objects fail closed.
+
+For an ordinary source prediction, O's parent must load through the production
+published-history reader and the prediction metadata and chronology must match
+that history exactly. The only exception is the exact seven-file 2026-08-26
+cohort sealed by
+`evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json`.
+That manifest pins O/O^, the raw commit, the 4,434-row incident-affected legacy
+history input, and every prediction path, mode, blob, byte count, SHA-256,
+timestamp, model, version, and role. Any mismatch rejects the whole cohort.
+Its evaluation `prediction_source` must state that corrected-history claims and
+promotion-evidence eligibility are false; `actual_history` remains the separate
+corrected source of the revealed draw. The new prediction cohort must exactly match
 `P:config.yaml`'s `live.models` at `project.model_version`; no model may be
 missing or added, and each `primary`/`shadow` role must agree with
 `live.shadow_models`.

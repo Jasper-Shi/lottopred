@@ -1,0 +1,107 @@
+{
+  "corrected_history_claim": false,
+  "history_input": {
+    "bytes": 136297,
+    "draw_count": 4434,
+    "evidence_use": "descriptive_only_excluded_from_corrected_operational_cohorts",
+    "git_blob": "9d5d79130c77fb2642069d4b49e8ecc65615ab0f",
+    "history_through": "2026-08-22",
+    "mode": "100644",
+    "operational_history": false,
+    "path": "data/processed/draws.csv",
+    "revision": "9f16e20c726c7b65eed1d387c4c725d51248f570",
+    "sha256": "f7f47b29cd1281043672784843a06d8a8a0abf8e0bdcf511805f9346e3f37773"
+  },
+  "incident_id": "DI-2026-08-20-registered-history",
+  "origin": {
+    "author_at": "2026-08-23T15:36:01Z",
+    "commit": "9f16e20c726c7b65eed1d387c4c725d51248f570",
+    "commit_bytes": 276,
+    "commit_raw_sha256": "e1526cfb61a69b03488ef9c3c34015f18db63d562f40261f92d40da29880fb78",
+    "committer_at": "2026-08-23T15:36:01Z",
+    "parent": "0ef18836530ebb7083e0c8e5d557e5cdc3d476a4",
+    "tree": "e1f930883095f683ba44c4b8d3176d2cfe235898"
+  },
+  "predictions": {
+    "predictions/2026-08-26__ema_gap__v1.0.0.json": {
+      "bytes": 2191,
+      "generated_at": "2026-08-23T11:35:59.681632-04:00",
+      "git_blob": "a8159032ec7aa47627ac432e5303b1b838843f2c",
+      "mode": "100644",
+      "model_name": "ema_gap",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "803af5c6f56d8b7ce3f75e0052015f9b1030e9d27d67f886af6a213ef26894c2",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__ensemble__v1.0.0.json": {
+      "bytes": 2188,
+      "generated_at": "2026-08-23T11:36:01.073756-04:00",
+      "git_blob": "f2df110923a0f5136a66bb1dcc35376cc3931ed6",
+      "mode": "100644",
+      "model_name": "ensemble",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "c07e6118a2ed61132626602f7ab74e3baca659aa28a2033656ae2587207ce166",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__logistic__v1.0.0.json": {
+      "bytes": 2198,
+      "generated_at": "2026-08-23T11:36:00.968438-04:00",
+      "git_blob": "ee83fff0fbcd7ce768880a7e3a367486d8553e16",
+      "mode": "100644",
+      "model_name": "logistic",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "58032d0b9b6e40314a82039431cb3868468277929c6dfa4d23eb673918f3e270",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__long_frequency__v1.0.0.json": {
+      "bytes": 2200,
+      "generated_at": "2026-08-23T11:35:59.655183-04:00",
+      "git_blob": "73275cbd248fcbac78ed67256e3341a3c7539e34",
+      "mode": "100644",
+      "model_name": "long_frequency",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "7f7cfc90e8e7c8d58117656035975353586e3ceb6f8bde0fc125d3b1778d3622",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__random__v1.0.0.json": {
+      "bytes": 2193,
+      "generated_at": "2026-08-23T11:35:59.640444-04:00",
+      "git_blob": "0df842e837613306f27cdfc2dccc2a852b307154",
+      "mode": "100644",
+      "model_name": "random",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "d1afd687db881a6a9bbe9eaef5abdca58d973d59bc77ead4ec341998688ba86d",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__recent_frequency__v1.0.0.json": {
+      "bytes": 2182,
+      "generated_at": "2026-08-23T11:35:59.669104-04:00",
+      "git_blob": "7f82f326ec33009eaac4e7c933b5f1abb826fab0",
+      "mode": "100644",
+      "model_name": "recent_frequency",
+      "model_version": "v1.0.0",
+      "role": "primary",
+      "sha256": "f0a4fee650f064ec2cf0b243923e645ce93ccb480aefff02d36a450a967473bf",
+      "target_draw_date": "2026-08-26"
+    },
+    "predictions/2026-08-26__v3_boosting__v1.0.0.json": {
+      "bytes": 2199,
+      "generated_at": "2026-08-23T11:36:01.458977-04:00",
+      "git_blob": "3b1547434d6bda7bc9f58d90b270b55631aaf689",
+      "mode": "100644",
+      "model_name": "v3_boosting",
+      "model_version": "v1.0.0",
+      "role": "shadow",
+      "sha256": "fe51480b5a15b24dcf6551396edafb84c8363f40998a1bc1a53348ec2a65e0f6",
+      "target_draw_date": "2026-08-26"
+    }
+  },
+  "promotion_eligible": false,
+  "schema_version": "lotto649-sealed-legacy-prediction-cohort-v1",
+  "status": "incident_affected_legacy_registered_malformed_incomplete_non_operational"
+}

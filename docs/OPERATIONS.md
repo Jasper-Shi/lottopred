@@ -200,6 +200,15 @@ not enough.
    or relabel any pre-incident prediction, evaluation, report, or registered
    evidence artifact.
 
+When a due prediction is evaluated, treat `actual_history` and
+`prediction_source` as different claims. The former identifies the corrected
+operational history containing the result. The latter is recomputed from the
+prediction's complete immutable Git history and identifies the history visible
+when the forecast was made. The exact seven 2026-08-26 snapshots are sealed as
+incident-affected legacy forecasts: their hits may be recorded descriptively,
+but they are excluded from corrected-history promotion evidence. Any other
+legacy-like or ambiguous source fails closed.
+
 Until that release is committed, manual and scheduled dispatches are expected
 to perform only checkout plus the safe guard and then skip.
 

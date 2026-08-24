@@ -1248,6 +1248,11 @@ def test_smtp_exception_does_not_block_evaluation_or_prediction(
     )
     saved = []
     monkeypatch.setattr(live, "operational_history_provenance", lambda _h: {"p": P})
+    monkeypatch.setattr(
+        live,
+        "evaluation_prediction_source",
+        lambda _repository, _publication, _relative: {"kind": "test-fixture"},
+    )
     monkeypatch.setattr(live, "should_alert", lambda _ev, _cfg: True)
     monkeypatch.setattr(
         live,
@@ -1265,7 +1270,14 @@ def test_smtp_exception_does_not_block_evaluation_or_prediction(
             "_root": tmp_path,
             "notifications": {"enabled": True},
         },
-        type("History", (), {"draws": (actual,)})(),
+        type(
+            "History",
+            (),
+            {
+                "draws": (actual,),
+                "registry": type("Registry", (), {"resolved_revision": P})(),
+            },
+        )(),
     )
 
     assert completed[0]["email_sent"] is False

@@ -163,10 +163,12 @@ validation may leave only unreachable Git objects for ordinary garbage
 collection; it never changes an authoritative ref.
 
 Backtest detail and summary rows carry the canonical operational-history
-provenance as serialized JSON. New live prediction metadata carries the verified training
-history identity, while new evaluation artifacts separately carry the verified
-actual-result history identity; an old prediction is never relabeled as having
-been trained on corrected history.
+provenance as serialized JSON. New live prediction metadata carries the verified
+training-history identity. Every new evaluation carries two distinct fields:
+`actual_history` identifies the corrected history that supplied the revealed
+draw, while `prediction_source` identifies the immutable forecast bytes, their
+unique Git origin, and the history visible when that forecast was created. An
+old prediction is never relabeled as having been trained on corrected history.
 
 Workflows that may consume verified history use full-history checkout because
 the loader must resolve the registry genesis, publication topology, sealed
@@ -208,9 +210,20 @@ Only the remotely published and reloaded A commit creates the external audit
 trail proving the prediction existed before the result was known. The same
 temporary P context must remain open through A publication; returning only a
 history object and resuming execution in the caller's old checkout is forbidden.
-Evaluation also revalidates that its source prediction was added by the prior
-artifact base from a pre-draw, provenance-bound parent; a structurally valid
-post-draw prediction cannot be wrapped in a successful evaluation.
+Evaluation resolves the source prediction's unique single-parent origin across
+the complete `P` ancestry, proves that the exact `100644` blob is present at
+every reachable descendant and absent everywhere outside that origin cone, and
+requires the origin to lie on the publication base's first-parent history. A
+structurally valid post-draw, rewritten, re-added, side-branch, or
+merge-introduced prediction cannot be wrapped in a successful evaluation.
+
+The seven immutable 2026-08-26 snapshots are a closed exception because their
+origin predates the corrected operational registry. Their exact cohort,
+origin, raw Git objects, and 4,434-row legacy history input are pinned by
+`evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json`.
+Evaluations may report their descriptive hits, but `prediction_source` marks
+them as incident-affected legacy evidence that is ineligible for corrected-
+history promotion.
 
 An SMTP exception records `email_sent=false` and does not interrupt evaluation,
 prediction, freezing, or A publication. Any other failure after the private P
