@@ -80,23 +80,29 @@ only from immutable Git blobs. Worktree replacements and caller-provided pin
 overrides are not authority. The direct backtest boundary consumes this single
 read seam after its runtime gate.
 
-Official-source collection, offline preparation, and local CAS are implemented
-as disconnected review/test seams. The network collector retrieves exact
+Official-source collection, offline preparation, local CAS, and the
+fixed-repository remote exact-CAS publisher are implemented as disconnected
+review/test seams. The network collector retrieves exact
 bounded WCLC and Loto-Québec HTML without writing Git or operational state. The
 preparation seam takes those two assets, creates an
 unattached `B -> E -> S -> P` candidate without changing worktree/index/refs,
 and validates `P` through the production reader. The local adapter can advance
 only a self-contained bare repository whose literal `HEAD` is `main`; it always
 rereads authority after a CAS attempt and returns success only after exact `P`
-is observed and reloaded. The local adapter is not a GitHub/remote adapter, and
-none of these seams is connected to a CLI or workflow.
+is observed and reloaded. The local adapter is not a GitHub/remote adapter. The
+GitHub adapter uploads only exact-OID objects, attempts one GraphQL
+`updateRefs` CAS, rereads `main` after every acknowledgement outcome, and
+requires a fresh anonymous full fetch through the production reader. It refuses
+an unprotected or non-SHA-1 authority. None of these seams is connected to a CLI
+or workflow.
 
 Public bootstrap, live refresh, evaluation, and prediction entry points
-therefore still refuse execution after their gates until a remote exact-CAS
-publisher installs the collector/preparer transaction, a remote revision reload
-succeeds, and the execution worktree is handed to that authority head. This does
-not complete the remote operational path or reviewed release; all switches
-remain false. The
+therefore still refuse execution after their gates. Before reconsidering those
+gates, configure and verify protected `main`, run the required disposable GitHub
+OID/CAS canary, orchestrate collector/preparer/publisher, prove the remote
+revision reload, and hand the execution worktree to that exact authority head.
+This does not complete the remote operational path or reviewed release; all
+switches remain false. The
 frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 

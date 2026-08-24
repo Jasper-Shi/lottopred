@@ -54,6 +54,10 @@ affected documentation in the same change.
 - `src/lotto649/history_publication_cas.py` proves the exact CAS/reread state
   machine only for a self-contained local bare `main`; it is not a network or
   GitHub publication adapter.
+- `src/lotto649/history_publication_github.py` is the disconnected fixed-repository
+  GitHub publisher. It uploads exact content-addressed objects, attempts one
+  `updateRefs` compare-and-swap, rereads `main`, and succeeds only after a fresh
+  anonymous full fetch passes the production history reader.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -139,8 +143,11 @@ only through the verified operational-history seam. `lotto649 bootstrap` remains
 blocked until the reviewed collector is connected to a remote exact-CAS
 registry publisher, the remote authority reload succeeds, and the execution
 worktree is handed to the published authority head; it must never fall back to
-the legacy processed CSV. The collector, offline preparer, and local bare CAS
-are separately testable components and do not authorize this execution path.
+the legacy processed CSV. The collector, offline preparer, local bare CAS, and
+disconnected GitHub publisher are separately testable components. The GitHub
+publisher still requires protected-main configuration, a disposable-repository
+OID/CAS canary, workflow orchestration, and the post-publication worktree
+handoff; none of these components authorizes this execution path.
 
 Live forward cycle:
 

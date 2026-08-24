@@ -4,10 +4,12 @@
 
 Protocol version: `lotto649-history-pin-registry-event-v1`.
 
-The reader, one-event genesis migration, offline dual-source preparation seam,
-and local bare-repository compare-and-swap adapter are implemented. Network
-source acquisition, a remote/GitHub compare-and-swap adapter, workflow
-integration, and the reviewed execution release are not implemented. Therefore
+The reader, one-event genesis migration, network source collector, offline
+dual-source preparation seam, local bare-repository compare-and-swap adapter,
+and disconnected fixed-repository GitHub publisher are implemented. The GitHub
+publisher is not workflow-integrated and has not yet passed the required
+disposable-repository object-OID/CAS canary or post-publication execution
+handoff. Therefore
 `data.refresh_enabled`, `backtest.enabled`, and `live.enabled` remain `false`;
 this protocol does not authorize execution or claim remote publication safety.
 
@@ -181,9 +183,35 @@ unreadable ref returns a typed non-success; there is no retry, merge, or force.
 
 This local adapter proves the state machine against one local bare authority.
 It does not prove GitHub branch-protection, receive-pack, API, credential, or
-remote acknowledgement semantics. A future remote adapter must freeze and test
-its own exact CAS contract rather than treating an ordinary non-force push as
-equivalent.
+remote acknowledgement semantics.
+
+The disconnected GitHub seam is
+`publish_prepared_history_to_github(prepared, token=...) -> PublicationReceipt`.
+Its public entry point fixes `Jasper-Shi/lottopred` and `refs/heads/main`; callers
+cannot inject a repository or substitute the post-publication loader. Before
+any upload it freezes and rehashes the exact local blob, tree, and commit objects
+for `E`, `S`, and `P`; verifies repository identity, SHA-1 object format, and
+protected-main force/deletion policy; then requires every Git Database REST
+response OID to equal the prepared OID. It attempts GraphQL `updateRefs` exactly
+once with `beforeOid=B`, `afterOid=P`, and `force=false`. Any acknowledgement,
+error, or timeout is followed by an authoritative ref reread. A successful
+return additionally requires a new anonymous full bare fetch of public `main`
+at exact `P` and a production-reader reload. It never uses an ordinary push,
+force, merge, rebase, temporary ref, or the prepared repository as remote proof.
+
+This code seam alone does not prove GitHub token permissions, branch-rule
+compatibility, REST commit serialization, unattached-object visibility, or
+remote read-after-write behavior. Before workflow integration, an authorized
+disposable repository must prove exact returned OIDs for all `B -> E -> S -> P`
+objects, one successful and one stale `updateRefs` CAS, protected-main behavior,
+and a fresh public reload. Production `main` protection must also be configured
+and independently verified.
+
+The REST protection preflight requires repository Administration read, while
+Git object installation requires Contents write. The built-in Actions token is
+not assumed to satisfy that combination. The canary/release review must select
+and prove the narrow credential and permissions without placing it in Git,
+logs, subprocess arguments, receipts, or exception text.
 
 ## Reader guarantees
 
@@ -228,10 +256,11 @@ with an external signed checkpoint/witness; do not silently broaden v1 claims.
 
 ## Release rule
 
-Merging the reader, official-source collector, and offline/local publication
-components does not reopen execution. The next implementation phase is a
-remote/GitHub exact-CAS publisher, post-publication authority reload, and
-execution-worktree handoff that orchestrate those disconnected seams. Only a
-later, independently reviewed release may change the exact disabled config bytes
-and the SHA-bound workflow execution plan. Until then all three runtime switches
-and all workflow stages remain false.
+Merging the reader, official-source collector, offline/local publication
+components, and disconnected GitHub publisher does not reopen execution. The
+next implementation phase is the authorized disposable-remote canary,
+protected-main verification, collector/publisher orchestration, and
+post-publication execution-worktree handoff. Only a later, independently
+reviewed release may change the exact disabled config bytes and the SHA-bound
+workflow execution plan. Until then all three runtime switches and all workflow
+stages remain false.
