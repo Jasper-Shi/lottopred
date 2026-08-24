@@ -77,7 +77,7 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > credentials. Only the protected canary step receives the dedicated
 > publication credential, and it calls only
 > `orchestrate_github_live_cycle(*, token=...)`; no CLI, ordinary Git push,
-> automatic retry after worker start, or schedule is present. `workflow_dispatch`
+> automatic retry after worker start, or unattended live schedule is present. `workflow_dispatch`
 > requires `expected_sha`, the canonical 40-hex production `main` dispatch
 > target established by independent review. No dispatch SHA is approved yet;
 > neither the candidate nor activation merge ancestor is that value. The plan
@@ -86,7 +86,7 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > repository/event/ref/checkout mismatch, or early time writes all-false outputs
 > and fails red. The publication credential is not installed, and the hard
 > `2026-08-27T15:15:00Z` plus dual-official-source gate is pending. No manual
-> dispatch has run and no schedule exists. A first successful P or A advance
+> dispatch has run and no unattended live schedule exists. A first successful P or A advance
 > invalidates the approved SHA and blocks rerun. Stage 2 is a separate PR after
 > canary success and evidence review.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
@@ -214,6 +214,12 @@ The configured workflows are:
   credentials, `expected_sha` is a required input, and only the protected canary
   step receives the dedicated publication secret.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
+- `research-progress-email.yml`: configured hourly (`17 * * * *`) Chinese
+  committed-state report. It is read-only, uses a full-history checkout with
+  `persist-credentials=false`, loads history through the production
+  `load_published_history(HEAD)` authority, and passes only the two SMTP
+  secrets to its send step. It neither runs nor imports live refresh, model,
+  backtest, or data-refresh entry points and does not query the GitHub API.
 - `research-v2-fast.yml` and `research-v2-v4.yml`: historical branch-specific
   research workflows retained for auditability.
 
@@ -222,6 +228,14 @@ The last committed pre-hold live-cycle boundary is `main` commit
 evaluations and froze the 2026-08-26 predictions. Its parent `0ef1883` appended
 the 2026-08-19 evaluations and froze the 2026-08-22 predictions. Those artifacts
 remain immutable during the hold.
+
+The latest committed `ensemble v1.0.0` evaluation, for 2026-08-22, records
+Top-6/12/18 as `2/3/3`. Its source prediction records 4,433 input draws through
+2026-08-19, while the production published-history authority reconstructs 4,443
+draws through that date. The hourly report therefore labels this
+incident-affected, pre-incident/legacy malformed-history cohort
+`descriptive-only` and `nonpromotion`; it must not silently present the hits as
+corrected-history or promotion evidence.
 
 The 2026-08-26 cohort is now sealed by
 `evidence/data_integrity/DI-2026-08-20-registered-history/legacy-2026-08-26-prediction-cohort.json`.
@@ -255,6 +269,31 @@ publication. The dedicated email smoke workflow treats a false send as a
 failure so configuration can be tested explicitly. After the private P worker
 starts, any orchestration failure receives no automatic retry because an email
 may already have left the process.
+
+The hourly progress workflow is independent of the Codex/chat thread and of a
+Codex Goal or live worker. Its concurrency group serializes only this email job
+and does not cancel an in-progress run. It accepts only the first scheduled `main`
+attempt (`GITHUB_RUN_ATTEMPT=1`), exact checkout/workflow SHA, and fixed workflow
+identity. It reads only committed facts, labels current PR/CI, remote protection,
+and Codex in-flight work as not queried, and sends at most once with no retry.
+An SMTP false result or exception makes this email job red; unlike a live hit
+alert, it has no model/artifact work to preserve. The body is built before SMTP
+and never claims successful delivery. Setup installs only the reviewed
+hash-locked wheels in `requirements/research-progress-email.txt` with
+`--require-hashes --only-binary=:all:`. They are the narrow transitive imports
+needed by the production history loader; after setup, the only intended network
+side effect is SMTP.
+The cron is a scheduling request, not a punctual real-time guarantee. This
+workflow is configured but not yet operationally proven; that wording may be
+changed only after the merged workflow's first scheduled run is verified.
+`GITHUB_RUN_NUMBER` is rendered as “第 N 次更新,” not as elapsed research hours.
+The UTC report-generation instant is captured inside the process and is kept
+separate from the committed evidence timestamp; it is not claimed to be the
+GitHub service start time. Without a cross-run cursor, the report does not claim
+whether an evaluation was added “this hour.” It instead reports the pending
+latest prediction and the latest committed evaluation separately. Its displayed
+hit counts are recomputed from the matching committed prediction and the
+production published-history draw; inconsistent evaluation JSON fails closed.
 
 Current alert thresholds in `config.yaml` are final-combination hits `>= 4` or
 Top-12 hits `>= 5`.
