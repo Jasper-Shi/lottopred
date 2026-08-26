@@ -651,10 +651,27 @@ def test_new_ensemble_ticket_is_emailed_once_after_verified_a_publication(
         "publish_frozen_execution_artifacts_to_github",
         publish_artifacts,
     )
+    load_recommendation = orchestration._load_frozen_purchase_recommendation
+
+    def read_published_recommendation(observed_artifacts, *, workspace):
+        events.append("read-A")
+        return load_recommendation(observed_artifacts, workspace=workspace)
+
+    monkeypatch.setattr(
+        orchestration,
+        "_load_frozen_purchase_recommendation",
+        read_published_recommendation,
+    )
 
     receipt = orchestration.orchestrate_github_live_cycle(token="secret")
 
-    assert events == ["context-enter", "publish-A", "smtp", "context-exit"]
+    assert events == [
+        "context-enter",
+        "publish-A",
+        "read-A",
+        "smtp",
+        "context-exit",
+    ]
     assert receipt.purchase_recommendation.target_draw_date.isoformat() == "2026-08-29"
     assert receipt.purchase_recommendation.final_combination == (1, 2, 3, 4, 5, 6)
     assert receipt.purchase_recommendation.artifact_commit == artifact_commit

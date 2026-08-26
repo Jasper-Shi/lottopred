@@ -977,14 +977,14 @@ def orchestrate_github_live_cycle(*, token: str) -> LiveCycleReceipt:
             manifest=manifest,
             created_at=artifact_time,
         )
-        recommendation = _load_frozen_purchase_recommendation(
-            artifacts,
-            workspace=workspace,
-        )
         a_receipt = _validate_a_receipt(
             publish_frozen_execution_artifacts_to_github(artifacts, token=token),
             artifacts=artifacts,
             p_history=p_receipt.history,
+        )
+        recommendation = _load_frozen_purchase_recommendation(
+            artifacts,
+            workspace=workspace,
         )
         recommendation_email_attempted = False
         recommendation_email_sent = False
