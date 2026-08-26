@@ -5,6 +5,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 import hashlib
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -29,6 +30,7 @@ from lotto649.official_source_collection import OfficialSourceCollection
 from lotto649.operational_history import load_published_history
 
 import lotto649.live_orchestration as orchestration
+from lotto649 import notification
 from lotto649 import live
 
 
@@ -39,7 +41,7 @@ S = "3" * 40
 P = "4" * 40
 A = "5" * 40
 CREATED_AT = datetime(2026, 8, 27, 12, tzinfo=UTC)
-OUTPUT_PATH = "predictions/2026-08-29__candidate__v1.0.0.json"
+OUTPUT_PATH = "evaluations/2026-08-26__candidate__v1.0.0.json"
 
 
 def _base_history():
@@ -142,6 +144,21 @@ def _artifacts():
     object.__setattr__(artifacts, "created_at", CREATED_AT)
     object.__setattr__(artifacts, "_capability", object())
     return artifacts
+
+
+def _purchase_recommendation():
+    return notification.PublishedPreDrawRecommendation(
+        target_draw_date=orchestration.next_draw_date(
+            _published_history(_base_history()).draws[-1].draw_date
+        ),
+        generated_at=CREATED_AT,
+        model_name="ensemble",
+        model_version="v1.0.0",
+        final_combination=(1, 2, 3, 4, 5, 6),
+        snapshot_path="predictions/2026-08-29__ensemble__v1.0.0.json",
+        snapshot_sha256="d" * 64,
+        artifact_commit=A,
+    )
 
 
 def _fixture_ports(events: list[str], monkeypatch):
@@ -300,6 +317,9 @@ def test_full_cycle_success_preserves_order_and_context_through_a_publication(
     assert receipt.history_publication.publication_commit == P
     assert receipt.artifact_publication.artifact_commit == A
     assert receipt.output_paths == (OUTPUT_PATH,)
+    assert receipt.purchase_recommendation is None
+    assert receipt.purchase_recommendation_email_attempted is False
+    assert receipt.purchase_recommendation_email_sent is False
     assert events == [
         "load-B",
         "collect",
@@ -311,6 +331,458 @@ def test_full_cycle_success_preserves_order_and_context_through_a_publication(
         "publish-A",
         "context-exit",
     ]
+
+
+def test_new_ensemble_ticket_is_emailed_once_after_verified_a_publication(
+    monkeypatch,
+    tmp_path,
+):
+    repository = tmp_path / "repository"
+    subprocess.run(
+        ["git", "init", "--quiet", str(repository)],
+        check=True,
+        capture_output=True,
+    )
+    (repository / "config.yaml").write_bytes((ROOT / "config.yaml").read_bytes())
+    (repository / "authority.txt").write_text("B\n", encoding="ascii")
+    environment = os.environ.copy()
+    environment.update(
+        {
+            "GIT_AUTHOR_EMAIL": "test@example.invalid",
+            "GIT_AUTHOR_NAME": "Test",
+            "GIT_COMMITTER_EMAIL": "test@example.invalid",
+            "GIT_COMMITTER_NAME": "Test",
+        }
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "add", "config.yaml", "authority.txt"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "commit", "--quiet", "-m", "base B"],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+    base_commit = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (repository / "authority.txt").write_text("P\n", encoding="ascii")
+    subprocess.run(
+        ["git", "-C", str(repository), "add", "authority.txt"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "commit", "--quiet", "-m", "history P"],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+    publication_commit = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+    output_path = "predictions/2026-08-29__ensemble__v1.0.0.json"
+    prediction = {
+        "final_combination": [1, 2, 3, 4, 5, 6],
+        "generated_at": CREATED_AT.isoformat(),
+        "metadata": {
+            "history_draws": 4445,
+            "history_through": "2026-08-26",
+            "operational_history": {},
+            "role": "primary",
+        },
+        "model_name": "ensemble",
+        "model_version": "v1.0.0",
+        "probabilities": {str(number): 6 / 49 for number in range(1, 50)},
+        "target_draw_date": "2026-08-29",
+        "top6": [1, 2, 3, 4, 5, 6],
+        "top12": list(range(1, 13)),
+        "top18": list(range(1, 19)),
+    }
+    raw_prediction = json.dumps(
+        prediction,
+        indent=2,
+        sort_keys=True,
+    ).encode("utf-8")
+    prediction_path = repository / output_path
+    prediction_path.parent.mkdir()
+    prediction_path.write_bytes(raw_prediction)
+    subprocess.run(
+        ["git", "-C", str(repository), "add", output_path],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repository), "commit", "--quiet", "-m", "artifact A"],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+    artifact_commit = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    artifact_tree = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", f"{artifact_commit}^{{tree}}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    prediction_blob = subprocess.run(
+        ["git", "-C", str(repository), "rev-parse", f"{artifact_commit}:{output_path}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "checkout",
+            "--quiet",
+            "--detach",
+            publication_commit,
+        ],
+        check=True,
+        capture_output=True,
+    )
+    prediction_path.parent.mkdir()
+    prediction_path.write_bytes(b'{"untrusted_worktree_numbers":[41,42,43,44,45,46]}')
+
+    base_history = _base_history()
+    base_history = replace(
+        base_history,
+        registry=replace(
+            base_history.registry,
+            requested_revision=base_commit,
+            resolved_revision=base_commit,
+        ),
+    )
+    published_history = _published_history(base_history)
+    published_history = replace(
+        published_history,
+        registry=replace(
+            published_history.registry,
+            requested_revision=publication_commit,
+            resolved_revision=publication_commit,
+            publication_commit=publication_commit,
+        ),
+        registry_transaction=replace(
+            published_history.registry_transaction,
+            base_commit=base_commit,
+        ),
+    )
+    artifact_history = replace(
+        published_history,
+        registry=replace(
+            published_history.registry,
+            requested_revision=artifact_commit,
+            resolved_revision=artifact_commit,
+        ),
+    )
+    prepared = PreparedPublication(
+        repository,
+        base_commit,
+        E,
+        S,
+        publication_commit,
+        published_history.draws[-1].draw_date,
+        "7" * 64,
+        "a" * 64,
+    )
+    p_receipt = PublicationReceipt(
+        base_commit,
+        publication_commit,
+        base_commit,
+        publication_commit,
+        CasAck(CasStatus.APPLIED),
+        PublicationOutcome.ADVANCED,
+        published_history,
+    )
+    workspace = _workspace(published_history)
+    object.__setattr__(workspace, "root", repository)
+    object.__setattr__(workspace, "publication_commit", publication_commit)
+    artifacts = object.__new__(FrozenExecutionArtifacts)
+    object.__setattr__(artifacts, "repository", repository)
+    object.__setattr__(artifacts, "parent_commit", publication_commit)
+    object.__setattr__(artifacts, "tree_oid", artifact_tree)
+    object.__setattr__(artifacts, "artifact_commit", artifact_commit)
+    object.__setattr__(artifacts, "paths", (output_path,))
+    object.__setattr__(
+        artifacts,
+        "files",
+        (
+            FrozenExecutionFile(
+                path=output_path,
+                bytes=len(raw_prediction),
+                sha256=hashlib.sha256(raw_prediction).hexdigest(),
+                git_blob=prediction_blob,
+            ),
+        ),
+    )
+    object.__setattr__(artifacts, "created_at", CREATED_AT)
+    object.__setattr__(artifacts, "_capability", object())
+    a_receipt = ArtifactPublicationReceipt(
+        publication_commit,
+        artifact_commit,
+        publication_commit,
+        artifact_commit,
+        CasAck(CasStatus.APPLIED),
+        PublicationOutcome.ADVANCED,
+        artifact_history,
+    )
+    source_time = CREATED_AT - timedelta(hours=1)
+    collection = OfficialSourceCollection(
+        sources=(
+            RawSource("wclc", "https://wclc.invalid", source_time, b"wclc"),
+            RawSource("loto_quebec", "https://lq.invalid", source_time, b"lq"),
+        ),
+        completed_at=source_time,
+    )
+    events: list[str] = []
+    captured_message = {}
+
+    @contextmanager
+    def open_workspace(_receipt):
+        events.append("context-enter")
+        try:
+            yield workspace
+        finally:
+            events.append("context-exit")
+
+    class SMTP:
+        def __init__(self, host, port, timeout):
+            captured_message["route"] = (host, port, timeout)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def starttls(self):
+            pass
+
+        def login(self, username, password):
+            captured_message["login"] = (username, password)
+
+        def send_message(self, message):
+            events.append("smtp")
+            captured_message["message"] = message
+
+    monkeypatch.setenv("SMTP_USERNAME", "sender@example.test")
+    monkeypatch.setenv("SMTP_PASSWORD", "app-password")
+    monkeypatch.setenv("SMTP_HOST", "hostile.example.test")
+    monkeypatch.setenv("EMAIL_TO", "hostile@example.test")
+    monkeypatch.setattr(notification.smtplib, "SMTP", SMTP)
+    monkeypatch.setattr(
+        orchestration,
+        "_load_production_config",
+        lambda: {
+            "_root": repository,
+            "_authority_head": base_commit,
+            "data": {"refresh_enabled": True},
+            "live": {"enabled": True},
+        },
+    )
+    monkeypatch.setattr(orchestration, "_trusted_utc_now", lambda: CREATED_AT)
+    monkeypatch.setattr(
+        orchestration,
+        "load_operational_history",
+        lambda _cfg: base_history,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "RequestsOfficialSourceHttpClient",
+        lambda: object(),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "collect_official_sources",
+        lambda _target, *, http_client, clock: collection,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "prepare_history_publication",
+        lambda *_args, **_kwargs: prepared,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "publish_prepared_history_to_github",
+        lambda _prepared, *, token: p_receipt,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "open_github_execution_workspace",
+        open_workspace,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "_execute_published_code",
+        lambda _workspace, *, generated_at: orchestration._LiveOutputManifest(
+            publication_commit,
+            (output_path,),
+        ),
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "freeze_execution_outputs",
+        lambda _workspace, _paths, *, created_at: artifacts,
+    )
+
+    def publish_artifacts(_artifacts, *, token):
+        events.append("publish-A")
+        return a_receipt
+
+    monkeypatch.setattr(
+        orchestration,
+        "publish_frozen_execution_artifacts_to_github",
+        publish_artifacts,
+    )
+
+    receipt = orchestration.orchestrate_github_live_cycle(token="secret")
+
+    assert events == ["context-enter", "publish-A", "smtp", "context-exit"]
+    assert receipt.purchase_recommendation.target_draw_date.isoformat() == "2026-08-29"
+    assert receipt.purchase_recommendation.final_combination == (1, 2, 3, 4, 5, 6)
+    assert receipt.purchase_recommendation.artifact_commit == artifact_commit
+    assert receipt.purchase_recommendation_email_attempted is True
+    assert receipt.purchase_recommendation_email_sent is True
+    assert captured_message["route"] == ("smtp.gmail.com", 587, 30)
+    message = captured_message["message"]
+    assert message["To"] == "sender@example.test"
+    assert "2026-08-29" in message["Subject"]
+    body = message.get_content()
+    assert "01、02、03、04、05、06" in body
+    assert "ensemble v1.0.0" in body
+    assert output_path in body
+    assert artifact_commit in body
+    assert "不保证中奖" in body
+    assert "可承受损失" in body
+
+
+def test_already_published_artifact_never_resends_purchase_recommendation(
+    monkeypatch,
+):
+    events: list[str] = []
+    fixture = _fixture_ports(events, monkeypatch)
+    recommendation = _purchase_recommendation()
+    already_published = replace(
+        fixture["a_receipt"],
+        observed_before=A,
+        cas_ack=None,
+        outcome=PublicationOutcome.ALREADY_PUBLISHED,
+    )
+    email_calls = []
+
+    monkeypatch.setattr(
+        orchestration,
+        "_load_frozen_purchase_recommendation",
+        lambda _artifacts, *, workspace: recommendation,
+    )
+
+    def publish_artifacts(_artifacts, *, token):
+        events.append("publish-A")
+        return already_published
+
+    monkeypatch.setattr(
+        orchestration,
+        "publish_frozen_execution_artifacts_to_github",
+        publish_artifacts,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "send_pre_draw_recommendation",
+        lambda observed: email_calls.append(observed) or True,
+    )
+
+    receipt = orchestration.orchestrate_github_live_cycle(token="secret")
+
+    assert receipt.purchase_recommendation == recommendation
+    assert receipt.purchase_recommendation_email_attempted is False
+    assert receipt.purchase_recommendation_email_sent is False
+    assert email_calls == []
+    assert events.count("publish-A") == 1
+
+
+def test_purchase_email_failure_is_recorded_without_retrying_published_cycle(
+    monkeypatch,
+):
+    events: list[str] = []
+    _fixture_ports(events, monkeypatch)
+    recommendation = _purchase_recommendation()
+    email_calls = []
+
+    monkeypatch.setattr(
+        orchestration,
+        "_load_frozen_purchase_recommendation",
+        lambda _artifacts, *, workspace: recommendation,
+    )
+
+    def fail_email(observed):
+        email_calls.append(observed)
+        raise RuntimeError("indeterminate SMTP delivery")
+
+    monkeypatch.setattr(
+        orchestration,
+        "send_pre_draw_recommendation",
+        fail_email,
+    )
+
+    receipt = orchestration.orchestrate_github_live_cycle(token="secret")
+
+    assert receipt.artifact_publication.outcome is PublicationOutcome.ADVANCED
+    assert receipt.purchase_recommendation == recommendation
+    assert receipt.purchase_recommendation_email_attempted is True
+    assert receipt.purchase_recommendation_email_sent is False
+    assert email_calls == [recommendation]
+    assert events.count("publish-A") == 1
+
+
+def test_purchase_recommendation_is_not_sent_on_or_after_draw_date(monkeypatch):
+    events: list[str] = []
+    _fixture_ports(events, monkeypatch)
+    recommendation = _purchase_recommendation()
+    email_calls = []
+    clock_values = iter(
+        (
+            CREATED_AT,
+            CREATED_AT,
+            datetime(2026, 8, 29, 4, tzinfo=UTC),
+        )
+    )
+
+    monkeypatch.setattr(orchestration, "_trusted_utc_now", lambda: next(clock_values))
+    monkeypatch.setattr(
+        orchestration,
+        "_load_frozen_purchase_recommendation",
+        lambda _artifacts, *, workspace: recommendation,
+    )
+    monkeypatch.setattr(
+        orchestration,
+        "send_pre_draw_recommendation",
+        lambda observed: email_calls.append(observed) or True,
+    )
+
+    receipt = orchestration.orchestrate_github_live_cycle(token="secret")
+
+    assert receipt.purchase_recommendation == recommendation
+    assert receipt.purchase_recommendation_email_attempted is False
+    assert receipt.purchase_recommendation_email_sent is False
+    assert email_calls == []
+    assert events.count("publish-A") == 1
 
 
 def test_live_module_has_no_aggregate_output_bypass():

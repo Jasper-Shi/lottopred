@@ -56,9 +56,13 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > `2fe56a40532f7be2586a5cfc004699561556e849`; it
 > composes collect through remote P publication/reload, a fresh detached-P
 > handoff, private exact-P worker execution, A freezing, and remote A
-> publication/reread/fresh reload. It reads literal-B configuration and trusted
-> clocks internally and exposes no caller-injectable configuration, clock, or
-> adapter seam. The private worker has no standalone entry point, and the
+> publication/reread/fresh reload. After a new A passes that boundary, it reads
+> the exact A primary `ensemble` blob and makes one fixed-route Chinese pre-draw
+> email attempt with the target date and final six numbers. Repeated A, mutable
+> worktree bytes, shadow models, and the target date or later are not sendable.
+> It reads literal-B configuration and trusted clocks internally and exposes no
+> caller-injectable configuration, clock, or adapter seam. The private worker
+> has no standalone entry point, and the
 > parent binds the worker plus its imported `lotto649` source modules to P.
 > It remains unimported by every CLI. PR #32 fixed due-prediction provenance by
 > proving each prediction's unique immutable origin across the complete commit
@@ -167,7 +171,12 @@ predictions for the next Wednesday or Saturday only inside the isolated
 workspace obtained after the remote publisher installs P and a fresh authority
 reload succeeds. That context must remain open until the exact artifact commit
 A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
-legacy CLI `bootstrap` and `live` commands remain stopped by the writer
+new-A path then attempts one Chinese email for the exact primary `ensemble`
+snapshot, naming the target date and frozen final combination. An SMTP failure
+does not invalidate A and is not retried; an `ALREADY_PUBLISHED` receipt does
+not resend. This behavior is covered by offline tests but has not sent a real
+recommendation because the Stage-1 production canary has not run. The legacy
+CLI `bootstrap` and `live` commands remain stopped by the writer
 interlock under the Stage-1 true-toggle configuration. Backtest remains false and
 unauthorized. The Stage-1 workflow can reach only the public orchestrator after
 its exact digest, repository, ref, event, future independently approved exact
@@ -304,6 +313,14 @@ publication. The dedicated email smoke workflow treats a false send as a
 failure so configuration can be tested explicitly. After the private P worker
 starts, any orchestration failure receives no automatic retry because an email
 may already have left the process.
+
+The post-A purchase-reference message has a stricter fixed route: it always
+uses Gmail with `SMTP_USERNAME` as both sender and recipient and ignores all
+optional route/address overrides. Its source is the exact newly published A
+`ensemble` blob. The orchestration receipt records attempted/sent booleans;
+missing secrets, false return, or exception leave A intact and do not trigger a
+retry. `ALREADY_PUBLISHED` and the Toronto target date or later skip sending.
+No real message or new prediction has been produced by this code path yet.
 
 The hourly progress workflow is independent of the Codex/chat thread and of a
 Codex Goal or live worker. Its concurrency group serializes only this email job

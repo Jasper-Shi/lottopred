@@ -164,9 +164,14 @@ state machine: load configuration from literal B, load B
 history, collect both sources, prepare and remotely publish `B -> E -> S -> P`,
 freshly reload P, open the isolated detached-P workspace, execute the private
 P worker, freeze its exact outputs in A, publish exact `P -> A`, and require the
-final reread plus fresh A reload before returning success. Its public boundary
-accepts only the GitHub token. Configuration, UTC clocks, adapters, repository,
-and ref are fixed internally rather than supplied by a caller.
+final reread plus fresh A reload before returning success. If that newly
+published A contains the configured primary `ensemble` snapshot, the parent
+then reads the exact A blob—not the mutable worktree—and makes one fixed-route
+Chinese SMTP attempt containing its target draw date and final six numbers.
+An `ALREADY_PUBLISHED` A receipt never resends it, and the draw-date cutoff is
+evaluated in `America/Toronto`. Its public boundary accepts only the GitHub
+token. Configuration, UTC clocks, adapters, repository, and ref are fixed
+internally rather than supplied by a caller.
 
 The parent launches `src/lotto649/_live_worker.py` with isolated Python flags
 from the detached P workspace, verifies that worker before and after execution,
@@ -239,6 +244,12 @@ freeze exact files into A with sole parent P
      |
      v
 exact-CAS P -> A; reread A; fresh authority reload
+     |
+     v
+read exact A primary ensemble final six
+     |
+     v
+one pre-draw Chinese Gmail attempt (new A only)
 ```
 
 Only the remotely published and reloaded A commit creates the external audit
@@ -251,6 +262,14 @@ every reachable descendant and absent everywhere outside that origin cone, and
 requires the origin to lie on the publication base's first-parent history. A
 structurally valid post-draw, rewritten, re-added, side-branch, or
 merge-introduced prediction cannot be wrapped in a successful evaluation.
+
+The purchase-reference email is downstream of that audit boundary. It is not
+sent for a shadow model, an arbitrary model, a worktree replacement, a missing
+ensemble snapshot, a repeated A, or on/after the target date in Toronto. Missing
+SMTP credentials, a false send result, or an SMTP exception is recorded in the
+cycle receipt but never rolls A back and never causes an automatic retry. This
+notification reports an experimental frozen combination; it is not evidence of
+a predictive edge or a guarantee of a win.
 
 The seven immutable 2026-08-26 snapshots are a closed exception because their
 origin predates the corrected operational registry. Their exact cohort,
