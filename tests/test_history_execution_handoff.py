@@ -353,11 +353,47 @@ def _candidate(
             check=True,
             capture_output=True,
         )
+    # Keep the synthetic pre-draw origin valid after the real repository's
+    # commit clock passes this fixture's historical target date.
+    unanchored = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+    unanchored_history = load_published_history(repository, unanchored)
+    target = _next_draw_date(unanchored_history.draws[-1].draw_date)
+    anchor_at = datetime.combine(
+        target - timedelta(days=2),
+        datetime.min.time(),
+        UTC,
+    ).replace(hour=12)
+    anchor_environment = os.environ.copy()
+    anchor_environment.update(
+        {
+            "GIT_AUTHOR_DATE": anchor_at.isoformat(),
+            "GIT_COMMITTER_DATE": anchor_at.isoformat(),
+        }
+    )
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "-c",
+            "user.name=handoff-test",
+            "-c",
+            "user.email=handoff-test@lotto649.invalid",
+            "commit",
+            "--allow-empty",
+            "--quiet",
+            "-m",
+            "anchor handoff fixture chronology",
+        ],
+        check=True,
+        capture_output=True,
+        env=anchor_environment,
+    )
     initial = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
     if prediction_history_attack in {"side_add", "side_conflict"}:
         _git(repository, "branch", "handoff-attack-side", initial)
     base_history = load_published_history(repository, initial)
-    target = _next_draw_date(base_history.draws[-1].draw_date)
+    assert target == _next_draw_date(base_history.draws[-1].draw_date)
     generated_at = datetime.combine(
         target + timedelta(days=1 if source_prediction_after_draw else -1),
         datetime.min.time(),

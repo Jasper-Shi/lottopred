@@ -372,11 +372,25 @@ Gmail host/port and same-account sender/recipient defaults. The optional
 host/address overrides remain available only to manual or legacy email paths;
 they are outside the reviewed worker boundary.
 
+After a new A commit is remotely installed, reread, and freshly reloaded, the
+parent orchestration reads the exact primary `ensemble` prediction blob from A
+and attempts one Chinese pre-draw email. The message includes the target draw
+date, the sorted final six numbers, model/version, immutable snapshot path, and
+A commit. It always uses `smtp.gmail.com:587` with `SMTP_USERNAME` as both
+sender and recipient; `SMTP_HOST`, `SMTP_PORT`, `EMAIL_FROM`, and `EMAIL_TO`
+cannot redirect this purchase-reference message. A worktree file is never its
+source. `ALREADY_PUBLISHED` skips the send, and no attempt is made on or after
+the target date in Toronto.
+
 For `SMTP_PASSWORD`, use a Google **App Password**, not the account's normal sign-in password. Google App Password availability normally requires 2-Step Verification on the Google account.
 
 Missing email secrets or an SMTP exception do not stop backtesting, evaluation,
 prediction, or artifact publication; email is a side effect only. A threshold
-evaluation records `email_sent=false` when delivery raises.
+evaluation records `email_sent=false` when delivery raises. For the post-A
+purchase-reference message, the cycle receipt records both whether SMTP was
+attempted and whether it returned success. False, missing-secret, and exception
+outcomes do not roll back the already-published A and are never retried
+automatically; the delivery may be indeterminate after SMTP accepts a message.
 
 `research-progress-email.yml` is a separate read-only status job. It runs
 `python -m lotto649.research_progress_email` with `PYTHONPATH=src` after
@@ -438,6 +452,9 @@ Parser raises rather than proceeding with a suspiciously small or discontinuous 
 
 The evaluation/prediction state remains valid. SMTP is not part of model state;
 the evaluation records `email_sent=false` and the isolated worker continues.
+Likewise, failure of the one post-A purchase-reference email leaves A valid,
+records a failed attempt in the orchestration receipt, and does not replay the
+live cycle. An already-published A is never used to resend that email.
 That live-alert rule does not apply to the standalone hourly status job: its
 only intended result is the email, so SMTP failure fails the Actions job red and
 is not retried.

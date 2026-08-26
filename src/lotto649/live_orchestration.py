@@ -16,6 +16,7 @@ from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import yaml
 
@@ -50,6 +51,10 @@ from .official_source_collection import (
     RequestsOfficialSourceHttpClient,
     collect_official_sources,
 )
+from .notification import (
+    PublishedPreDrawRecommendation,
+    send_pre_draw_recommendation,
+)
 from .operational_history import PublishedHistory, load_operational_history
 
 _OID_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -70,6 +75,7 @@ _MAX_MANIFEST_BYTES = 64 * 1024
 _MAX_WORKER_BYTES = 256 * 1024
 _WORKER_PATH = "src/lotto649/_live_worker.py"
 _SMTP_ENVIRONMENT = ("SMTP_PASSWORD", "SMTP_USERNAME")
+_DRAW_TIME_ZONE = ZoneInfo("America/Toronto")
 _TRUSTED_PATH = "/usr/bin:/bin"
 _FIXED_SUBPROCESS_ENVIRONMENT = {
     "GIT_CONFIG_COUNT": "0",
@@ -119,6 +125,9 @@ class LiveCycleReceipt:
     history_publication: PublicationReceipt
     artifact_publication: ArtifactPublicationReceipt
     output_paths: tuple[str, ...]
+    purchase_recommendation: PublishedPreDrawRecommendation | None
+    purchase_recommendation_email_attempted: bool
+    purchase_recommendation_email_sent: bool
 
 
 @dataclass(frozen=True)
@@ -718,6 +727,135 @@ def _validate_artifacts(
     return artifacts
 
 
+def _load_frozen_purchase_recommendation(
+    artifacts: FrozenExecutionArtifacts,
+    *,
+    workspace: ExecutionWorkspace,
+) -> PublishedPreDrawRecommendation | None:
+    prediction_paths = tuple(
+        path for path in artifacts.paths if path.startswith("predictions/")
+    )
+    if not prediction_paths:
+        return None
+    try:
+        raw_config = _p_git_bytes(
+            workspace.root,
+            "cat-file",
+            "blob",
+            f"{workspace.publication_commit}:config.yaml",
+        )
+        config = yaml.safe_load(raw_config)
+        project = config["project"]
+        live_config = config["live"]
+        version = project["model_version"]
+        models = live_config["models"]
+        shadow_models = live_config["shadow_models"]
+        if (
+            type(config) is not dict
+            or type(project) is not dict
+            or type(live_config) is not dict
+            or type(version) is not str
+            or type(models) is not list
+            or any(type(model) is not str for model in models)
+            or len(models) != len(set(models))
+            or "ensemble" not in models
+            or type(shadow_models) is not list
+            or any(type(model) is not str for model in shadow_models)
+            or "ensemble" in shadow_models
+            or not workspace.history.draws
+        ):
+            raise ValueError("configured recommendation identity")
+        target = next_draw_date(workspace.history.draws[-1].draw_date)
+        relative = f"predictions/{target.isoformat()}__ensemble__{version}.json"
+        if relative not in prediction_paths:
+            raise ValueError("ensemble prediction is absent")
+        frozen_files = tuple(file for file in artifacts.files if file.path == relative)
+        if len(frozen_files) != 1:
+            raise ValueError("ensemble frozen identity")
+        frozen = frozen_files[0]
+        raw = _p_git_bytes(
+            artifacts.repository,
+            "cat-file",
+            "blob",
+            f"{artifacts.artifact_commit}:{relative}",
+        )
+        listing = _p_git_bytes(
+            artifacts.repository,
+            "ls-tree",
+            "-z",
+            artifacts.artifact_commit,
+            "--",
+            relative,
+        )
+        calculated_blob = hashlib.sha1(
+            f"blob {len(raw)}\0".encode("ascii") + raw,
+            usedforsecurity=False,
+        ).hexdigest()
+        if (
+            len(raw) != frozen.bytes
+            or hashlib.sha256(raw).hexdigest() != frozen.sha256
+            or calculated_blob != frozen.git_blob
+            or listing != f"100644 blob {frozen.git_blob}\t{relative}\0".encode("ascii")
+        ):
+            raise ValueError("ensemble artifact bytes")
+        payload = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_json_constant,
+        )
+        expected_keys = {
+            "final_combination",
+            "generated_at",
+            "metadata",
+            "model_name",
+            "model_version",
+            "probabilities",
+            "target_draw_date",
+            "top6",
+            "top12",
+            "top18",
+        }
+        metadata = payload["metadata"]
+        final = payload["final_combination"]
+        generated_at = datetime.fromisoformat(payload["generated_at"])
+        if (
+            type(payload) is not dict
+            or set(payload) != expected_keys
+            or payload["target_draw_date"] != target.isoformat()
+            or payload["model_name"] != "ensemble"
+            or payload["model_version"] != version
+            or type(metadata) is not dict
+            or metadata.get("role") != "primary"
+            or type(final) is not list
+            or len(final) != 6
+            or any(type(number) is not int for number in final)
+        ):
+            raise ValueError("ensemble prediction payload")
+        return PublishedPreDrawRecommendation(
+            target_draw_date=target,
+            generated_at=generated_at,
+            model_name="ensemble",
+            model_version=version,
+            final_combination=tuple(final),
+            snapshot_path=relative,
+            snapshot_sha256=frozen.sha256,
+            artifact_commit=artifacts.artifact_commit,
+        )
+    except (
+        KeyError,
+        OSError,
+        OverflowError,
+        PublishedCodeExecutionError,
+        RecursionError,
+        TypeError,
+        UnicodeError,
+        ValueError,
+    ) as exc:
+        raise LiveOrchestrationError(
+            "published ensemble recommendation is invalid"
+        ) from exc
+
+
 def _validate_a_receipt(
     receipt: object,
     *,
@@ -844,10 +982,38 @@ def orchestrate_github_live_cycle(*, token: str) -> LiveCycleReceipt:
             artifacts=artifacts,
             p_history=p_receipt.history,
         )
+        recommendation = _load_frozen_purchase_recommendation(
+            artifacts,
+            workspace=workspace,
+        )
+        recommendation_email_attempted = False
+        recommendation_email_sent = False
+        if (
+            recommendation is not None
+            and a_receipt.outcome is not PublicationOutcome.ALREADY_PUBLISHED
+        ):
+            notification_time = _utc_second(
+                _trusted_utc_now,
+                label="pre-draw recommendation",
+            )
+            if (
+                notification_time.astimezone(_DRAW_TIME_ZONE).date()
+                < recommendation.target_draw_date
+            ):
+                recommendation_email_attempted = True
+                try:
+                    recommendation_email_sent = send_pre_draw_recommendation(
+                        recommendation
+                    )
+                except Exception:  # noqa: BLE001 - never replay a published ticket
+                    recommendation_email_sent = False
         return LiveCycleReceipt(
             history_publication=p_receipt,
             artifact_publication=a_receipt,
             output_paths=manifest.paths,
+            purchase_recommendation=recommendation,
+            purchase_recommendation_email_attempted=recommendation_email_attempted,
+            purchase_recommendation_email_sent=recommendation_email_sent,
         )
 
 

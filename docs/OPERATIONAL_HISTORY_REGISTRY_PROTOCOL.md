@@ -356,6 +356,14 @@ boundary. An SMTP exception records `email_sent=false` and processing
 continues. Once worker execution starts, no failure is retried automatically
 because notification may already have caused an external side effect.
 
+Only after a new A is remotely installed and freshly verified, the parent reads
+the exact A blob for the configured primary `ensemble` snapshot and makes one
+fixed-Gmail Chinese pre-draw email attempt with its target date and final six.
+The worktree is not an authority for this message. `ALREADY_PUBLISHED`, a
+shadow/arbitrary model, or the Toronto target date and later cannot send. A
+missing secret, false SMTP result, or exception is recorded in the returned
+cycle receipt, does not invalidate A, and is not automatically retried.
+
 The publishers and orchestration remain disconnected from CLI entry points.
 Stage 1 exposes only the composed public orchestrator through its digest-bound
 manual workflow. Local tests cannot prove GitHub serialization,
