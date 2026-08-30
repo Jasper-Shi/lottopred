@@ -36,8 +36,11 @@ the reviewed `src/lotto649/operational_history.py` seam, which owns the deployed
 Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
-but the historical/backtest gate remains closed. Stage-1 data/live runtime
-gates are armed only for the unrun manual canary described below. The bounded
+but the historical/backtest gate remains closed until a model-specific reviewed
+authorization such as V12.0.1 historical `M_A_H2` is merged. That fixed-history
+authorization is independent of any future live canary. The old Stage-1
+data/live runtime bytes remain present only pending the D0 all-false reseal and
+are not dispatch authority. The bounded
 dual-source collector, offline preparer, and local bare-repository exact-CAS
 adapter now cover source acquisition plus the `B -> E -> S -> P` transaction
 and local state machine as disconnected seams. A fixed-repository GitHub
@@ -55,27 +58,23 @@ authorized disposable remote OID/CAS canary and protected production `main`
 were verified on 2026-08-24. Production `main` contains Stage-1 activation
 merge ancestor `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`.
 
-Stage 1 is a manual-only production canary in state
-`merged_armed_not_executed`: exact config digest
+The original Stage 1 is a manual-only production canary in state
+`merged_armed_expired_unexecuted_pending_D0_reseal`: exact config digest
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`,
 data/live true, backtest false, and no integration, backtest, CLI,
 ordinary-push, automatic post-worker retry, or scheduled execution path. The
 final candidate `5c5dc355ce1bfdae1f467eefa35062aff59d9614`
 passed independent Standards and Spec review with 0 blocker, 0 major, and 0
-minor findings. The remaining pre-dispatch gates are the narrow workflow
-publication credential, independent approval of the exact production `main`
-dispatch SHA, and the hard `2026-08-27T15:15:00Z` plus dual-official-source
-requirement. The credential is not installed, the time/source gate is pending,
-and no dispatch SHA is approved. Manual dispatch requires a future reviewed
-canonical 40-hex SHA as `expected_sha`; neither the candidate nor activation
-merge ancestor is the approval value. The plan stores only
-`approved_sha_source=post_merge_review`; dispatch evidence records the reviewed
-value. The guard binds it to both `GITHUB_SHA` and checkout HEAD. No canary has
-run and no schedule exists. A successful P or A advance makes the approved SHA
-stale and prevents replay. A separate Stage-2 schedule PR is permitted only
-after the exact production `B -> E -> S -> P -> A` canary succeeds and its
-evidence is reviewed. See `docs/OPERATIONS.md`; no Stage-1 preparation or legacy
-evaluation creates model evidence by itself.
+minor findings. Its fixed 2026-08-27 dispatch window expired without a
+credential, approved production SHA, dispatch, or canary result. It must not be
+run late, re-dated, or reused. D0 must independently reseal its config and
+workflow to all-false before any new live recovery wiring. V12.0.1 registers a
+separate future manual-only live lane with a new fixed canary, identity, and
+authorization chain; that lane still permits no schedule or automatic retry.
+A later unattended schedule remains a distinct release after an exact
+production `B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed.
+See `docs/OPERATIONS.md`; no Stage-1 preparation, live canary, or legacy
+evaluation creates historical model evidence by itself.
 
 Do not silently rerun or overwrite V2–V11 artifacts under their old versions.
 Any corrected-history sensitivity analysis gets a new experiment identity,
@@ -149,29 +148,30 @@ model version and a new prospective counter.
 
 ## Current registered experiment: V12
 
-V12 is frozen at the registration-only stage as
-[`V12_post_rng_parity_composition_transition`](experiments/V12_post_rng_parity_composition_transition.md).
-It is one exact post-RNG parity-composition transition law, not a search across
-structural-set rules. The registered governed authority is production `main`
+The original
+[`V12_post_rng_parity_composition_transition`](experiments/V12_post_rng_parity_composition_transition.md)
+freezes one exact post-RNG parity-composition transition law, not a search across
+structural-set rules. Its governed authority remains production `main`
 `4a617f2c1575a165b42878600753a01ddf2ced03`, which reconstructs 4,444 draws
-through 2026-08-22. The future one-shot historical lane contains exactly 627
-consumed 2020--2025 targets (314/313); every known 2026 result is excluded.
+through 2026-08-22. The one-shot historical lane remains exactly 627 consumed
+2020--2025 targets (314/313); every 2026 result is excluded.
 
-The next permissible work is an independently reviewed implementation commit
-using synthetic fixtures and closed-form oracles only. It remains
-non-executable. Canary source `S_C` adds only the fixed self-reference-free
-success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
-is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
-and the reviewed implementation merge `I` must be strict ancestors of exact
-protected-main authorization base `K`; I and M_C may occur in either order.
-Non-authoritative authorization source `A_s` is K's auth-JSON-only child. The
-normal merge `M_A` has parents K,A_s and a tree identical to A_s.
-Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
-Before local
-claim or governed-history access, the runner must also acquire the single
-repository-global consumption lease at
-`refs/heads/v12-consumption-v12.0.0`. No successful canary evidence exists.
-No V12 forecast or score exists. No report, live role, or prospective cohort
+V12.0.0 is `superseded_unexecuted`: its fixed production-canary route expired
+without execution, which is neither a scientific rejection nor consumed model
+evidence. The outcome-blind
+[`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
+retains the same H12 statistical fingerprint and creates new operational
+identities. It is registration-only, not implemented, not authorized, not
+scored, and not activated.
+
+The next historical work is a complete independently reviewed I2 using only
+synthetic fixtures and closed-form oracles, followed by an auth-JSON-only source
+and ordinary protected-main merge `M_A_H2`. Only that merge may authorize a
+fresh exact `refs/heads/v12-consumption-v12.0.1` lease and the single historical
+run. This historical route is deliberately independent of future draw outcomes
+and live-canary success. Production recovery is a separate manual-only lane:
+D0 and I2 precede W2/S2/C2/M_C2/K_L2/`M_A_L2`; no schedule or automatic retry is
+authorized. No V12 forecast, score, report, live role, or prospective cohort
 exists at this checkpoint.
 
 ## Candidate feature families
