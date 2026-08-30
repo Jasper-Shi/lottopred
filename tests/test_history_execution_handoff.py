@@ -333,9 +333,57 @@ def _candidate(
         check=True,
         capture_output=True,
     )
+    source_head = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
+    source_history = load_published_history(repository, source_head)
+    target = _next_draw_date(source_history.draws[-1].draw_date)
+    anchor_at = datetime.combine(
+        target - timedelta(days=2),
+        datetime.min.time(),
+        UTC,
+    ).replace(hour=12)
+    anchor_environment = os.environ.copy()
+    anchor_environment.update(
+        {
+            "GIT_AUTHOR_DATE": anchor_at.isoformat(),
+            "GIT_COMMITTER_DATE": anchor_at.isoformat(),
+        }
+    )
+    anchor = (
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repository),
+                "-c",
+                "user.name=handoff-test",
+                "-c",
+                "user.email=handoff-test@lotto649.invalid",
+                "commit-tree",
+                f"{source_head}^{{tree}}",
+                "-p",
+                source_head,
+                "-m",
+                "create pre-draw handoff fixture anchor",
+            ],
+            check=True,
+            capture_output=True,
+            env=anchor_environment,
+        )
+        .stdout.decode()
+        .strip()
+    )
+    _git(repository, "switch", "--detach", "--quiet", anchor)
     if base_symlink:
         (repository / "unsafe-link").symlink_to("README.md")
         _git(repository, "add", "unsafe-link")
+        symlink_environment = os.environ.copy()
+        symlink_at = anchor_at + timedelta(minutes=1)
+        symlink_environment.update(
+            {
+                "GIT_AUTHOR_DATE": symlink_at.isoformat(),
+                "GIT_COMMITTER_DATE": symlink_at.isoformat(),
+            }
+        )
         subprocess.run(
             [
                 "git",
@@ -352,12 +400,13 @@ def _candidate(
             ],
             check=True,
             capture_output=True,
+            env=symlink_environment,
         )
     initial = _git(repository, "rev-parse", "HEAD").stdout.decode().strip()
     if prediction_history_attack in {"side_add", "side_conflict"}:
         _git(repository, "branch", "handoff-attack-side", initial)
     base_history = load_published_history(repository, initial)
-    target = _next_draw_date(base_history.draws[-1].draw_date)
+    assert _next_draw_date(base_history.draws[-1].draw_date) == target
     generated_at = datetime.combine(
         target + timedelta(days=1 if source_prediction_after_draw else -1),
         datetime.min.time(),

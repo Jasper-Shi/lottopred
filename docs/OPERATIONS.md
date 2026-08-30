@@ -27,8 +27,10 @@ live:
 Production `main` now contains Stage-1 activation merge ancestor
 `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Its deployed config has
 `data.refresh_enabled=true`, `live.enabled=true`, and
-`backtest.enabled=false`. Those true runtime gates are limited by the
-manual-only workflow controls below; no Stage-1 dispatch has run.
+`backtest.enabled=false`. The Stage-1 window expired without execution, so those
+residual true values grant no dispatch authority. D0 must reseal all workflow
+outputs to false before replacement live wiring, and the old plan must not be
+run late or reused.
 
 All three switches are fail closed. Missing keys, YAML nulls, numbers, and
 strings such as `"true"` remain disabled. Literal boolean `true` satisfies only
@@ -53,17 +55,21 @@ ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6
 An exact match still emits `false` for every stage. Any unrecognized byte
 change—including a comment, whitespace, YAML-equivalent key spelling, or
 duplicate key—also emits only `false`. Integration and backtest recognize the
-Stage-1 digest only to remain all-false no-ops; `live.yml` has the separate,
-exact Stage-1 authorization path below. The guard never relies on a partial YAML
-parser. A sealed state cannot fall through to a Git write or other side effect.
+Stage-1 digest only to remain all-false no-ops; `live.yml` retains the expired
+Stage-1 path only as deployed historical state, not as dispatch authority. The
+guard never relies on a partial YAML parser. A sealed state cannot fall through
+to a Git write or other side effect.
 The guard writes its all-false outputs before attempting the hash; a missing or
 unreadable `config.yaml` emits a warning and exits successfully in the same
 sealed state.
 
-### Stage-1 manual production canary
+### Stage-1 manual production canary (expired; do not dispatch)
 
-Stage 1 is `merged_armed_not_executed`, not a completed or currently authorized
-canary. Its exact plan is
+Stage 1 is `merged_armed_expired_unexecuted_pending_D0_reseal`, not a completed
+or currently authorized canary. Its fixed dispatch window expired without an
+attempt. The procedure below is retained only as an audit record and must not be
+run late, re-dated, or reused. D0 must restore all-false config/workflow bytes
+before any new live recovery wiring. Its exact historical plan is
 [`2026-08-27-production-live-canary-plan.json`](../evidence/release_canaries/2026-08-27-production-live-canary-plan.json).
 The merged release changes only the applicable live boundary:
 
@@ -82,25 +88,24 @@ The exact deployed `config.yaml` SHA-256 is:
 d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931
 ```
 
-`.github/workflows/live.yml` has only `workflow_dispatch` and requires its
-`expected_sha` input; it has no unattended live schedule or push trigger. It uses a full-history
-checkout with `persist-credentials=false` and top-level `contents: read`. Its
-guard begins false and may authorize setup plus one protected canary step only
-for the exact config digest, repository, `main` ref, manual event, approved SHA,
-checked-out commit, and trusted UTC not-before value. That step is the only
-consumer of `LOTTO_GITHUB_PUBLICATION_TOKEN`, and it calls only
+`.github/workflows/live.yml` retained only `workflow_dispatch` and required its
+`expected_sha` input; it had no unattended live schedule or push trigger. It
+used a full-history checkout with `persist-credentials=false` and top-level
+`contents: read`. Its guard began false and was designed to authorize one
+protected canary step only for the exact config digest, repository, `main` ref,
+manual event, approved SHA, checked-out commit, and trusted UTC not-before
+value. Expiry removed that authority. The protected step was the only consumer
+of `LOTTO_GITHUB_PUBLICATION_TOKEN`, and it called only
 `orchestrate_github_live_cycle(*, token=...)`. The repository-scoped credential
 is not installed. Integration and backtest remain all-false
 workflow no-ops, backtest stays runtime-disabled, and legacy CLI/bootstrap
 writers remain interlocked. Stage 1 contains no ordinary Git push and no
 automatic retry after the private P worker starts.
 
-No `expected_sha` is approved, and this plan does not guess its value. An
-independent reviewer must approve the exact production `main` dispatch target;
-the operator supplies its canonical lowercase 40-hex SHA and records it in
-dispatch evidence. Neither reviewed candidate
+No `expected_sha` was approved before expiry, and none may be added afterward.
+Neither reviewed candidate
 `5c5dc355ce1bfdae1f467eefa35062aff59d9614` nor activation merge ancestor
-`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` is that authority. The guard
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` was that authority. The guard
 requires
 `expected_sha == GITHUB_SHA == checkout HEAD`. With the exact Stage-1 config,
 an invalid or mismatched SHA, unauthorized repository/event/ref, checkout
@@ -119,10 +124,10 @@ seven 2026-08-26 snapshots. Final Stage-1 candidate
 `5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
 Spec review with 0 blocker, 0 major, and 0 minor findings.
 
-The remaining pre-dispatch blockers are independent approval of the exact
+At expiry, the unfulfilled prerequisites were independent approval of the exact
 production `main` dispatch SHA, installation and verification of the narrow
-publication credential, and the time/source gate. The earliest permitted
-dispatch is
+publication credential, and the time/source gate. The historical earliest
+permitted dispatch was
 `2026-08-27T15:15:00Z`, and both WCLC and Loto-Québec must have independently
 published and agreed on the 2026-08-26 draw. The single attempt must produce
 exact `B -> E -> S -> P -> A` topology. Success requires a fresh authoritative
@@ -137,14 +142,12 @@ corrected result source, while `prediction_source.kind` is
 pinned by manifest SHA-256
 `04f115049f81fa462810a18b756e7d893633b0195705bf27d8e4e5c91d52fc02`.
 
-If the protected worker starts and the canary later fails, do not dispatch it
-again automatically. Audit the acknowledged remote state, then use a reviewed
-forward commit to restore false data/live switches and reseal the workflow;
-never reset, force, or rewrite acknowledged commits. The first successful P or
-A authority advance changes production `main`, so the old reviewed
-`expected_sha` no longer matches and cannot authorize a replay. Stage 2 may add
-the Thursday/Sunday schedule only in a separate PR after Stage-1 succeeds and
-its exact evidence receives independent review.
+The expired plan's registered failure rule was no automatic retry after worker
+start. Any acknowledged remote state would have required audit and a reviewed
+forward reseal, never reset, force, or rewrite. That rule remains historical;
+the plan cannot now be attempted once. V12.0.1's separate future `A_L2` route is
+also manual-only and no-retry. Any Thursday/Sunday schedule requires a later
+release after the replacement canary evidence receives independent review.
 
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:
@@ -205,9 +208,9 @@ token; it reads literal-B configuration, trusted UTC clocks, fixed repository,
 fixed ref, and concrete adapters internally. The private P worker has no
 standalone module or CLI entry point. The parent verifies the worker and every
 loaded `lotto649` source module against exact P before accepting its bounded
-manifest. It is not imported by any CLI. Stage 1 connects only its public
-orchestration boundary to the protected manual workflow; the module does not
-itself change a runtime gate or authorize execution.
+manifest. It is not imported by any CLI. The expired Stage-1 release connected
+only its public orchestration boundary to the protected manual workflow; that
+old wiring and the module itself grant no current execution authority.
 
 ### Remote publication release state
 
@@ -231,17 +234,22 @@ Remote verification on 2026-08-24 established these facts:
 
 The disposable canary used the authenticated operator boundary; it did not
 install or expose a workflow credential. The prediction-origin blocker is
-satisfied by PR #32. The remaining Stage-1 pre-dispatch blockers are:
+satisfied by PR #32. For audit, the prerequisites still unfulfilled when
+Stage-1 expired were:
 
-1. install and verify a repository-scoped publication credential with only the
+1. installation and verification of a repository-scoped publication credential
+   with only the
    Administration-read, Contents-write, and Metadata-read permissions required
    by the reviewed publishers;
-2. independently review and approve the exact production `main` dispatch
-   target, supply its
+2. independent review and approval of the exact production `main` dispatch
+   target, including its
    canonical 40-hex SHA as required `expected_sha`, and record it in dispatch
    evidence;
-3. wait until no earlier than `2026-08-27T15:15:00Z` and verify that WCLC and
-   Loto-Québec have both published and agreed on the 2026-08-26 draw.
+3. satisfaction of the old `2026-08-27T15:15:00Z` time gate and dual-source
+   agreement on the 2026-08-26 draw.
+
+These are historical non-completions, not a remaining checklist. Satisfying
+them now cannot authorize the expired plan.
 
 The Stage-1 candidate itself has already passed independent Standards and Spec
 review at `5c5dc355ce1bfdae1f467eefa35062aff59d9614`, with 0 blocker, 0 major, and
@@ -256,10 +264,11 @@ ordinary push.
 
 Public bootstrap and legacy live entry points remain interlocked. Production
 `main` contains Stage-1 activation merge ancestor `3b72d6f`; the deployed
-data/live runtime gates are literal true only for its separately digest-bound
-manual orchestration call, while backtest remains false. Stage 1 has not run
-and does not prove the remote operational path. The frozen schema and trust
-boundary are in
+data/live runtime gates remain literal true from its expired digest-bound manual
+orchestration route, while backtest remains false. Those bytes are not dispatch
+authority. Stage 1 has not run and does not prove the remote operational path.
+D0 must reseal the remaining true runtime bytes before new live wiring. The
+frozen schema and trust boundary are in
 [`OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`](OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md).
 
 Create or validate the seal only in a permission-isolated repository directory.
@@ -284,8 +293,8 @@ not enough.
    the next canonical suffix and registry events through the exact
    `B -> E -> S -> P` transaction, remotely compare-and-swap `main`, and reload
    that remote revision successfully before evaluation or prediction. The
-   merged orchestration implements this order in code, but the production
-   canary must prove it before Stage 2.
+   merged orchestration implements this order in code, but a replacement
+   production canary must prove it before any later scheduling release.
 3. Offline unit, chronology, integrity, workflow-guard, and lint checks pass.
    Run a network smoke only after source access itself is approved.
 4. The review names exactly which stages are reopening and why, prepares the
@@ -309,35 +318,36 @@ incident-affected legacy forecasts: their hits may be recorded descriptively,
 but they are excluded from corrected-history promotion evidence. Any other
 legacy-like or ambiguous source fails closed.
 
-Stage 1 is merged and armed, but no dispatch SHA is approved and the canary has
-not run. Only a future explicitly authorized one-time Stage-1 manual dispatch
-may proceed after every remaining gate passes; unattended live scheduling
-remains absent until it is added by a separate Stage-2 PR.
+Stage 1 is merged but expired unexecuted. It has no dispatch authority, and no
+late SHA, credential, or source receipt can revive it. D0 must reseal all-false
+outputs before any replacement live wiring. Historical V12.0.1 `A_H2` remains
+independent of D0, W2, future outcomes, and live-canary success; the separate
+future `A_L2` route is manual-only, no-retry, and unscheduled.
 
 ## GitHub Actions workflows
 
 - `test.yml` — runs unit tests on pushes and pull requests.
-- `integration.yml` — remains an all-false no-op in Stage 1; its historical
-  source/model smoke stages are not part of this canary.
+- `integration.yml` — remains an all-false no-op; its historical source/model
+  smoke stages were not part of the expired Stage-1 canary.
 - `backtest.yml` — outside the hold, runs the configured historical walk-forward
   benchmark. Reopening it now requires the reviewed corrected-history consumer;
   no corrected rerun makes the consumed 2020–2025 outcomes blind again.
-- `live.yml` — in Stage 1, requires manual `expected_sha` and exposes only a
-  digest-bound call to `orchestrate_github_live_cycle`; it has no unattended
-  live schedule or push trigger.
+- `live.yml` — retains the expired Stage-1 manual `expected_sha` guard and
+  digest-bound call to `orchestrate_github_live_cycle`, but this wiring has no
+  dispatch authority; it has no unattended live schedule or push trigger and
+  must be resealed by D0 before replacement wiring.
 - `research-progress-email.yml` — requests an hourly run at minute 17 and sends
   one Chinese committed-state status report. It has `contents: read`, a
   full-history checkout, `persist-credentials=false`, no publication token, and
   no push/manual trigger. The cron is a scheduling request and does not
   guarantee punctual or real-time delivery.
 
-During Stage 1, integration and backtest remain sealed. `live.yml` has read-only
-repository permissions, does not persist checkout credentials, begins with
-false guard outputs, and may proceed only for the exact Stage-1 identity/time
-gates, including canonical `expected_sha == GITHUB_SHA == checkout HEAD`.
-Stage-1 identity/time rejection fails red after the false outputs are written.
-The narrow publication token, rather than an ordinary Git push, is the only
-remote write capability passed to the orchestrator.
+Integration and backtest remain sealed. `live.yml` has read-only repository
+permissions, does not persist checkout credentials, and begins with false guard
+outputs. Its expired Stage-1 identity/time checks are retained only as deployed
+history and cannot authorize a late run. D0 must replace the residual live
+state with all-false outputs before W2. Any future `A_L2` implementation remains
+manual-only, no-retry, and unscheduled.
 
 The backtest, integration, and live workflows use full Git history so the
 verified-history loader can resolve its pinned artifact/evidence ancestry if a
@@ -456,9 +466,9 @@ operator audit rather than an unattended replay.
 
 ## Scheduled time
 
-Stage 1 has no unattended live schedule. Its one manual production-canary dispatch is permitted
-no earlier than `2026-08-27T15:15:00Z` and only after both official sources have
-published and agreed on the 2026-08-26 draw. A separate Stage-2 PR may add a
-`15:15 UTC` Thursday/Sunday live schedule after the canary evidence passes
-review. The read-only hourly progress-email schedule is not Stage 2 and does not
-authorize or execute live work.
+The expired Stage-1 plan had no unattended live schedule and was never
+dispatched. Its 2026-08-27 window must not be reused. V12.0.1 registers a new
+manual-only live lane with no automatic retry; any unattended Thursday/Sunday
+schedule remains a separate release after the new canary evidence passes
+review. The read-only hourly progress-email schedule is not a live schedule and
+does not authorize or execute live work.

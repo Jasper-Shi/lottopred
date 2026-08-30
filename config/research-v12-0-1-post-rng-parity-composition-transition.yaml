@@ -1,0 +1,258 @@
+experiment:
+  id: V12_0_1_post_rng_parity_composition_transition_operational_rebinding
+  scientific_family: V12_post_rng_parity_composition_transition
+  model_version: v12.0.1
+  registration_seal: evidence/research_registrations/v12-post-rng-parity-composition-transition-v2.json
+  seed: 649
+  status: registered_not_implemented_not_authorized_not_scored
+
+supersession:
+  closure: evidence/research_closures/v12-post-rng-parity-composition-transition-v1-superseded-unexecuted.json
+  old_model_version: v12.0.0
+  old_status: superseded_unexecuted
+  scientific_disposition: null
+  forbidden_dispositions:
+    - Archive
+    - Reject
+    - consumed
+
+statistical_equivalence:
+  classification: operational_rebinding_only
+  statistical_behavior_changed: false
+  source:
+    model_version: v12.0.0
+    registration_commit: 0af20fc41fc5aaa0879dada0a258797a8bc14e20
+    registration_path: evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json
+    registration_sha256: 4406bd25ee82195bff7a97b258885cb3bb3c1a8fb829f383c5e3c1616e169170
+  fingerprint_sha256: af2e16a55ff0e817cf71208471e19e4f481bed63990f7e41268997c4c4b35c76
+  fingerprint_payload:
+    hypothesis_id: H12
+    seed: 649
+    historical_target_count: 627
+    half_target_counts:
+      - 314
+      - 313
+    primary_metric: mean_top12_main_number_hits_minus_72_over_49
+    gate_count: 10
+    core:
+      path: src/lotto649/models/v12_parity_transition.py
+      sha256: fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77
+    contract_sections:
+      control_null_contract: f050c82f101a17f5126a8a8db61c7f484d83e605f27213b6803306d74fab2d8c
+      controls: cf590452b19f1dfbae0f0fbd2b1db3ce47b290c0011b2889413bdca529f271e0
+      gates: d64633c7179128d0fce76f37ead0f5740ef13e725a941794102ddc0fa00f2396
+      historical_governance: d33abcabd1bfa7548f8eab680d4efab864f52b271e111cab7212a1f0245366fc
+      historical_scope: 7106f906239761694647b3f60f2ce8c5855d5b61ef8e74539b262aacf0a03a65
+      mathematical_contract: 6c2391fa3d58ea1161af90282028e28d787ce52de38cb03e43366d89cf7ed832
+      model: 2a97e0a6e18860c31027828302fb9230ab44bfa1b3a846663fc84c1483d66b7f
+      multiplicity: d0ce22e9e36441d9d497af56c1675f98ee618d83ea1a146a7851a7c8c5e57997
+      notifications: bb1bd1de4219d90b931b3789c33d1df4fdab36d22fb7d0ac4a2becc4eab33af2
+      target_date_identities: 1264cd4fc34cd33bdfdcabba79be6efe3a6902068a17b9ed61d9ee667baccf77
+
+phase_contract:
+  at_R2: all_execution_fail_closed
+  shared_order: R2 < I2
+  historical_lane:
+    authorization: A_H2_absent
+    excluded_live_prerequisites:
+      - D0
+      - W2
+      - S2
+      - C2
+      - M_C2
+      - K_L2
+      - A_L2
+    required_order: R2 < I2 < K_H2 < A_H_s2 < M_A_H2 < L_H2 < run_H2
+  live_lane:
+    authorization: A_L2_absent
+    production_wiring: W2_absent
+    partial_order:
+      - R2 < D0
+      - R2 < I2
+      - D0 < W2
+      - I2 < W2
+      - W2 < S2 < C2 < M_C2 < K_L2 < A_L_s2 < M_A_L2
+
+historical_authorization_contract:
+  authorization: A_H2
+  authorization_prerequisites:
+    - registered_R2_authority
+    - complete_independently_reviewed_I2
+    - protected_remote_main_K_H2
+    - fixed_governed_history_authority
+    - historical_runtime_dependency_closure_frozen_at_I2
+  excluded_prerequisites:
+    - D0
+    - W2
+    - S2
+    - C2
+    - M_C2
+    - K_L2
+    - A_L2
+    - future_draw_outcome
+    - live_canary_success
+  one_shot_execution_prerequisites:
+    - normal_M_A_H2_at_protected_remote_main_HEAD
+    - fresh_exact_v12.0.1_historical_lease
+
+live_authorization_contract:
+  authorization: A_L2
+  authorization_prerequisites:
+    - registered_R2_authority
+    - complete_independently_reviewed_I2
+    - old_stage1_all_false_reseal_D0
+    - complete_W2_digest_bindings
+    - timely_immutable_pre_draw_S2
+    - fresh_exact_v12.0.1_live_canary_lease_before_C2
+    - successful_one_shot_C2
+    - normal_self_reference_free_M_C2
+    - protected_remote_main_K_L2
+    - live_runtime_dependency_closure_frozen_at_W2
+  activation_authority: normal_M_A_L2_at_protected_remote_main_HEAD
+
+old_stage1_reseal_prerequisite:
+  state: required_separate_unimplemented
+  changes_in_r2: []
+  must_precede: W2_and_any_live_recovery_dispatch
+  required_runtime_outputs:
+    backtest: false
+    integration: false
+    live: false
+
+production_wiring_contract:
+  absent_at_R2: true
+  complete_reviewed_I2_required: true
+  may_be_armed_after_I2: true
+  permanent_fail_closed: false
+  runtime_dependency_closure_freezes_at: W2
+  closure_equality_checkpoints:
+    - W2
+    - K_L2
+    - A_L_s2
+    - M_A_L2
+  W2_may_fill_only_digest_bindings:
+    - reviewed_protected_main_commit_sha
+    - config_git_blob_oid
+    - config_sha256
+    - workflow_git_blob_oid
+    - workflow_sha256
+    - live_runtime_dependency_closure_sha256
+  non_digest_W2_fields: prohibited
+
+production_canary_prerequisite:
+  plan_path: evidence/release_canaries/2026-09-10-v12.0.1-production-live-canary-plan.json
+  success_path: evidence/release_canaries/stage1-r2-v12.0.1-production-live-canary-success.json
+  success_state_at_R2: absent
+  fixed_canary_draw: '2026-09-09'
+  fixed_next_prediction_target: '2026-09-12'
+  seed_prediction_freeze:
+    comparison: freeze_time_utc_strictly_less_than_deadline_utc
+    deadline_exclusive: true
+    deadline_utc: '2026-09-09T04:00:00Z'
+    target_day_timezone: America/Toronto
+    target_local_day: '2026-09-09'
+  dispatch_not_before: '2026-09-10T15:15:00Z'
+  dispatch_not_after: '2026-09-11T15:15:00Z'
+  date_roll_forward: prohibited
+  missed_deadline_status: superseded_unexecuted
+  missed_deadline_status_scope: V12.0.1_live_lane_only
+
+expected_implementation_paths:
+  - src/lotto649/models/v12_parity_transition.py
+  - src/lotto649/v12_0_1_evidence.py
+  - src/lotto649/v12_0_1_registered_attempt.py
+  - tools/run_v12_0_1_historical.py
+  - tests/test_v12_0_1_parity_transition.py
+  - tests/test_v12_0_1_registered_attempt.py
+
+canonical_command:
+  - python3.12
+  - tools/run_v12_0_1_historical.py
+  - --consume-v12-0-1-once
+
+artifact_paths:
+  historical_attempt_ledger: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.ledger.jsonl
+  historical_claim: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.claim
+  historical_report_commit: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.commit.json
+  historical_report_commit_staging: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.commit.json.staging
+  historical_report_json: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.json
+  historical_report_json_staging: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.json.staging
+  historical_report_markdown: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.md
+  historical_report_markdown_staging: reports/v12_post_rng_parity_composition_transition_v12.0.1_historical.md.staging
+
+repository_global_attempt_lease:
+  ref: refs/heads/v12-consumption-v12.0.1
+  attempt_limit: 1
+  absence_precondition: fresh_exact_GitHub_404_before_local_claim_history_forecast_or_outcome
+  createRef_attempts: 1
+  automatic_retry: false
+  update_or_delete: prohibited
+
+live_canary_lease:
+  ref: refs/heads/v12-live-canary-v12.0.1
+  attempt_limit: 1
+  createRef_attempts: 1
+  automatic_retry: false
+  update_or_delete: prohibited
+
+runtime:
+  arithmetic: CPython_3.12_IEEE_754_binary64
+  dependency_manifest: requirements/v12-historical.txt
+  dependency_manifest_sha256: a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6
+  pure_core_sha256: fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77
+  historical_dependency_closure_state: absent_until_complete_I2
+  historical_closure_equality_checkpoints:
+    - I2
+    - K_H2
+    - A_H_s2
+    - M_A_H2
+  live_dependency_closure_state: absent_until_complete_W2
+  live_closure_equality_checkpoints:
+    - W2
+    - K_L2
+    - A_L_s2
+    - M_A_L2
+
+outcome_blindness:
+  canonical_attempt_instantiated: false
+  implementation_review_inputs: synthetic_fixtures_and_closed_form_oracles_only
+  live_or_canonical_worker_run: false
+  real_2020_2025_outcomes_read: false
+  real_2026_outcomes_read: false
+  statistical_change_after_outcome_access: prohibited
+
+execution:
+  historical_authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v2-historical.json
+  live_authorization_seal: evidence/research_authorizations/v12-post-rng-parity-composition-transition-v2-live.json
+  pre_authorization: prohibited
+  automatic: false
+  future_historical_authority: only_normal_merge_M_A_H2_at_protected_remote_main_HEAD
+  future_live_authority: only_normal_merge_M_A_L2_at_protected_remote_main_HEAD
+
+live_dispatch_identity:
+  automatic_retry: false
+  branch: main
+  event: workflow_dispatch
+  manual_only: true
+  repository: Jasper-Shi/lottopred
+  schedule: prohibited
+  workflow: .github/workflows/live.yml
+
+repository_documentation_sync:
+  binding: exact_bytes_in_R2_git_authority_tree
+  must_complete_before: R2_authority_commit
+  paths:
+    - AGENTS.md
+    - docs/ARCHITECTURE.md
+    - docs/CODEX_HANDOFF.md
+    - docs/MODEL_PROTOCOL.md
+    - docs/OPERATIONS.md
+    - docs/RESEARCH_ROADMAP.md
+  sha256:
+    AGENTS.md: 332bb70be33d3d02c1b3d534d0c494024dd845b1ce0f4f0cf05e3a43f7e6bfe7
+    docs/ARCHITECTURE.md: ae92bf302bc76814b09c8e91b5ff9e7e8e2bb0909feda31eaaa451c54233c691
+    docs/CODEX_HANDOFF.md: 1e0ed362b2c555fe1e5c9f58b203809dde6cfe5928fc9a1b0b3cc85e73d861ca
+    docs/MODEL_PROTOCOL.md: 5c6f48af7291b37cb742451a0ed69a2638a9aa0d4b86dbcd6e5f4bb74d9e9b0f
+    docs/OPERATIONS.md: b9ab3b8b2cc98fab82e62c27e6a7e72f5bdec417a5c4f43c7795aeb718da7661
+    docs/RESEARCH_ROADMAP.md: f6578ad3a05b92a1d1a1e2b47cd91292a4a61836a26e479866dddd0c214e531a
+  state: completed_by_external_owner_and_sealed_at_R2

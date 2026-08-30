@@ -1,0 +1,192 @@
+{
+  "base": {
+    "clean_head": "1b74e4ed629b26bca4dceda3ec4a93cc09272479",
+    "old_plan": "evidence/release_canaries/2026-08-27-production-live-canary-plan.json",
+    "old_registration_closure": "evidence/research_closures/v12-post-rng-parity-composition-transition-v1-superseded-unexecuted.json",
+    "old_status": "superseded_unexecuted"
+  },
+  "credential": {
+    "installed_at_R2": false,
+    "permissions": [
+      "Administration:read",
+      "Contents:write",
+      "Metadata:read"
+    ],
+    "secret_name": "LOTTO_GITHUB_PUBLICATION_TOKEN",
+    "state": "future_W2_blocker"
+  },
+  "dispatch_authorization": {
+    "approved_sha_stored_in_plan": false,
+    "binding": "expected_sha_equals_github_sha_equals_checkout_head",
+    "source": "future_independent_post_W2_review",
+    "state": "not_available_at_R2"
+  },
+  "execution": {
+    "canary_draw": "2026-09-09",
+    "dispatch_not_after": "2026-09-11T15:15:00Z",
+    "dispatch_not_before": "2026-09-10T15:15:00Z",
+    "entrypoint": "future_complete_I2_production_wiring_only",
+    "next_prediction_target": "2026-09-12",
+    "official_source_gate": {
+      "authorities": [
+        "loto_quebec",
+        "wclc"
+      ],
+      "draw_date": "2026-09-09",
+      "requirement": "both_authorities_publish_and_agree"
+    },
+    "seed_prediction_freeze": {
+      "comparison": "freeze_time_utc_strictly_less_than_deadline_utc",
+      "deadline_exclusive": true,
+      "deadline_utc": "2026-09-09T04:00:00Z",
+      "target_day_timezone": "America/Toronto",
+      "target_local_day": "2026-09-09"
+    },
+    "topology": [
+      "B",
+      "E",
+      "S",
+      "P",
+      "A"
+    ]
+  },
+  "expected_success": {
+    "evaluations": {
+      "count": 7,
+      "models": {
+        "primary": [
+          "random",
+          "long_frequency",
+          "recent_frequency",
+          "ema_gap",
+          "logistic",
+          "ensemble"
+        ],
+        "shadow": [
+          "v3_boosting"
+        ]
+      },
+      "target_draw": "2026-09-09"
+    },
+    "history": {
+      "draw_count": 4449,
+      "history_through": "2026-09-09"
+    },
+    "predictions": {
+      "count": 7,
+      "models": {
+        "primary": [
+          "random",
+          "long_frequency",
+          "recent_frequency",
+          "ema_gap",
+          "logistic",
+          "ensemble"
+        ],
+        "shadow": [
+          "v3_boosting"
+        ]
+      },
+      "target_draw": "2026-09-12"
+    },
+    "preservation": {
+      "all_existing_predictions_byte_identical": true,
+      "late_prediction_creation": "prohibited"
+    }
+  },
+  "expiry": {
+    "automatic_status": "superseded_unexecuted",
+    "date_roll_forward": "prohibited",
+    "dispatch_after_window": "prohibited",
+    "historical_lane_effect": "none",
+    "new_registration_and_version_required": true,
+    "seed_deadline_miss_predicate": "freeze_time_utc_greater_than_or_equal_to_deadline_utc",
+    "status_scope": "V12.0.1_live_lane_only",
+    "trigger_if_dispatch_window_missed": true,
+    "trigger_if_seed_deadline_missed": true
+  },
+  "failure_policy": {
+    "automatic_retry": false,
+    "backdate_or_clock_override": "prohibited",
+    "ordinary_git_push": "prohibited",
+    "partial_acknowledgement": "audit_then_forward_reseal",
+    "rewrite_acknowledged_commits": "prohibited"
+  },
+  "live_dispatch_identity": {
+    "automatic_retry": false,
+    "branch": "main",
+    "event": "workflow_dispatch",
+    "manual_only": true,
+    "repository": "Jasper-Shi/lottopred",
+    "schedule": "prohibited",
+    "workflow": ".github/workflows/live.yml"
+  },
+  "model_version": "v12.0.1",
+  "outcome_blindness": {
+    "candidate_output_used_to_choose_dates": false,
+    "dates_selected_from_calendar_and_operational_lead_time_only": true,
+    "implementation_or_live_run_by_this_plan": false,
+    "registered_target_outcome_access": false
+  },
+  "plan_created_on": "2026-08-30",
+  "prerequisites": {
+    "complete_I2": {
+      "required_before": "W2",
+      "state": "absent_at_R2"
+    },
+    "history_recovery": {
+      "adapter": "future_separately_reviewed_data_only_append_only_exact_CAS",
+      "late_predictions": "prohibited",
+      "must_be_authoritative_through": "2026-09-05",
+      "state": "unresolved_R2_blocker",
+      "v12_execution_or_scoring": "prohibited"
+    },
+    "old_stage1_reseal_D0": {
+      "changes_in_r2": [],
+      "must_precede": "W2_and_any_live_recovery_dispatch",
+      "required_runtime_outputs": {
+        "backtest": false,
+        "integration": false,
+        "live": false
+      },
+      "state": "required_separate_unimplemented"
+    },
+    "seed_S2": {
+      "immutable_pre_draw_predictions": 7,
+      "state": "absent_at_R2",
+      "target_draw": "2026-09-09"
+    },
+    "success_evidence_review": {
+      "state": "future_after_C2",
+      "success_path": "evidence/release_canaries/stage1-r2-v12.0.1-production-live-canary-success.json"
+    }
+  },
+  "production_wiring_W2": {
+    "absent_at_R2": true,
+    "closure_equality_checkpoints": [
+      "W2",
+      "K_L2",
+      "A_L_s2",
+      "M_A_L2"
+    ],
+    "complete_reviewed_I2_required": true,
+    "may_be_armed_after_I2": true,
+    "permanent_fail_closed": false,
+    "runtime_dependency_closure_freezes_at": "W2",
+    "W2_may_fill_only_digest_bindings": [
+      "reviewed_protected_main_commit_sha",
+      "config_git_blob_oid",
+      "config_sha256",
+      "workflow_git_blob_oid",
+      "workflow_sha256",
+      "live_runtime_dependency_closure_sha256"
+    ],
+    "non_digest_W2_fields": "prohibited"
+  },
+  "schema_version": "lotto649-production-live-canary-recovery-plan-v1",
+  "stage": {
+    "id": "stage-1-r2-forward-recovery",
+    "production_wiring_present": false,
+    "status": "registered_not_released"
+  }
+}

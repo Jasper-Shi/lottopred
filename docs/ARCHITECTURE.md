@@ -30,9 +30,10 @@ behind three explicit kill switches. Pre-Stage-1 ancestor
 Production `main` now contains Stage-1 activation merge ancestor
 `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Its deployed configuration has
 `data.refresh_enabled=true`, `live.enabled=true`, and
-`backtest.enabled=false`. Those true runtime gates are armed only for the
-manual, digest-bound production canary described below; they do not authorize
-a CLI, scheduled, integration, or backtest run.
+`backtest.enabled=false`. The fixed manual canary window expired without
+execution, so those residual true values grant no dispatch authority. D0 must
+reseal all three workflow outputs to false before any replacement live wiring;
+the old route must not be run late or reused.
 
 These checks deny by default. A missing key, a non-boolean value, or a value
 other than literal boolean `true` does not enable execution. `bootstrap`
@@ -54,54 +55,57 @@ mode recognizes disabled-config SHA-256
 `ad3237bc57c85013e85dad16d1b6f04f43b50991d666a4b1528bf5b8614a76b6`,
 and even that exact match emits `false` for every execution stage. An
 unrecognized digest also emits only `false`. Integration and backtest likewise
-recognize the Stage-1 digest only to remain all-false no-ops; `live.yml` has the
-separate exact Stage-1 authorization path below. The guard writes all-false
+recognize the Stage-1 digest only to remain all-false no-ops; `live.yml` retains
+the expired Stage-1 path solely as historical deployed state, not as dispatch
+authority. The guard writes all-false
 outputs before hashing; a missing or unreadable `config.yaml` produces a
 warning and a successful sealed exit rather than a traceback that could obscure
 the operational state.
 
-The merged Stage-1 release changes only the live production-canary boundary.
-The exact `config.yaml` SHA-256 is
+The following records the expired Stage-1 design for audit only. The merged
+release changed only the live production-canary boundary. Its plan must not be
+dispatched, re-dated, or reused. The exact `config.yaml` SHA-256 was
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
-Only a manual `workflow_dispatch`, after a read-only full-history checkout and
-fixed repository/ref/commit/time checks, may call
-`orchestrate_github_live_cycle(*, token=...)`. The dedicated publication secret
-is scoped only to that protected step. Integration and backtest remain all-false
-workflow no-ops, the legacy CLI writer interlock remains closed, and there is no
-ordinary Git push or unattended schedule.
+The old route accepted only a manual `workflow_dispatch` after a read-only
+full-history checkout and fixed repository/ref/commit/time checks, and called
+`orchestrate_github_live_cycle(*, token=...)`. Its publication secret was scoped
+only to that protected step. Integration and backtest remained all-false
+workflow no-ops, the legacy CLI writer interlock remained closed, and the route
+had no ordinary Git push or unattended schedule.
 
-The dispatch requires an `expected_sha` input. An independent reviewer must
-establish the exact production `main` dispatch target; the operator supplies
-that canonical lowercase 40-hex value, and the guard requires
+The expired dispatch contract required an `expected_sha` established by
+independent review, supplied as a canonical lowercase 40-hex value, with
 `expected_sha == GITHUB_SHA == checkout HEAD`. Neither reviewed candidate
 `5c5dc355ce1bfdae1f467eefa35062aff59d9614` nor activation merge ancestor
-`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` is an approved dispatch SHA. The
-plan stores only
-`approved_sha_source=post_merge_review`; the actual value belongs in dispatch
-evidence. Once the exact Stage-1 config digest is present, an invalid or
-mismatched SHA, wrong repository/event/ref, inconsistent checkout, or early
-dispatch writes all-false outputs first and then fails the workflow red.
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee` was an approved dispatch SHA. No
+value was approved before expiry. The plan stored only
+`approved_sha_source=post_merge_review`; invalid identity or timing wrote
+all-false outputs first and failed the workflow red.
 
-Stage 1 is `merged_armed_not_executed`. Its final candidate
+The original Stage 1 is
+`merged_armed_expired_unexecuted_pending_D0_reseal`. Its final candidate
 `5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
 Spec review with 0 blocker, 0 major, and 0 minor findings. No manual dispatch
 has run, no dispatch SHA is approved, the repository-scoped publication
-credential is not installed, and the hard not-before/source gate remains
-pending. That gate is `2026-08-27T15:15:00Z` after both WCLC and Loto-Québec
-publish and agree on the 2026-08-26 draw. Success is exact
+credential is not installed, and its fixed 2026-08-27 window expired without a
+dispatch. The old plan must not be run late or reused, and D0 must reseal its
+remaining true runtime bytes before new live wiring. Its registered success
+shape was exact
 `B -> E -> S -> P -> A`, a fresh reload of 4,445 draws through 2026-08-26,
 seven descriptive-only legacy evaluations, and seven immutable 2026-08-29
 predictions. The existing seven 2026-08-26 snapshots remain byte-identical. A
 post-worker failure has no automatic retry. The first successful P or A
-authority advance moves `main`, so the old independently approved
-`expected_sha` fails the next dispatch and blocks a replay. Stage 2 may add
-scheduling only in a separate PR after the canary succeeds and its evidence is
-reviewed.
+authority advance would have moved `main`, so the old independently approved
+`expected_sha` would have failed a second dispatch and blocked replay. V12.0.1
+keeps its historical one-shot `A_H2` authorization independent of D0, W2,
+future outcomes, and the replacement live-canary lane. The separate future
+`A_L2` route is manual-only, has no automatic retry, and authorizes no
+unattended schedule.
 
-This emergency seal is deliberately scoped to the three execution commands on
-main: `bootstrap`, `backtest`, and `live`. It grants no authority for any other
-research execution. Any broader operation must be added to a reviewed incident
-plan rather than inferred from this operational seal.
+The expired emergency seal was deliberately scoped to the three execution
+commands on main: `bootstrap`, `backtest`, and `live`. It now grants no
+execution authority. Any replacement operation must be added through its own
+reviewed incident plan rather than inferred from the old seal.
 
 ## Verified corrected-history boundary
 
@@ -175,8 +179,9 @@ SHA-256. The private worker has no standalone module or CLI entry point. Its
 subprocess environment is scrubbed and admits only `SMTP_USERNAME` and
 `SMTP_PASSWORD`; notification therefore uses fixed Gmail defaults rather than
 optional host, port, sender, or recipient overrides. It remains absent from
-every CLI import path. The merged Stage-1 release connects only this public
-function to the digest-bound manual workflow.
+every CLI import path. The expired Stage-1 release connected only this public
+function to the digest-bound manual workflow; that old wiring has no dispatch
+authority.
 
 Bootstrap and every legacy public live entry point remain quarantined by the
 writer interlock. The disposable remote OID/CAS canary and production `main`
@@ -185,8 +190,9 @@ protection were verified on 2026-08-24. PR #31 merged orchestration as
 prediction-origin proof as
 `60f972b217f7bd23d1b4807e96034db0cfd1fe2e`, now a pre-Stage-1 ancestor.
 Production `main` contains activation merge ancestor
-`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Stage 1 is armed but is not a
-completed production canary; its remaining gates are recorded above. See
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. Stage 1 expired unexecuted and has
+no dispatch authority; D0 must reseal its residual runtime bytes before any new
+live wiring. See
 `OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md` for the exact schema, transaction,
 and trust boundary.
 
@@ -266,10 +272,11 @@ worker starts is fail closed and receives no automatic retry: notification may
 already have produced an external side effect even when the worker cannot
 return a complete manifest.
 
-This path remains dormant until an exact production `main` dispatch SHA is
-independently reviewed and approved, and the credential and time/source gates
-pass. The Stage-1 candidate review is satisfied; Stage 1 permits one manual
-attempt and no unattended schedule.
+The old Stage-1 path is permanently non-authoritative after expiry. It must not
+be dispatched after its window, even if a SHA or credential later becomes
+available. D0 must first restore all-false outputs; any replacement production
+path requires the separate future `A_L2` manual-only chain and has no automatic
+retry or unattended schedule.
 
 ## Path B — Historical walk-forward simulation
 
@@ -344,6 +351,8 @@ A single historical 6/6 or 5/6 is not sufficient evidence of predictive skill. A
 
 ## Scheduling
 
-Codex Cloud is for development and review. Stage 1 has only one manual
-production-canary dispatch. A separate Stage-2 PR may add the Thursday/Sunday
-schedule after the Stage-1 evidence passes independent review.
+Codex Cloud is for development and review. The old Stage-1 manual canary expired
+without execution and cannot be dispatched. V12.0.1's future live lane is
+manual-only through `A_L2`, with no automatic retry or schedule. Any unattended
+Thursday/Sunday schedule requires a separate later release after the new canary
+evidence passes independent review.

@@ -19,8 +19,8 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 
 > **Data-integrity incident hold (2026-08-20):** the operational roles in the
 > table below describe the pre-incident system, but execution is currently
-> suspended except for the gated Stage-1 manual canary, which is armed but has
-> not executed. Pre-Stage-1 ancestor
+> suspended. The original gated Stage-1 manual canary expired unexecuted and
+> grants no dispatch authority. Pre-Stage-1 ancestor
 > `60f972b217f7bd23d1b4807e96034db0cfd1fe2e` had
 > `data.refresh_enabled=false`, `backtest.enabled=false`, and
 > `live.enabled=false`. Production now contains activation merge ancestor
@@ -47,9 +47,9 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > immutable Git blobs; local worktree replacements are never history authority.
 > The verified-history read interface is now the sole input to the direct
 > backtest boundary. Backtest remains false, and the legacy bootstrap/live
-> writer interlocks remain closed. The Stage-1 data/live true values can be
-> consumed only by the protected manual workflow after every independent gate
-> passes. The dual-source collector, offline preparer, local bare-repository
+> writer interlocks remain closed. The old Stage-1 data/live true bytes must not
+> be consumed; D0 must reseal the operational outputs all-false. The dual-source
+> collector, offline preparer, local bare-repository
 > CAS, fixed-repository GitHub publisher, isolated execution/artifact handoff,
 > and capability-scoped exact remote `P -> A` publisher remain disconnected
 > from CLI. PR #31 merged the fixed code-level orchestration at
@@ -69,7 +69,8 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > enforces administrator, force-push, and deletion protection. A real production
 > end-to-end `P -> A` canary has not run.
 >
-> Stage 1 is `merged_armed_not_executed`. Final candidate
+> The original Stage-1 route is
+> `merged_armed_expired_unexecuted_pending_D0_reseal`. Final candidate
 > `5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
 > Spec review with 0 blocker, 0 major, and 0 minor findings, and production
 > contains activation merge ancestor
@@ -81,18 +82,23 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > credentials. Only the protected canary step receives the dedicated
 > publication credential, and it calls only
 > `orchestrate_github_live_cycle(*, token=...)`; no CLI, ordinary Git push,
-> automatic retry after worker start, or unattended live schedule is present. `workflow_dispatch`
-> requires `expected_sha`, the canonical 40-hex production `main` dispatch
-> target established by independent review. No dispatch SHA is approved yet;
-> neither the candidate nor activation merge ancestor is that value. The plan
-> stores only `approved_sha_source=post_merge_review`, and dispatch evidence must
-> record the eventual value. On the exact Stage-1 config, invalid/mismatched SHA,
-> repository/event/ref/checkout mismatch, or early time writes all-false outputs
-> and fails red. The publication credential is not installed, and the hard
-> `2026-08-27T15:15:00Z` plus dual-official-source gate is pending. No manual
-> dispatch has run and no unattended live schedule exists. A first successful P or A advance
-> invalidates the approved SHA and blocks rerun. Stage 2 is a separate PR after
-> canary success and evidence review.
+> automatic retry after worker start, or unattended live schedule was present.
+> At design time, `workflow_dispatch` required `expected_sha`, the canonical
+> 40-hex production `main` target established by independent review. No dispatch
+> SHA was approved before expiry; neither the candidate nor activation merge
+> ancestor became that value. The plan stored only
+> `approved_sha_source=post_merge_review`; any attempted value would have been
+> recorded in dispatch evidence. On the exact Stage-1 config, invalid identity
+> or early timing would have written all-false outputs and failed red. The
+> publication credential was never installed, and the fixed
+> `2026-08-27T15:15:00Z` canary window expired without execution. It must not be
+> dispatched late, re-dated, or reused; a separate D0 all-false reseal is
+> pending. No manual dispatch ran and no unattended live schedule existed. A
+> successful P or A advance would have invalidated its approved SHA and blocked
+> rerun. The expired plan has no Stage-2
+> continuation. Any future scheduling would require the separately registered
+> V12.0.1 live lane, a successful new manual canary, evidence review, and another
+> release.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
 > preparation authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
@@ -111,7 +117,8 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V2 statistical | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
-| V12 parity transition | Registered only | Outcome-blind `R` checkpoint: not implemented, not authorized, not scored, and absent from factory, CLI, workflows, and live configuration. |
+| V12.0.0 parity transition | Superseded unexecuted | Its fixed canary route expired without execution. This is not Archive, Reject, consumed evidence, or a model result. |
+| V12.0.1 parity transition | Registered only | Outcome-blind operational rebinding with the unchanged H12 statistical fingerprint: not implemented, not authorized, not scored, and absent from factory, CLI, workflows, and live configuration. |
 | 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
 | 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
@@ -120,33 +127,29 @@ ranking lift is interesting but not statistically convincing.
 
 ### V12 registration checkpoint
 
-The formal V12 authority is
-[`V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md),
-with machine-readable config and registration seal at the paths named there.
+The immutable V12.0.0 scientific authority is
+[`V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md).
 It freezes one post-RNG odd-count transition hypothesis and one literal
-pseudo-parity control. The registered source is the governed `PublishedHistory`
-at `4a617f2c1575a165b42878600753a01ddf2ced03`: 4,444 draws through
-2026-08-22. The only future historical diagnostic is exactly 627 consumed
-targets in 2020--2025, split 314/313. All known 2026 outcomes are excluded.
+pseudo-parity control against governed `PublishedHistory` authority
+`4a617f2c1575a165b42878600753a01ddf2ced03`: 4,444 draws through
+2026-08-22. The only historical diagnostic remains exactly 627 consumed targets
+in 2020--2025, split 314/313; every 2026 outcome is excluded.
 
-The checkpoint is registration commit **R** only. The six expected
-implementation/test paths and
-`evidence/research_authorizations/v12-post-rng-parity-composition-transition-v1.json`
-do not exist at R. A later **I** may implement only the frozen interface and
-synthetic/oracle tests, but must fail before history load or artifact creation.
-Canary source `S_C` must add only the fixed self-reference-free success JSON to
-protected-main base `K_C`. The reviewed canary-success integration `M_C` is a
-normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C` and the reviewed
-implementation merge `I` must be strict ancestors of exact protected-main
-authorization base `K`; I and M_C may occur in either order. Non-authoritative
-authorization source `A_s` is K's auth-JSON-only child. The normal merge `M_A`
-has parents K,A_s and a tree identical to A_s.
-Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
-The single repository-global
-consumption lease at `refs/heads/v12-consumption-v12.0.0` must be acquired
-before any local claim or history access. No successful canary evidence exists.
-No V12 forecast or score exists. No result artifact, notification, shadow
-activation, or production behavior exists now.
+V12.0.0 is now `superseded_unexecuted` because its exact forward-canary route
+expired. The new
+[`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
+changes no statistical behavior. Its formal R2 checkpoint remains
+registration-only: the V12.0.1 implementation and both authorization paths are
+absent, and no runner may load governed history or write an artifact.
+
+After complete independently reviewed I2, the historical lane may advance
+through protected-main base `K_H2`, auth-JSON-only source `A_H_s2`, and ordinary
+merge `M_A_H2`. Only `M_A_H2` at protected remote `main`/HEAD may acquire the
+fresh single lease `refs/heads/v12-consumption-v12.0.1` and authorize the one-shot
+historical run. It does not depend on a future draw or live-canary success. The
+live lane is separate and remains manual-only through D0/W2/S2/C2/M_C2/K_L2 and
+`M_A_L2`; no schedule or automatic retry is authorized. No V12 forecast, score,
+report, result notification, shadow activation, or production behavior exists.
 
 ## How the implemented system runs
 
@@ -158,7 +161,7 @@ lotto649 backtest
 lotto649 live
 ```
 
-The authorized disposable canary and protected production `main` were verified
+The disposable publication canary and protected production `main` were verified
 on 2026-08-24. The production publication path is the sole public
 `orchestrate_github_live_cycle(*, token=...)` boundary, not a CLI command.
 `backtest` walks forward chronologically over the Git-authenticated verified
@@ -168,11 +171,11 @@ workspace obtained after the remote publisher installs P and a fresh authority
 reload succeeds. That context must remain open until the exact artifact commit
 A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
 legacy CLI `bootstrap` and `live` commands remain stopped by the writer
-interlock under the Stage-1 true-toggle configuration. Backtest remains false and
-unauthorized. The Stage-1 workflow can reach only the public orchestrator after
-its exact digest, repository, ref, event, future independently approved exact
-production `expected_sha`, checkout, credential, time, and source gates all
-pass.
+interlock. Backtest remains false and unauthorized. The old Stage-1 workflow
+bytes are expired and grant no dispatch authority; D0 must reseal them all-false.
+Only a later V12.0.1 `A_L2` manual lane may reach the public orchestrator after
+its new exact digest, repository, ref, event, reviewed production SHA, checkout,
+credential, time, and source gates all pass.
 
 `config.yaml` deliberately separates two selections:
 
@@ -212,9 +215,10 @@ Stage-1 activation merge ancestor
 The newest V3 snapshot was generated on 2026-08-23 at 11:36 EDT from 4,434
 registered draws through 2026-08-22 and is labeled `shadow`. Its target was not
 yet knowable at this checkpoint, so no 2026-08-26 evaluation is committed.
-The Stage-1 plan preregisters exactly seven descriptive-only evaluations of
-this legacy cohort and seven new 2026-08-29 predictions, but none exists until
-the manual canary publishes A. That canary has not run.
+The expired Stage-1 plan preregistered exactly seven descriptive-only
+evaluations of this legacy cohort and seven 2026-08-29 predictions. It never ran,
+none of those artifacts was created by that plan, and they must not be created
+late.
 
 The corrected epoch is separate and append-only. Its sealed base contains 4,442
 draws through 2026-08-15. The suffix binds the 2026-08-19 and 2026-08-22 draws
@@ -244,10 +248,10 @@ The configured workflows are:
   Stage 1.
 - `backtest.yml`: configured historical backtest, currently sealed to checkout
   and an all-false guard.
-- `live.yml`: Stage 1 exposes only a manual, digest-bound production
-  canary. Repository permissions are read-only, checkout does not persist
-  credentials, `expected_sha` is a required input, and only the protected canary
-  step receives the dedicated publication secret.
+- `live.yml`: the old Stage-1 branch is expired and pending D0 all-false reseal;
+  it must not be dispatched. A later reviewed W2 may add only the separately
+  registered V12.0.1 manual `A_L2` canary identity, never a schedule or automatic
+  retry.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
 - `research-progress-email.yml`: configured hourly (`17 * * * *`) Chinese
   committed-state report. It is read-only, uses a full-history checkout with
@@ -337,11 +341,10 @@ Top-12 hits `>= 5`.
 
 The legacy source adapters remain in `src/lotto649/data_sources.py` for audit and
 future refactoring, but they are no longer a valid operational-history write
-path. Legacy live refresh remains behind its writer interlock. The Stage-1
-release binds the merged orchestrator to exact reviewed workflow/config bytes.
-Its candidate review is satisfied, but no exact production `main` dispatch SHA
-is approved, the publication credential is not installed, and the hard
-time/source gate remains pending. The disposable OID/CAS canary and
+path. Legacy live refresh remains behind its writer interlock. The old Stage-1
+release remains an immutable record, but its fixed window expired and its
+workflow/config bytes grant no dispatch authority. D0 must reseal those bytes
+before W2 can bind the new manual `A_L2` route. The disposable OID/CAS canary and
 production-main protection were completed on 2026-08-24; the production
 `P -> A` canary has not run.
 The pre-incident reconciliation policy was:
@@ -374,14 +377,12 @@ Do not broaden the fallback to swallow those integrity failures.
    `RESEARCH_ROADMAP.md`, `ARCHITECTURE.md`, and `OPERATIONS.md` first.
 2. Treat `9f16e20c726c7b65eed1d387c4c725d51248f570` and the artifact facts above as
    the last pre-hold `main` boundary.
-3. Preserve the merged Stage-1 configuration: exactly data/live true and
-   backtest false, with `live.yml` bound to the exact config digest. Call only
-   the public orchestrator and preserve the CLI writer interlock. Do not
-   dispatch until an independent review approves the exact production `main`
-   target and the operator uses its canonical 40-hex SHA as required
-   `expected_sha`; never substitute candidate
-   `5c5dc355ce1bfdae1f467eefa35062aff59d9614`, activation merge ancestor
-   `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`, or another unreviewed head.
+3. Do not dispatch the expired Stage-1 route. Preserve its history, but use the
+   separate reviewed D0 release to restore data/live/backtest and `live.yml` to
+   all-false behavior. Preserve the CLI writer interlock. Any later production
+   attempt must use the new V12.0.1 manual `A_L2` identity and its independently
+   reviewed exact production SHA; never reuse an old candidate, activation
+   ancestor, plan, credential binding, or date.
 4. Preserve and independently review the sealed corrected epoch and append-only
    suffix identities above. Do not replace them with worktree CSV bytes or
    caller-supplied metadata.
@@ -399,22 +400,20 @@ Do not broaden the fallback to swallow those integrity failures.
    merged orchestration's fixed literal-B, exact-P worker, freeze-A, and P-to-A
    sequence; do not add a standalone worker or caller-injectable
    configuration/clock/adapter path. The prediction-origin fix is satisfied by
-   PR #32, and final Stage-1 candidate review is satisfied with Standards/Spec
-   findings 0/0/0. Complete the exact dispatch-target review, credential, and
-   hard time/source gates; run at most one production canary and verify exact
-   reload evidence. Record the approved SHA in dispatch evidence, not this plan.
-   A successful P or A advance makes that SHA stale and blocks rerun. Add
-   scheduling only through the separate Stage-2 PR in `OPERATIONS.md` after
-   Stage-1 succeeds.
-8. Outcome-blind model design and preregistration may continue during the hold,
-   but do not score models on the legacy history or treat the sealed epoch as an
-   authorized runtime before the gated canary. In particular, V12 authorization
-   A may not be minted or accepted until the successful Stage-1 production
-   canary evidence is independently reviewed, committed, and validated against
-   its fixed plan, reviewed main SHA, successful live workflow run, protected
-   main, and production P/A reload receipts. No such production-canary success
-   evidence exists yet. Use a new version whenever statistical behavior
-   changes.
+   PR #32, and the expired Stage-1 candidate review remains an immutable
+   historical fact. Do not complete or dispatch that route late. After D0 and
+   complete I2, W2 may bind only the new digest/OID identities; S2/C2 then permit
+   at most one manual production canary with exact reload evidence. Record its
+   reviewed SHA in new dispatch evidence. A successful P or A advance makes
+   that SHA stale and blocks rerun. Scheduling requires a later separate release
+   after the new canary succeeds.
+8. Outcome-blind model design and preregistration may continue during the hold.
+   V12.0.1 historical authorization is independent of future/live evidence: only
+   reviewed I2, fixed governed history, the frozen historical runtime closure,
+   protected-main `M_A_H2`, and the fresh one-shot lease may authorize scoring.
+   The separate live `A_L2` lane still requires D0/W2/S2/C2/M_C2/K_L2 and its own
+   protected-main merge. Neither authorization exists now. Use a new version
+   whenever statistical behavior changes.
 9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 

@@ -81,9 +81,11 @@ affected documentation in the same change.
   CLI entry point. The parent launches it only from the detached P workspace,
   verifies its source and imported `lotto649` modules against P, and gives it
   only `SMTP_USERNAME` and `SMTP_PASSWORD` beyond a fixed scrubbed environment.
-  It is not imported by a CLI. The merged Stage-1 release may call only
-  `orchestrate_github_live_cycle(*, token=...)` from a SHA-bound manual
-  workflow; the armed release alone does not authorize a dispatch.
+  It is not imported by a CLI. The expired, unexecuted Stage-1 release exposed
+  only `orchestrate_github_live_cycle(*, token=...)` from a SHA-bound manual
+  workflow, but that old route has no dispatch authority and must not be run
+  late. D0 must first reseal its remaining runtime outputs to all-false before
+  any replacement live wiring.
 - `src/lotto649/features.py` and `research_features.py` build leakage-safe
   number-level features.
 - `src/lotto649/models/` contains probability models. Each model must return one
@@ -179,26 +181,23 @@ and merged as pre-Stage-1 ancestor
 `5c5dc355ce1bfdae1f467eefa35062aff59d9614` passed independent Standards and
 Spec review with 0 blocker, 0 major, and 0 minor findings. Production `main`
 now contains Stage-1 activation merge ancestor
-`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. The deployed Stage-1 state is
-`merged_armed_not_executed`: `data.refresh_enabled` and `live.enabled` are
-literal `true`, `backtest.enabled=false`, and manual-only `live.yml` is bound
-to config SHA-256
+`3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`. The original Stage-1 state is now
+`merged_armed_expired_unexecuted_pending_D0_reseal`: its fixed window expired
+without execution and it grants no dispatch authority. Its deployed bytes
+still contain literal `data.refresh_enabled=true`, `live.enabled=true`, and
+`backtest.enabled=false`, with manual-only `live.yml` bound to config SHA-256
 `d53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931`.
-Repository permissions are read-only, checkout does not persist credentials,
-and the dedicated publication credential is exposed only to the protected
-canary step. There is no ordinary Git push or automatic retry after worker
-start. Manual dispatch requires `expected_sha`: the operator supplies the
-canonical 40-hex production `main` SHA established by an independent review of
-the exact dispatch target. No dispatch SHA is approved yet; neither the
-candidate commit nor the activation merge ancestor is that authority, and the
-eventual value must be recorded only in dispatch evidence. The publication
-credential is not installed, and the not-before/source gate remains pending.
-For the exact Stage-1 config, an invalid/mismatched SHA, context mismatch, or
-early dispatch writes all-false outputs and fails red. A successful P or A
-advance moves `main`, so the old approved SHA cannot authorize a rerun. No
-manual canary has executed and no schedule exists. Stage 2 may add scheduling
-only in a separate PR after the production canary succeeds and its evidence is
-reviewed.
+Those residual true values are pending a separate reviewed D0 release that
+restores all-false workflow outputs; they are not permission to dispatch the
+old plan, install its credential, approve a late SHA, or reuse its date.
+
+V12.0.1 has two independent future authorization lanes. Historical `A_H2` may
+advance after complete reviewed I2, protected-main authorization merge, fixed
+governed-history checks, and its fresh one-shot lease; it does not depend on D0,
+W2, a future outcome, or any live canary. The live lane must separately pass D0,
+W2, timely S2, one-shot C2, reviewed success integration, and protected-main
+`A_L2`. That future live route is manual-only, has no schedule, and has no
+automatic retry. Neither lane is authorized at registration.
 
 Live forward cycle:
 

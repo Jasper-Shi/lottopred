@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT_ID = "V12_post_rng_parity_composition_transition"
 MODEL_VERSION = "v12.0.0"
 MAIN_AUTHORITY_COMMIT = "4a617f2c1575a165b42878600753a01ddf2ced03"
+REGISTRATION_AUTHORITY_COMMIT = "0af20fc41fc5aaa0879dada0a258797a8bc14e20"
 
 BASIS_PATH = "docs/research/V12_post_rng_parity_composition_transition_basis.md"
 EXPERIMENT_PATH = "docs/experiments/V12_post_rng_parity_composition_transition.md"
@@ -818,8 +819,10 @@ def test_v12_A_requires_completed_stage1_production_canary_evidence() -> None:
 
 
 def test_v12_authorization_summaries_defer_execution_to_M_A() -> None:
-    registration = _registration()
-    config = yaml.safe_load((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
+    registration = json.loads(
+        _git_bytes(REGISTRATION_AUTHORITY_COMMIT, REGISTRATION_PATH)
+    )
+    config = yaml.safe_load(_git_bytes(REGISTRATION_AUTHORITY_COMMIT, CONFIG_PATH))
     expected = {
         "invariant": (
             "only_normal_merge_M_A_at_protected_remote_main_HEAD_executes_"
@@ -832,7 +835,9 @@ def test_v12_authorization_summaries_defer_execution_to_M_A() -> None:
     assert registration["authorization_summary_contract"] == expected
     assert config["authorization_summary_contract"] == expected
     for relative_path in AUTHORIZATION_SUMMARY_PATHS:
-        summary = (ROOT / relative_path).read_text(encoding="utf-8")
+        summary = _git_bytes(REGISTRATION_AUTHORITY_COMMIT, relative_path).decode(
+            "utf-8"
+        )
         assert AUTHORIZATION_SUMMARY_SENTENCE in summary, relative_path
         assert "canary-success integration `M_C`" in summary, relative_path
         assert "self-reference-free" in summary, relative_path

@@ -77,29 +77,32 @@ Each hypothesis must prove value out-of-sample and survive multiple-testing corr
 
 ## V12 registered research checkpoint
 
-`V12_post_rng_parity_composition_transition` is frozen as an outcome-blind,
-research-only attempt in
-[`docs/experiments/V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md).
-It tests one signed lag-one association between consecutive post-RNG odd-number
-counts, with one fixed pseudo-parity control. Its governed registration input is
+The original
+[`V12_post_rng_parity_composition_transition`](experiments/V12_post_rng_parity_composition_transition.md)
+registration froze one signed lag-one association between consecutive post-RNG
+odd-number counts and one fixed pseudo-parity control. Its governed input remains
 production `main` authority `4a617f2c1575a165b42878600753a01ddf2ced03`,
 whose `PublishedHistory` has 4,444 draws through 2026-08-22. The only historical
-score scope is the 627 consumed targets in 2020--2025, split 314/313; all known
+score scope remains the 627 consumed targets in 2020--2025, split 314/313; all
 2026 outcomes are excluded.
 
-V12 is **registered, not implemented, not authorized, not scored, and not
-activated**. Canary source `S_C` must add only the fixed self-reference-free
-success JSON to protected-main base `K_C`. The reviewed canary-success integration `M_C`
-is a normal merge with parents K_C,S_C and a tree identical to S_C. Both `M_C`
-and reviewed implementation merge `I` must be strict ancestors of exact
-protected-main authorization base `K`; I and M_C may occur in either order. The
-non-authoritative authorization source `A_s` is K's auth-JSON-only child. Its
-normal merge `M_A` must have parents K,A_s and a tree identical to A_s.
-Only normal merge `M_A` at protected remote `main`/HEAD executes; `A_s` is non-authoritative.
-The repository-global consumption lease at literal ref
-`refs/heads/v12-consumption-v12.0.0` must also be acquired exactly once before
-any local claim or history access. No successful canary evidence exists.
-No V12 forecast or score exists. V1 and V3 roles are unchanged.
+V12.0.0 is now **`superseded_unexecuted`** because its fixed forward-canary
+window expired. This is not `Archive`, `Reject`, or `consumed`, and it conveys no
+scientific result. The outcome-blind
+[`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
+retains the identical H12 statistical fingerprint while assigning new execution
+identities. V12.0.1 is **registered only: not implemented, not authorized, not
+scored, and not activated**.
+
+V12.0.1 has separate historical and live authorization lanes. After complete
+independently reviewed I2, only the ordinary historical-auth merge `M_A_H2` at
+protected remote `main`/HEAD may authorize the new one-shot historical lease
+`refs/heads/v12-consumption-v12.0.1` and historical run. That lane uses the fixed
+governed-history authority and does not depend on a future draw or live-canary
+success. The independent live lane remains manual-only and fail closed through
+D0/W2/S2/C2/M_C2/K_L2 and `M_A_L2`; it permits neither a schedule nor automatic
+retry. No V12 forecast, score, report, canary success, historical authorization,
+or live authorization exists. V1 and V3 roles are unchanged.
 
 ## Planned anti-overfitting checks
 
