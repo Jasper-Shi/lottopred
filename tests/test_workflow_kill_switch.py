@@ -498,7 +498,28 @@ def test_release_docs_bind_stage1_to_manual_live_only_double_approval():
     assert "manual `workflow_dispatch`" in architecture_words
     assert "backtest.enabled=false" in architecture_words
     assert "no ordinary Git push or unattended schedule" in architecture_words
-    assert "Stage 2 may add scheduling only in a separate PR" in architecture_words
+    r2 = yaml.safe_load(
+        (
+            ROOT
+            / "evidence"
+            / "research_registrations"
+            / "v12-post-rng-parity-composition-transition-v2.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert r2["old_stage1_reseal_prerequisite"]["required_runtime_outputs"] == {
+        "backtest": False,
+        "integration": False,
+        "live": False,
+    }
+    assert r2["live_dispatch_identity"]["manual_only"] is True
+    assert r2["live_dispatch_identity"]["schedule"] == "prohibited"
+    assert r2["live_dispatch_identity"]["automatic_retry"] is False
+    assert {
+        "D0",
+        "W2",
+        "future_draw_outcome",
+        "live_canary_success",
+    }.issubset(r2["historical_authorization_contract"]["excluded_prerequisites"])
     assert "same commit" in operations_words
     assert "runtime switches remain a second gate" in operations_words
     assert "config-only" in operations_words
