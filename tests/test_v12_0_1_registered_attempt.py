@@ -1608,3 +1608,57 @@ def test_source_closure_refuses_process_and_entrypoint_import_bypasses(attempt, 
         attempt._check_source_safety(
             "src/lotto649/synthetic_module.py", ast.parse(source)
         )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "import operator\nloader = operator.attrgetter('__class__.__init__.__globals__')(obj)",
+        "from operator import attrgetter as access\naccess('__class__')(obj)",
+        "import operator\noperator.methodcaller('__getattribute__', '__class__')(obj)",
+        "from operator import methodcaller as invoke\ninvoke('__getattribute__','__class__')(obj)",
+        "import types\nf = types.FunctionType(code, environment)",
+        "from types import FunctionType as build\nf = build(code, environment)",
+        "import pandas as pd\npd.eval(payload)",
+        "module.exec(payload)",
+        "module.compile(payload)",
+        "from typing import get_type_hints as resolve\nresolve(obj)",
+        "import typing\ntyping.get_type_hints(obj)",
+    ],
+)
+def test_source_closure_refuses_indirect_reflection_constructors(attempt, source):
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+def test_late_integrity_failure_after_exact_hit_archives_but_retains_audit_requirement(
+    attempt, monkeypatch, tmp_path
+):
+    original = attempt._drive_sequence
+
+    def inject_late_failure(*args, **kwargs):
+        rows, warnings, reason = original(*args, **kwargs)
+        assert reason == "exact_final6_pending_independent_audit"
+        return (
+            rows,
+            [*warnings, "synthetic_late_integrity_failure"],
+            "Archive_after_claim_failure_no_retry",
+        )
+
+    monkeypatch.setattr(attempt, "_drive_sequence", inject_late_failure)
+    case = _durable_case(first_main=(1, 2, 3, 4, 5, 6))
+    report = _durable_run(attempt, tmp_path / "synthetic-late-failure", case)
+    assert report["disposition"] == "Archive"
+    assert report["independent_leakage_audit"] == "pending"
+    assert report["audit"]["complete"] is False
+    assert report["targets"][0]["exact_final6_opportunities"]
+    assert report["eligible_evidence"] is False
+    assert case.calls["forecast"] == [case.targets[0]]
+    handoff = report["candidate_audit_handoff"]
+    assert handoff["status"] == "independent_audit_pending"
+    assert handoff["write_policy"] == "write_once_only_after_independent_audit"
+    assert handoff["target_draw_date"] == case.targets[0].isoformat()
+    assert "synthetic" in handoff["report_path_after_audit"]
+    assert not list(tmp_path.rglob("historical-6of6-candidate__*"))

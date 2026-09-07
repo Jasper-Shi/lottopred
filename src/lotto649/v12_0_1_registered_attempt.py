@@ -73,6 +73,41 @@ _ROUTE_OVERRIDES = frozenset({"SMTP_HOST", "SMTP_PORT", "EMAIL_FROM", "EMAIL_TO"
 _EXTERNAL_MODULES = frozenset(
     {"numpy", "pandas", "requests", "yaml", "sklearn", "scipy", "bs4", "pypdf"}
 )
+# These are the standard-library roots actually used by the frozen historical
+# closure, rather than every module the running interpreter happens to offer.
+# A newly introduced loader/reflection module cannot silently enlarge that set.
+_STDLIB_MODULES = frozenset(
+    {
+        "__future__",
+        "abc",
+        "ast",
+        "collections",
+        "csv",
+        "dataclasses",
+        "datetime",
+        "email",
+        "fractions",
+        "functools",
+        "hashlib",
+        "importlib",
+        "io",
+        "itertools",
+        "json",
+        "math",
+        "os",
+        "pathlib",
+        "platform",
+        "re",
+        "secrets",
+        "smtplib",
+        "subprocess",
+        "sys",
+        "sysconfig",
+        "threading",
+        "typing",
+        "urllib",
+    }
+)
 _CLOSURE_ROOTS = (
     "config.yaml",
     CONFIG_PATH,
@@ -455,6 +490,19 @@ def _check_source_safety(
         "module_from_spec",
         "spec_from_file_location",
         "load_library",
+        "attrgetter",
+        "methodcaller",
+        "FunctionType",
+        "LambdaType",
+        "CodeType",
+        "ModuleType",
+        "new_class",
+        "resolve_bases",
+        "DynamicClassAttribute",
+        "get_type_hints",
+        "get_annotations",
+        "evaluate_forward_ref",
+        "_eval_type",
         "load",
         "system",
         "popen",
@@ -479,6 +527,10 @@ def _check_source_safety(
                 if alias.name == "subprocess":
                     process_aliases.add(alias.asname or alias.name)
         elif isinstance(node, ast.ImportFrom):
+            if any(alias.name in forbidden_attributes for alias in node.names):
+                raise AuthorizationError(
+                    "reflection or code-loading aliases are prohibited"
+                )
             if node.module == "subprocess" or (
                 node.module == "os"
                 and any(
@@ -529,7 +581,12 @@ def _check_source_safety(
                 raise AuthorizationError("import-state object aliases are prohibited")
         if isinstance(node, ast.Attribute):
             dotted = _dotted(node)
-            if node.attr in forbidden_attributes:
+            # Regex compilation is the existing parser capability; Python/code
+            # evaluation ports remain forbidden when reached as attributes too.
+            regular_expression_compile = dotted == "re.compile"
+            if node.attr in forbidden_attributes or (
+                node.attr in dynamic_names and not regular_expression_compile
+            ):
                 raise AuthorizationError(
                     "dynamic import or reflection attribute is prohibited"
                 )
@@ -581,6 +638,10 @@ def _check_source_safety(
             )
             for name in names:
                 top = name.partition(".")[0]
+                if not (
+                    isinstance(node, ast.ImportFrom) and node.level
+                ) and top not in _STDLIB_MODULES | _EXTERNAL_MODULES | {"lotto649"}:
+                    raise AuthorizationError("unregistered runtime import root")
                 if top in {"builtins", "runpy", "ctypes", "marshal", "pickle"} or (
                     top == "importlib"
                     and not (
@@ -661,7 +722,7 @@ def runtime_dependency_closure(repository: Path, commit: str) -> list[dict[str, 
                 if top == "lotto649":
                     pending.append(_module_path(imported, inventory))
                 elif (
-                    top not in sys.stdlib_module_names
+                    top not in _STDLIB_MODULES
                     and top not in _EXTERNAL_MODULES
                     and top != "__future__"
                 ):
@@ -1857,11 +1918,28 @@ def _report_files(
         report["classification"] = "synthetic_fixture_only"
         report["synthetic_fixture_only"] = True
         report["eligible_evidence"] = False
+    exact_rows = [row for row in rows if row.get("exact_final6_opportunities")]
     report["independent_leakage_audit"] = (
-        "pending"
-        if stop_reason == "exact_final6_pending_independent_audit"
-        else "not_required_no_exact_final6"
+        "pending" if exact_rows else "not_required_no_exact_final6"
     )
+    if exact_rows:
+        candidate = exact_rows[0]
+        producer = candidate["exact_final6_opportunities"][0]["primary_producer"]
+        target = candidate["target_draw_date"]
+        prefix = (
+            "synthetic_historical-6of6-candidate"
+            if synthetic
+            else "reports/historical-6of6-candidate"
+        )
+        report["candidate_audit_handoff"] = {
+            "status": "independent_audit_pending",
+            "target_draw_date": target,
+            "primary_producer": producer,
+            "forecast_payload_sha256": candidate["forecast_payload_sha256"],
+            "report_path_after_audit": f"{prefix}__{target}__{producer}__v12.0.1.json",
+            "write_policy": "write_once_only_after_independent_audit",
+            "eligible_evidence": False,
+        }
     report["audit_publication"] = "pending_git_integration"
     json_raw = canonical_json_bytes(report)
     markdown_raw = render_markdown(report).encode("utf-8")

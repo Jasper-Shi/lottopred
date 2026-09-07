@@ -1365,3 +1365,31 @@ def test_frozen_payload_can_be_fully_validated_without_any_reveal(mutation):
         payload["forecasts"][0]["probabilities"]["1"] = 0.5
     with pytest.raises(ValueError):
         evidence.validate_frozen_payload(evidence.canonical_json_bytes(payload))
+
+
+@pytest.mark.parametrize(
+    "reason,warnings",
+    [
+        (
+            "Archive_after_claim_failure_no_retry",
+            ("one_shot_worker_failed_after_claim",),
+        ),
+        ("exact_final6_pending_independent_audit", ("synthetic_integrity_warning",)),
+        (None, ()),
+    ],
+)
+def test_exact_hit_never_overrides_failure_or_missing_stop_audit_status(
+    reason, warnings
+):
+    report = evidence.build_report(
+        _report_rows(1, exact_first=True),
+        _report_bindings(),
+        audit_complete=False,
+        audit_warnings=warnings,
+        stop_reason=reason,
+    )
+    assert report["disposition"] == "Archive"
+    assert report["targets"][0]["exact_final6_opportunities"]
+    assert report["audit"]["complete"] is False
+    assert report["gates"] is None
+    assert report["eligible_evidence"] is report["promotion_authority"] is False

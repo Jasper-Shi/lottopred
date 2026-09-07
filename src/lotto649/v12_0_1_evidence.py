@@ -928,7 +928,11 @@ def build_report(
             "input_vector": vector,
             "adjusted_vector": list(holm_adjusted(vector)),
         }
-    if exact_hits:
+    if (
+        exact_hits
+        and stop_reason == "exact_final6_pending_independent_audit"
+        and not warnings
+    ):
         disposition = "pending_audit"
     elif not complete or not audit_complete or warnings:
         disposition = "Archive"
