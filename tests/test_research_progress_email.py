@@ -515,10 +515,11 @@ def test_report_fails_closed_if_stage_one_plan_enables_unattended_live_schedule(
     )
 
     root, _head = _clone_current_repository(tmp_path)
-    plan_path = next(
-        (root / "evidence" / "release_canaries").glob(
-            "*-production-live-canary-plan.json"
-        )
+    plan_path = (
+        root
+        / "evidence"
+        / "release_canaries"
+        / "2026-08-27-production-live-canary-plan.json"
     )
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     plan["stage2"]["unattended_schedule_in_stage_1"] = True

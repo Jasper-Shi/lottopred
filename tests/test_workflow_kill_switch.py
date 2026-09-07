@@ -47,6 +47,15 @@ def _steps(workflow_name: str) -> list[dict]:
     return next(iter(_workflow(workflow_name)["jobs"].values()))["steps"]
 
 
+def test_unit_check_name_distinguishes_pull_requests_from_pushes():
+    workflow = _workflow("test.yml")
+
+    assert set(workflow[True]) == {"push", "pull_request"}
+    assert workflow["jobs"]["test"]["name"] == (
+        "${{ github.event_name == 'pull_request' && 'test' || 'push-test' }}"
+    )
+
+
 def _disabled_config_bytes() -> bytes:
     candidate = (ROOT / "config.yaml").read_bytes()
     disabled = candidate.replace(b"refresh_enabled: true", b"refresh_enabled: false")
