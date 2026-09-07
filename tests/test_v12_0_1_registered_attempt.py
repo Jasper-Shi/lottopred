@@ -137,6 +137,8 @@ def _fixture_git(root: Path, *arguments: str) -> str:
         "GIT_AUTHOR_EMAIL": "test@example.invalid",
         "GIT_COMMITTER_NAME": "Synthetic test",
         "GIT_COMMITTER_EMAIL": "test@example.invalid",
+        "GIT_AUTHOR_DATE": "2020-01-01T00:00:00+0000",
+        "GIT_COMMITTER_DATE": "2020-01-01T00:00:00+0000",
     }
     return subprocess.run(
         ["/usr/bin/git", "-C", str(root), *arguments],
@@ -1662,3 +1664,150 @@ def test_late_integrity_failure_after_exact_hit_archives_but_retains_audit_requi
     assert handoff["target_draw_date"] == case.targets[0].isoformat()
     assert "synthetic" in handoff["report_path_after_audit"]
     assert not list(tmp_path.rglob("historical-6of6-candidate__*"))
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "import typing\nref = typing.ForwardRef(\"__import__('lotto649.synthetic_hidden')\")\nref._evaluate({}, {}, recursive_guard=frozenset())",
+        "from typing import ForwardRef\nForwardRef(\"__import__('lotto649.synthetic_hidden')\")._evaluate({}, {}, recursive_guard=frozenset())",
+        "from typing import ForwardRef as make_ref\nmake_ref(payload)",
+    ],
+)
+def test_type_annotation_evaluation_cannot_hide_a_dynamic_import(attempt, source):
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+@pytest.mark.parametrize(
+    "member",
+    [
+        "execl",
+        "execlp",
+        "execle",
+        "execv",
+        "execvp",
+        "execvpe",
+        "execve",
+        "posix_spawn",
+        "posix_spawnp",
+        "spawnl",
+        "spawnlp",
+        "spawnle",
+        "spawnlpe",
+        "spawnv",
+        "spawnvp",
+        "spawnve",
+        "spawnvpe",
+        "startfile",
+        "system",
+        "popen",
+    ],
+)
+@pytest.mark.parametrize("aliased", [False, True])
+def test_os_execution_members_require_exact_registered_capabilities(
+    attempt, member, aliased
+):
+    source = (
+        f"from os import {member} as launch\nlaunch(payload)"
+        if aliased
+        else f"import os\nos.{member}(payload)"
+    )
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "import os\nescaped = os\nescaped.execl(payload)",
+        "import os\nescaped = [os][0]\nescaped.posix_spawn(payload)",
+        "import os\nget_os = lambda: os\nget_os().execl(payload)",
+        "import typing\nescaped = typing\nescaped.ForwardRef(payload)",
+        "import os\nmember = os.path.os\nmember.execl(payload)",
+    ],
+)
+def test_registered_module_objects_cannot_escape_member_capability_checks(
+    attempt, source
+):
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "try:\n    1 / 0\nexcept Exception as error:\n    error.__traceback__.tb_frame.f_globals['__builtins__']['__import__']('lotto649.synthetic_hidden')",
+        "generator = (None for _ in ())\ngenerator.gi_frame.f_globals['__builtins__']['__import__']('lotto649.synthetic_hidden')",
+        "coroutine.cr_frame.f_globals['__builtins__']['__import__']('lotto649.synthetic_hidden')",
+    ],
+)
+def test_frame_reflection_cannot_introduce_unregistered_code_without_imports(
+    attempt, source
+):
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from lotto649.notification import os\nos.execl(payload)",
+        "from .notification import os as escaped\nescaped.execl(payload)",
+        "import os\nos = hidden_provider()\nos.path.lexists(payload)",
+        "import os\ndef wrapper(os):\n    return os.path.lexists(payload)",
+        "from pathlib import Path\nPath = hidden_provider()\nPath(payload)",
+    ],
+)
+def test_registered_capabilities_cannot_be_reexported_or_rebound(attempt, source):
+    with pytest.raises(attempt.AuthorizationError):
+        attempt._check_source_safety(
+            "src/lotto649/synthetic_module.py", ast.parse(source)
+        )
+
+
+def test_isolated_venv_never_inherits_system_site_packages(
+    launcher, monkeypatch, tmp_path
+):
+    prefix = tmp_path / "synthetic-frozen-venv"
+    prefix.mkdir()
+    (prefix / "pyvenv.cfg").write_text("# Synthetic venv marker.\n")
+    runtime = _launcher_sys()
+    runtime.executable = str(prefix / "bin/python3.12")
+    runtime.version_info = SimpleNamespace(major=3, minor=12)
+    monkeypatch.setitem(launcher, "sys", runtime)
+    calls = []
+    monkeypatch.setitem(
+        launcher,
+        "sysconfig",
+        SimpleNamespace(
+            get_path=lambda key: calls.append(key) or "/synthetic-system-packages"
+        ),
+    )
+    assert launcher["_runtime_search_paths"]() == [
+        prefix / "lib/python3.12/site-packages",
+        prefix / "Lib/site-packages",
+    ]
+    assert calls == []
+
+
+def test_base_interpreter_uses_only_its_sysconfig_paths(
+    launcher, monkeypatch, tmp_path
+):
+    runtime = _launcher_sys()
+    runtime.executable = str(tmp_path / "synthetic-base/bin/python3.12")
+    runtime.version_info = SimpleNamespace(major=3, minor=12)
+    monkeypatch.setitem(launcher, "sys", runtime)
+    paths = {"purelib": "/synthetic/base/purelib", "platlib": "/synthetic/base/platlib"}
+    monkeypatch.setitem(launcher, "sysconfig", SimpleNamespace(get_path=paths.get))
+    assert launcher["_runtime_search_paths"]() == [
+        Path(value) for value in paths.values()
+    ]

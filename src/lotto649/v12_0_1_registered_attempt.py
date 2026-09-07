@@ -108,6 +108,582 @@ _STDLIB_MODULES = frozenset(
         "urllib",
     }
 )
+# Static capability inventory derived from the reviewed historical source
+# closure. Verification must never expand this inventory from the source it is
+# being asked to authorize. This constrains repository code, not arbitrary
+# Python or the internals of the separately pinned dependency distributions.
+_REGISTERED_IMPORT_MODULES = frozenset(
+    {
+        "ast",
+        "csv",
+        "hashlib",
+        "io",
+        "itertools",
+        "json",
+        "math",
+        "numpy",
+        "os",
+        "pandas",
+        "platform",
+        "re",
+        "requests",
+        "secrets",
+        "smtplib",
+        "subprocess",
+        "sys",
+        "sysconfig",
+        "yaml",
+    }
+)
+_REGISTERED_FROM_IMPORTS = {
+    "__future__": frozenset({"annotations"}),
+    "abc": frozenset({"ABC", "abstractmethod"}),
+    "bs4": frozenset({"BeautifulSoup"}),
+    "collections.abc": frozenset({"Callable", "Iterable", "Mapping", "Sequence"}),
+    "dataclasses": frozenset({"asdict", "dataclass"}),
+    "datetime": frozenset({"UTC", "date", "datetime", "timedelta"}),
+    "email.message": frozenset({"EmailMessage"}),
+    "fractions": frozenset({"Fraction"}),
+    "functools": frozenset({"lru_cache"}),
+    "hashlib": frozenset({"sha256"}),
+    "importlib.metadata": frozenset({"distributions"}),
+    "itertools": frozenset({"pairwise"}),
+    "pathlib": frozenset({"Path", "PurePosixPath"}),
+    "sklearn.ensemble": frozenset({"HistGradientBoostingClassifier"}),
+    "sklearn.linear_model": frozenset({"LogisticRegression"}),
+    "sklearn.pipeline": frozenset({"make_pipeline"}),
+    "sklearn.preprocessing": frozenset({"StandardScaler"}),
+    "threading": frozenset({"Lock"}),
+    "typing": frozenset({"Any", "Iterable", "Self"}),
+    "urllib.parse": frozenset({"urlsplit"}),
+}
+_REGISTERED_MODULE_API = {
+    "ast": frozenset(
+        {
+            "AST",
+            "AnnAssign",
+            "Attribute",
+            "Call",
+            "ClassDef",
+            "FunctionDef",
+            "Import",
+            "ImportFrom",
+            "Load",
+            "Name",
+            "Store",
+            "arg",
+            "dump",
+            "iter_child_nodes",
+            "parse",
+            "walk",
+        }
+    ),
+    "csv": frozenset({"reader", "writer"}),
+    "datetime.date": frozenset({"fromisoformat"}),
+    "datetime.datetime": frozenset({"fromisoformat", "fromtimestamp", "now"}),
+    "hashlib": frozenset({"sha1", "sha256"}),
+    "io": frozenset({"StringIO"}),
+    "itertools": frozenset({"combinations"}),
+    "json": frozenset({"JSONDecodeError", "dumps", "loads"}),
+    "math": frozenset(
+        {
+            "comb",
+            "cos",
+            "exp",
+            "expm1",
+            "fsum",
+            "isfinite",
+            "log",
+            "log1p",
+            "pi",
+            "sin",
+            "sqrt",
+        }
+    ),
+    "numpy": frozenset(
+        {
+            "arange",
+            "array",
+            "clip",
+            "diff",
+            "dot",
+            "exp",
+            "flatnonzero",
+            "float64",
+            "full",
+            "log",
+            "mean",
+            "ndarray",
+            "polyfit",
+            "quantile",
+            "random",
+            "random.default_rng",
+            "std",
+            "sum",
+            "unique",
+            "zeros",
+        }
+    ),
+    "os": frozenset(
+        {
+            "O_CREAT",
+            "O_EXCL",
+            "O_RDONLY",
+            "O_WRONLY",
+            "close",
+            "devnull",
+            "environ",
+            "environ.get",
+            "environ.items",
+            "execve",
+            "fdopen",
+            "fsync",
+            "getenv",
+            "link",
+            "open",
+            "path",
+            "path.lexists",
+        }
+    ),
+    "pandas": frozenset({"DataFrame", "concat"}),
+    "platform": frozenset({"machine", "platform", "python_version"}),
+    "re": frozenset(
+        {
+            "IGNORECASE",
+            "compile",
+            "escape",
+            "finditer",
+            "fullmatch",
+            "match",
+            "search",
+            "sub",
+        }
+    ),
+    "requests": frozenset({"Session"}),
+    "secrets": frozenset({"token_hex"}),
+    "smtplib": frozenset({"SMTP"}),
+    "subprocess": frozenset({"SubprocessError", "run"}),
+    "sys": frozenset(
+        {
+            "argv",
+            "byteorder",
+            "dont_write_bytecode",
+            "executable",
+            "flags",
+            "flags.isolated",
+            "flags.no_site",
+            "float_info",
+            "float_info.mant_dig",
+            "float_info.max_exp",
+            "float_info.radix",
+            "implementation",
+            "implementation.name",
+            "modules",
+            "modules.items",
+            "path",
+            "path.append",
+            "path.insert",
+            "stderr",
+            "version_info",
+            "version_info.major",
+            "version_info.minor",
+        }
+    ),
+    "sysconfig": frozenset({"get_path"}),
+    "yaml": frozenset({"safe_load"}),
+}
+_REGISTERED_LOCAL_IMPORTS = {
+    "lotto649.domain": frozenset({"Draw"}),
+    "lotto649.features": frozenset(
+        {"BASE_P", "indicator_matrix", "number_feature_frame"}
+    ),
+    "lotto649.history_registry": frozenset(
+        {
+            "RegistryProvenance",
+            "RegistrySealIdentity",
+            "RegistrySuffixIdentity",
+            "RegistryTransaction",
+            "load_history_registry",
+            "resolve_repository_head",
+        }
+    ),
+    "lotto649.models.base": frozenset({"ProbabilityModel", "normalize_expected_six"}),
+    "lotto649.models.baselines": frozenset(
+        {"EmaGapModel", "LongFrequencyModel", "RandomBaseline", "RecentFrequencyModel"}
+    ),
+    "lotto649.models.ensemble": frozenset({"EnsembleModel"}),
+    "lotto649.models.factory": frozenset({"build_models"}),
+    "lotto649.models.logistic": frozenset({"LogisticNumberModel"}),
+    "lotto649.models.v12_parity_transition": frozenset(
+        {
+            "CANDIDATE_MODEL_NAME",
+            "CONTROL_MODEL_NAME",
+            "FAIR_MEAN",
+            "FAIR_SET_COUNT",
+            "PSEUDO_PARTITION_LABELS",
+            "PSEUDO_PARTITION_SHA256",
+            "ParityForecast",
+            "STANDARDIZED_BUCKET_STATES",
+            "TRUE_ODD_LABELS",
+            "forecast_candidate",
+            "forecast_control",
+            "tilted_moment_log_z",
+        }
+    ),
+    "lotto649.models.v2_statistical": frozenset({"V2StatisticalModel"}),
+    "lotto649.models.v3_boosting": frozenset({"V3BoostingModel"}),
+    "lotto649.models.v4_ensemble": frozenset({"V4EnsembleModel"}),
+    "lotto649.notification": frozenset({"send_email"}),
+    "lotto649.official_history": frozenset(
+        {
+            "canonical_official_rows_sha256",
+            "expected_lotto649_draw_dates",
+            "parse_lotoquebec_detail_html",
+            "parse_wclc_target_html",
+        }
+    ),
+    "lotto649.operational_history": frozenset(
+        {"load_published_history", "operational_history_provenance"}
+    ),
+    "lotto649.optimizer": frozenset({"select_combination"}),
+    "lotto649.research_features": frozenset(
+        {"rich_number_feature_frame", "standardized_signal_scores"}
+    ),
+    "lotto649.v12_0_1_evidence": frozenset(
+        {
+            "build_report",
+            "canonical_json_bytes",
+            "four_forecasts",
+            "opportunity_summary",
+            "render_markdown",
+            "score_target",
+            "validate_frozen_payload",
+        }
+    ),
+    "lotto649.v12_0_1_registered_attempt": frozenset({"main"}),
+    "lotto649.verified_history": frozenset(
+        {"VerifiedHistory", "_load_verified_history_from_immutable_bytes"}
+    ),
+}
+_REGISTERED_ATTRIBUTE_NAMES = frozenset(
+    {
+        "AST",
+        "AnnAssign",
+        "Attribute",
+        "Call",
+        "ClassDef",
+        "DataFrame",
+        "FunctionDef",
+        "IGNORECASE",
+        "Import",
+        "ImportFrom",
+        "JSONDecodeError",
+        "Load",
+        "Name",
+        "O_CREAT",
+        "O_EXCL",
+        "O_RDONLY",
+        "O_WRONLY",
+        "SMTP",
+        "Session",
+        "Store",
+        "StringIO",
+        "SubprocessError",
+        "__file__",
+        "__new__",
+        "__post_init__",
+        "__setattr__",
+        "_bindings",
+        "_cache_key",
+        "_cache_value",
+        "_closed",
+        "_create_ref_attempted",
+        "_head",
+        "_sequence",
+        "_session",
+        "_stream",
+        "_training_frame",
+        "absolute",
+        "add",
+        "ancestor",
+        "any",
+        "append",
+        "arange",
+        "arg",
+        "args",
+        "argv",
+        "array",
+        "artifact_commit",
+        "as_posix",
+        "asname",
+        "astimezone",
+        "astype",
+        "attr",
+        "authorization_sha256",
+        "base",
+        "beta",
+        "bonus",
+        "byteorder",
+        "changes",
+        "clip",
+        "close",
+        "columns",
+        "comb",
+        "combinations",
+        "commit",
+        "compile",
+        "concat",
+        "cos",
+        "count",
+        "ctx",
+        "date",
+        "day",
+        "decode",
+        "default_rng",
+        "destination_bucket",
+        "destination_date",
+        "devnull",
+        "diff",
+        "dont_write_bytecode",
+        "dot",
+        "draw_count",
+        "draw_date",
+        "draws",
+        "dump",
+        "dumps",
+        "encode",
+        "end",
+        "endswith",
+        "environ",
+        "epoch",
+        "escape",
+        "eta",
+        "event_count",
+        "evidence_commit",
+        "evidence_commits",
+        "executable",
+        "execution_commit",
+        "execve",
+        "exists",
+        "exp",
+        "expected_bucket",
+        "expm1",
+        "extend",
+        "fdopen",
+        "file_sha256",
+        "fileno",
+        "final6",
+        "find_all",
+        "finditer",
+        "fit",
+        "flags",
+        "flatnonzero",
+        "float64",
+        "float_info",
+        "flush",
+        "fragment",
+        "fromhex",
+        "fromisoformat",
+        "fromtimestamp",
+        "fsum",
+        "fsync",
+        "full",
+        "fullmatch",
+        "func",
+        "generated_at",
+        "genesis_commit",
+        "get",
+        "get_path",
+        "get_text",
+        "getenv",
+        "getvalue",
+        "git_blob",
+        "groups",
+        "head",
+        "head_event_sha256",
+        "headers",
+        "hex",
+        "hexdigest",
+        "history_through",
+        "hostname",
+        "id",
+        "implementation",
+        "insert",
+        "integers",
+        "intersection",
+        "is_absolute",
+        "is_dir",
+        "is_file",
+        "is_symlink",
+        "isfinite",
+        "isin",
+        "isoformat",
+        "isolated",
+        "isspace",
+        "items",
+        "iter_child_nodes",
+        "iter_content",
+        "iterdir",
+        "iterrows",
+        "join",
+        "keywords",
+        "level",
+        "lexists",
+        "link",
+        "loads",
+        "log",
+        "log1p",
+        "log_z",
+        "login",
+        "long_freq",
+        "lower",
+        "machine",
+        "major",
+        "mant_dig",
+        "match",
+        "max_exp",
+        "mean",
+        "members",
+        "metadata",
+        "min_history",
+        "min_samples",
+        "minor",
+        "mkdir",
+        "model_name",
+        "module",
+        "modules",
+        "month",
+        "name",
+        "names",
+        "ndarray",
+        "no_site",
+        "nonce_hex",
+        "now",
+        "number",
+        "numbers",
+        "oid",
+        "open",
+        "parent",
+        "parents",
+        "parse",
+        "partition",
+        "parts",
+        "password",
+        "path",
+        "payload",
+        "pi",
+        "platform",
+        "polyfit",
+        "pop",
+        "port",
+        "predict",
+        "predict_proba",
+        "previous_bucket",
+        "probabilities",
+        "provenance",
+        "publication_commit",
+        "python_version",
+        "quantile",
+        "radix",
+        "random",
+        "ranking",
+        "read_blob",
+        "read_bytes",
+        "reader",
+        "ref",
+        "registry",
+        "registry_path",
+        "registry_seal",
+        "registry_suffix",
+        "registry_transaction",
+        "relative_to",
+        "removeprefix",
+        "removesuffix",
+        "replace",
+        "repository",
+        "request",
+        "request_json",
+        "require_full_clean",
+        "resolve",
+        "resolved_revision",
+        "returncode",
+        "rglob",
+        "root",
+        "rows_sha256",
+        "rpartition",
+        "rstrip",
+        "run",
+        "safe_load",
+        "scheme",
+        "seal",
+        "seal_raw",
+        "search",
+        "select",
+        "selected_labels",
+        "send_message",
+        "set_content",
+        "sha1",
+        "sha256",
+        "sin",
+        "source_commit",
+        "split",
+        "splitlines",
+        "sqrt",
+        "start",
+        "startswith",
+        "starttls",
+        "status_code",
+        "std",
+        "stderr",
+        "stdout",
+        "strftime",
+        "stride",
+        "strip",
+        "sub",
+        "suffix",
+        "suffix_commit",
+        "suffix_raw",
+        "sum",
+        "target_date",
+        "target_draw_date",
+        "text",
+        "timestamp",
+        "to_numpy",
+        "token_hex",
+        "toordinal",
+        "top12",
+        "top18",
+        "top6",
+        "training_draws",
+        "transaction",
+        "transition_count",
+        "transitions",
+        "tree",
+        "trust_env",
+        "tzinfo",
+        "uniform",
+        "unique",
+        "unlink",
+        "update",
+        "url",
+        "username",
+        "value",
+        "values",
+        "version",
+        "version_info",
+        "walk",
+        "weekday",
+        "window",
+        "write",
+        "writer",
+        "writerow",
+        "x_prev",
+        "x_source",
+        "year",
+        "zeros",
+    }
+)
+
 _CLOSURE_ROOTS = (
     "config.yaml",
     CONFIG_PATH,
@@ -394,7 +970,7 @@ _SENSITIVE_FUNCTION_AST = {
     (
         IMPLEMENTATION_PATHS[3],
         "main",
-    ): "ab7c9d472575200a7ce99dc0c4a871a1453e8a08cc1781c034bc2a1917fdb9e2",
+    ): "feac33f96bb6626e3c766511fff10a638ef3e77f975260f91a28dd6624a3cd3d",
 }
 _LEGACY_GETTER_SOURCE_SHA256 = (
     "baaeafcda224ce9626bf5b9071474c1e10342d34b42b20aa1445822de52b662a"
@@ -438,6 +1014,92 @@ _LEGACY_PROCESS_SOURCE_SHA256 = {
 }
 
 
+def _check_import_capabilities(
+    path: str, tree: ast.AST, parents: Mapping[ast.AST, ast.AST]
+) -> None:
+    """Check fixed imports, exact API paths, and direct alias propagation."""
+    bindings: dict[str, str] = {}
+    module_aliases: set[str] = set()
+    module = path.removeprefix("src/").removesuffix(".py").replace("/", ".")
+    package = (
+        module.removesuffix(".__init__")
+        if module.endswith(".__init__")
+        else module.rpartition(".")[0]
+    )
+    for node in ast.walk(tree):
+        entries: list[tuple[str, str]] = []
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name not in _REGISTERED_IMPORT_MODULES:
+                    raise AuthorizationError("unregistered module import capability")
+                bound_name = alias.asname or alias.name
+                module_aliases.add(bound_name)
+                entries.append((bound_name, alias.name))
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:
+                pieces = package.split(".")
+                if node.level > len(pieces):
+                    raise AuthorizationError(
+                        "relative import escapes the registered package"
+                    )
+                prefix = ".".join(pieces[: len(pieces) - node.level + 1])
+                base = prefix + ("." + node.module if node.module else "")
+            else:
+                base = node.module or ""
+            allowed = (
+                _REGISTERED_LOCAL_IMPORTS.get(base, frozenset())
+                if base.startswith("lotto649")
+                else _REGISTERED_FROM_IMPORTS.get(base, frozenset())
+            )
+            for alias in node.names:
+                if alias.name not in allowed:
+                    raise AuthorizationError("unregistered imported member capability")
+                if base != "__future__":
+                    entries.append(
+                        (alias.asname or alias.name, base + "." + alias.name)
+                    )
+        for bound_name, origin in entries:
+            if bound_name in bindings and bindings[bound_name] != origin:
+                raise AuthorizationError("import capability alias is rebound")
+            bindings[bound_name] = origin
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr not in _REGISTERED_ATTRIBUTE_NAMES
+        ):
+            raise AuthorizationError("unregistered object attribute capability")
+        if isinstance(node, ast.Name) and node.id in bindings:
+            parent = parents.get(node)
+            if isinstance(node.ctx, ast.Store):
+                # Dataclass fields with no value do not rebind a module name.
+                data_field = (
+                    isinstance(parent, ast.AnnAssign)
+                    and parent.value is None
+                    and isinstance(parents.get(parent), ast.ClassDef)
+                )
+                if not data_field:
+                    raise AuthorizationError("imported capability cannot be rebound")
+            if (
+                isinstance(node.ctx, ast.Load)
+                and node.id in module_aliases
+                and (not isinstance(parent, ast.Attribute) or parent.value is not node)
+            ):
+                raise AuthorizationError("module capability cannot escape as a value")
+        if isinstance(node, ast.arg) and node.arg in bindings:
+            raise AuthorizationError("argument shadows an imported capability")
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in bindings:
+            raise AuthorizationError("definition shadows an imported capability")
+        if isinstance(node, ast.Attribute):
+            root_name, separator, member_path = _dotted(node).partition(".")
+            origin = bindings.get(root_name)
+            if (
+                separator
+                and origin is not None
+                and member_path not in _REGISTERED_MODULE_API.get(origin, frozenset())
+            ):
+                raise AuthorizationError("unregistered module API member capability")
+
+
 def _check_source_safety(
     path: str, tree: ast.AST, *, blob_sha256: str | None = None
 ) -> None:
@@ -452,6 +1114,7 @@ def _check_source_safety(
         for parent in ast.walk(tree)
         for child in ast.iter_child_nodes(parent)
     }
+    _check_import_capabilities(path, tree, parents)
     trusted_nodes: set[ast.AST] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
@@ -503,6 +1166,8 @@ def _check_source_safety(
         "get_annotations",
         "evaluate_forward_ref",
         "_eval_type",
+        "ForwardRef",
+        "_evaluate",
         "load",
         "system",
         "popen",

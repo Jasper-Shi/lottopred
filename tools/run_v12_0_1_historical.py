@@ -84,6 +84,23 @@ def _verify_initial_sources(root: Path) -> None:
         raise RuntimeError("launcher requires a fresh source checkout without bytecode")
 
 
+def _runtime_search_paths() -> list[Path]:
+    prefix = Path(sys.executable).absolute().parent.parent
+    version = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    if (prefix / "pyvenv.cfg").is_file():
+        # CPython 3.12 -S leaves sysconfig pointing at the base interpreter.
+        # Mixing its packages into a venv would violate the frozen environment.
+        return [
+            prefix / "lib" / version / "site-packages",
+            prefix / "Lib" / "site-packages",
+        ]
+    return [
+        Path(value)
+        for key in ("purelib", "platlib")
+        if (value := sysconfig.get_path(key))
+    ]
+
+
 def main() -> int:
     if sys.argv[1:] != [_FLAG]:
         print(f"Usage: python3.12 tools/run_v12_0_1_historical.py {_FLAG}")
@@ -111,20 +128,7 @@ def main() -> int:
         return 2
     try:
         _verify_initial_sources(root)
-        paths = []
-        for key in ("purelib", "platlib"):
-            value = sysconfig.get_path(key)
-            if value:
-                paths.append(Path(value))
-        prefix = Path(sys.executable).absolute().parent.parent
-        version = f"python{sys.version_info.major}.{sys.version_info.minor}"
-        paths.extend(
-            (
-                prefix / "lib" / version / "site-packages",
-                prefix / "Lib" / "site-packages",
-            )
-        )
-        for path in paths:
+        for path in _runtime_search_paths():
             if path.is_dir():
                 candidate = str(path.resolve(strict=True))
                 if candidate not in sys.path:
