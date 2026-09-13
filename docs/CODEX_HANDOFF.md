@@ -1,5 +1,45 @@
 # Codex Handoff
 
+## V14 fixed-five registration checkpoint
+
+At this new registration checkpoint, [V14](experiments/V14_long_frequency_fixed_five_disjoint_groups.md)
+`v14.0.0` is **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**.
+The [complete scientific basis](research/V14_long_frequency_fixed_five_disjoint_groups_basis.md)
+and [machine seal](../evidence/research_registrations/v14-long-frequency-fixed-five-disjoint-groups-v1.json)
+freeze one inherited long-frequency probability source and one Top-30 snake
+partition into five disjoint six-number groups. No V14 historical probability,
+ranking, group, hit score or p-value has been generated. The preparation
+[archive](../evidence/research_preparation/v14-fixed-five-20260913/README.md)
+contains source, exact mathematics and artificial-fixture checks only.
+
+The probability and selection modules are separate contracts. Strength 250,
+full strictly prior history, ranking ties, fixed G1-G5 identities, one primary
+maximum-hit statistic and the complete 627/314/313 consumed diagnostic cohort
+are frozen. No probability-method/group-rule grid or result-driven tuning is
+permitted. Top-6 is a ranking diagnostic; G1 alone retains legacy Final-6 aliases.
+The user's multiple-group extension qualifies only an explicitly identified,
+pre-frozen G1-G5 group, never a retrospectively selected replacement Final-6.
+
+Next complete the separately registered notification deployment and its
+no-SMTP permission/runtime qualification, then the nine-path historical
+implementation, independent reviews, exact-source CI and one-file historical
+authorization through ordinary protected-main merges. Missing notification
+API/credential capability is a preauthorization failure, not permission to
+weaken checks or begin the historical worker. The ordinary workflow token cannot supply the Administration read permission
+required for full branch-protection checks. N must separately register and
+qualify a least-privileged protection reader while retaining the default SMTP
+route. Registration alone creates no attempt, lease, history-read, workflow
+dispatch, live or email authority.
+
+V13 closure [PR #56](https://github.com/Jasper-Shi/lottopred/pull/56) actually
+merged at `b1c99b02d9e18ca66b806b00c41a739daeae6740`, the R14 base. Its two
+exact-source checks each passed 3,162 tests and its independent Standards and
+Spec reviews each recorded zero blocker/major findings. Original W13, its
+627-target Reject and consumed lease remain unchanged. Never restart V13.
+The broader Goal is incomplete; live remains paused and the hourly committed-
+state email remains independent. Earlier V13 preparation/registration wording
+below records those earlier checkpoints, not current authority.
+
 ## V13 completed historical checkpoint (2026-09-13)
 
 The sole V13 worker completed **627/627 targets, Reject, no Final-6 6/6**.
