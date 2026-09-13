@@ -1,0 +1,8 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+..............
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/shutil.py:698: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+230 passed in 668.11s (0:11:08)

@@ -1,0 +1,42 @@
+{
+  "I13_source_commit_created": false,
+  "V13_canonical_worker_or_claim_or_lease_created": false,
+  "V13_prediction_or_scoring_performed": false,
+  "base_sha": "900054719a4ac089d4c059830b5c7162f2543616",
+  "classification": "engineering_test_boundary_incident_not_historical_result",
+  "collection_payload_reading": "not_found_in_static_audited_source; unexpanded_workflow_scripts_not_certified",
+  "formal_leakage_audit_conclusion": "not_claimed",
+  "legacy_payload_reading": "confirmed_reachable_and_inferred_executed_under_default_test_order; no_nodeid_trace",
+  "log_mtime_utc": "2026-09-13T10:24:30.974697+00:00",
+  "log_sha256": "a563c5f3bfe614ef438a079fc2be00ead08bbd620003c18f53a7bf8d92983f08",
+  "model_changes_after_test_reading": false,
+  "next_step": "independent_protocol_review_then_explicit_permission_for_proposed_legacy_test_exception; no_full_suite_or_CI_or_merge_or_run_now",
+  "observed_at_utc": "2026-09-13T10:35:10.226841+00:00",
+  "permission_exception": "not_approved",
+  "preserved_records": [
+    {
+      "bytes": 564,
+      "path": "v13-i13-final-complete-repository-tests-20260913.log",
+      "sha256": "a563c5f3bfe614ef438a079fc2be00ead08bbd620003c18f53a7bf8d92983f08"
+    },
+    {
+      "bytes": 17919,
+      "path": "v13-i13-full-suite-boundary-static-audit-20260913.md",
+      "sha256": "1bc6330ba80c41e733b0e6d1ddd855a4928fe2bfe916433ff4cb454cff7e2f88"
+    },
+    {
+      "bytes": 3372,
+      "path": "v13-legacy-test-boundary-decision-proposal-20260913.md",
+      "sha256": "dbe517028109e26d9b8d06a606cb197ce8e591b19cfe0245adfc0cdf3be6e01e"
+    }
+  ],
+  "root_accountability": "Started full legacy suite without first checking every legacy data-read boundary; stopped when source review identified violation.",
+  "source_bytes_unchanged": true,
+  "source_files_staged": 8,
+  "source_review_manifest_sha256": "fb1fabf83c66e6843b0cb75d1987fe7f10e35499ec6af0ab3b5a7437c1619416",
+  "test_completed_cases": 230,
+  "test_elapsed_seconds": 668.11,
+  "test_exit_code": 2,
+  "test_result": "interrupted_not_complete_not_full_suite_pass",
+  "test_session_id": 82522
+}

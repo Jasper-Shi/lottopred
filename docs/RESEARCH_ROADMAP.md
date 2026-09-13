@@ -1,5 +1,18 @@
 # V5+ Research Roadmap
 
+## Prospective V13 legacy-test permission (2026-09-13)
+
+The user authorized the [separate legacy regression read exception](experiments/V13_legacy_regression_read_exception.md)
+after clarification of program checks versus real historical predictions.
+Only unchanged main900 legacy integrity fixtures may read their existing
+committed data/evidence, including local regression and this registration PR's
+first CI after independent draft review. The original interrupted 230-test run
+remains an incident, not a pass or retrospective permission. V13 science and its
+runtime seal remain unchanged; V13 tests stay synthetic, and historical
+execution still requires the full separate authorization/lease chain. At this
+checkpoint V13 remains registered, not implemented on main, not authorized and
+not scored. This exception alone enables no live operation or email.
+
 ## Next fixed experiment: V13 main-set overlap
 
 V12.0.2 completed its single registered diagnostic with Reject and no 6/6;
