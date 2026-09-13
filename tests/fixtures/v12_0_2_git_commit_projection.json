@@ -1,0 +1,106 @@
+{
+  "authorization_seal_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "canonical_body": {
+    "authorization_seal_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "canonical_command": [
+      "python3.12",
+      "tools/run_v12_0_2_historical.py",
+      "--consume-v12-0-2-once"
+    ],
+    "execution_authority_M_A": "6666666666666666666666666666666666666666",
+    "nonce_hex": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "schema_version": "lotto649-v12-consumption-lease-v1"
+  },
+  "canonical_body_utf8": "{\"authorization_seal_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonical_command\":[\"python3.12\",\"tools/run_v12_0_2_historical.py\",\"--consume-v12-0-2-once\"],\"execution_authority_M_A\":\"6666666666666666666666666666666666666666\",\"nonce_hex\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"schema_version\":\"lotto649-v12-consumption-lease-v1\"}",
+  "classification": "synthetic_fixture_only",
+  "execution_commit": "6666666666666666666666666666666666666666",
+  "execution_commit_raw": "tree bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nparent 4444444444444444444444444444444444444444\nauthor Synthetic <fixture@example.invalid> 1700000000 +0000\ncommitter Synthetic <fixture@example.invalid> 1700000000 +0000\n\nsynthetic authorization metadata\n",
+  "execution_tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "get_commit_response": {
+    "author": {
+      "date": "2023-11-14T22:13:20Z",
+      "email": "lotto649-v12-lease@users.noreply.github.com",
+      "name": "LOTTO649 V12 Consumption Lease"
+    },
+    "committer": {
+      "date": "2023-11-14T22:13:20Z",
+      "email": "lotto649-v12-lease@users.noreply.github.com",
+      "name": "LOTTO649 V12 Consumption Lease"
+    },
+    "html_url": "https://github.com/Jasper-Shi/lottopred/commit/f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+    "message": "{\"authorization_seal_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonical_command\":[\"python3.12\",\"tools/run_v12_0_2_historical.py\",\"--consume-v12-0-2-once\"],\"execution_authority_M_A\":\"6666666666666666666666666666666666666666\",\"nonce_hex\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"schema_version\":\"lotto649-v12-consumption-lease-v1\"}",
+    "node_id": "synthetic-opaque-commit-node",
+    "parents": [
+      {
+        "html_url": "https://github.com/Jasper-Shi/lottopred/commit/6666666666666666666666666666666666666666",
+        "sha": "6666666666666666666666666666666666666666",
+        "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/6666666666666666666666666666666666666666"
+      }
+    ],
+    "sha": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+    "tree": {
+      "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/trees/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+    "verification": {
+      "payload": null,
+      "reason": "unsigned",
+      "signature": null,
+      "verified": false,
+      "verified_at": null
+    }
+  },
+  "get_ref_response": {
+    "node_id": "synthetic-opaque-ref-node",
+    "object": {
+      "sha": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+      "type": "commit",
+      "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/f9d38ccbf6792b90d6ae7328267a59c74ad55e99"
+    },
+    "ref": "refs/heads/v12-consumption-v12.0.2",
+    "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/refs/heads/v12-consumption-v12.0.2"
+  },
+  "nonce_hex": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "post_commit_request": {
+    "author": {
+      "date": "2023-11-14T22:13:20Z",
+      "email": "lotto649-v12-lease@users.noreply.github.com",
+      "name": "LOTTO649 V12 Consumption Lease"
+    },
+    "committer": {
+      "date": "2023-11-14T22:13:20Z",
+      "email": "lotto649-v12-lease@users.noreply.github.com",
+      "name": "LOTTO649 V12 Consumption Lease"
+    },
+    "message": "{\"authorization_seal_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonical_command\":[\"python3.12\",\"tools/run_v12_0_2_historical.py\",\"--consume-v12-0-2-once\"],\"execution_authority_M_A\":\"6666666666666666666666666666666666666666\",\"nonce_hex\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"schema_version\":\"lotto649-v12-consumption-lease-v1\"}\n",
+    "parents": [
+      "6666666666666666666666666666666666666666"
+    ],
+    "tree": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "post_commit_request_byte_count": 809,
+  "post_commit_request_sha256": "a752b831c415a75c6e102d48ef8121b22e1c9c37984bbbc952f91f4a0e320554",
+  "post_commit_response": {
+    "sha": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99"
+  },
+  "post_ref_request": {
+    "ref": "refs/heads/v12-consumption-v12.0.2",
+    "sha": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99"
+  },
+  "post_ref_response": {
+    "node_id": "synthetic-opaque-ref-node",
+    "object": {
+      "sha": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+      "type": "commit",
+      "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/f9d38ccbf6792b90d6ae7328267a59c74ad55e99"
+    },
+    "ref": "refs/heads/v12-consumption-v12.0.2",
+    "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/refs/heads/v12-consumption-v12.0.2"
+  },
+  "raw_commit_byte_count": 692,
+  "raw_commit_sha1": "f9d38ccbf6792b90d6ae7328267a59c74ad55e99",
+  "raw_commit_sha256": "a47da1bc1e7c81efb8833e4724ad3c814a7b14dff14deaf8d1955d423ad6d6ff",
+  "raw_commit_utf8": "tree bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nparent 6666666666666666666666666666666666666666\nauthor LOTTO649 V12 Consumption Lease <lotto649-v12-lease@users.noreply.github.com> 1700000000 +0000\ncommitter LOTTO649 V12 Consumption Lease <lotto649-v12-lease@users.noreply.github.com> 1700000000 +0000\n\n{\"authorization_seal_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"canonical_command\":[\"python3.12\",\"tools/run_v12_0_2_historical.py\",\"--consume-v12-0-2-once\"],\"execution_authority_M_A\":\"6666666666666666666666666666666666666666\",\"nonce_hex\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"schema_version\":\"lotto649-v12-consumption-lease-v1\"}\n",
+  "source": "R3 closed representation policy; fabricated metadata, no remote observations"
+}
