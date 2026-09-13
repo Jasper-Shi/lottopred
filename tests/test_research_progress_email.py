@@ -845,3 +845,268 @@ def test_process_boundary_attempts_exactly_one_email_without_retry(
     assert "正文生成时尚未调用 SMTP，不声明送达成功" in body
     assert "sender@example.invalid" not in body
     assert "not-a-real-secret" not in body
+
+
+@pytest.fixture
+def email_plan_synthetic():
+    return {
+        "path": "evidence/release_canaries/2032-01-01-production-live-canary-plan.json",
+        "status": "synthetic_plan_only",
+        "credential_installed_at_registration": False,
+        "not_before": "2032-01-01T15:15:00Z",
+        "source_draw_date": "2031-12-31",
+        "next_prediction_target_draw": "2032-01-03",
+        "stage1_unattended_schedule": False,
+        "legacy_classification": "descriptive_only_nonpromotion",
+        "legacy_target_draw": "2031-12-31",
+    }
+
+
+@pytest.mark.parametrize(
+    ("instant", "state"),
+    (
+        ("2032-01-01T15:14:59+00:00", "before_not_before_no_authority_inferred"),
+        (
+            "2032-01-01T15:15:00+00:00",
+            "dispatch_deadline_unavailable_no_authority_inferred",
+        ),
+        (
+            "2032-01-04T04:59:59+00:00",
+            "dispatch_deadline_unavailable_no_authority_inferred",
+        ),
+        ("2032-01-04T05:00:00+00:00", "expired_next_prediction_target_day_passed"),
+    ),
+)
+def test_email_plan_timing_uses_explicit_clock_and_entire_toronto_target_day(
+    email_plan_synthetic, instant, state
+):
+    from lotto649.research_progress_email import _canary_plan_timing
+
+    facts = _canary_plan_timing(email_plan_synthetic, datetime.fromisoformat(instant))
+    assert facts["state"] == state
+    assert facts["dispatch_authority_verified"] is False
+    assert facts["next_prediction_target_draw"] == "2032-01-03"
+    assert facts["basis"] == (
+        "entire_registered_next_prediction_target_day_in_America_Toronto"
+    )
+
+
+def test_email_plan_timing_respects_toronto_summer_offset(email_plan_synthetic):
+    from lotto649.research_progress_email import _canary_plan_timing
+
+    email_plan_synthetic.update(
+        not_before="2032-07-01T15:15:00Z",
+        source_draw_date="2032-06-30",
+        next_prediction_target_draw="2032-07-03",
+    )
+    before = _canary_plan_timing(
+        email_plan_synthetic, datetime(2032, 7, 4, 3, 59, 59, tzinfo=UTC)
+    )
+    after = _canary_plan_timing(
+        email_plan_synthetic, datetime(2032, 7, 4, 4, 0, 0, tzinfo=UTC)
+    )
+    assert before["state"] == "dispatch_deadline_unavailable_no_authority_inferred"
+    assert after["state"] == "expired_next_prediction_target_day_passed"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("not_before", None),
+        ("not_before", "not a date"),
+        ("not_before", "2032-01-01T15:15:00"),
+        ("not_before", "2032-01-05T15:15:00Z"),
+        ("source_draw_date", None),
+        ("source_draw_date", "2032-01-03"),
+        ("next_prediction_target_draw", None),
+        ("next_prediction_target_draw", ""),
+        ("next_prediction_target_draw", "2032-02-30"),
+        ("next_prediction_target_draw", "2031-12-31"),
+    ),
+)
+def test_email_plan_timing_rejects_missing_malformed_or_inconsistent_metadata(
+    email_plan_synthetic, field, value
+):
+    from lotto649.research_progress_email import ProgressEmailError, _canary_plan_timing
+
+    email_plan_synthetic[field] = value
+    with pytest.raises(ProgressEmailError):
+        _canary_plan_timing(email_plan_synthetic, datetime(2032, 1, 5, tzinfo=UTC))
+
+
+@pytest.mark.parametrize(
+    "instant",
+    (
+        datetime(2032, 1, 5),  # noqa: DTZ001 -- intentional naive-clock rejection fixture.
+        datetime(2032, 1, 5, microsecond=1, tzinfo=UTC),
+    ),
+)
+def test_email_plan_timing_rejects_an_invalid_report_clock(
+    email_plan_synthetic, instant
+):
+    from lotto649.research_progress_email import ProgressEmailError, _canary_plan_timing
+
+    with pytest.raises(ProgressEmailError, match="generated_at"):
+        _canary_plan_timing(email_plan_synthetic, instant)
+
+
+@pytest.fixture
+def email_plan_report_seams(monkeypatch, tmp_path, email_plan_synthetic):
+    from lotto649 import research_progress_email as progress
+
+    head = "a" * 40
+    config = {
+        "refresh_enabled": True,
+        "live_enabled": True,
+        "backtest_enabled": False,
+    }
+    history = {"history_through": "2031-12-31", "draw_count": 1}
+    release = {
+        "live_canary_plan": email_plan_synthetic,
+        "protection": {
+            "verified_at": "2032-01-01T00:00:00Z",
+            "enforce_admins": True,
+            "allow_force_pushes": False,
+            "allow_deletions": False,
+        },
+        "publication_canary": {"passed": True},
+    }
+    artifacts = {
+        "top_hits": (0, 0, 0),
+        "metric_model": "synthetic",
+        "metric_version": "v0.0.0",
+        "metric_qualification": "legacy_descriptive_only_nonpromotion",
+        "latest_operational_state": "synthetic_pending",
+        "latest_prediction_pending_evaluation": True,
+        "latest_prediction_date": "2032-01-03",
+        "prediction_history_draws": 1,
+        "prediction_history_through": "2031-12-31",
+        "latest_evaluation_date": "2031-12-31",
+        "final_hits": 0,
+        "primary_models": ["synthetic"],
+        "shadow_models": [],
+        "versions": ["v0.0.0"],
+    }
+    monkeypatch.setattr(progress, "_require_full_history", lambda _root: None)
+    monkeypatch.setattr(progress, "_head", lambda _root: head)
+    monkeypatch.setattr(
+        progress, "_committed_blob", lambda *_args, **_kwargs: b"synthetic"
+    )
+    monkeypatch.setattr(progress, "_parse_config", lambda _raw: config)
+    monkeypatch.setattr(
+        progress,
+        "_commit_facts",
+        lambda _root: {
+            "sha": head,
+            "committed_at": "2032-01-01T00:00:00Z",
+            "summary": "synthetic metadata only",
+        },
+    )
+    monkeypatch.setattr(progress, "_history_facts", lambda *_args: (history, object()))
+    monkeypatch.setattr(progress, "_release_facts", lambda _root: release)
+    monkeypatch.setattr(
+        progress,
+        "_prediction_and_evaluation_facts",
+        lambda *_args, **_kwargs: artifacts,
+    )
+    return progress, tmp_path, head, email_plan_synthetic
+
+
+@pytest.mark.parametrize(
+    ("instant", "expired"),
+    (
+        (datetime(2032, 1, 1, 15, 0, tzinfo=UTC), False),
+        (datetime(2032, 1, 2, 15, 0, tzinfo=UTC), False),
+        (datetime(2032, 1, 5, 15, 0, tzinfo=UTC), True),
+    ),
+)
+def test_email_plan_render_never_turns_dates_into_canary_dispatch_advice(
+    email_plan_report_seams, instant, expired
+):
+    progress, root, head, _plan = email_plan_report_seams
+    report = progress.build_research_progress_report(
+        root, _run_context(head), generated_at=instant
+    )
+    assert "只运行一次手动 production canary" not in report.body
+    assert "D0" in report.body
+    assert "另行注册" in report.body
+    assert "开关不等于 workflow 已获执行授权" in report.body
+    if expired:
+        assert "目标日 2032-01-03 已整日过去" in report.body
+        assert "旧预测计划已过期，无执行授权" in report.body
+        assert "不得补跑、顺延或重试" in report.body
+        assert "无需为过期计划配置凭据" in report.body
+    else:
+        assert "当前执行授权未验证" in report.body
+        assert "旧预测计划已过期" not in report.body
+
+
+def test_email_plan_render_rejects_unavailable_target_date(email_plan_report_seams):
+    progress, root, head, plan = email_plan_report_seams
+    del plan["next_prediction_target_draw"]
+    with pytest.raises(progress.ProgressEmailError):
+        progress.build_research_progress_report(
+            root, _run_context(head), generated_at=datetime(2032, 1, 5, tzinfo=UTC)
+        )
+
+
+def test_email_plan_release_facts_extracts_only_registered_target_metadata(
+    monkeypatch, tmp_path, email_plan_synthetic
+):
+    from lotto649 import research_progress_email as progress
+
+    prefix = "evidence/release_canaries/2032-01-01-"
+    protection_path = prefix + "production-main-protection.json"
+    publication_path = prefix + "github-publication-canary.json"
+    plan_path = prefix + "production-live-canary-plan.json"
+    plan = {
+        "status": "synthetic_plan_only",
+        "credential": {"installed": False},
+        "execution": {
+            "not_before": email_plan_synthetic["not_before"],
+            "official_source_gate": {
+                "authorities": ["loto_quebec", "wclc"],
+                "draw_date": email_plan_synthetic["source_draw_date"],
+                "requirement": "both_authorities_publish_and_agree",
+            },
+        },
+        "stage2": {"unattended_schedule_in_stage_1": False},
+        "legacy_due_prediction_cohort": {
+            "classification": "descriptive_only_nonpromotion",
+            "target_draw": "2031-12-31",
+        },
+        "expected_success": {"predictions": {"target_draw": "2032-01-03"}},
+    }
+    objects = {
+        plan_path: plan,
+        protection_path: {
+            "repository": "Jasper-Shi/lottopred",
+            "verified_at": "2032-01-01T00:00:00Z",
+            "protection": {
+                "enforce_admins": True,
+                "allow_force_pushes": False,
+                "allow_deletions": False,
+            },
+        },
+        publication_path: {
+            "created_at": "2032-01-01T00:00:00Z",
+            "fresh_anonymous_full_fetch": "a" * 40,
+            **dict.fromkeys(
+                (
+                    "delete_rejected",
+                    "exact_blob_tree_commit_oids",
+                    "force_update_rejected",
+                    "stale_update_refs_rejected",
+                    "successful_update_refs",
+                ),
+                True,
+            ),
+        },
+    }
+    monkeypatch.setattr(progress, "_committed_paths", lambda *_args: tuple(objects))
+    monkeypatch.setattr(progress, "_json_blob", lambda _root, path: objects[path])
+    facts = progress._release_facts(tmp_path)
+    assert facts["live_canary_plan"]["next_prediction_target_draw"] == "2032-01-03"
+    del plan["expected_success"]["predictions"]["target_draw"]
+    with pytest.raises(progress.ProgressEmailError):
+        progress._release_facts(tmp_path)
