@@ -38,6 +38,14 @@ scores; a later evidence commit must report the complete result or an explicit
 early stop. Its target-day ad hoc V1 selection for 2026-09-12 is separate and
 cannot become registered prospective evidence.
 
+The single replay is now complete: 627 targets, no Final-6 6/6, and V1 mean
+Top-6/12/18 hits 0.720893 / 1.395534 / 2.078150, each below its fair
+expectation. Brier and binary log loss also trail the fair constant. The
+experiment is closed as a negative diagnostic and grants no promotion or
+permission to tune/replay its revealed outcomes. Complete frozen results and
+read-only audit are in the
+[dated evidence report](../reports/v1_ensemble_verified_history_diagnostic_20260913/summary.zh-CN.md).
+
 - Single-number inclusion probability: `6/49 ~= 0.122449`
 - Expected hits from a fixed six-number selection: `36/49 ~= 0.734694`
 - Expected Top-12 hits: `72/49 ~= 1.469388`
