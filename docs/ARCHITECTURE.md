@@ -96,11 +96,10 @@ seven descriptive-only legacy evaluations, and seven immutable 2026-08-29
 predictions. The existing seven 2026-08-26 snapshots remain byte-identical. A
 post-worker failure has no automatic retry. The first successful P or A
 authority advance would have moved `main`, so the old independently approved
-`expected_sha` would have failed a second dispatch and blocked replay. V12.0.1
-keeps its historical one-shot `A_H2` authorization independent of D0, W2,
-future outcomes, and the replacement live-canary lane. The separate future
-`A_L2` route is manual-only, has no automatic retry, and authorizes no
-unattended schedule.
+`expected_sha` would have failed a second dispatch and blocked replay.
+V12.0.1's separate live lane also expired `superseded_unexecuted`; its historical
+startup failed and is frozen against retry. The new R3 historical-only route
+has no live lane and remains independent of D0 and any future live canary.
 
 The expired emergency seal was deliberately scoped to the three execution
 commands on main: `bootstrap`, `backtest`, and `live`. It now grants no
@@ -274,9 +273,9 @@ return a complete manifest.
 
 The old Stage-1 path is permanently non-authoritative after expiry. It must not
 be dispatched after its window, even if a SHA or credential later becomes
-available. D0 must first restore all-false outputs; any replacement production
-path requires the separate future `A_L2` manual-only chain and has no automatic
-retry or unattended schedule.
+available. D0 must first restore all-false outputs. V12.0.1's live lane also
+expired; any replacement production path requires a new live registration and
+reviewed canary. R3 has no live or scheduling authority.
 
 ## Path B — Historical walk-forward simulation
 
@@ -287,6 +286,30 @@ verified history[0:t] -> features -> model -> probability vector -> result[t] ->
 ```
 
 Then advance to `t+1`. Random train/test shuffling is forbidden.
+
+### V12 historical-only registration boundary
+
+The current registered operation is
+[`V12.0.2 / R3`](experiments/V12_0_2_historical_operational_rebinding.md).
+
+**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+
+It preserves the sealed H12 science and common pure core. Its six-path I3
+implementation must remain disconnected from the production factory, CLI,
+workflows and live configuration.
+R3 requires new independent reviews, exact-head CI, ordinary protected-main
+implementation and authorization merges, and its own one-shot lease. The core
+and complete runtime closure must match at I3, `K_H3`, `A_H_s3` and `M_A_H3`.
+
+The registered startup order is complete read-only authorization validation,
+exclusive durable startup receipt, execution capability, recorded remote
+mutation intents and receipts, then claim and scientific ledger. Seal the startup
+journal before governed history access. Per-target predictions freeze before
+reveal and score.
+Receipt creation grants no authority; a failed or uncertain attempt cannot
+resume or reuse a lease. The R3 specification defines exact object projection,
+journal ownership and hash bindings. V12.0.1's failed startup, frozen runtime and
+unknown original POST activity remain a separate immutable incident.
 
 ## Feature engine
 
@@ -352,7 +375,8 @@ A single historical 6/6 or 5/6 is not sufficient evidence of predictive skill. A
 ## Scheduling
 
 Codex Cloud is for development and review. The old Stage-1 manual canary expired
-without execution and cannot be dispatched. V12.0.1's future live lane is
-manual-only through `A_L2`, with no automatic retry or schedule. Any unattended
-Thursday/Sunday schedule requires a separate later release after the new canary
-evidence passes independent review.
+without execution and cannot be dispatched. V12.0.1's later live lane also
+expired unexecuted. R3 is historical-only and adds no schedule. Any future live
+recovery needs a new registration and reviewed canary after D0; an unattended
+Thursday/Sunday schedule remains a separate later release after that evidence
+passes independent review.

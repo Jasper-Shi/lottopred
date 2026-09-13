@@ -26,6 +26,10 @@ Preserve two properties above headline hit counts:
   publication, read `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`.
 - For system boundaries and operational recovery, read `docs/ARCHITECTURE.md`
   and `docs/OPERATIONS.md`.
+- Before V12 implementation, historical authorization, or startup recovery,
+  read `docs/experiments/V12_0_2_historical_operational_rebinding.md` and the
+  V12.0.1 startup incident linked there. R3 is historical-only and registered,
+  not implemented, authorized, or scored; preserve V12.0.1's no-retry boundary.
 
 When code and prose disagree, verify behavior from code and tests, then update the
 affected documentation in the same change.
@@ -191,13 +195,9 @@ Those residual true values are pending a separate reviewed D0 release that
 restores all-false workflow outputs; they are not permission to dispatch the
 old plan, install its credential, approve a late SHA, or reuse its date.
 
-V12.0.1 has two independent future authorization lanes. Historical `A_H2` may
-advance after complete reviewed I2, protected-main authorization merge, fixed
-governed-history checks, and its fresh one-shot lease; it does not depend on D0,
-W2, a future outcome, or any live canary. The live lane must separately pass D0,
-W2, timely S2, one-shot C2, reviewed success integration, and protected-main
-`A_L2`. That future live route is manual-only, has no schedule, and has no
-automatic retry. Neither lane is authorized at registration.
+V12.0.1's historical startup failed and is frozen against retry; its separate
+live lane expired `superseded_unexecuted`. V12.0.2 has no live lane. Historical
+authorization follows R3 independently of D0 or a future live canary.
 
 Live forward cycle:
 

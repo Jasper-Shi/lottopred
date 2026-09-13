@@ -47,10 +47,25 @@ which the frozen lease verifier rejects. The original invocation retained no
 phase/nonce/OID/POST receipt, so its exact failure stage and whether a dangling
 commit was uploaded remain unknown. Do not infer either from the later 404,
 retry the command, reuse either old authorization source, or alter the frozen
-I2 closure. The next work is a separately preregistered historical-only
-operational version preserving the H12 science and adding strict representation
-checks plus durable sanitized startup receipts. PR #41 remains obsolete and
-unmerged. No V12 result or 6/6 exists.
+I2 closure. PR #45 normally merged the incident and live closure at
+`3015078e251bdcbb92719e1b291b1807525fef16`. Obsolete PR #41 is closed and
+unmerged; its source branch and audit history are preserved. No V12 result or
+6/6 exists.
+
+The current registered operation is
+[`V12.0.2 historical operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md).
+
+**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+
+It preserves the exact H12 scientific fingerprint, core, dates, seed, controls
+and ten gates.
+It registers strict GitHub object-representation checks and durable sanitized
+startup receipts. It has no live lane. The next work is the six-path I3
+implementation using only source, fixed Git metadata, synthetic fixtures and
+closed-form oracles. New independent Standards/Spec reviews, successful
+exact-head CI, an ordinary protected-main implementation merge, a new
+auth-JSON-only source and ordinary authorization merge, and a fresh V12.0.2
+one-shot lease are all still required before historical execution.
 
 The V12.0.1 live seed and canary windows have expired. That lane is
 `superseded_unexecuted`, recorded in the separate
@@ -156,9 +171,9 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 > pending. No manual dispatch ran and no unattended live schedule existed. A
 > successful P or A advance would have invalidated its approved SHA and blocked
 > rerun. The expired plan has no Stage-2
-> continuation. Any future scheduling would require the separately registered
-> V12.0.1 live lane, a successful new manual canary, evidence review, and another
-> release.
+> continuation. The later V12.0.1 live lane also expired unexecuted. Future
+> live recovery requires its own new registration and reviewed canary; R3
+> provides no live or scheduling authority.
 > The complete facts and blocker list are in `OPERATIONS.md`. No component or
 > preparation authorizes execution. Re-enable only through the reviewed
 > two-gate release described in
@@ -178,7 +193,8 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V12.0.0 parity transition | Superseded unexecuted | Its fixed canary route expired without execution. This is not Archive, Reject, consumed evidence, or a model result. |
-| V12.0.1 parity transition | Implemented; historical authorization pending | I2 merged in PR #40; no historical run or score. The live lane expired unexecuted. The standalone historical launcher remains absent from production factory/CLI/workflow/live wiring. |
+| V12.0.1 parity transition | Startup failed; frozen against retry; not scored | Its sole invocation after PR #44 failed before any claim or forecast. The exact failure stage and remote POST activity remain unknown. Its separate live lane expired unexecuted. |
+| V12.0.2 parity transition | Registered; not implemented, authorized, or scored | R3 preserves H12 science under new historical-only execution identities. It adds no live lane or production factory/CLI/workflow wiring. |
 | 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
 | 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
@@ -195,21 +211,19 @@ pseudo-parity control against governed `PublishedHistory` authority
 2026-08-22. The only historical diagnostic remains exactly 627 consumed targets
 in 2020--2025, split 314/313; every 2026 outcome is excluded.
 
-V12.0.0 is now `superseded_unexecuted` because its exact forward-canary route
-expired. The new
-[`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
-changes no statistical behavior. Its formal R2 checkpoint remains
-registration-only: the V12.0.1 implementation and both authorization paths are
-absent, and no runner may load governed history or write an artifact.
+V12.0.0 remains `superseded_unexecuted`. V12.0.1's actual historical startup
+failure and its separate expired live lane retain the distinct dispositions
+recorded in the 2026-09-13 checkpoint above. Neither old authorization source
+grants another attempt.
 
-After complete independently reviewed I2, the historical lane may advance
-through protected-main base `K_H2`, auth-JSON-only source `A_H_s2`, and ordinary
-merge `M_A_H2`. Only `M_A_H2` at protected remote `main`/HEAD may acquire the
-fresh single lease `refs/heads/v12-consumption-v12.0.1` and authorize the one-shot
-historical run. It does not depend on a future draw or live-canary success. The
-live lane is separate and remains manual-only through D0/W2/S2/C2/M_C2/K_L2 and
-`M_A_L2`; no schedule or automatic retry is authorized. No V12 forecast, score,
-report, result notification, shadow activation, or production behavior exists.
+The current authority is the registration-only
+[`R3 specification`](experiments/V12_0_2_historical_operational_rebinding.md).
+Its historical sequence is `R3 < I3 < K_H3 < A_H_s3 < M_A_H3 < L_H3 < run_H3`.
+Only the new ordinary authorization merge `M_A_H3` at protected remote
+`main`/HEAD can authorize the new one-shot route; `A_H_s3` itself cannot.
+R3 has no live lane and does not depend on D0, future outcomes or live-canary
+success. No V12 forecast, score, report, result notification, shadow activation,
+or production behavior exists.
 
 ## How the implemented system runs
 
@@ -233,9 +247,10 @@ A (sole parent P) is remotely compare-and-swapped and freshly reloaded. The
 legacy CLI `bootstrap` and `live` commands remain stopped by the writer
 interlock. Backtest remains false and unauthorized. The old Stage-1 workflow
 bytes are expired and grant no dispatch authority; D0 must reseal them all-false.
-Only a later V12.0.1 `A_L2` manual lane may reach the public orchestrator after
-its new exact digest, repository, ref, event, reviewed production SHA, checkout,
-credential, time, and source gates all pass.
+V12.0.1's live lane also expired. A future production attempt requires a new
+live registration and reviewed release with its own exact digest, repository,
+ref, event, production SHA, checkout, credential, time, and source gates.
+R3 historical authorization cannot reach this orchestrator.
 
 `config.yaml` deliberately separates two selections:
 
@@ -309,9 +324,8 @@ The configured workflows are:
 - `backtest.yml`: configured historical backtest, currently sealed to checkout
   and an all-false guard.
 - `live.yml`: the old Stage-1 branch is expired and pending D0 all-false reseal;
-  it must not be dispatched. A later reviewed W2 may add only the separately
-  registered V12.0.1 manual `A_L2` canary identity, never a schedule or automatic
-  retry.
+  it must not be dispatched. V12.0.1's later live lane also expired. Any
+  replacement wiring requires a new live registration; R3 adds none.
 - `email-test.yml`: explicit Gmail SMTP smoke test.
 - `research-progress-email.yml`: configured hourly (`17 * * * *`) Chinese
   committed-state report. It is read-only, uses a full-history checkout with
@@ -404,8 +418,9 @@ future refactoring, but they are no longer a valid operational-history write
 path. Legacy live refresh remains behind its writer interlock. The old Stage-1
 release remains an immutable record, but its fixed window expired and its
 workflow/config bytes grant no dispatch authority. D0 must reseal those bytes
-before W2 can bind the new manual `A_L2` route. The disposable OID/CAS canary and
-production-main protection were completed on 2026-08-24; the production
+before any newly registered live recovery wiring; the V12.0.1 live route also
+expired and cannot be revived. The disposable OID/CAS canary and production-main
+protection were completed on 2026-08-24; the production
 `P -> A` canary has not run.
 The pre-incident reconciliation policy was:
 
@@ -440,9 +455,9 @@ Do not broaden the fallback to swallow those integrity failures.
 3. Do not dispatch the expired Stage-1 route. Preserve its history, but use the
    separate reviewed D0 release to restore data/live/backtest and `live.yml` to
    all-false behavior. Preserve the CLI writer interlock. Any later production
-   attempt must use the new V12.0.1 manual `A_L2` identity and its independently
-   reviewed exact production SHA; never reuse an old candidate, activation
-   ancestor, plan, credential binding, or date.
+   attempt requires a new live registration and independently reviewed exact
+   production SHA. V12.0.1's live lane also expired; preserve its fixed dates
+   and closure. R3 supplies no replacement live identity.
 4. Preserve and independently review the sealed corrected epoch and append-only
    suffix identities above. Do not replace them with worktree CSV bytes or
    caller-supplied metadata.
@@ -461,19 +476,19 @@ Do not broaden the fallback to swallow those integrity failures.
    sequence; do not add a standalone worker or caller-injectable
    configuration/clock/adapter path. The prediction-origin fix is satisfied by
    PR #32, and the expired Stage-1 candidate review remains an immutable
-   historical fact. Do not complete or dispatch that route late. After D0 and
-   complete I2, W2 may bind only the new digest/OID identities; S2/C2 then permit
-   at most one manual production canary with exact reload evidence. Record its
-   reviewed SHA in new dispatch evidence. A successful P or A advance makes
-   that SHA stale and blocks rerun. Scheduling requires a later separate release
-   after the new canary succeeds.
-8. Outcome-blind model design and preregistration may continue during the hold.
-   V12.0.1 historical authorization is independent of future/live evidence: only
-   reviewed I2, fixed governed history, the frozen historical runtime closure,
-   protected-main `M_A_H2`, and the fresh one-shot lease may authorize scoring.
-   The separate live `A_L2` lane still requires D0/W2/S2/C2/M_C2/K_L2 and its own
-   protected-main merge. Neither authorization exists now. Use a new version
-   whenever statistical behavior changes.
+   historical fact. Both Stage-1 and V12.0.1 live windows are closed. A new
+   live registration must define its own reviewed digest/OID identities,
+   canary and reload evidence after D0; historical I3 does not authorize them.
+   Scheduling requires a later separate release after that canary succeeds.
+8. Continue the registered historical-only R3 work from its linked
+   specification. Complete I3 with synthetic/source-only checks, new independent
+   reviews and exact-head CI; preserve the core and runtime closure at I3,
+   `K_H3`, `A_H_s3` and `M_A_H3`. Only the new ordinary protected-main
+   authorization merge and fresh `refs/heads/v12-consumption-v12.0.2` lease
+   permit its single run. Validate authorization before creating a startup
+   receipt, then preserve durable receipts before remote mutation. V12.0.1
+   remains frozen against retry. R3 grants no history access, artifact creation
+   or execution by itself, and has no live lane.
 9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 
