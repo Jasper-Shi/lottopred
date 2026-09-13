@@ -1,5 +1,34 @@
 # Codex Handoff
 
+## V13 registration checkpoint after V12 evidence publication
+
+V12.0.2's six immutable worker files and independent negative-result audit
+are published through the ordinary [PR #50](https://github.com/Jasper-Shi/lottopred/pull/50)
+merge `f247649be2928bfc7cbf5a00c0a400eedadb89f2`, with source parent
+`fb78dd941f55b18553c196725704d18b95210838` and prior-main parent
+`b7fa81d6d5facc1730700cd527362df79f457cf8`. Artifact commit
+`c9b483f6e89bf73eade28829188fbebe745e28c0` remains an ancestor.
+The pending-publication wording below describes its earlier evidence-source
+checkpoint; immutable worker bytes remain untouched. Both exact-source CI
+checks passed 1,862 tests and final Standards/Spec reviews had zero findings.
+V12 remains Reject, permanently closed against rerun, with no 6/6.
+
+The next separately frozen hypothesis is
+[V13 main-set overlap](experiments/V13_post_rng_main_set_overlap.md),
+model `v13.0.0`, seed 649. At its R13 checkpoint it is **REGISTERED /
+NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**. It tests one signed scalar
+overlap law with one fixed cyclic-anchor control and frozen V1/random
+comparators, on the same consumed 627 dates split 314/313. There are no V13
+important numbers, predictions, scores, gates or result yet.
+
+Use the [new seal](../evidence/research_registrations/v13-post-rng-main-set-overlap-v1.json)
+and its exact eight-path I13 boundary. R13 grants no startup, claim, lease,
+worker, CLI, workflow, production configuration or email authority. Before
+separate historical authorization use source, registered fixtures, closed
+math and fixed Git metadata only. V12 authorization and leases grant V13
+nothing. V13 has no live lane; production remains paused. The broad 6/6 Goal
+is incomplete. Current uncommitted work must not be reported as Git evidence.
+
 ## 2026-09-13 research checkpoint
 
 The user-requested

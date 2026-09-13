@@ -1,5 +1,25 @@
 # Model Research Protocol
 
+## V13 registered historical restriction
+
+[V13](experiments/V13_post_rng_main_set_overlap.md), version `v13.0.0`,
+registers one exact exponential main-set overlap law with a fixed Normal(0,1)
+prior, expanding post-2019-05-15 adjacent-pair fit, fixed cyclic-source control
+and frozen V1/random comparators. Its [machine seal](../evidence/research_registrations/v13-post-rng-main-set-overlap-v1.json)
+fixes all arithmetic, source pins, 627 diagnostic targets, split 314/313,
+metrics, five-entry family correction and ten gates. It changes no production
+model or live authority. At R13: **REGISTERED / NOT IMPLEMENTED /
+NOT AUTHORIZED / NOT SCORED**.
+
+This restricted law remains part of an exposed transition family; the old
+2020–2025 outcomes are not untouched confirmation. V12's completed Reject
+is preserved without a rerun or changed formula. V13 cannot be selected or
+tuned against revealed outcomes, and repeated cross-version comparator
+tickets do not create new independent opportunities. A first new Final-6
+6/6 requires a stopped, frozen, independently audited historical record and
+one successful default-route Chinese notice before Goal completion. Top-12
+6/6 alone is recorded and continues without a notification.
+
 ## Non-negotiable: no future leakage
 
 A target draw may use only information available strictly before that draw. This includes features, normalization, training labels, hyperparameter selection and ensemble weights.

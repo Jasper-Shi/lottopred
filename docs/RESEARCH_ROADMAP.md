@@ -1,5 +1,30 @@
 # V5+ Research Roadmap
 
+## Next fixed experiment: V13 main-set overlap
+
+V12.0.2 completed its single registered diagnostic with Reject and no 6/6;
+its evidence and independent audit are normally merged in
+[PR #50](https://github.com/Jasper-Shi/lottopred/pull/50). It is closed against
+retuning and another run. The next narrow hypothesis is the
+[V13 exact main-set overlap law](experiments/V13_post_rng_main_set_overlap.md),
+with its [mathematical basis](research/V13_post_rng_main_set_overlap_basis.md)
+and [machine registration](../evidence/research_registrations/v13-post-rng-main-set-overlap-v1.json).
+
+At R13, `v13.0.0` is **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED /
+NOT SCORED**. One global beta models overlap with the prior main set;
+there is no lag/window/label search or V1 blend. The fixed cyclic control is
+correlated and may retain some alternative signal; its conservative gate
+and limitations are frozen before scores. All 627 targets remain consumed
+diagnostics and the family correction is not Goal-global.
+
+Next steps must preserve `R13 < I13 < K_H13 < A_H_s13 < M_A_H13 < L_H13 < run_H13`.
+The eight new implementation paths, separate authorization-only branch,
+independent reviews, frozen runtime, unique new lease and sole command are
+specified in the seal. No historical answers or real capability are available
+to implementation work before authorization. No live branch is registered.
+Continue only with a separately frozen hypothesis after any negative result;
+do not manufacture stronger-looking V13 variants from its revealed scores.
+
 ## Objective
 
 Develop one falsifiable hypothesis at a time while protecting the true forward
