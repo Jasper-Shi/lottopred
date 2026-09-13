@@ -27,6 +27,17 @@ do not thereby acquire corrected-history promotion evidence.
 
 ## Fair-lottery baselines
 
+The separately requested
+[`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md)
+registers one corrected-history replay of the unchanged V1 ensemble, with the
+original random baseline and a fixed label-permuted probability control. Its
+reviewed registration/implementation merge authorizes only its named manual
+one-shot diagnostic command. It does not enable the generic backtest/live
+switches or authorize V12. At registration it has no historical predictions or
+scores; a later evidence commit must report the complete result or an explicit
+early stop. Its target-day ad hoc V1 selection for 2026-09-12 is separate and
+cannot become registered prospective evidence.
+
 - Single-number inclusion probability: `6/49 ~= 0.122449`
 - Expected hits from a fixed six-number selection: `36/49 ~= 0.734694`
 - Expected Top-12 hits: `72/49 ~= 1.469388`
@@ -91,8 +102,11 @@ window expired. This is not `Archive`, `Reject`, or `consumed`, and it conveys n
 scientific result. The outcome-blind
 [`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
 retains the identical H12 statistical fingerprint while assigning new execution
-identities. V12.0.1 is **registered only: not implemented, not authorized, not
-scored, and not activated**.
+identities. V12.0.1 is **registered and implemented, but not historically
+authorized or scored**. I2 merged by PR #40 at
+`40f6e4098d4ed59f9421196efb8573c66c48928a`. Its live lane missed its fixed
+seed/canary windows and is `superseded_unexecuted`; a separate live closure
+artifact remains to be committed.
 
 V12.0.1 has separate historical and live authorization lanes. After complete
 independently reviewed I2, only the ordinary historical-auth merge `M_A_H2` at

@@ -16,6 +16,14 @@ only for labeled diagnostics; correction does not make its answers unseen again.
 
 ## Evidence lanes
 
+The user's next requested diagnostic is
+[`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md):
+one replay of the unchanged V1 ensemble over the corrected 627-target
+2020–2025 cohort, with random and fixed label-permuted controls. Registration
+and implementation are reviewed before the one manual run. At registration,
+no result is available. The replay uses durable forecast-before-reveal files,
+preserves every target, and cannot promote V1 or restore blind-test status.
+
 Keep these lanes separate in code, reports, and claims:
 
 | Lane | Data | Allowed use | Claim allowed |
@@ -36,8 +44,9 @@ the reviewed `src/lotto649/operational_history.py` seam, which owns the deployed
 Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
-but the historical/backtest gate remains closed until a model-specific reviewed
-authorization such as V12.0.1 historical `M_A_H2` is merged. That fixed-history
+but the generic historical/backtest gate remains closed. The new V1 diagnostic
+is authorized only by its own reviewed registration/implementation merge;
+V12.0.1 still requires its distinct historical `M_A_H2`. That fixed-history
 authorization is independent of any future live canary. The old Stage-1
 data/live runtime bytes remain present only pending the D0 all-false reseal and
 are not dispatch authority. The bounded
@@ -146,7 +155,7 @@ At the registered checkpoint, promote, continue unchanged, or reject. Publish th
 decision and full comparison set. A change inspired by the cohort begins a new
 model version and a new prospective counter.
 
-## Current registered experiment: V12
+## Separate registered lane: V12
 
 The original
 [`V12_post_rng_parity_composition_transition`](experiments/V12_post_rng_parity_composition_transition.md)
@@ -161,17 +170,20 @@ without execution, which is neither a scientific rejection nor consumed model
 evidence. The outcome-blind
 [`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
 retains the same H12 statistical fingerprint and creates new operational
-identities. It is registration-only, not implemented, not authorized, not
-scored, and not activated.
+identities. I2 is implemented and merged by PR #40; the historical lane is not
+authorized or scored. The fixed live seed/canary windows expired without their
+prerequisites, so only the live lane is `superseded_unexecuted`.
 
-The next historical work is a complete independently reviewed I2 using only
-synthetic fixtures and closed-form oracles, followed by an auth-JSON-only source
-and ordinary protected-main merge `M_A_H2`. Only that merge may authorize a
+Future V12 historical work needs an auth-JSON-only source on the then-current
+protected main and an ordinary merge `M_A_H2`. The old unmerged PR #41 source
+must be rebound after intervening V1 work advances main. Only the valid new
+merge may authorize a
 fresh exact `refs/heads/v12-consumption-v12.0.1` lease and the single historical
 run. This historical route is deliberately independent of future draw outcomes
-and live-canary success. Production recovery is a separate manual-only lane:
-D0 and I2 precede W2/S2/C2/M_C2/K_L2/`M_A_L2`; no schedule or automatic retry is
-authorized. No V12 forecast, score, report, live role, or prospective cohort
+and live-canary success. The expired V12.0.1 live window cannot roll forward;
+future production recovery needs a separately registered operational route.
+No schedule or automatic retry is authorized. No V12 forecast, score, report,
+live role, or prospective cohort
 exists at this checkpoint.
 
 ## Candidate feature families

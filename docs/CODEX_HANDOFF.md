@@ -1,5 +1,33 @@
 # Codex Handoff
 
+## 2026-09-13 research checkpoint
+
+The user requested a historical diagnostic of the unchanged V1 ensemble used
+for their separate ad hoc 2026-09-12 model calculation. The new
+[`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md)
+registration freezes 627 consumed 2020–2025 targets and the verified 4,444-draw
+history through 2026-08-22. Its registration/implementation must pass both
+review axes and CI and merge normally before its single named manual command.
+At this checkpoint it has not run, created predictions, or produced scores.
+It leaves `config.yaml`, source model behavior, production switches and all
+existing prediction/evaluation/report files unchanged.
+
+V12 I2 has merged in PR #40 at
+`40f6e4098d4ed59f9421196efb8573c66c48928a`; V12 is implemented but remains
+historically unauthorized and unscored. PR #41 is an unmerged authorization
+source bound to that older main. Once main advances, future V12 authorization
+requires a new auth-only source on the current protected main and a fresh
+reviewed ordinary merge; do not reuse the stale source as execution authority.
+The new V1 files and ordinary documentation updates do not alter V12's frozen
+29-path historical runtime closure.
+
+The V12.0.1 live seed and canary windows have expired. That lane is
+`superseded_unexecuted`, with its separate closure artifact still outstanding;
+this does not reject or consume the unexecuted V12 historical experiment.
+Production remains paused, and PR #37's ticket-email direction remains outside
+this research. The older operational checkpoints below describe their dated
+state and do not supersede this section.
+
 Last verified on 2026-08-24 against a production history containing Stage-1
 activation merge ancestor `3b72d6f3f5cbaf7122d9f4941215c33edac4a6ee`
 and corrected-epoch artifact commit
@@ -118,7 +146,7 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V3 boosting | Paused shadow | Before the hold, it created immutable snapshots and evaluations beside V1; it did not change V1 predictions or ensemble weights. |
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V12.0.0 parity transition | Superseded unexecuted | Its fixed canary route expired without execution. This is not Archive, Reject, consumed evidence, or a model result. |
-| V12.0.1 parity transition | Registered only | Outcome-blind operational rebinding with the unchanged H12 statistical fingerprint: not implemented, not authorized, not scored, and absent from factory, CLI, workflows, and live configuration. |
+| V12.0.1 parity transition | Implemented; historical authorization pending | I2 merged in PR #40; no historical run or score. The live lane expired unexecuted. The standalone historical launcher remains absent from production factory/CLI/workflow/live wiring. |
 | 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
 | 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
