@@ -2,20 +2,38 @@
 
 ## 2026-09-13 research checkpoint
 
-The user requested a historical diagnostic of the unchanged V1 ensemble used
-for their separate ad hoc 2026-09-12 model calculation. The new
+The user-requested
 [`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md)
-registration freezes 627 consumed 2020–2025 targets and the verified 4,444-draw
-history through 2026-08-22. Its registration/implementation must pass both
-review axes and CI and merge normally before its single named manual command.
-At this checkpoint it has not run, created predictions, or produced scores.
-It leaves `config.yaml`, source model behavior, production switches and all
-existing prediction/evaluation/report files unchanged.
+has completed its single registered run: all 627 consumed 2020–2025 targets,
+three frozen producers per target, 1,881 prediction files, and 627 evaluations.
+PR #42 normally merged reviewed source `c886604cecb65ed9879d90568a1541430223b030`
+at execution commit `5d348b72938ece45e41d42e7f9bb4850d220c740`.
+The source passed 1,213 CI tests and independent Standards/Spec review with
+0 blocker/major/minor. The independent V1 consumption ref points to that
+execution commit and must never be updated, deleted or reused.
+
+V1 mean Top-6/12/18 hits are 0.720893 / 1.395534 / 2.078150; all are below
+fair expectations. Mean Final-6 hits are 0.720893 versus the random control's
+0.779904. V1's best Final-6 is 4/6 on 2020-07-25; none of the three producers
+has a 5/6 or 6/6. Probability scoring also trails the fair constant. This
+experiment closes with a negative diagnostic result, no promotion and no
+future-winning claim. The broader 6/6 Goal is not complete. No hit-triggered
+email was sent. Do not tune or rerun this V1 experiment.
+
+The immutable full report, every prediction/evaluation, ledger, read-only audit,
+and Chinese interpretation are under
+[`reports/v1_ensemble_verified_history_diagnostic_20260913/`](../reports/v1_ensemble_verified_history_diagnostic_20260913/summary.zh-CN.md).
+The verified input contains 4,444 draws through 2026-08-22; each predictor saw
+only the prefix strictly before its historical target. Actual forecast generation
+was 2026-09-13 00:59:20–01:05:40 UTC, never backdated. These are corrected-history
+sensitivity diagnostics, not restored blind or prospective predictions.
+`config.yaml`, models, production switches and all pre-existing artifacts
+remain unchanged.
 
 V12 I2 has merged in PR #40 at
 `40f6e4098d4ed59f9421196efb8573c66c48928a`; V12 is implemented but remains
 historically unauthorized and unscored. PR #41 is an unmerged authorization
-source bound to that older main. Once main advances, future V12 authorization
+source bound to that older main. Main has advanced; future V12 authorization
 requires a new auth-only source on the current protected main and a fresh
 reviewed ordinary merge; do not reuse the stale source as execution authority.
 The new V1 files and ordinary documentation updates do not alter V12's frozen

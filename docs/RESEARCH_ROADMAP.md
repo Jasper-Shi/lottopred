@@ -16,13 +16,23 @@ only for labeled diagnostics; correction does not make its answers unseen again.
 
 ## Evidence lanes
 
-The user's next requested diagnostic is
-[`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md):
-one replay of the unchanged V1 ensemble over the corrected 627-target
-2020–2025 cohort, with random and fixed label-permuted controls. Registration
-and implementation are reviewed before the one manual run. At registration,
-no result is available. The replay uses durable forecast-before-reveal files,
-preserves every target, and cannot promote V1 or restore blind-test status.
+The user's separately requested
+[`V1_ensemble_verified_history_diagnostic_20260913`](experiments/V1_ensemble_verified_history_diagnostic.md)
+completed once from reviewed PR #42 merge
+`5d348b72938ece45e41d42e7f9bb4850d220c740`. All 627 targets and all three
+producers are preserved. V1 mean Top-6/12/18 hits were 0.720893 / 1.395534 /
+2.078150, below fair expectations; its best Final-6 was 4/6 and no producer
+reached 5/6 or 6/6. It closes as a negative data-correction sensitivity
+diagnostic, with no model change or promotion. See the
+[complete evidence and Chinese interpretation](../reports/v1_ensemble_verified_history_diagnostic_20260913/summary.zh-CN.md).
+
+Do not search V1 variants in response to this result. The already preregistered
+V12 candidate remains a separate narrow, falsifiable hypothesis; its formula,
+seed, controls and gates were frozen before these V1 results and remain unchanged.
+It still needs its own current-base authorization source and ordinary merge,
+with all original gates, before any unique historical run. No new V12 result,
+lease or authorization is implied by V1's completion. The broader 6/6 Goal is
+not complete.
 
 Keep these lanes separate in code, reports, and claims:
 
