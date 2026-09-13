@@ -1,5 +1,28 @@
 # Architecture
 
+## V13 completed historical boundary
+
+V13 has completed its separately authorized, standalone historical lane;
+it is disconnected from live configuration, the production model factory,
+CLI, workflows and schedules. The exact sequence
+`R13 < I13 < K_H13 < A_H_s13 < M_A_H13 < L_H13 < run_H13` finished at
+execution commit `182a4245bbaf0c444ef1e16c1b5beb120eec327f`, with original
+artifact commit `8ab54e1827317239b33061a439305801e733872c` retaining that
+sole parent. Its permanent lease is
+`4cfd6d641d32b7168f74725626448d82f9dec46d`.
+
+All four producer outputs for each of 627 targets were frozen before reveal
+and scored from those bytes. The original six startup/claim/ledger/report/
+Markdown/manifest files remain immutable. Both independent audits verified
+the completed evidence within their documented scopes. The scientific
+result is **Reject**, with no 6/6; see
+[the full interpretation](research/V13_HISTORICAL_RESULTS.md).
+Do not confuse the worker's internal audit flag with independent audit,
+or its creation-time pending-publication field with later Git ancestry.
+Neither a completed lease nor a source authorization grants another run.
+The multi-group successor is specification work only and adds no active
+module, command or execution authority at this checkpoint.
+
 ## Goal
 
 Ask one narrow question: **does any model repeatedly assign higher probability/rank to future winning numbers than a fair-lottery baseline when it is forbidden from seeing the future?**

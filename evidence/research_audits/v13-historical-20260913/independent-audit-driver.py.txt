@@ -1,0 +1,280 @@
+"""Independent read-only audit of the already completed, fixed V13 worker output.
+Author/auditor: /root/v13_auth_helper_readiness_review.
+No forecast factory, model fit, historical startup, capability or persistence API.
+Only new external audit proof/report writes; original research bytes are immutable.
+"""
+from __future__ import annotations
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+from datetime import datetime, timezone, date
+
+ROOT = Path('/Users/jaspershi/CodexResearch/lottopred-v13-historical-output-audit-20260913')
+W = '8ab54e1827317239b33061a439305801e733872c'
+M = '182a4245bbaf0c444ef1e16c1b5beb120eec327f'
+K = 'dcb08b49af436585c48f94551e0c7a0ddd79c56b'
+A = '81fe287b5dfe53c69fe8708d0816d94e57f2ea6c'
+I = '6a607d6a86bf30c73ab105103bb3d2ad0211a0a5'
+WTREE = '21b7c415af1e8e417ad2a431da7da9f02b9de622'
+LEASE = '4cfd6d641d32b7168f74725626448d82f9dec46d'
+HISTORY = '4a617f2c1575a165b42878600753a01ddf2ced03'
+CORE_SHA = '7944102759212ef88da895e1336e8489f077c75e7aa9682fb1c805cd96707675'
+CLOSURE_SHA = 'c2f2162b0caa0c50346af8cd576214a31ec65dd5c27c21287559f07f9c15d2a7'
+AUTH_SHA = 'b18e2012c2dd2bfff1b1a251448c56db3923cdc2f0853751c7659962fc8fb457'
+REG_SHA = '36543acd288418c0cfbf561024b2ca60fa483b8aae6a6988026b76dde861e759'
+TERMINAL = Path('/private/tmp/v13-actual-worker-terminal-six-files-' + W + '.json')
+TERMINAL_SHA = '941830e1fef95f43243f7deb7a38077b7aaef0a21639be79501bf8c959cee7b2'
+STEM = Path('/private/tmp/v13-actual-output-independent-audit-' + W + '-20260913')
+PROOF = Path(str(STEM) + '.json')
+REPORT = Path(str(STEM) + '.md')
+FROZEN = '/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/bin/python3.12'
+SITE = '/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/lib/python3.12/site-packages'
+AUDITOR = '/root/v13_auth_helper_readiness_review'
+SESSION = 'v13-actual-output-independent-audit-20260913'
+PHASE = 'initial'
+SAFE = {'PATH':'/usr/bin:/bin:/usr/sbin:/sbin', 'LANG':'C', 'LC_ALL':'C', 'GIT_CONFIG_COUNT':'0', 'GIT_CONFIG_GLOBAL':'/dev/null', 'GIT_CONFIG_SYSTEM':'/dev/null', 'GIT_CONFIG_NOSYSTEM':'1', 'GIT_GRAFT_FILE':'/dev/null', 'GIT_NO_REPLACE_OBJECTS':'1', 'GIT_NO_LAZY_FETCH':'1', 'GIT_OPTIONAL_LOCKS':'0', 'GIT_TERMINAL_PROMPT':'0', 'GIT_ATTR_NOSYSTEM':'1'}
+
+def require(value, code):
+    if not value:
+        raise RuntimeError(code)
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def unique(pairs):
+    result = {}
+    for key, value in pairs:
+        require(key not in result, 'duplicate_key')
+        result[key] = value
+    return result
+
+
+def parsed(raw, lf=True):
+    value = json.loads(raw, object_pairs_hook=unique, parse_constant=lambda _: (_ for _ in ()).throw(ValueError('nonfinite')))
+    require(raw == canonical(value) + (b'\n' if lf else b''), 'noncanonical_json')
+    return value
+
+
+def stage(name):
+    global PHASE
+    PHASE = name
+    print(json.dumps({'audit_phase':name, 'worker_invoked':False}), flush=True)
+
+
+def exclusive(path, raw):
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'wb') as stream:
+        stream.write(raw); stream.flush(); os.fsync(stream.fileno())
+    require(path.read_bytes() == raw, 'audit_output_differs')
+
+
+def main():
+    require(sys.executable == FROZEN and sys.version_info[:3] == (3,12,11) and sys.implementation.name == 'cpython', 'fixed_python_required')
+    require(sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode and not sys.flags.optimize, 'fixed_flags_required')
+    require(not os.path.lexists(PROOF) and not os.path.lexists(REPORT), 'new_audit_outputs_required')
+    gh_env = {key:os.environ[key] for key in ('HOME','GH_CONFIG_DIR','XDG_CONFIG_HOME','TMPDIR') if key in os.environ}
+    require('HOME' in gh_env, 'existing_login_config_required')
+    gh_env.update({'PATH':'/opt/homebrew/bin:/usr/bin:/bin','GH_HOST':'github.com','GH_PROMPT_DISABLED':'1','GH_PAGER':'cat','GH_NO_UPDATE_NOTIFIER':'1','GH_NO_EXTENSION_UPDATE_NOTIFIER':'1','GIT_TERMINAL_PROMPT':'0','LANG':'C','LC_ALL':'C'})
+    os.environ.clear(); os.environ.update(SAFE)
+    require(ROOT.resolve(strict=True) == ROOT and not any(p.is_symlink() for p in (ROOT,*ROOT.parents)), 'canonical_clone_required')
+    def git(*args):
+        r = subprocess.run(['/usr/bin/git','--no-replace-objects','-c','core.hooksPath=/dev/null','-c','core.fsmonitor=false','-C',str(ROOT),*args], env=SAFE, capture_output=True, timeout=120)
+        require(r.returncode == 0, 'safe_git_failed')
+        return r.stdout
+    def clean_snapshot():
+        require(git('rev-parse','HEAD').decode().strip() == W, 'audit_head_moved')
+        require(git('rev-parse','--is-shallow-repository') == b'false\n', 'full_clone_required')
+        require(git('rev-parse','--show-object-format') == b'sha1\n', 'sha1_required')
+        for rel in ('shallow','objects/info/alternates','objects/info/http-alternates','info/grafts'):
+            require(not os.path.lexists(ROOT/'.git'/rel), 'independent_git_required')
+        require(not git('for-each-ref','--format=%(refname)','refs/replace/'), 'replace_refs_prohibited')
+        require(not git('status','--porcelain=v1','-z','--untracked-files=all'), 'clean_worktree_required')
+        require(not git('ls-files','--others','--ignored','--exclude-standard','-z'), 'ignored_files_prohibited')
+        flags = git('ls-files','-v','-z').split(b'\0')
+        require(all(not row or row[:2] == b'H ' for row in flags), 'hidden_index_flags')
+        return {'head':W,'tree':git('rev-parse','HEAD^{tree}').decode().strip(),'config_sha256':sha((ROOT/'.git/config').read_bytes()),'index_sha256':sha(git('ls-files','--stage','-z'))}
+    stage('source_and_original_six_file_identity')
+    before = clean_snapshot()
+    require(before['tree'] == WTREE, 'worker_tree_differs')
+    terminal_raw = TERMINAL.read_bytes(); require(sha(terminal_raw) == TERMINAL_SHA,'terminal_receipt_drift')
+    terminal = parsed(terminal_raw)
+    require(terminal['artifact_commit'] == W and terminal['execution_sha'] == M and terminal['artifact_tree'] == WTREE,'terminal_identity_differs')
+    require(git('rev-list','--parents','-n','1',W).decode().split() == [W,M],'worker_parent_differs')
+    require(git('rev-list','--parents','-n','1',M).decode().split() == [M,K,A],'authorization_parents_differ')
+    fixed_files = terminal['files']; paths = [row['path'] for row in fixed_files]
+    changes = git('diff-tree','--no-commit-id','--no-renames','-r','--name-status','-z',M,W).split(b'\0')
+    require(changes == [part for p in paths for part in (b'A',p.encode())]+[b''],'worker_six_additions_differ')
+    raw_files = {}
+    for item in fixed_files:
+        raw = git('cat-file','blob',item['git_blob'])
+        require(sha(raw) == item['sha256'] and len(raw) == item['bytes'],'original_six_file_digest_differs')
+        require(git('rev-parse',W+':'+item['path']).decode().strip() == item['git_blob'],'worker_blob_differs')
+        path = ROOT/item['path']; require(path.is_file() and not path.is_symlink() and path.read_bytes() == raw,'working_artifact_differs')
+        raw_files[item['path']] = raw
+    commit_raw = git('cat-file','commit',W)
+    require(hashlib.sha1(b'commit '+str(len(commit_raw)).encode()+b'\0'+commit_raw).hexdigest() == W,'raw_worker_commit_hash_differs')
+    headers,message = commit_raw.split(b'\n\n',1); lines = headers.splitlines()
+    require(len(lines)==4 and lines[0] == ('tree '+WTREE).encode() and lines[1] == ('parent '+M).encode(),'worker_raw_headers_differ')
+    author = b'LOTTO649 V13 Historical Evidence <lotto649-v13-evidence@users.noreply.github.com> '
+    require(lines[2].startswith(b'author '+author) and lines[3] == b'committer '+lines[2][7:] and re.fullmatch(rb'[0-9]+ \+0000',lines[2][len(b'author '+author):]),'worker_raw_identity_differs')
+    require(message == b'Record immutable V13.0.0 consumed historical diagnostic artifacts\n','worker_message_differs')
+    auth_path='evidence/research_authorizations/v13-post-rng-main-set-overlap-v1-historical.json'
+    auth_raw=(ROOT/auth_path).read_bytes(); require(sha(auth_raw)==AUTH_SHA,'authorization_sha_differs'); auth=parsed(auth_raw)
+    closure=auth['runtime_dependency_closure']; require(len(closure)==27 and sha(canonical(closure))==CLOSURE_SHA,'fixed_closure_differs')
+    for row in closure:
+        path=ROOT/row['path']; require(path.is_file() and not path.is_symlink(),'source_path_invalid')
+        require(sha(path.read_bytes())==row['sha256'] and git('rev-parse',W+':'+row['path']).decode().strip()==row['git_blob'],'preimport_closure_differs')
+    require(sha((ROOT/'src/lotto649/v13_registered_attempt.py').read_bytes())=='3da425d55adf3b3534f9ff55f02a1f0c6a8faaad8a3b5387b6e8b23fce902efa','entrypoint_differs')
+    require({p.name for p in (ROOT/'src').iterdir()}=={'lotto649'} and not (ROOT/'src/lotto649/v13_registered_attempt').exists(),'import_shadow')
+    require(all(not p.is_symlink() and (not p.is_file() or p.suffix=='.py') for p in (ROOT/'src').rglob('*')),'unregistered_source_loader')
+    require(not any(n=='lotto649' or n.startswith('lotto649.') for n in sys.modules),'project_preimport')
+    sys.path[:0]=[str(ROOT/'src'),SITE]
+    from lotto649 import v13_registered_attempt as attempt
+    repository=attempt.GitRepository(ROOT); repository.require_full_clean()
+    science,operation=attempt._registered_authorities(repository,W)
+    require(attempt.REGISTRATION_SHA256==REG_SHA and attempt.HISTORY_AUTHORITY==HISTORY,'registration_identity_differs')
+    for checkpoint in (I,K,A,M,W):
+        require(attempt._core_and_closure(repository,checkpoint,required_core_sha256=CORE_SHA)==closure,'checkpoint_closure_differs')
+        require(attempt._implementation_manifest(repository,checkpoint)==auth['implementation_files'],'implementation_manifest_differs')
+    attempt._verify_worktree_runtime(repository,W,closure)
+    runtime=attempt.runtime_identity(); require(runtime==auth['runtime']==operation['runtime_closure']['exact_runtime'],'runtime_differs')
+    attempt._verify_registered_numerics(science) # Only registered literal synthetic scalar/root oracles.
+    def no_execution_state():
+        for value in (attempt._VERIFIED_FACTS,attempt._STARTED_FACTS,attempt._ISSUED_AUTHORITIES,attempt._USED_AUTHORITIES,attempt._ISSUED_LEASES,attempt._USED_LEASES,attempt._ACTIVE_ATTEMPTS,attempt._HISTORICAL_TRANSPORT_OWNERS,attempt._NOTIFICATION_FACTS):
+            require(not value,'audit_created_execution_state')
+    no_execution_state()
+    file_roles=operation['claim_ledger_publication']['worker_outputs']
+    finals={key:file_roles[key] for key in ('startup','claim','ledger','json','markdown','manifest')}
+    require(sorted(finals.values())==paths,'registered_six_paths_differ')
+    for path in paths:
+        require(attempt._notification_blob_origin(repository,W,path)==W,'immutable_add_origin_differs')
+    manifest=parsed(raw_files[finals['manifest']]); claim=parsed(raw_files[finals['claim']]); stored=parsed(raw_files[finals['json']])
+    claim_spec=operation['claim_ledger_publication']['claim_schema']; manifest_spec=operation['claim_ledger_publication']['manifest_schema']
+    attempt._closed_object(claim,set(claim_spec['required_keys'])); attempt._closed_object(manifest,set(manifest_spec['required_keys']))
+    require(claim['schema_version']==claim_spec['schema_version'] and manifest['schema_version']==manifest_spec['schema_version'],'claim_manifest_schema')
+    require(manifest['files']==[r for r in fixed_files if r['path']!=finals['manifest']],'manifest_five_files_differ')
+    require(manifest['parent_commit']==M and manifest['authorization_sha256']==AUTH_SHA and manifest['classification']=='consumed_historical_diagnostic_only' and manifest['self_reference']=='containing_commit_resolved_from_Git_object_not_embedded','manifest_identity')
+    bindings=claim['bindings']; require(bindings['execution_authority_M_A_H13']==M and bindings['lease_commit_L_H13']==LEASE and bindings['authorization_sha256']==AUTH_SHA,'claim_execution_lease')
+    require({key:bindings[key] for key in auth}==auth,'claim_authorization_bytes')
+    stage('ledger_startup_and_all_frozen_rows')
+    ledger=attempt.audit_ledger(ROOT/finals['ledger'])
+    require(ledger['scored_target_count']==627 and not ledger['pending_forecast'] and not ledger['stopped_for_audit'],'expected_complete_negative_ledger')
+    rows=attempt._durable_scored_rows(ROOT/finals['ledger'])
+    require(len(rows)==627 and not any(r['exact_final6_opportunities'] for r in rows),'unexpected_capture_or_incomplete')
+    events=[parsed(raw,lf=False) for raw in raw_files[finals['ledger']].splitlines()]
+    require(all(e['bindings']==bindings for e in events),'ledger_claim_bindings')
+    require(not any(e['event_kind']=='attempt_archived' for e in events),'unexpected_archive')
+    instants=[attempt._valid_utc(e['recorded_at']) for e in events]
+    require(all(a<=b for a,b in zip(instants,instants[1:])),'ledger_clock_regressed')
+    require(events[0]['payload']['claim_sha256']==sha(raw_files[finals['claim']]),'first_claim_hash')
+    attempt._notification_startup_metadata(repository,raw_files[finals['startup']],manifest,claim,raw_files[finals['claim']],events,M,operation)
+    require(stored['targets']==rows and stored['ledger']==ledger and stored['bindings']==bindings,'report_changed_or_omitted_rows')
+    stage('fixed_authority_and_627_prior_only_prefixes')
+    from lotto649.operational_history import load_published_history,operational_history_provenance
+    from lotto649 import v13_evidence as evidence
+    from lotto649.models.v13_main_set_overlap import map_score
+    history=load_published_history(ROOT,HISTORY); provenance=operational_history_provenance(history)
+    require(len(history.draws)==4444 and history.draws[0].draw_date==date(1982,6,12) and history.draws[-1].draw_date==date(2026,8,22),'governed_history_count_dates')
+    require(all(a.draw_date<b.draw_date for a,b in zip(history.draws,history.draws[1:])),'governed_order')
+    expected=auth['governed_history_identity']['immutable_objects']
+    expected_provenance={'observed_revision':HISTORY,'registry_genesis_commit':expected['registry']['genesis_commit'],'registry_git_blob':expected['registry']['git_blob'],'registry_sha256':expected['registry']['sha256'],'registry_head_sha256':expected['registry']['head_sha256'],'seal_sha256':expected['seal']['sha256'],'seal_git_blob':expected['seal']['git_blob'],'base_rows_sha256':expected['base']['rows_sha256'],'base_draw_count':4442,'suffix_git_blob':expected['suffix']['git_blob'],'suffix_sha256':expected['suffix']['sha256'],'suffix_head_sha256':expected['suffix']['head_sha256'],'suffix_event_count':2}
+    require(all(provenance.get(k)==v for k,v in expected_provenance.items()),'fixed_history_provenance')
+    targets=attempt._target_dates(history,science); require([d.isoformat() for d in targets]==[r['target_draw_date'] for r in rows],'627_target_dates')
+    positions={d.draw_date:i for i,d in enumerate(history.draws)}
+    max_stationarity=0.0
+    for number,row in enumerate(rows):
+        target=date.fromisoformat(row['target_draw_date']); actual=history.draws[positions[target]]; frozen=row['forecast_payload']; prefix=history.draws[:positions[target]]
+        require(row['actual']==list(actual.numbers) and row['bonus']==actual.bonus,'revealed_actual_differs')
+        require(prefix[-1].draw_date.isoformat()==frozen['history_through']==frozen['training_cutoff_date'] and all(d.draw_date<target for d in prefix),'prior_only_cutoff')
+        serialized=[{'draw_date':d.draw_date.isoformat(),'numbers':list(d.numbers),'bonus':d.bonus} for d in prefix]
+        require(sha(canonical(serialized)+b'\n')==frozen['visible_prefix_sha256'] and len(prefix)==frozen['visible_prefix_draw_count'],'visible_prefix_identity')
+        post=[d for d in prefix if d.draw_date>=date(2019,5,15)]
+        projection=[{'draw_date':d.draw_date.isoformat(),'numbers':list(d.numbers)} for d in post]
+        for index,forecast in enumerate(frozen['forecasts'][:2]):
+            state=forecast['scientific_state']; counts=[]
+            for source,destination in zip(post,post[1:]):
+                anchor=source.numbers if index==0 else tuple(1+n%49 for n in source.numbers)
+                counts.append(len(set(anchor)&set(destination.numbers)))
+            require(state['scientific_projection_sha256']==sha(canonical(projection)+b'\n') and state['counts_sha256']==sha(canonical(counts)+b'\n'),'scientific_prefix_or_counts_digest')
+            require(state['training_pair_count']==len(counts) and state['training_overlap_sum']==sum(counts),'training_counts')
+            require(state['source_draw_date']==prefix[-1].draw_date.isoformat() and state['source_anchor']==list(prefix[-1].numbers),'source_anchor')
+            require(state['transformed_anchor']==(None if index==0 else sorted(1+n%49 for n in prefix[-1].numbers)),'control_anchor')
+            residual=map_score(state['beta'],counts) # Evaluate frozen beta only; never solve/refit it.
+            require(math.isfinite(residual),'nonfinite_frozen_stationarity')
+            max_stationarity=max(max_stationarity,abs(residual))
+        evidence.validate_frozen_payload(evidence.canonical_json_bytes(frozen))
+        recomputed=evidence.score_target(evidence.canonical_json_bytes(frozen),actual)
+        require(all(row[k]==v for k,v in recomputed.items()),'frozen_score_arithmetic_differs')
+        if (number+1)%200==0: print(json.dumps({'audit_phase':PHASE,'validated_targets':number+1}),flush=True)
+    import yaml
+    v1_cfg=yaml.safe_load(repository.read_blob(HISTORY,'config.yaml'))
+    require(sha(evidence.canonical_json_bytes(v1_cfg))==evidence._FROZEN_V1_CONFIG_SHA256,'fixed_v1_config_differs')
+    stage('in_memory_report_metrics_and_markdown_equality')
+    require(stored['stop_reason'] is None and stored['audit']['warnings']==[],'negative_report_stop_warning')
+    rebuilt=evidence.build_report(rows,dict(bindings),audit_complete=True,audit_warnings=(),stop_reason=None)
+    rebuilt['claim_sha256']=sha(raw_files[finals['claim']]); rebuilt['ledger']=ledger
+    rebuilt['independent_leakage_audit']='not_required_no_exact_final6'; rebuilt['audit_publication']='pending_git_integration'
+    require(evidence.canonical_json_bytes(rebuilt)==raw_files[finals['json']],'full_report_byte_equality_failed')
+    require(evidence.render_markdown(rebuilt).encode()==raw_files[finals['markdown']],'markdown_byte_equality_failed')
+    require(rebuilt['complete_registered_scope'] is True and rebuilt['disposition']=='Reject' and rebuilt['expected_target_count']==627,'negative_verdict_differs')
+    no_execution_state(); attempt._verify_worktree_runtime(repository,W,closure); require(clean_snapshot()==before,'local_state_changed_before_remote')
+    stage('read_only_archived_authorization_reviews_and_lease')
+    token=response=api=None
+    try:
+        gh=Path('/opt/homebrew/bin/gh').resolve(strict=True)
+        require(gh.is_relative_to('/opt/homebrew/Cellar/gh') and gh.name=='gh' and not stat.S_IMODE(gh.stat().st_mode)&0o022,'fixed_gh_executable')
+        response=subprocess.run([str(gh),'auth','token','--hostname','github.com'],cwd='/private/tmp',env=gh_env,capture_output=True,timeout=30)
+        require(response.returncode==0 and 0<len(response.stdout)<=514,'existing_github_auth_unavailable')
+        token=response.stdout.rstrip(b'\r\n').decode('ascii'); require(response.stdout in {token.encode(),token.encode()+b'\n',token.encode()+b'\r\n'},'token_framing')
+        response=None; gh_env.clear(); api=attempt.FixedGitHubApi(token); token=None
+        archived_auth,contributors=attempt._notification_authorization_metadata(repository,api,M,W)
+        require(archived_auth==auth,'archived_auth_differs')
+        require(AUDITOR not in {p['agent_id'] for p in contributors} and SESSION not in {p['session_id'] for p in contributors},'auditor_is_source_author')
+        attempt._remote_protection(api); remote_main=attempt._remote_main(api)
+        require(remote_main==M,'remote_main_changed_before_publication')
+        ref=api.request_json('GET','/repos/Jasper-Shi/lottopred/git/ref/heads/v13-consumption-v13.0.0')
+        attempt._verify_lease_ref(ref,LEASE)
+        lease_raw=repository.run('cat-file','commit',LEASE); headers,message=lease_raw.split(b'\n\n',1)
+        ls=headers.splitlines(); prefix=b'author LOTTO649 V13 Consumption Lease <lotto649-v13-lease@users.noreply.github.com> '
+        epoch=int(ls[2][len(prefix):].split()[0]); stamp=datetime.fromtimestamp(epoch,timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        person={'name':'LOTTO649 V13 Consumption Lease','email':'lotto649-v13-lease@users.noreply.github.com','date':stamp}
+        request={'tree':repository.tree(M),'parents':[M],'author':person,'committer':dict(person),'message':message.decode()}
+        observed=api.request_json('GET','/repos/Jasper-Shi/lottopred/git/commits/'+LEASE)
+        attempt._verify_lease_object(observed,LEASE,lease_raw,request)
+        discovered_reviews=attempt._discover_authorization_reviews(api,source=A,base=K,merge=M,closure_sha256=CLOSURE_SHA)
+        transport=attempt._historical_transport_state(api)
+        require(transport['phase']=='read_only' and transport['authority'] is None and not transport['commit_attempted'] and not transport['ref_attempted'],'transport_left_read_only')
+        no_execution_state()
+    finally:
+        token=response=None; gh_env.clear()
+        if api is not None: api._session.headers.clear();api._session.close()
+    stage('final_immutability_and_external_audit_proof')
+    attempt._verify_worktree_runtime(repository,W,closure); require(clean_snapshot()==before,'audit_clone_changed')
+    for item in fixed_files:
+        require(sha((ROOT/item['path']).read_bytes())==item['sha256'],'six_file_changed_during_audit')
+    require(sha(TERMINAL.read_bytes())==TERMINAL_SHA,'terminal_proof_changed')
+    no_execution_state()
+    proof={'schema_version':'lotto649-v13-independent-completed-output-audit-v1','classification':'completed_original_consumed_historical_diagnostic_independently_validated','auditor_agent_id':AUDITOR,'audit_session_id':SESSION,'audited_at_utc':datetime.now(timezone.utc).isoformat(),'verdict':'pass','blocker_count':0,'major_count':0,'artifact_commit':W,'artifact_tree':WTREE,'execution_commit':M,'lease_commit':LEASE,'observed_remote_main':remote_main,'source_closure_sha256':CLOSURE_SHA,'pure_core_sha256':CORE_SHA,'runtime_identity_sha256':sha(canonical(runtime)),'terminal_source_receipt_sha256':TERMINAL_SHA,'audit_driver_sha256':sha(Path(__file__).read_bytes()),'original_six_files':fixed_files,'history_provenance':provenance,'ledger_audit':ledger,'verified_target_count':627,'verified_frozen_producer_count':2508,'exact_final6_count':0,'disposition':rebuilt['disposition'],'all_report_json_bytes_equal':True,'all_report_markdown_bytes_equal':True,'prior_only_prefixes_and_actuals_match_fixed_authority':True,'startup_thirteen_phases_and_lease_original_receipts_match':True,'frozen_scalar_stationarity_max_absolute_descriptive_only':max_stationarity,'gates':rebuilt['gates'],'audit_complete_is_independent_of_scientific_gate_pass':True,'implementation_review_records':auth['review_records'],'authorization_review_records':discovered_reviews,'registered_source_contributors':contributors,'independent_auditor_not_source_contributor':True,'repository_changed_by_audit':False,'original_execution_clone_touched':False,'worker_rerun':False,'new_forecasts_or_model_fits':False,'frozen_rule_and_score_equality_oracles_only':True,'canonical_state_created':False,'lease_mutation':False,'notification_invoked':False,'goal_complete':False,'limitations':['Original worker process exit and original-working-file observation rely on the fixed parent terminal receipt; this audit independently verifies its existing W blobs and exact stored content.','Hash chains and current GitHub observations are not independent wall-clock witnesses of every original fsync; the sealed source/runtime, original startup receipts and preserved run metadata supply the operational chain.','Model coefficients were not refitted and no historical prediction was regenerated; frozen scalar laws, exact input projections, same-rule selection and scores/report arithmetic were verified.','2020-2025 remains consumed historical diagnostic evidence and cannot establish future predictability or untouched confirmation.']}
+    proof_raw=canonical(proof)+b'\n'; exclusive(PROOF,proof_raw)
+    report_text='''# V13 原始627期输出独立审计\n\n结论：PASS，0 blocker、0 major。科学结果仍为 Reject；本审计不等于模型有预测优势或 Goal 完成。\n\n已独立核验原始六文件/W 提交、13阶段 startup 与原 lease 证据、627期 prior-only cutoff/prefix/actual、全部2508个冻结模型输出的49概率/hex/排序/Top-K/Final-6、固定规则 equality oracle、评分与完整报告/Markdown 精确字节一致。原 JSON/Markdown/ledger/claim/manifest/startup 均未修改。\n\n没有6/6，没有新的预测、模型拟合、worker、canonical state、lease 操作或通知。已使用真实 GET 重新核验归档授权、原CI/独立评论和当前原lease对象。完整技术边界及残余信任说明见同名 JSON。\n\n原始 worker commit：`'''+W+'''`。执行 M：`'''+M+'''`。\n\n审计 proof SHA-256：`'''+sha(proof_raw)+'''`。\n\n此结论仅针对本次已冻结历史诊断输出。下一步可保留同一原始 commit，通过普通证据 PR 发布；不得重写历史或将 consumed diagnostic 称为未来中奖证明。\n'''
+    exclusive(REPORT,report_text.encode())
+    print(json.dumps({'audit_verdict':'pass','blocker_count':0,'major_count':0,'target_count':627,'artifact_commit':W,'report_disposition':rebuilt['disposition'],'proof_path':str(PROOF),'proof_sha256':sha(proof_raw),'report_path':str(REPORT),'report_sha256':sha(report_text.encode()),'worker_rerun':False}),flush=True)
+
+if __name__=='__main__':
+    try:
+        main()
+    except BaseException:
+        print(json.dumps({'audit_verdict':'not_completed','failed_phase':PHASE,'diagnostic':'fixed_read_only_audit_check_failed','worker_rerun':False,'original_outputs_must_be_preserved':True}),file=sys.stderr,flush=True)
+        raise SystemExit(1) from None

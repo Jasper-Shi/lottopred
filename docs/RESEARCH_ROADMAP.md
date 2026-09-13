@@ -1,5 +1,29 @@
 # V5+ Research Roadmap
 
+## V13 closed; successor specification only
+
+The sole V13 historical diagnostic is complete: **627/627, Reject, no 6/6**.
+Its best Final-6 is 3/6 on seven dates; all predefined targets, producers,
+metrics, intervals and gates remain in the original report. Both actual
+independent audits passed with zero blocker/major findings; see
+[the result and audit interpretation](research/V13_HISTORICAL_RESULTS.md).
+Its permanent lease is consumed. V13 cannot be retuned or rerun.
+
+Next, finish the separately documented two-module research specification:
+one fixed probability source followed by one fixed five-group selection
+rule, compared with a fair five-group structure that matches coverage and
+all group overlaps. This is preparation only, not a registered successor
+or permission to compute new outcomes. Freeze the exact modules, full
+cohort, every group, one primary metric, fair null, bounded secondary
+metrics, multiplicity interpretation, early-stop/failure rules and audit
+schema before implementation or historical authorization. Do not search a
+grid of probability methods and group rules against exposed answers.
+
+The predecessor's result is a valid negative finding. Historical 2020–2025
+remains consumed, never new blind confirmation, and no reliable future
+winning advantage or Goal completion has been established. Earlier R13/E13
+sections below preserve their registration-time status.
+
 ## Prospective V13 legacy-test permission (2026-09-13)
 
 The user authorized the [separate legacy regression read exception](experiments/V13_legacy_regression_read_exception.md)
