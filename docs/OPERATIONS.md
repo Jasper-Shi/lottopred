@@ -1,5 +1,46 @@
 # Operations Guide
 
+## V13 is completed; no recovery by retry
+
+The sole V13 worker completed **627/627 targets, Reject, no Final-6 6/6**.
+Candidate best Final-6 is 3/6 on seven dates. Both actual independent audits
+passed with zero blocker and zero major findings. The full
+[result and audit interpretation](research/V13_HISTORICAL_RESULTS.md) links
+every original target/producer record and separates scientific findings,
+independent audit, publication and their limits. This remains consumed
+historical diagnostic evidence; no future winning ability is established.
+
+I13 normally merged in [PR #53](https://github.com/Jasper-Shi/lottopred/pull/53)
+at `dcb08b49af436585c48f94551e0c7a0ddd79c56b`. Separate historical authorization
+[PR #54](https://github.com/Jasper-Shi/lottopred/pull/54) normally merged at
+`182a4245bbaf0c444ef1e16c1b5beb120eec327f` before the sole invocation. Original
+worker commit `8ab54e1827317239b33061a439305801e733872c` adds exactly six files
+and retains that execution commit as its sole parent.
+
+[PR #55](https://github.com/Jasper-Shi/lottopred/pull/55) ordinarily merged
+these unchanged original artifacts at
+`05986709848b08e069ba14eea832143f14a075f6` on 2026-09-13T19:35:00Z.
+The merge preserves ordered parents (execution M, original W) and W's tree.
+Both exact-W checks passed 3,162 tests; the two actual public independent
+reviews recorded zero blocker/major findings. The separately archived
+[publication proof](../evidence/research_audits/v13-historical-20260913/pr55-merge-provenance.json)
+records those observed identities.
+
+The permanent lease `refs/heads/v13-consumption-v13.0.0` remains
+`4cfd6d641d32b7168f74725626448d82f9dec46d`. Never rerun the worker/launcher,
+update/delete/adopt its lease, refit to its revealed outcomes or overwrite
+original predictions, ledger or reports. Creation-time
+`audit_publication=pending_git_integration` stays immutable; later Git
+provenance resolves publication. No 6/6 capture email was required or sent.
+The default hourly committed-state email remains separate; live stays paused.
+
+The broad Goal is incomplete. The next permitted research step is one narrow,
+scientifically distinct preregistration before computing that candidate's
+results. The user's two-module idea (probabilities followed by fixed multiple
+groups) is being specified; it is not yet registered, implemented, authorized
+or scored. No model/parameter/group-rule grid or V13 rerun is authorized.
+Earlier registration checkpoint wording is historical state, not a new authority.
+
 ## V12 historical completion and recovery
 
 V12.0.1's sole canonical invocation after authorization PR #44 merge

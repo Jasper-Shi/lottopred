@@ -1,5 +1,24 @@
 # Model Research Protocol
 
+## V13 closed after its sole completed diagnostic
+
+V13 `v13.0.0` completed all 627 consumed historical targets with **Reject**,
+no Final-6 6/6 and best 3/6 on seven dates. The candidate's Top-6/12/18 means
+were 0.720893 / 1.440191 / 2.183413, each below the fair expectation. Its
+exact Top-12 p was 0.774024942722521 and fixed five-entry transition-family Holm p was 1.0;
+scientific gates 1–9 failed. Two independent audits passed within their
+stated scope. See the [complete results](research/V13_HISTORICAL_RESULTS.md).
+
+The registered formula, source core, window, controls, seed, ranking,
+metrics and decision gates remain frozen. Do not rerun, tune or relabel
+V13 to improve these observed results. A multi-group successor requires a
+new registration fixing its probability module, all group identities,
+matched opportunity/overlap controls, cohort, statistics and stopping rule
+before its outcomes. More groups do not by themselves show predictive skill.
+The earlier R13/E13 descriptions below are registration-time checkpoints,
+not the current V13 execution status. No live, promotion or Goal completion
+follows from this diagnostic.
+
 ## Prospective V13 legacy-test permission (2026-09-13)
 
 The user authorized the [separate legacy regression read exception](experiments/V13_legacy_regression_read_exception.md)

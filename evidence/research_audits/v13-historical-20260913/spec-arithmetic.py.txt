@@ -1,0 +1,150 @@
+"""Independent arithmetic equality audit; never fit, select or forecast."""
+from pathlib import Path
+import sys, json, hashlib, math, subprocess, os
+sys.path.append('/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/lib/python3.12/site-packages')
+import numpy as np
+assert sys.version_info[:3]==(3,12,11) and np.__version__=='2.3.5'
+assert not any(x=='lotto649' or x.startswith('lotto649.') for x in sys.modules)
+ROOT=Path('/Users/jaspershi/CodexResearch/lottopred-v13-formal-historical-run-20260913')
+W='8ab54e1827317239b33061a439305801e733872c';M='182a4245bbaf0c444ef1e16c1b5beb120eec327f'
+STEM='reports/v13_post_rng_main_set_overlap_v13.0.0_historical'
+ENV={'PATH':'/usr/bin:/bin','LANG':'C','LC_ALL':'C','TMPDIR':'/private/tmp','GIT_CONFIG_GLOBAL':'/dev/null','GIT_CONFIG_SYSTEM':'/dev/null','GIT_CONFIG_NOSYSTEM':'1','GIT_NO_REPLACE_OBJECTS':'1','GIT_NO_LAZY_FETCH':'1','GIT_OPTIONAL_LOCKS':'0'}
+def git(*args):return subprocess.check_output(['/usr/bin/git','-c','core.hooksPath=/dev/null','-c','core.fsmonitor=false','-C',str(ROOT),*args],env=ENV)
+def c(x):return json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+def sha(x):return hashlib.sha256(x).hexdigest()
+def read(path):return json.loads((ROOT/path).read_bytes())
+def eq(x,y,label):
+ assert c(x)==c(y),label
+PROOF=Path('/private/tmp/v13-actual-worker-terminal-six-files-'+W+'.json');pr=PROOF.read_bytes();assert sha(pr)=='941830e1fef95f43243f7deb7a38077b7aaef0a21639be79501bf8c959cee7b2';proof=json.loads(pr)
+assert git('show','-s','--format=%P',W).strip().decode()==M
+assert git('rev-parse',W+'^{tree}').strip().decode()=='21b7c415af1e8e417ad2a431da7da9f02b9de622'
+assert git('rev-parse','HEAD').strip().decode()==M
+for x in proof['files']:
+ b=git('cat-file','blob',W+':'+x['path']);assert b==(ROOT/x['path']).read_bytes();assert sha(b)==x['sha256'] and len(b)==x['bytes']
+ assert git('rev-parse',W+':'+x['path']).strip().decode()==x['git_blob']
+assert git('diff-tree','--no-commit-id','-r','--name-status',M,W).decode().splitlines()==['A\t'+x['path'] for x in proof['files']]
+r=read(STEM+'.json');reg=read('evidence/research_registrations/v13-post-rng-main-set-overlap-v1.json');spec=reg['scientific_contract'];op=reg['operational_contract'];a=read('evidence/research_authorizations/v13-post-rng-main-set-overlap-v1-historical.json')
+assert (ROOT/(STEM+'.json')).read_bytes()==c(r)+b'\n'
+for k,v in a.items():eq(r['bindings'][k],v,'auth binding '+k)
+assert r['bindings']['execution_authority_M_A_H13']==M and r['bindings']['lease_commit_L_H13']=='4cfd6d641d32b7168f74725626448d82f9dec46d'
+for k in ('statistical_fingerprint_sha256','operational_contract_sha256'):assert r[k]==reg[k]
+eq(r['bindings']['runtime'],op['runtime_closure']['exact_runtime'],'runtime')
+assert r['required_pure_core_sha256']==a['pure_core_sha256']=='7944102759212ef88da895e1336e8489f077c75e7aa9682fb1c805cd96707675'
+for x in a['implementation_files']+a['runtime_dependency_closure']:
+ assert sha(git('cat-file','blob',W+':'+x['path']))==x['sha256']
+rows=r['targets'];names=r['model_order'];assert names==spec['opportunities']['producer_order'];assert len(rows)==627
+assert r['processed_target_count']==r['expected_target_count']==627 and r['complete_registered_scope'] is True
+assert r['scope_order']==spec['statistics']['scope_order'];assert r['stop_reason'] is None
+assert r['classification']=='consumed_historical_diagnostic_only' and r['eligible_evidence'] is False and r['promotion_authority'] is False
+assert r['audit']=={'complete':True,'independent_leakage_audit':'not_claimed','scope':'worker_record_consistency_not_independent_leakage_audit','warning_count':0,'warnings':[]}
+assert r['independent_leakage_audit']=='not_required_no_exact_final6'
+DATES=[x['target_draw_date'] for x in rows];assert DATES==sorted(set(DATES));assert all('2020-01-01'<=x<='2025-12-31' for x in DATES)
+N=math.comb(49,6);assert N==13983816
+own_counts=[];all_scores=[]
+def proper(p,actual):return {'brier_score':math.fsum((p[i-1]-float(i in actual))**2 for i in range(1,50))/49.0,'log_loss':-math.fsum(math.log(p[i-1]) if i in actual else math.log1p(-p[i-1]) for i in range(1,50))/49.0}
+for t in rows:
+ actual=t['actual'];assert actual==sorted(set(actual)) and len(actual)==6;aset=set(actual);f=t['forecast_payload'];assert f['target_draw_date']==t['target_draw_date'] and f['training_cutoff_date']==f['history_through']<t['target_draw_date']
+ eq(f['bindings'],r['bindings'],'forecast binding');assert sha(c(f)+b'\n')==t['forecast_payload_sha256'];assert [x['model_name'] for x in f['forecasts']]==names
+ recomputed=[];unique={}
+ for j,q in enumerate(f['forecasts']):
+  assert set(q['probabilities'])==set(map(str,range(1,50))) and set(q['probability_hex'])==set(q['probabilities'])
+  p=[q['probabilities'][str(i)] for i in range(1,50)];assert all(type(x)is float and 0<x<1 for x in p);assert abs(math.fsum(p)-6.0)<=1e-10
+  assert all(q['probability_hex'][str(i)]==p[i-1].hex() for i in range(1,50))
+  ranking=q['ranking'];assert sorted(ranking)==list(range(1,50)) and ranking==sorted(range(1,50),key=lambda i:(-p[i-1],i))
+  for k in (6,12,18):assert q['top'+str(k)]==ranking[:k]
+  assert q['final6']==sorted(ranking[:6]);state=q['scientific_state'];gain=None
+  if state is not None:
+   for key in ('beta','complement_mean','log_z','mean'):assert state[key].hex()==state[key+'_hex']
+   anchor=state['transformed_anchor'] if state['transformed_anchor'] is not None else state['source_anchor']
+   gain=0.0 if state['beta']==0.0 else (float.fromhex('0x1.07412c1f4cc68p+4')+state['beta']*float(len(aset&set(anchor))))-state['log_z']
+  h=sha(c(q)+b'\n');assert f['forecast_sha256_by_model'][names[j]]==h
+  score={'model_name':names[j],'model_version':q['model_version'],'forecast_sha256':h,**proper(p,aset),'joint_log_gain':gain,'final6_hits':len(aset&set(q['final6'])),'matched_final6':sorted(aset&set(q['final6'])),'mean_actual_rank':math.fsum(ranking.index(i)+1 for i in actual)/6.0}
+  for k in (6,12,18):score['top'+str(k)+'_hits']=len(aset&set(ranking[:k]))
+  eq(score,t['scores'][j],'per target score '+t['target_draw_date']+' '+names[j]);recomputed.append(score)
+  key=tuple(q['final6'])
+  if key not in unique:unique[key]={'final6':list(key),'primary_producer':names[j],'producer_model_names':[],'forecast_sha256_by_producer':{},'hits':score['final6_hits']}
+  unique[key]['producer_model_names'].append(names[j]);unique[key]['forecast_sha256_by_producer'][names[j]]=h
+ eq(t['unique_final6'],list(unique.values()),'dedup opportunities');assert t['unique_opportunity_count']==len(unique);own_counts.append(len(unique));all_scores.append(recomputed)
+ eq(t['fair_scores'],proper([6.0/49.0]*49,aset),'fair proper score')
+ assert t['top12_all_six_producers']==[x['model_name'] for x in recomputed if x['top12_hits']==6]
+ assert t['exact_final6_opportunities']==[] and all(x['final6_hits']<6 for x in recomputed)
+ eq(t['cumulative_opportunities'],{'unique_opportunity_count':sum(own_counts),'nominal_fair_exact6_chance':-math.expm1(math.fsum(math.log1p(-u/N) for u in own_counts))},'cumulative opportunities')
+eq(r['opportunities'],rows[-1]['cumulative_opportunities'],'total opportunities')
+print('PASS 2508 original frozen forecast contracts and scores; fair scores; opportunities; identities',flush=True)
+# Cross-link each original ledger freeze and reveal record, without reading training history.
+with (ROOT/(STEM+'.ledger.jsonl')).open('rb') as stream:
+ first=json.loads(next(stream));previous=first['event_sha256'];assert first['event_kind']=='attempt_claimed'
+ for i,t in enumerate(rows):
+  freeze=json.loads(next(stream));reveal=json.loads(next(stream));assert freeze['sequence']==2*i+1 and reveal['sequence']==2*i+2
+  assert freeze['event_kind']=='prediction_frozen' and reveal['event_kind']=='target_revealed_scored'
+  eq(freeze['payload'],{'forecast_payload':t['forecast_payload'],'forecast_payload_sha256':t['forecast_payload_sha256']},'ledger freeze')
+  scored=dict(t);scored.pop('scored_event_sequence');scored.pop('scored_event_sha256');eq(reveal['payload'],scored,'ledger reveal')
+  assert t['prediction_generated_at']==freeze['recorded_at']<=reveal['recorded_at'];assert t['prediction_frozen_event_sha256']==freeze['event_sha256'] and t['scored_event_sha256']==reveal['event_sha256']
+ assert next(stream,b'')==b''
+print('PASS report-to-ledger all 627 original freeze/reveal pairs',flush=True)
+# Exact fixed fair integer distributions once per registered n; no model evaluation.
+weights=[math.comb(12,h)*math.comb(37,6-h) for h in range(7)];assert weights==spec['statistics']['exact_top12']['weights'];coeff=[1];tails={}
+for n in range(1,628):
+ fresh=[0]*(len(coeff)+6)
+ for i,x in enumerate(coeff):
+  for h,w in enumerate(weights):fresh[i+h]+=x*w
+ coeff=fresh
+ if n in (313,314,627):
+  assert sum(coeff)==N**n;tails[n]=(coeff,N**n)
+print('PASS fixed exact integer fair-null distributions 313/314/627',flush=True)
+def ci(values):
+ n=len(values);ix=np.random.default_rng(649).integers(0,n,size=(10000,n));means=np.array([math.fsum(values[int(i)] for i in sample)/n for sample in ix],dtype=np.float64);lo,hi=np.quantile(means,[.025,.975],method='linear')
+ return {'lower':float(lo),'upper':float(hi),'seed':649,'resamples':10000,'method':'linear'}
+def summary(sub,j,infer):
+ scores=[x['scores'][j] for x in sub];n=len(sub);out={'model_name':names[j],'draw_count':n,'final6_histogram':{str(h):sum(x['final6_hits']==h for x in scores) for h in range(7)},'joint_log_gain_sum':math.fsum(x['joint_log_gain'] for x in scores) if j<2 else None}
+ for field,src in [('mean_final6_hits','final6_hits'),('mean_actual_rank','mean_actual_rank'),('brier_score','brier_score'),('log_loss','log_loss')]:out[field]=math.fsum(x[src] for x in scores)/n
+ for k in (6,12,18):out['mean_top'+str(k)+'_hits']=math.fsum(x['top'+str(k)+'_hits'] for x in scores)/n;out['top'+str(k)+'_lift']=out['mean_top'+str(k)+'_hits']-6.0*k/49.0
+ bins=[]
+ for b in range(10):
+  probs=[];ys=[]
+  for t in sub:
+   for label in range(1,50):
+    p=t['forecast_payload']['forecasts'][j]['probabilities'][str(label)]
+    if b/10.0<=p<(b+1)/10.0:probs.append(p);ys.append(float(label in t['actual']))
+  size=len(probs);bins.append({'lower':b/10.0,'upper':(b+1)/10.0,'count':size,'mean_probability':math.fsum(probs)/size if size else None,'observed_frequency':math.fsum(ys)/size if size else None})
+ out['calibration_bins']=bins
+ if infer:
+  co,den=tails[n];num=sum(co[sum(x['top12_hits'] for x in scores):]);out['top12_exact_p']={'value':num/den,'numerator_hex':hex(num),'denominator_hex':hex(den)};out['top12_lift_ci95']=ci([x['top12_hits']-72.0/49.0 for x in scores])
+ return out
+computed={}
+for scope,sub in [('aggregate',rows),('first_half',rows[:314]),('second_half',rows[314:])]:
+ original=r['scopes'][scope];pin=next(x for x in spec['scope']['scopes'] if x['id']==scope);dates=[x['target_draw_date'] for x in sub];assert len(sub)==pin['count']==original['n'] and dates[0]==pin['first_target']==original['first_target'] and dates[-1]==pin['last_target']==original['last_target'];assert sha(('\n'.join(dates)+'\n').encode())==pin['target_dates_sha256']==original['target_dates_sha256']
+ models={}
+ for j,name in enumerate(names):models[name]=summary(sub,j,True);eq(models[name],original['models'][name],'scope model '+scope+' '+name)
+ contrasts={}
+ for suffix,j in [('v1',2),('cyclic_control',1),('fair',None)]:
+  delta={}
+  for label,key in [('brier','brier_score'),('log_loss','log_loss')]:delta[label+'_delta']=math.fsum(x['scores'][0][key]-(x['fair_scores'] if j is None else x['scores'][j])[key] for x in sub)/len(sub)
+  if j is not None:delta['top12_paired_ci95']=ci([x['scores'][0]['top12_hits']-x['scores'][j]['top12_hits'] for x in sub])
+  if j==1:delta['joint_log_gain_sum']=math.fsum(x['scores'][0]['joint_log_gain']-x['scores'][j]['joint_log_gain'] for x in sub)
+  contrasts['candidate_minus_'+suffix]=delta
+ eq(contrasts,original['contrasts'],'scope contrasts '+scope);computed[scope]={'models':models,'contrasts':contrasts}
+ print('PASS exact means/calibration/p tails/bootstrap/paired contrasts '+scope,flush=True)
+for j,name in enumerate(names):
+ eq(summary(rows,j,False),r['partial_descriptive'][name],'complete descriptive '+name)
+ maximum=max(x['scores'][j]['final6_hits'] for x in rows);eq(r['best_final6_by_model'][name],{'final6_hits':maximum,'target_dates':[x['target_draw_date'] for x in rows if x['scores'][j]['final6_hits']==maximum]},'all tied best dates')
+for year in range(2020,2026):
+ sub=[x for x in rows if x['target_draw_date'].startswith(str(year))]
+ for j,name in enumerate(names):eq(summary(sub,j,False),r['annual_descriptive_only'][str(year)][name],'annual '+str(year)+' '+name)
+pvals=[1.0,1.0,0.9783404732169021,0.5909687963172663,computed['aggregate']['models'][names[0]]['top12_exact_p']['value']];ordered=sorted(range(5),key=lambda i:(pvals[i],i));adjusted=[0.0]*5;last=0.0
+for rank,i in enumerate(ordered):last=max(last,min(1.0,(5-rank)*pvals[i]));adjusted[i]=last
+eq(pvals,r['multiplicity']['input_vector'],'fixed family input');eq(adjusted,r['multiplicity']['adjusted_vector'],'Holm adjustment')
+sc=list(computed.values());agg=sc[0]['models'][names[0]];l20=float.fromhex('0x1.7f7427b73e391p+1')
+passed=[agg['top12_lift']>0,adjusted[4]<=.05,agg['top12_lift_ci95']['lower']>0,all(x['models'][names[0]]['top12_lift']>0 for x in sc[1:]),all(x['contrasts']['candidate_minus_v1']['top12_paired_ci95']['lower']>0 for x in sc),all(x['contrasts']['candidate_minus_cyclic_control']['top12_paired_ci95']['lower']>0 and all(x['models'][m]['top12_exact_p']['value']>.05 and x['models'][m]['top12_lift_ci95']['lower']<=0<=x['models'][m]['top12_lift_ci95']['upper'] for m in names[1::2]) for x in sc),all(x['models'][names[0]]['top6_lift']>0 for x in sc),all(x['contrasts']['candidate_minus_'+ref][metric+'_delta']<=1e-9 for x in sc for ref in ('fair','v1') for metric in ('brier','log_loss')),agg['joint_log_gain_sum']>=l20 and all(x['models'][names[0]]['joint_log_gain_sum']>0 for x in sc[1:]) and all(x['contrasts']['candidate_minus_cyclic_control']['joint_log_gain_sum']>0 for x in sc) and sc[0]['models'][names[1]]['joint_log_gain_sum']<l20,r['audit']['warning_count']==0]
+eq(r['gates'],[{'number':p['number'],'name':p['name'],'passed':value} for p,value in zip(spec['gates'],passed)],'ten gates');assert passed==[False]*9+[True] and r['disposition']=='Reject'
+# Markdown keeps all complete per-target canonical objects, dates, and honest labels.
+md=(ROOT/(STEM+'.md')).read_text();assert '2020–2025 是已消耗的历史诊断数据' in md and '此报告本身不宣称独立审计通过' in md
+assert [line[4:] for line in md.splitlines() if line.startswith('### 20')]==DATES
+for t in rows:assert c(t).decode() in md
+out={'classification':'independent_frozen_output_arithmetic_equality_audit_not_prediction','reviewer_agent_id':'/root/v13_exception_spec_review','review_session_id':'v13-completed-worker-spec-audit-20260913','artifact_commit':W,'execution_commit':M,'original_six_file_proof_sha256':sha(pr),'report_sha256':sha((ROOT/(STEM+'.json')).read_bytes()),'ledger_sha256':sha((ROOT/(STEM+'.ledger.jsonl')).read_bytes()),'script_sha256':sha(Path(__file__).read_bytes()),'target_count':627,'producer_count':4,'fixed_scope_counts':[627,314,313],'original_forecast_score_equalities':2508,'exact_integer_tail_equalities':12,'bootstrap_interval_equalities':18,'ten_gates':passed,'disposition':'Reject','all_producer_exact_final6_count':0,'candidate_summary':{k:v for k,v in agg.items() if k not in ('calibration_bins','top12_exact_p')},'candidate_exact_top12_p':agg['top12_exact_p']['value'],'candidate_holm_adjusted_p':adjusted[4],'best_final6_by_model':r['best_final6_by_model'],'opportunities':r['opportunities'],'source_or_original_evidence_modified':False,'model_fit_forecast_or_worker_invoked':False,'full_leakage_or_remote_lease_audit_claimed':False,'verdict':'pass'}
+for x in proof['files']:assert sha((ROOT/x['path']).read_bytes())==x['sha256']
+assert git('rev-parse','HEAD').strip().decode()==M
+path=Path('/private/tmp/v13-worker-spec-statistical-replay-20260913.result.json')
+with path.open('xb') as f:f.write(c(out)+b'\n')
+print('PASS all annual/descriptive/best-date/multiplicity/gates/Markdown equality checks',flush=True)
+print('RESULT '+str(path)+' SHA256 '+sha(path.read_bytes()),flush=True)

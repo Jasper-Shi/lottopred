@@ -1,0 +1,15 @@
+# Completed V13 original output: independent Spec audit
+
+Reviewer: `/root/v13_exception_spec_review`
+Session: `v13-completed-worker-spec-audit-20260913`
+Verdict: PASS in the stated Spec/arithmetic scope — 0 blocker, 0 major, 0 minor.
+
+Fixed review: base M `182a4245bbaf0c444ef1e16c1b5beb120eec327f` to original artifact W `8ab54e1827317239b33061a439305801e733872c`, tree `21b7c415af1e8e417ad2a431da7da9f02b9de622`. I independently verified the sole parent, exactly six additions, and original worktree/Git-blob byte equality against the six-file proof SHA-256 `941830e1fef95f43243f7deb7a38077b7aaef0a21639be79501bf8c959cee7b2`. Original JSON SHA-256 is `d4836c67588ae0dd0358c354ca1cfe92a833abb0b420c57df1ed08740b0aac46`; ledger `b944521cce27a2698e686cb028b27adab084c69626a759f3aa5d484e5ab8ffc7`; Markdown `18a31953e84a92bdacdb7e24f5abdb3bfd9d77bdfdee4a55f1b4567d141e9c09`.
+
+Against the original R13 science/operation contract, independently written arithmetic recomputed all 2,508 frozen producer scores from their stored probabilities/rankings and actual main labels. All 49 probabilities/hex values, complete rankings, Top-6/12/18 and one Final-6 per producer were present. Exact 627/314/313 date counts/digests, source/core/closure/runtime/authorization bindings, all 627 report-to-ledger freeze/reveal payloads, opportunity deduplication, every scope/year mean/histogram/calibration bin and all tied best dates matched. Twelve integer-convolution upper-tail fractions and eighteen fresh-seed649 NumPy2.3.5 bootstrap intervals matched exactly, including paired proper-score and joint-gain arithmetic. No fitting or new prediction occurred.
+
+V13 candidate Top-6/12/18 means are 0.7208931419457735 / 1.4401913875598087 / 2.18341307814992. Its best Final-6 is 3/6 on seven fully retained dates; all four producers have zero 6/6. Candidate exact Top-12 p=0.774024942722521, fixed five-family Holm p=1.0. Gates 1–9 fail; gate 10 passes the worker's recorded consistency count. Therefore the registered complete-horizon scientific disposition is Reject, conditional on the separate integrity audit remaining clean.
+
+Interpretation is honest: consumed historical diagnostic, no promotion/future ability, correlated control rather than independent replication, descriptive row-bootstrap intervals rather than guaranteed serial-dependence coverage, and 2,500 locally deduplicated opportunities whose chance is nominal accounting rather than Goal-global/anytime significance. The original report explicitly does not claim an independent leakage audit.
+
+Reproduction: external arithmetic script SHA-256 `82d45f452283a9e82a4b726f9e885c17cc0ac1c721cc1c1d8f759d2ab024ce6c`; exit-0 log `1826bf546078660c3eecfc08293903e766c88598696bb9c2bda91b8549fdea68`; result proof `c07d17d6993a5bed516c35b7133cc4d055ed4d505723efd77c34c975e0444358`. Frozen CPython3.12.11 -I-S-B, NumPy2.3.5, no project imports. Original source/evidence/HEAD were unchanged. Full input-prefix provenance, durable startup/hash-chain chronology and remote lease audit belong to the separate independent audit; this report does not replace them, CI, publication, or establish Goal completion.
