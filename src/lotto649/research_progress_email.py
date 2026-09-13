@@ -490,6 +490,13 @@ def _release_facts(root: Path) -> dict[str, object]:
         plan.get("legacy_due_prediction_cohort"),
         name="live-canary-plan.legacy_due_prediction_cohort",
     )
+    expected_success = _mapping(
+        plan.get("expected_success"), name="live-canary-plan.expected_success"
+    )
+    expected_predictions = _mapping(
+        expected_success.get("predictions"),
+        name="live-canary-plan.expected_success.predictions",
+    )
     plan_status = _require_string(
         plan.get("status"), name="live-canary-plan.status", maximum=80
     )
@@ -507,6 +514,10 @@ def _release_facts(root: Path) -> dict[str, object]:
         ),
         "source_draw_date": _iso_date(
             source_gate.get("draw_date"), name="live-canary-plan.source_draw_date"
+        ),
+        "next_prediction_target_draw": _iso_date(
+            expected_predictions.get("target_draw"),
+            name="live-canary-plan.next_prediction_target_draw",
         ),
         "source_requirement": _require_string(
             source_gate.get("requirement"),
@@ -535,6 +546,51 @@ def _release_facts(root: Path) -> dict[str, object]:
         "protection": protection_facts,
         "publication_canary": publication_facts,
         "live_canary_plan": plan_facts,
+    }
+
+
+def _canary_plan_timing(
+    plan: Mapping[str, object], generated_at: datetime
+) -> dict[str, object]:
+    """Observe plan dates; their validity never grants dispatch authority.
+
+    The Stage-1 plan has no upper dispatch deadline. Once its entire registered
+    next-prediction target day has passed in Toronto, the prediction plan is
+    necessarily expired. Before that point, no end time or authority is inferred.
+    """
+    instant, _text = _report_instant(generated_at)
+    not_before = _parsed_iso_datetime(
+        plan.get("not_before"), name="live-canary-plan.not_before"
+    )
+    source_date = date.fromisoformat(
+        _iso_date(
+            plan.get("source_draw_date"), name="live-canary-plan.source_draw_date"
+        )
+    )
+    target_date = date.fromisoformat(
+        _iso_date(
+            plan.get("next_prediction_target_draw"),
+            name="live-canary-plan.next_prediction_target_draw",
+        )
+    )
+    if (
+        source_date >= target_date
+        or not_before.astimezone(_TORONTO).date() > target_date
+    ):
+        raise _fail("live-canary plan dates are inconsistent")
+    report_date = instant.astimezone(_TORONTO).date()
+    if report_date > target_date:
+        state = "expired_next_prediction_target_day_passed"
+    elif instant < not_before:
+        state = "before_not_before_no_authority_inferred"
+    else:
+        state = "dispatch_deadline_unavailable_no_authority_inferred"
+    return {
+        "state": state,
+        "basis": "entire_registered_next_prediction_target_day_in_America_Toronto",
+        "report_date_toronto": report_date.isoformat(),
+        "next_prediction_target_draw": target_date.isoformat(),
+        "dispatch_authority_verified": False,
     }
 
 
@@ -921,7 +977,7 @@ def build_research_progress_report(
     if not root.is_dir():
         raise _fail("repository root is not a directory")
     context = _parse_run_context(run_context)
-    _generated_instant, generated_at_text = _report_instant(generated_at)
+    generated_instant, generated_at_text = _report_instant(generated_at)
     _require_full_history(root)
     head = _head(root)
     if head != context.sha:
@@ -936,6 +992,7 @@ def build_research_progress_report(
     history, published_history = _history_facts(root, head)
     release = _release_facts(root)
     plan = _mapping(release["live_canary_plan"], name="release.live_canary_plan")
+    plan_timing = _canary_plan_timing(plan, generated_instant)
     artifacts = _prediction_and_evaluation_facts(
         root,
         config,
@@ -963,6 +1020,7 @@ def build_research_progress_report(
         "config": config,
         "history": history,
         "release": release,
+        "live_canary_plan_timing": plan_timing,
         "artifacts": artifacts,
     }
     facts_digest = _digest(facts)
@@ -1020,6 +1078,36 @@ def build_research_progress_report(
         if plan["credential_installed_at_registration"]
         else "登记时未安装"
     )
+    expired = plan_timing["state"] == "expired_next_prediction_target_day_passed"
+    if expired:
+        timing_text = (
+            f"按多伦多报告日期 {plan_timing['report_date_toronto']}，"
+            f"计划后续预测目标日 {plan_timing['next_prediction_target_draw']} 已整日过去；"
+            "旧预测计划已过期，无执行授权，不得补跑、顺延或重试。"
+        )
+        next_step = (
+            "未来恢复 live 前，须先完成 D0，将配置与工作流重新封存为全部关闭，"
+            "再另行注册并独立审查新的 canary；本邮件不授予执行授权。"
+        )
+        blockers = "旧预测计划已过期；补齐凭据、SHA 或来源记录均不能恢复旧授权。"
+        user_action = (
+            "无需为过期计划配置凭据；未来 live 恢复须完成 D0、新注册和独立授权。"
+        )
+    else:
+        timing_text = (
+            "尚未达到计划最早时间；当前执行授权未验证。"
+            if plan_timing["state"] == "before_not_before_no_authority_inferred"
+            else "已达到计划最早时间，但计划未提供最晚 dispatch 时间；当前执行授权未验证。"
+        )
+        next_step = (
+            "只核对已提交计划与独立执行授权；本邮件的时间观察不构成 canary 执行指令。"
+            "计划过期后的 live 恢复须完成 D0 并另行注册。"
+        )
+        blockers = (
+            f"发布凭据{credential_state}；计划最早时间 {plan['not_before']}；"
+            f"来源目标 {plan['source_draw_date']} 的双来源及当前执行授权均未查询。"
+        )
+        user_action = "当前 Secrets 和外部授权状态未查询；本邮件不据此要求配置凭据。"
     body = "\n".join(
         (
             "LOTTO 6/49 中文小时进度（只读、已提交证据）",
@@ -1032,18 +1120,14 @@ def build_research_progress_report(
             "【当前阶段】"
             f"Stage-1 配置已提交（{switches}）；production canary 的已提交计划状态："
             f"{plan['status']}；Stage-1 计划声明无人值守 live 定时为"
-            f"{_enabled(plan['stage1_unattended_schedule'])}。",
+            f"{_enabled(plan['stage1_unattended_schedule'])}。{timing_text}",
             "【已完成事项】"
             f"一次性远端发布 canary 的已提交证据通过：{publication['passed']}；"
             f"main 保护证据记录于 {protection['verified_at']}。",
             "【正在进行】"
             "Codex 线程内进行中工作：未查询；本任务只读取当前提交并发送状态邮件。",
-            "【下一步】"
-            "依已提交计划：满足发布凭据、精确 SHA、时间和双官方来源门后，只运行一次手动 production canary；"
-            "成功并复审后才另行评审 live 定时。",
-            "【阻塞项】"
-            f"发布凭据{credential_state}；最早时间 {plan['not_before']}；"
-            f"目标开奖 {plan['source_draw_date']} 的双来源当前状态未查询。",
+            f"【下一步】{next_step}",
+            f"【阻塞项】{blockers}",
             "【风险】"
             "外部状态可能晚于本提交，当前远端状态均不作推断；彩票公平且不可预测仍是默认解释，"
             "现有结果不证明稳定优势。",
@@ -1079,8 +1163,7 @@ def build_research_progress_report(
             f"shadow={','.join(artifacts['shadow_models'])}；"
             f"version={','.join(artifacts['versions'])}。",
             "【邮件状态】正文生成时尚未调用 SMTP，不声明送达成功；程序不会自动重试。",
-            "【是否需要用户行动】"
-            "仅在已提交计划所列窄权限发布凭据仍未配置时需要配置；当前 Secrets/外部状态未查询。",
+            f"【是否需要用户行动】{user_action}",
             "",
             f"来源 SHA：{head}",
             f"Actions run id：{context.run_id}",
