@@ -1,0 +1,199 @@
+"""Fixed, isolated launcher for the registered V13.0.0 historical attempt.
+
+The launcher is not authorization. The registered verifier must still prove
+protected-main authority and acquire the one-shot lease before any history read.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+import sysconfig
+from pathlib import Path
+
+_FLAG = "--consume-v13-once"
+_ROUTING_OVERRIDES = ("SMTP_HOST", "SMTP_PORT", "EMAIL_FROM", "EMAIL_TO")
+_SECRET_NAMES = ("GH_TOKEN",)
+_FIXED_ENVIRONMENT = {
+    "GIT_CONFIG_COUNT": "0",
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_CONFIG_SYSTEM": os.devnull,
+    "GIT_GRAFT_FILE": os.devnull,
+    "GIT_NO_LAZY_FETCH": "1",
+    "GIT_NO_REPLACE_OBJECTS": "1",
+    "GIT_OPTIONAL_LOCKS": "0",
+    "GIT_TERMINAL_PROMPT": "0",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "TMPDIR": "/tmp",
+}
+_INITIAL_SOURCES = (
+    "tools/run_v13_historical.py",
+    "src/lotto649/__init__.py",
+    "src/lotto649/v13_registered_attempt.py",
+)
+
+
+def _git(root: Path, *arguments: str) -> bytes:
+    completed = subprocess.run(
+        [
+            "/usr/bin/git",
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-C",
+            str(root),
+            *arguments,
+        ],
+        env=_FIXED_ENVIRONMENT,
+        check=False,
+        capture_output=True,
+        timeout=60,
+    )
+    if completed.returncode:
+        raise RuntimeError("launcher requires intact immutable Git objects")
+    return completed.stdout
+
+
+def _verify_initial_sources(root: Path) -> None:
+    if (root / ".git").is_symlink() or not (root / ".git").is_dir():
+        raise RuntimeError("launcher requires an independent complete clone")
+    # Reading key names cannot invoke filters. Reject local execution hooks
+    # before status or any other operation that may inspect working-tree bytes.
+    allowed_config = {
+        "core.repositoryformatversion",
+        "core.filemode",
+        "core.bare",
+        "core.logallrefupdates",
+        "core.ignorecase",
+        "core.precomposeunicode",
+        "remote.origin.url",
+        "remote.origin.fetch",
+    }
+    config_keys = (
+        _git(root, "config", "--local", "--no-includes", "--name-only", "--list")
+        .decode("utf-8")
+        .splitlines()
+    )
+    if any(
+        key not in allowed_config
+        and re.fullmatch(r"branch\.[A-Za-z0-9/_-]+\.(?:remote|merge)", key) is None
+        for key in config_keys
+    ):
+        raise RuntimeError("launcher refuses unregistered local Git configuration")
+    if _git(root, "rev-parse", "--is-shallow-repository").strip() != b"false":
+        raise RuntimeError("launcher refuses shallow history")
+    head = _git(root, "rev-parse", "--verify", "HEAD").decode("ascii").strip()
+    if re.fullmatch(r"[0-9a-f]{40}", head) is None:
+        raise RuntimeError("launcher requires a complete SHA-1 commit identity")
+    for relative in _INITIAL_SOURCES:
+        source = root / relative
+        if any(part.is_symlink() for part in (source, *source.parents)):
+            raise RuntimeError("launcher refuses source symlinks")
+        entry = _git(root, "ls-tree", "-z", head, "--", relative)
+        metadata, path = entry.rstrip(b"\0").split(b"\t")
+        mode, kind, _oid = metadata.split(b" ")
+        if mode != b"100644" or kind != b"blob" or path.decode() != relative:
+            raise RuntimeError("launcher source is not a registered plain file")
+        if source.read_bytes() != _git(root, "show", f"{head}:{relative}"):
+            raise RuntimeError("launcher refuses uncommitted source bytes")
+    if any((root / "src").rglob("*.pyc")):
+        raise RuntimeError("launcher requires a fresh source checkout without bytecode")
+
+    # The package search path is added only after this function returns.
+    # Restrict that top level even when an unexpected module was committed:
+    # otherwise it could shadow a not-yet-imported standard-library module.
+    source_root = root / "src"
+    if not source_root.is_dir() or any(
+        entry.name != "lotto649" for entry in source_root.iterdir()
+    ):
+        raise RuntimeError("launcher refuses unregistered top-level source entries")
+    # The registered source tree contains only Python source files. Native
+    # extensions and an entry-point-named package can outrank the checked .py.
+    if (
+        any(
+            entry.is_symlink() or (entry.is_file() and entry.suffix != ".py")
+            for entry in source_root.rglob("*")
+        )
+        or (source_root / "lotto649" / "v13_registered_attempt").exists()
+    ):
+        raise RuntimeError("launcher refuses unregistered initial source loader")
+    if _git(root, "status", "--porcelain=v1", "-z", "--untracked-files=all"):
+        raise RuntimeError("launcher requires a clean tree before package imports")
+    if _git(root, "ls-files", "--others", "--ignored", "--exclude-standard", "-z"):
+        raise RuntimeError("launcher refuses ignored files before package imports")
+
+
+def _runtime_search_paths() -> list[Path]:
+    prefix = Path(sys.executable).absolute().parent.parent
+    version = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    if (prefix / "pyvenv.cfg").is_file():
+        # CPython 3.12 -S leaves sysconfig pointing at the base interpreter.
+        # Mixing its packages into a venv would violate the frozen environment.
+        return [
+            prefix / "lib" / version / "site-packages",
+            prefix / "Lib" / "site-packages",
+        ]
+    return [
+        Path(value)
+        for key in ("purelib", "platlib")
+        if (value := sysconfig.get_path(key))
+    ]
+
+
+def main() -> int:
+    if sys.argv[1:] != [_FLAG]:
+        print(f"Usage: python3.12 tools/run_v13_historical.py {_FLAG}")
+        return 2
+    if sys.implementation.name != "cpython" or sys.version_info[:3] != (3, 12, 11):
+        print(
+            "V13.0.0 requires the registered CPython 3.12.11 runtime.", file=sys.stderr
+        )
+        return 2
+    if any(name in os.environ for name in _ROUTING_OVERRIDES):
+        print(
+            "V13.0.0 accepts only the repository default SMTP route.", file=sys.stderr
+        )
+        return 2
+    source = Path(__file__).absolute()
+    root = source.parent.parent
+    if not (sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode):
+        environment = dict(_FIXED_ENVIRONMENT)
+        for name in _SECRET_NAMES:
+            if name in os.environ:
+                environment[name] = os.environ[name]
+        os.execve(
+            sys.executable,
+            [sys.executable, "-I", "-S", "-B", str(source), _FLAG],
+            environment,
+        )
+        return 2
+    try:
+        _verify_initial_sources(root)
+        for path in _runtime_search_paths():
+            if path.is_dir():
+                candidate = str(path.resolve(strict=True))
+                if candidate not in sys.path:
+                    sys.path.append(candidate)
+        sys.path.insert(0, str((root / "src").resolve(strict=True)))
+        from lotto649.v13_registered_attempt import main as registered_main
+
+        return registered_main()
+    except Exception:  # noqa: BLE001 -- never expose authenticated exception text.
+        # Failure text is deliberately fixed: transport/runtime exceptions may
+        # otherwise contain environment values or authenticated request details.
+        print(
+            "V13.0.0 stopped before returning a verified result; do not retry.",
+            file=sys.stderr,
+        )
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
