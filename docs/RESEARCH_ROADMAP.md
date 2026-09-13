@@ -29,10 +29,11 @@ diagnostic, with no model change or promotion. See the
 Do not search V1 variants in response to this result. The already preregistered
 V12 candidate remains a separate narrow, falsifiable hypothesis; its formula,
 seed, controls and gates were frozen before these V1 results and remain unchanged.
-It still needs its own current-base authorization source and ordinary merge,
-with all original gates, before any unique historical run. No new V12 result,
-lease or authorization is implied by V1's completion. The broader 6/6 Goal is
-not complete.
+V12.0.1 subsequently received its own authorization in PR #44, but its sole
+invocation failed before any claim or forecast and is frozen against retry.
+Further execution requires a new operational registration and separate
+authorization, with the unchanged scientific gates. V1's completion grants no
+V12 authority or result. The broader 6/6 Goal is not complete.
 
 Keep these lanes separate in code, reports, and claims:
 
@@ -55,9 +56,11 @@ Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
 but the generic historical/backtest gate remains closed. The new V1 diagnostic
-is authorized only by its own reviewed registration/implementation merge;
-V12.0.1 still requires its distinct historical `M_A_H2`. That fixed-history
-authorization is independent of any future live canary. The old Stage-1
+was authorized only by its own reviewed registration/implementation merge.
+V12.0.1's distinct historical `M_A_H2` was merged in PR #44, followed by a
+failed startup that must not be retried. A future operational version requires
+new registration and authorization, independently of any future live canary.
+The old Stage-1
 data/live runtime bytes remain present only pending the D0 all-false reseal and
 are not dispatch authority. The bounded
 dual-source collector, offline preparer, and local bare-repository exact-CAS
@@ -87,9 +90,11 @@ passed independent Standards and Spec review with 0 blocker, 0 major, and 0
 minor findings. Its fixed 2026-08-27 dispatch window expired without a
 credential, approved production SHA, dispatch, or canary result. It must not be
 run late, re-dated, or reused. D0 must independently reseal its config and
-workflow to all-false before any new live recovery wiring. V12.0.1 registers a
-separate future manual-only live lane with a new fixed canary, identity, and
-authorization chain; that lane still permits no schedule or automatic retry.
+workflow to all-false before any new live recovery wiring. V12.0.1 also
+registered a separate manual-only live lane; its fixed September seed/canary
+windows have now expired and that lane is `superseded_unexecuted`. Any future
+live recovery needs a new registration and version; no schedule, shifted date
+or automatic retry is authorized by either expired route.
 A later unattended schedule remains a distinct release after an exact
 production `B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed.
 See `docs/OPERATIONS.md`; no Stage-1 preparation, live canary, or legacy
@@ -180,21 +185,24 @@ without execution, which is neither a scientific rejection nor consumed model
 evidence. The outcome-blind
 [`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
 retains the same H12 statistical fingerprint and creates new operational
-identities. I2 is implemented and merged by PR #40; the historical lane is not
-authorized or scored. The fixed live seed/canary windows expired without their
-prerequisites, so only the live lane is `superseded_unexecuted`.
+identities. I2 merged by PR #40 and historical authorization PR #44 normally
+merged at `baa08ecb77555e17f383ef2998bea3c433e16f74`. The sole canonical
+invocation failed before any claim or forecast. V12.0.1 is startup-failed,
+frozen against retry, and unscored; its
+[incident record](../evidence/research_execution_incidents/v12-0-1-20260913/startup-incident.json)
+preserves the unknown original failure stage and the separately confirmed
+GitHub message-representation defect. No scientific rejection is inferred.
+The fixed live windows also expired and have a separate
+[`superseded_unexecuted` closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
 
-Future V12 historical work needs an auth-JSON-only source on the then-current
-protected main and an ordinary merge `M_A_H2`. The old unmerged PR #41 source
-must be rebound after intervening V1 work advances main. Only the valid new
-merge may authorize a
-fresh exact `refs/heads/v12-consumption-v12.0.1` lease and the single historical
-run. This historical route is deliberately independent of future draw outcomes
-and live-canary success. The expired V12.0.1 live window cannot roll forward;
-future production recovery needs a separately registered operational route.
-No schedule or automatic retry is authorized. No V12 forecast, score, report,
-live role, or prospective cohort
-exists at this checkpoint.
+The next historical work is a new, historical-only operational registration
+that preserves H12's formula, core digest, controls, dates, seed, inference and
+ten gates. It must define strict API representation checks and durable
+sanitized pre-POST receipts before implementation or execution. Neither the
+obsolete PR #41 source nor the failed V12.0.1 route grants another attempt.
+This preparation is independent of future draws and live-canary success.
+No V12 forecast, score, report, live role or prospective cohort exists at this
+checkpoint. The broader 6/6 Goal remains incomplete.
 
 ## Candidate feature families
 
