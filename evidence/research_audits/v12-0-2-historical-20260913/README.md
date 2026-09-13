@@ -45,6 +45,40 @@ verifier and lease routes must never be reinvoked to reproduce this audit.
 | remote-observation.json | `c94f4cb041ad942fc7e19704ac538ee004ef72e561307907d7f3715f838590cb` |
 | remote-observer.py.txt | `d5e6817f4f7ffc25dfa42339bbfceb5f0527cc0178660ff1fc2d79d65fe4f599` |
 
+## Post-audit statistics reproducibility helper
+
+`statistics-replay.py.txt` was authored by `/root/i3_independent_output_audit`
+**after** the original inline audit. Its SHA-256 is
+`cd73fcd584dbc1d4191cde31e7d0a44ae605d44ba15788e01b4a79b38d307606`.
+It adds a standalone read-only route for authenticating the fixed Git history,
+all target outcomes and prefixes, frozen forecast score arithmetic, 18 bootstrap
+intervals and 12 exact integer ratios. It does not refit or forecast and does
+not reproduce the separate complete startup/ledger or source chronology audits.
+
+The final helper passed 24 synthetic/math checks and Ruff check/format. Its
+first development replay failed before history access because the helper
+incorrectly included a trailing LF in the closure digest. This audit-helper
+encoding error was corrected against the frozen digest format, then the final
+source passed. No worker or scientific output was changed or rerun.
+The original author replay passed as session `48762`, exit 0. The later archived
+replay result and root invocation are `statistics-replay-result.json` and
+`statistics-replay-invocation.json`; they are additional audit observations,
+not replacements for the original independent receipt.
+
+Using the existing frozen CPython 3.12.11 / NumPy 2.3.5 environment and complete
+local Git history, from the repository root:
+
+```sh
+/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/bin/python3.12 -I -S -B \
+  evidence/research_audits/v12-0-2-historical-20260913/statistics-replay.py.txt \
+  --verify-frozen-negative-result --repository .
+```
+
+Use `--self-test` alone for synthetic/math checks. The original source pins its
+frozen dependency location; it intentionally refuses incompatible environments.
+Preserve the archive unchanged. A future portability wrapper would be a new
+reviewed audit helper, not a revision to this source or its existing receipts.
+
 ## Read-only output consistency replay
 
 Use CPython 3.12 with the archived source from this checkout. From the repository
@@ -53,7 +87,7 @@ load model features or consume a lease:
 
 ```sh
 python3.12 -I -S -B evidence/research_audits/v12-0-2-historical-20260913/output-consistency-auditor.py.txt \
-  --output-dir reports \
+  --output-dir "$PWD/reports" \
   --expected-execution-commit b7fa81d6d5facc1730700cd527362df79f457cf8 \
   --expected-source-commit caaeaca6d5ddfd3705171d86fddd3c53bdd75de6 \
   --expected-authorization-sha256 2bc702251488876bfc488e3bb5531b9157c0ab3913091e4f795fe0b74b4d29cd \
@@ -97,6 +131,10 @@ Markdown records. In particular:
 - Draw-level bootstrap intervals are the frozen diagnostic resampling rule,
   not generally serial-dependence-robust intervals. Family Holm adjustment is
   limited to the declared four-variant transition family, not the entire Goal.
+- The report's cumulative fair-opportunity product uses the realized, adaptively
+  determined unique ticket counts. It is nominal bookkeeping, not a Goal-wide
+  unconditional or anytime-valid p-value; reused comparator tickets are not new
+  globally independent opportunities.
 - This is a scoped completed negative-result audit, not the special independent
   leakage audit required after a captured Final-6 6/6.
 

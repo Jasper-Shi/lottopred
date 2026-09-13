@@ -123,7 +123,7 @@ worker 以授权合并为唯一父提交，生成六文件证据提交
 
 四个 producer 共保存 2,508 份逐期预测和 122,892 个号码概率。这个运行内
 计数不代表新增了 2,508 次全球独立尝试；V1/random 比较结果曾在先前诊断中
-发布，不能重复累加成新的独立中奖机会。
+发布，不能重复累加成新的独立中奖机会。 报告按各期实际不同票组数量计算的累计公平机会值属于冻结的名义记账，不能当成整个 Goal 的全局或任意停止有效 p 值。
 
 [独立历史与统计审计](../../evidence/research_audits/v12-0-2-historical-20260913/independent-audit.md)
 由 `/root/i3_independent_output_audit` 完成，结论 PASS，0 blocker / major / minor。

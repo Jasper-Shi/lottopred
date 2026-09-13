@@ -1,0 +1,970 @@
+"""New post-audit, read-only reproducibility helper; NOT original audit source.
+
+Created after the completed independent audit session
+v12-0-2-post-run-history-chronology-result-20260913-01. That audit used
+temporary inline Python; its existing JSON/Markdown receipts are not regenerated
+or changed by this helper. This helper authenticates the fixed committed history
+and prefixes, then replays statistics from already frozen probabilities/scores.
+It cannot generate forecasts, fit models, authorize or start a worker, create a
+lease, send email, or make network requests. It prints a new replay result only.
+
+Use the frozen CPython 3.12.11 with -I -S -B. Two explicit modes are available:
+--self-test (synthetic only), and --verify-frozen-negative-result (fixed artifacts).
+An optional --repository changes only where the pinned local objects are read.
+This is not a replacement for the earlier startup/ledger output auditor or for
+the original source chronology review and not a captured-6/6 leakage audit.
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import importlib.metadata
+import json
+import math
+import os
+import platform
+import subprocess
+import sys
+from datetime import date, timedelta
+from pathlib import Path
+
+DEFAULT_REPOSITORY = Path(
+    "/Users/jaspershi/CodexResearch/lottopred-v12-0-2-historical-run-20260913"
+)
+FROZEN_ENV = Path("/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen")
+SITE_PACKAGES = FROZEN_ENV / "lib/python3.12/site-packages"
+ARTIFACT = "c9b483f6e89bf73eade28829188fbebe745e28c0"
+EXECUTION = "b7fa81d6d5facc1730700cd527362df79f457cf8"
+SOURCE = "978475ee472af9f6c6ad46c3d9de1f8a90b39dae"
+AUTH_SOURCE = "caaeaca6d5ddfd3705171d86fddd3c53bdd75de6"
+HISTORY = "4a617f2c1575a165b42878600753a01ddf2ced03"
+LEASE = "a8b264a5d3db199e831b0c06cb0697794766d160"
+CORE = "fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77"
+CLOSURE = "95f60b79dffb11fcdfdbfa10b0e9e187998f68b61cfdb1fcd46fb3e6b801383a"
+REPORT_SHA = "5582ce55fd1fbfece3f5402501bf0470d4e60b1f35c5f66aae02d928cfaa496a"
+AUTH_SHA = "2bc702251488876bfc488e3bb5531b9157c0ab3913091e4f795fe0b74b4d29cd"
+FINGERPRINT = "af2e16a55ff0e817cf71208471e19e4f481bed63990f7e41268997c4c4b35c76"
+REQUIREMENTS_SHA = "a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6"
+STEM = "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical"
+AUTH_PATH = (
+    "evidence/research_authorizations/"
+    "v12-post-rng-parity-composition-transition-v3-historical.json"
+)
+SUFFIXES = (".startup.jsonl", ".claim", ".ledger.jsonl", ".json", ".md", ".commit.json")
+MODELS = (
+    "v12_post_rng_parity_composition_transition",
+    "v12_pseudo_parity_composition_transition_control",
+    "ensemble_v1.0.0",
+    "random_v1.0.0",
+)
+DATE_HASHES = {
+    "aggregate": "c339733dccc04c3ac25aca15ce991c31421ba35580488e7acadbea5672705782",
+    "first_half": "c3bea21f775ce8077d25b255ae18a3701b08b22f2bf39c812ce40e78f6edc2e5",
+    "second_half": "32f924f82aa85e2be7440c66cf7133ab1b16669ede77e7230efef8d7e473ee7b",
+}
+PSEUDO = frozenset(
+    (
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        16,
+        17,
+        18,
+        20,
+        24,
+        28,
+        29,
+        32,
+        33,
+        40,
+        41,
+        42,
+        43,
+        44,
+        48,
+        49,
+    )
+)
+N = math.comb(49, 6)
+FAIR = 6 / 49
+FAIR_TOP12 = 72 / 49
+SAFE_ENVIRONMENT = {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "GIT_CONFIG_COUNT": "0",
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_CONFIG_SYSTEM": "/dev/null",
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_GRAFT_FILE": "/dev/null",
+    "GIT_NO_REPLACE_OBJECTS": "1",
+    "GIT_NO_LAZY_FETCH": "1",
+    "GIT_OPTIONAL_LOCKS": "0",
+    "GIT_TERMINAL_PROMPT": "0",
+}
+
+
+class AuditFailure(ValueError):
+    """A fixed input or independently recomputed result did not match."""
+
+
+def require(condition, message):
+    if not condition:
+        raise AuditFailure(message)
+
+
+def close(actual, expected, message):
+    require(
+        type(actual) in (int, float)
+        and type(expected) in (int, float)
+        and math.isfinite(actual)
+        and math.isfinite(expected)
+        and math.isclose(actual, expected, rel_tol=2e-12, abs_tol=2e-12),
+        message,
+    )
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def canonical(value):
+    return (
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode()
+
+
+def strict_json(raw):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            require(key not in result, "duplicate JSON key")
+            result[key] = value
+        return result
+
+    def reject_constant(value):
+        raise AuditFailure("nonfinite JSON constant: " + value)
+
+    return json.loads(raw, object_pairs_hook=pairs, parse_constant=reject_constant)
+
+
+def calendar():
+    current, end, dates = date(2020, 1, 1), date(2025, 12, 31), []
+    while current <= end:
+        if current.weekday() in (2, 5):
+            dates.append(current.isoformat())
+        current += timedelta(days=1)
+    return dates
+
+
+def date_hash(dates):
+    return sha(("\n".join(dates) + "\n").encode())
+
+
+def git(root, *args):
+    return subprocess.run(
+        [
+            "/usr/bin/git",
+            "--no-replace-objects",
+            "-c",
+            "core.hooksPath=/dev/null",
+            "-c",
+            "core.fsmonitor=false",
+            "-C",
+            str(root),
+            *args,
+        ],
+        env=SAFE_ENVIRONMENT,
+        capture_output=True,
+        check=True,
+        timeout=120,
+    ).stdout
+
+
+def readonly_guard(event, args):
+    """Defense in depth for this Python process; not an OS sandbox claim."""
+    if event == "open":
+        _, mode, flags = args
+        if (mode and any(letter in mode for letter in "wax+")) or (
+            flags & (os.O_WRONLY | os.O_RDWR | os.O_CREAT | os.O_TRUNC | os.O_APPEND)
+        ):
+            raise AuditFailure("read-only replay rejected a file write")
+    if event.startswith("socket."):
+        raise AuditFailure("read-only replay rejected network access")
+    if event == "import" and (
+        args[0].startswith("lotto649.models")
+        or "registered_attempt" in args[0]
+        or args[0] in ("lotto649.notification", "lotto649.v12_0_2_evidence")
+    ):
+        raise AuditFailure("replay rejected a forecasting/worker module import")
+    if event == "subprocess.Popen":
+        executable, argv, _, _ = args
+        require(executable in ("git", "/usr/bin/git"), "only local Git reads allowed")
+        verbs = {
+            "show",
+            "rev-list",
+            "rev-parse",
+            "ls-tree",
+            "cat-file",
+            "merge-base",
+            "diff-tree",
+            "diff",
+        }
+        index = 1
+        while index < len(argv) and argv[index].startswith("-"):
+            option = argv[index]
+            require(option in ("-C", "-c", "--no-replace-objects"), "Git global option")
+            index += 2 if option in ("-C", "-c") else 1
+        require(index < len(argv) and argv[index] in verbs, "Git write/network verb")
+
+
+def numpy_runtime():
+    require(
+        sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode,
+        "invoke frozen Python with -I -S -B",
+    )
+    require(
+        sys.implementation.name == "cpython" and platform.python_version() == "3.12.11",
+        "fixed CPython 3.12.11 required",
+    )
+    require(Path(sys.executable).parent == FROZEN_ENV / "bin", "fixed interpreter path")
+    sys.path.append(str(SITE_PACKAGES))
+    import numpy as np
+
+    require(np.__version__ == "2.3.5", "fixed NumPy 2.3.5 required")
+    return np
+
+
+def exact_laws(sample_sizes):
+    require(
+        sample_sizes and all(type(n) is int and n > 0 for n in sample_sizes),
+        "positive sample sizes required",
+    )
+    weights = [math.comb(12, k) * math.comb(37, 6 - k) for k in range(7)]
+    require(sum(weights) == N, "single-draw exact-law mass")
+    coefficients, laws = [1], {}
+    for size in range(1, max(sample_sizes) + 1):
+        updated = [0] * (len(coefficients) + 6)
+        for hits, weight in enumerate(weights):
+            for total, coefficient in enumerate(coefficients):
+                updated[total + hits] += weight * coefficient
+        coefficients = updated
+        if size in sample_sizes:
+            require(sum(coefficients) == N**size, "convolution exact mass")
+            laws[size] = coefficients
+    return laws
+
+
+def exact_tail(law, size, total):
+    require(type(total) is int and 0 <= total <= size * 6, "exact tail domain")
+    numerator, denominator = sum(law[total:]), N**size
+    return {
+        "numerator_hex": hex(numerator),
+        "denominator_hex": hex(denominator),
+        "value": numerator / denominator,
+    }
+
+
+def bootstrap(np, values, indices=None):
+    require(
+        values and all(type(x) in (int, float) and math.isfinite(x) for x in values),
+        "bootstrap finite nonempty array",
+    )
+    n = len(values)
+    if indices is None:
+        indices = np.random.default_rng(649).integers(0, n, size=(10000, n))
+    means = np.array(
+        [math.fsum(values[int(i)] for i in sample) / n for sample in indices],
+        dtype=np.float64,
+    )
+    lower, upper = np.quantile(means, [0.025, 0.975], method="linear")
+    return {
+        "lower": float(lower),
+        "upper": float(upper),
+        "seed": 649,
+        "resamples": 10000,
+        "method": "linear",
+    }
+
+
+def check_interval(calculated, recorded, label):
+    require(set(recorded) == set(calculated), label + " keys")
+    for key in ("seed", "resamples", "method"):
+        require(recorded[key] == calculated[key], label + " " + key)
+    for key in ("lower", "upper"):
+        close(recorded[key], calculated[key], label + " " + key)
+
+
+def authenticate_row(row, records, position):
+    require(0 < position < len(records), "target history position")
+    actual, previous, payload = (
+        records[position],
+        records[position - 1],
+        row["forecast_payload"],
+    )
+    target = actual["draw_date"]
+    require(
+        row["target_draw_date"] == payload["target_draw_date"] == target, "target date"
+    )
+    require(
+        row["actual"] == actual["numbers"] and row["bonus"] == actual["bonus"],
+        "governed actual main numbers/bonus",
+    )
+    require(previous["draw_date"] < target, "strict chronology")
+    require(
+        payload["history_through"]
+        == payload["training_cutoff_date"]
+        == previous["draw_date"],
+        "prefix cutoff",
+    )
+    require(
+        type(payload["visible_prefix_draw_count"]) is int
+        and payload["visible_prefix_draw_count"] == position,
+        "prefix count",
+    )
+    require(
+        payload["visible_prefix_sha256"] == sha(canonical(records[:position])),
+        "complete original visible-prefix content hash",
+    )
+    require(
+        row["forecast_payload_sha256"] == sha(canonical(payload)),
+        "forecast payload hash",
+    )
+
+
+def check_frozen_scores(row):
+    actual = set(row["actual"])
+    require(len(actual) == 6 and row["bonus"] not in actual, "main/bonus categories")
+    forecasts, scores = row["forecast_payload"]["forecasts"], row["scores"]
+    require(
+        [f["model_name"] for f in forecasts] == list(MODELS), "forecast model order"
+    )
+    require([s["model_name"] for s in scores] == list(MODELS), "score model order")
+    for index, (forecast, score) in enumerate(zip(forecasts, scores, strict=True)):
+        probabilities = forecast["probabilities"]
+        require(
+            set(probabilities) == {str(k) for k in range(1, 50)}, "49 probabilities"
+        )
+        values = [probabilities[str(k)] for k in range(1, 50)]
+        require(
+            all(type(p) in (int, float) and 0 < p < 1 for p in values),
+            "probability domain",
+        )
+        close(math.fsum(values), 6, "expected probability total six")
+        rank = forecast["ranking"]
+        require(
+            rank == sorted(range(1, 50), key=lambda k: (-probabilities[str(k)], k)),
+            "full probability ranking/tie order",
+        )
+        for k in (6, 12, 18):
+            require(forecast[f"top{k}"] == rank[:k], "Top-K from frozen ranking")
+            require(
+                score[f"top{k}_hits"] == len(actual & set(rank[:k])),
+                "categorical Top-K hits",
+            )
+        require(forecast["final6"] == sorted(rank[:6]), "Final-6 frozen selection")
+        matches = sorted(actual & set(forecast["final6"]))
+        require(
+            score["matched_final6"] == matches and score["final6_hits"] == len(matches),
+            "categorical Final-6 hits (bonus excluded)",
+        )
+        require(
+            score["forecast_sha256"] == sha(canonical(forecast)),
+            "individual forecast hash",
+        )
+        brier = (
+            math.fsum((p - int(k in actual)) ** 2 for k, p in enumerate(values, 1)) / 49
+        )
+        loss = (
+            -math.fsum(
+                math.log(p) if k in actual else math.log1p(-p)
+                for k, p in enumerate(values, 1)
+            )
+            / 49
+        )
+        close(score["brier_score"], brier, "frozen-probability Brier")
+        close(score["log_loss"], loss, "frozen-probability Log Loss")
+        close(
+            score["mean_actual_rank"],
+            math.fsum(rank.index(k) + 1 for k in actual) / 6,
+            "mean actual rank",
+        )
+        state = forecast["scientific_state"]
+        if index < 2:
+            labels = set(range(1, 50, 2)) if index == 0 else PSEUDO
+            gain = (
+                0.0
+                if state["beta"] == 0.0
+                else math.log(N)
+                + state["beta"] * state["x_prev"] * len(actual & labels)
+                - state["log_z"]
+            )
+            close(score["joint_log_gain"], gain, "joint score from frozen state only")
+        else:
+            require(
+                state is None and score["joint_log_gain"] is None,
+                "comparator joint state",
+            )
+
+
+def verify_pins(root):
+    auth_raw = git(root, "show", f"{AUTH_SOURCE}:{AUTH_PATH}")
+    require(sha(auth_raw) == AUTH_SHA, "fixed authorization source byte hash")
+    require(
+        auth_raw == git(root, "show", f"{EXECUTION}:{AUTH_PATH}"),
+        "authorization merge bytes",
+    )
+    auth = strict_json(auth_raw)
+    require(
+        auth["implementation_commit"] == SOURCE
+        and auth["pure_core_sha256"] == CORE
+        and auth["governed_history_authority"] == HISTORY,
+        "authorization source bindings",
+    )
+    closure = auth["runtime_dependency_closure"]
+    require(
+        len(closure) == 31
+        and sha(canonical(closure).removesuffix(b"\n"))
+        == CLOSURE
+        == auth["runtime_dependency_closure_sha256"],
+        "31-path runtime closure",
+    )
+    for item in closure:
+        path = item["path"]
+        raw = git(root, "show", f"{SOURCE}:{path}")
+        require(
+            raw
+            == git(root, "show", f"{EXECUTION}:{path}")
+            == (root / path).read_bytes(),
+            "source/execution/local closure bytes: " + path,
+        )
+        require(sha(raw) == item["sha256"], "closure SHA: " + path)
+        require(
+            hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+            == item["git_blob"],
+            "closure Git blob: " + path,
+        )
+    require(
+        sha((root / "src/lotto649/models/v12_parity_transition.py").read_bytes())
+        == CORE,
+        "pure-core SHA (read only, never imported)",
+    )
+    require(
+        git(root, "rev-list", "--parents", "-n", "1", ARTIFACT).decode().split()
+        == [ARTIFACT, EXECUTION],
+        "artifact sole parent",
+    )
+    changes = git(
+        root, "diff-tree", "--no-commit-id", "--name-status", "-r", ARTIFACT
+    ).decode()
+    require(
+        sorted(changes.splitlines()) == sorted("A\t" + STEM + s for s in SUFFIXES),
+        "exactly six added artifact paths",
+    )
+    artifacts = {}
+    for suffix in SUFFIXES:
+        raw = git(root, "show", f"{ARTIFACT}:{STEM}{suffix}")
+        require(
+            raw == (root / (STEM + suffix)).read_bytes(), "frozen local/committed bytes"
+        )
+        artifacts[suffix] = {"bytes": len(raw), "sha256": sha(raw)}
+    raw = git(root, "show", f"{ARTIFACT}:{STEM}.json")
+    require(sha(raw) == REPORT_SHA, "fixed report SHA")
+    report = strict_json(raw)
+    bindings = report["bindings"]
+    for key, value in {
+        "implementation_commit": SOURCE,
+        "authorization_sha256": AUTH_SHA,
+        "execution_authority_M_A_H3": EXECUTION,
+        "authorization_source_A_H_s3": AUTH_SOURCE,
+        "governed_history_authority": HISTORY,
+        "lease_commit_L_H3": LEASE,
+        "pure_core_sha256": CORE,
+        "runtime_dependency_closure_sha256": CLOSURE,
+    }.items():
+        require(bindings[key] == value, "report binding: " + key)
+    require(
+        report["model_version"] == "v12.0.2"
+        and report["seed"] == 649
+        and report["statistical_fingerprint_sha256"] == FINGERPRINT,
+        "science pins",
+    )
+    require(
+        report["stop_reason"] is None
+        and report["complete_registered_scope"] is True
+        and report["processed_target_count"] == report["expected_target_count"] == 627
+        and report["disposition"] == "Reject",
+        "completed negative result only",
+    )
+    require(
+        report["classification"] == "consumed_historical_diagnostic_only",
+        "diagnostic label",
+    )
+    runtime = auth["runtime"]
+    require(bindings["runtime"] == runtime, "report runtime bytes")
+    require(
+        runtime["python_version"] == platform.python_version()
+        and runtime["platform"] == platform.platform()
+        and runtime["machine"] == platform.machine()
+        and runtime["byteorder"] == sys.byteorder,
+        "frozen current runtime identity",
+    )
+    installed = {
+        d.metadata["Name"].lower().replace("_", "-"): d.version
+        for d in importlib.metadata.distributions(path=[str(SITE_PACKAGES)])
+    }
+    require(
+        installed == runtime["installed_distributions"],
+        "complete installed distribution map",
+    )
+    require(
+        sha((root / "requirements/v12-historical.txt").read_bytes())
+        == REQUIREMENTS_SHA,
+        "frozen requirements manifest",
+    )
+    return auth, report, artifacts
+
+
+def authenticate_history(root, report):
+    sys.path.insert(0, str(root / "src"))
+    from lotto649.operational_history import (
+        load_published_history,
+        operational_history_provenance,
+    )
+
+    history = load_published_history(root, HISTORY)
+    records = [
+        {
+            "draw_date": d.draw_date.isoformat(),
+            "numbers": list(d.numbers),
+            "bonus": d.bonus,
+        }
+        for d in history.draws
+    ]
+    require(
+        len(records) == 4444
+        and records[0]["draw_date"] == "1982-06-12"
+        and records[-1]["draw_date"] == "2026-08-22",
+        "governed history scope",
+    )
+    dates = [record["draw_date"] for record in records]
+    require(dates == sorted(set(dates)), "governed chronology and unique dates")
+    positions = {d: i for i, d in enumerate(dates)}
+    rows = report["targets"]
+    require(
+        [row["target_draw_date"] for row in rows] == calendar(), "fixed 627 calendar"
+    )
+    for row in rows:
+        position = positions[row["target_draw_date"]]
+        authenticate_row(row, records, position)
+        check_frozen_scores(row)
+    return operational_history_provenance(history)
+
+
+def check_model_summary(rows, index, summary):
+    scores = [row["scores"][index] for row in rows]
+    require(
+        summary["draw_count"] == len(rows) and summary["model_name"] == MODELS[index],
+        "model summary identity",
+    )
+    for source, target in (
+        ("brier_score", "brier_score"),
+        ("log_loss", "log_loss"),
+        ("mean_actual_rank", "mean_actual_rank"),
+        ("final6_hits", "mean_final6_hits"),
+    ):
+        close(
+            summary[target],
+            math.fsum(s[source] for s in scores) / len(rows),
+            "model mean " + target,
+        )
+    for k in (6, 12, 18):
+        mean = math.fsum(s[f"top{k}_hits"] for s in scores) / len(rows)
+        close(summary[f"mean_top{k}_hits"], mean, "mean Top-K hits")
+        close(summary[f"top{k}_lift"], mean - 6 * k / 49, "fair Top-K lift")
+    require(
+        summary["final6_histogram"]
+        == {str(k): sum(s["final6_hits"] == k for s in scores) for k in range(7)},
+        "complete Final-6 histogram",
+    )
+    if index < 2:
+        close(
+            summary["joint_log_gain_sum"],
+            math.fsum(s["joint_log_gain"] for s in scores),
+            "joint score sum",
+        )
+    else:
+        require(
+            summary["joint_log_gain_sum"] is None, "joint score absent for comparator"
+        )
+    bins = [[] for _ in range(10)]
+    for row in rows:
+        probabilities = row["forecast_payload"]["forecasts"][index]["probabilities"]
+        for label in range(1, 50):
+            p = probabilities[str(label)]
+            bucket = next(i for i in range(10) if i / 10 <= p < (i + 1) / 10)
+            bins[bucket].append((p, int(label in row["actual"])))
+    require(len(summary["calibration_bins"]) == 10, "ten calibration bins")
+    for i, values in enumerate(bins):
+        recorded = summary["calibration_bins"][i]
+        require(
+            recorded["lower"] == i / 10
+            and recorded["upper"] == (i + 1) / 10
+            and recorded["count"] == len(values),
+            "calibration bin bounds/count",
+        )
+        if values:
+            close(
+                recorded["mean_probability"],
+                math.fsum(p for p, _ in values) / len(values),
+                "calibration mean probability",
+            )
+            close(
+                recorded["observed_frequency"],
+                math.fsum(y for _, y in values) / len(values),
+                "calibration observed frequency",
+            )
+        else:
+            require(
+                recorded["mean_probability"] is None
+                and recorded["observed_frequency"] is None,
+                "empty calibration bins retained",
+            )
+
+
+def replay_statistics(np, report):
+    rows = report["targets"]
+    scopes = {"aggregate": rows, "first_half": rows[:314], "second_half": rows[314:]}
+    laws = exact_laws({313, 314, 627})
+    intervals, exact_tests = [], []
+    for scope_name, scope_rows in scopes.items():
+        recorded = report["scopes"][scope_name]
+        dates, n = [r["target_draw_date"] for r in scope_rows], len(scope_rows)
+        require(
+            recorded["n"] == n
+            and recorded["first_target"] == dates[0]
+            and recorded["last_target"] == dates[-1]
+            and recorded["target_dates_sha256"]
+            == date_hash(dates)
+            == DATE_HASHES[scope_name],
+            "scope date membership",
+        )
+        # Every contrast logically starts a fresh seed-649 generator. Reusing its
+        # identical index matrix here preserves every sampled complete row exactly.
+        indices = np.random.default_rng(649).integers(0, n, size=(10000, n))
+        for index, model in enumerate(MODELS):
+            summary = recorded["models"][model]
+            check_model_summary(scope_rows, index, summary)
+            hits = [row["scores"][index]["top12_hits"] for row in scope_rows]
+            exact = exact_tail(laws[n], n, sum(hits))
+            require(
+                exact["numerator_hex"] == summary["top12_exact_p"]["numerator_hex"]
+                and exact["denominator_hex"]
+                == summary["top12_exact_p"]["denominator_hex"],
+                "exact unreduced integer tail ratio",
+            )
+            close(exact["value"], summary["top12_exact_p"]["value"], "exact tail float")
+            ci = bootstrap(np, [h - FAIR_TOP12 for h in hits], indices)
+            check_interval(ci, summary["top12_lift_ci95"], "Top-12 lift CI")
+            intervals.append({"scope": scope_name, "model_or_contrast": model, **ci})
+            exact_tests.append(
+                {
+                    "scope": scope_name,
+                    "model": model,
+                    "n": n,
+                    "total_top12_hits": sum(hits),
+                    "value": exact["value"],
+                    "exact_ratio_sha256": sha(canonical(exact)),
+                }
+            )
+        for name, index in (("candidate_minus_v1", 2), ("candidate_minus_pseudo", 1)):
+            ci = bootstrap(
+                np,
+                [
+                    row["scores"][0]["top12_hits"] - row["scores"][index]["top12_hits"]
+                    for row in scope_rows
+                ],
+                indices,
+            )
+            contrast = recorded["contrasts"][name]
+            check_interval(ci, contrast["top12_paired_ci95"], "paired Top-12 CI")
+            intervals.append({"scope": scope_name, "model_or_contrast": name, **ci})
+            for metric, key in (
+                ("brier_score", "brier_delta"),
+                ("log_loss", "log_loss_delta"),
+            ):
+                delta = (
+                    math.fsum(
+                        row["scores"][0][metric] - row["scores"][index][metric]
+                        for row in scope_rows
+                    )
+                    / n
+                )
+                close(contrast[key], delta, "paired proper-score contrast")
+            if index == 1:
+                close(
+                    contrast["joint_log_gain_sum"],
+                    math.fsum(
+                        row["scores"][0]["joint_log_gain"]
+                        - row["scores"][1]["joint_log_gain"]
+                        for row in scope_rows
+                    ),
+                    "paired joint score sum",
+                )
+        for metric, key in (
+            ("brier_score", "brier_delta"),
+            ("log_loss", "log_loss_delta"),
+        ):
+            fair = (
+                FAIR * (1 - FAIR)
+                if metric == "brier_score"
+                else (-FAIR * math.log(FAIR) - (1 - FAIR) * math.log1p(-FAIR))
+            )
+            close(
+                recorded["contrasts"]["candidate_minus_fair"][key],
+                math.fsum(row["scores"][0][metric] - fair for row in scope_rows) / n,
+                "fair proper-score contrast",
+            )
+    require(
+        len(intervals) == 18 and len(exact_tests) == 12,
+        "all registered inference replays",
+    )
+    best = {}
+    for index, model in enumerate(MODELS):
+        maximum = max(row["scores"][index]["final6_hits"] for row in rows)
+        best[model] = {
+            "final6_hits": maximum,
+            "target_dates": [
+                row["target_draw_date"]
+                for row in rows
+                if row["scores"][index]["final6_hits"] == maximum
+            ],
+        }
+    require(
+        best == report["best_final6_by_model"], "all tied best dates, no cherry-picking"
+    )
+    return {
+        "confidence_intervals": intervals,
+        "exact_tail_ratios": exact_tests,
+        "all_best_dates": best,
+    }
+
+
+def self_test(np):
+    passed = []
+
+    def rejects(label, operation):
+        try:
+            operation()
+        except (AuditFailure, ValueError):
+            passed.append(label)
+        else:
+            raise AuditFailure("negative test accepted: " + label)
+
+    rejects("duplicate JSON", lambda: strict_json('{"a":1,"a":2}'))
+    for value in ("NaN", "Infinity", "-Infinity"):
+        rejects("nonfinite JSON " + value, lambda value=value: strict_json(value))
+    require(
+        strict_json(canonical({"b": 2, "a": 1})) == {"a": 1, "b": 2},
+        "canonical round trip",
+    )
+    require(
+        sha(canonical({"a": 1})) != sha(canonical({"a": 1}).rstrip(b"\n")), "LF binding"
+    )
+    passed.extend(("canonical round trip", "canonical newline hash binding"))
+    dates = calendar()
+    require(
+        len(dates) == 627 and len(dates[:314]) == 314 and len(dates[314:]) == 313,
+        "synthetic calendar split",
+    )
+    for key, value in (
+        ("aggregate", dates),
+        ("first_half", dates[:314]),
+        ("second_half", dates[314:]),
+    ):
+        require(date_hash(value) == DATE_HASHES[key], "date digest " + key)
+        passed.append("calendar/split digest " + key)
+    records = [
+        {"draw_date": "2019-12-28", "numbers": [1, 2, 3, 4, 5, 6], "bonus": 7},
+        {"draw_date": "2020-01-01", "numbers": [8, 9, 10, 11, 12, 13], "bonus": 14},
+    ]
+    payload = {
+        "target_draw_date": "2020-01-01",
+        "history_through": "2019-12-28",
+        "training_cutoff_date": "2019-12-28",
+        "visible_prefix_draw_count": 1,
+        "visible_prefix_sha256": sha(canonical(records[:1])),
+    }
+    row = {
+        "target_draw_date": "2020-01-01",
+        "actual": records[1]["numbers"],
+        "bonus": 14,
+        "forecast_payload": payload,
+        "forecast_payload_sha256": sha(canonical(payload)),
+    }
+    authenticate_row(row, records, 1)
+    passed.append("invented history prefix authentication")
+    for key, value in (
+        ("training_cutoff_date", "2020-01-01"),
+        ("visible_prefix_draw_count", 2),
+        ("visible_prefix_sha256", "0" * 64),
+    ):
+        mutation = copy.deepcopy(row)
+        mutation["forecast_payload"][key] = value
+        mutation["forecast_payload_sha256"] = sha(
+            canonical(mutation["forecast_payload"])
+        )
+        rejects(
+            "bad prefix " + key,
+            lambda mutation=mutation: authenticate_row(mutation, records, 1),
+        )
+    mutation = copy.deepcopy(row)
+    mutation["actual"][0] = 49
+    rejects("altered target answer", lambda: authenticate_row(mutation, records, 1))
+    laws = exact_laws({1, 2})
+    require(
+        laws[1] == [math.comb(12, k) * math.comb(37, 6 - k) for k in range(7)],
+        "one-draw oracle",
+    )
+    require(sum(laws[2]) == N**2, "two-draw mass")
+    require(
+        exact_tail(laws[1], 1, 6)["numerator_hex"] == hex(math.comb(12, 6)),
+        "six-hit tail oracle",
+    )
+    passed.extend(
+        (
+            "one-draw hypergeometric oracle",
+            "two-draw exact mass",
+            "six-hit exact numerator",
+        )
+    )
+    rejects("exact tail out of range", lambda: exact_tail(laws[1], 1, 7))
+    for value in (0.0, 2.5):
+        ci = bootstrap(np, [value] * 4)
+        require(ci["lower"] == ci["upper"] == value, "constant bootstrap oracle")
+        passed.append("constant bootstrap oracle " + str(value))
+    rejects("empty bootstrap", lambda: bootstrap(np, []))
+    rejects("nonfinite bootstrap", lambda: bootstrap(np, [float("nan")]))
+    ci = bootstrap(np, [1, 2, 4, 0])
+    check_interval(ci, ci, "positive CI check")
+    mutation = dict(ci, lower=ci["lower"] + 0.01)
+    rejects("changed CI bound", lambda: check_interval(ci, mutation, "mutated CI"))
+    rejects(
+        "changed CI seed",
+        lambda: check_interval(ci, dict(ci, seed=650), "mutated seed"),
+    )
+    return {
+        "status": "PASS_SYNTHETIC_ONLY",
+        "check_count": len(passed),
+        "checks": passed,
+        "provenance": "new post-audit reproducibility helper; not original inline audit source",
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--self-test", action="store_true")
+    mode.add_argument("--verify-frozen-negative-result", action="store_true")
+    parser.add_argument("--repository", type=Path, default=DEFAULT_REPOSITORY)
+    args = parser.parse_args()
+    # No credential is read, copied, printed, or forwarded into this process's
+    # only child programs (local read-only Git). This mutates process memory only.
+    os.environ.clear()
+    os.environ.update(SAFE_ENVIRONMENT)
+    np = numpy_runtime()
+    if args.self_test:
+        result = self_test(np)
+    else:
+        root = args.repository.resolve(strict=True)
+        require(root.is_dir(), "repository directory")
+        auth, report, artifacts = verify_pins(root)
+        sys.addaudithook(readonly_guard)
+        history_identity = authenticate_history(root, report)
+        statistics = replay_statistics(np, report)
+        require(
+            not any(
+                name.startswith("lotto649.models") or "registered_attempt" in name
+                for name in sys.modules
+            ),
+            "no model or worker module was imported",
+        )
+        result = {
+            "status": "PASS_POST_AUDIT_READ_ONLY_REPLAY",
+            "reviewer": "/root/i3_independent_output_audit",
+            "provenance": "New reproducibility helper created after original inline audit; original receipts unchanged",
+            "original_audit_session": "v12-0-2-post-run-history-chronology-result-20260913-01",
+            "source_sha256": sha(Path(__file__).read_bytes()),
+            "artifact_commit": ARTIFACT,
+            "execution_commit": EXECUTION,
+            "i3_source": SOURCE,
+            "report_sha256": REPORT_SHA,
+            "authorization_sha256": AUTH_SHA,
+            "core_sha256": CORE,
+            "closure_sha256": CLOSURE,
+            "frozen_runtime": auth["runtime"],
+            "artifact_bytes": artifacts,
+            "authenticated_history": history_identity,
+            "target_count": 627,
+            "authenticated_complete_prefix_count": 627,
+            "frozen_forecasts_scored": 2508,
+            "bootstrap_intervals_replayed": 18,
+            "exact_integer_ratios_replayed": 12,
+            "result": "Reject; no Final-6 6/6; Goal not complete",
+            **statistics,
+            "limits": [
+                "No prediction or fitted beta is recomputed; frozen probabilities and score arrays only.",
+                "History origin is the fixed committed governed authority and existing reviewed validators, not a new external publisher check.",
+                "Full history is in process memory; prefix authentication does not physically hide future rows or directly trace historical execution.",
+                "This replay does not duplicate startup/ledger/source chronology audits or prove historical OS fsync, wall clock or runtime directly.",
+                "No remote lease/protection/publication checks; those remain separate root-owned evidence.",
+                "Float tolerance is 2e-12 relative/absolute; integer ratios and hashes compare exactly.",
+            ],
+        }
+    print(
+        json.dumps(
+            result, sort_keys=True, ensure_ascii=False, indent=2, allow_nan=False
+        )
+    )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (
+        AuditFailure,
+        OSError,
+        subprocess.SubprocessError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        # No subprocess stdout/stderr or environment is printed on failure.
+        print(
+            json.dumps(
+                {
+                    "status": "FAIL_READ_ONLY_REPLAY",
+                    "error_type": type(exc).__name__,
+                    "message": str(exc)
+                    if isinstance(exc, AuditFailure)
+                    else "fixed input/read check failed",
+                }
+            ),
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from None
