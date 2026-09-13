@@ -90,9 +90,11 @@ passed independent Standards and Spec review with 0 blocker, 0 major, and 0
 minor findings. Its fixed 2026-08-27 dispatch window expired without a
 credential, approved production SHA, dispatch, or canary result. It must not be
 run late, re-dated, or reused. D0 must independently reseal its config and
-workflow to all-false before any new live recovery wiring. V12.0.1 registers a
-separate future manual-only live lane with a new fixed canary, identity, and
-authorization chain; that lane still permits no schedule or automatic retry.
+workflow to all-false before any new live recovery wiring. V12.0.1 also
+registered a separate manual-only live lane; its fixed September seed/canary
+windows have now expired and that lane is `superseded_unexecuted`. Any future
+live recovery needs a new registration and version; no schedule, shifted date
+or automatic retry is authorized by either expired route.
 A later unattended schedule remains a distinct release after an exact
 production `B -> E -> S -> P -> A` canary succeeds and its evidence is reviewed.
 See `docs/OPERATIONS.md`; no Stage-1 preparation, live canary, or legacy
