@@ -49,23 +49,64 @@ commit was uploaded remain unknown. Do not infer either from the later 404,
 retry the command, reuse either old authorization source, or alter the frozen
 I2 closure. PR #45 normally merged the incident and live closure at
 `3015078e251bdcbb92719e1b291b1807525fef16`. Obsolete PR #41 is closed and
-unmerged; its source branch and audit history are preserved. No V12 result or
-6/6 exists.
+unmerged; its source branch and audit history are preserved. V12.0.1 produced
+no scientific result or 6/6.
 
-The current registered operation is
-[`V12.0.2 historical operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md).
+V12.0.2 has now completed its **sole authorized historical run: 627/627
+consumed 2020–2025 targets, frozen disposition Reject, no Final-6 6/6**.
+The candidate's best Final-6 was 3/6 on 11 dates. This is a negative historical
+diagnostic, with no promotion, future-winning claim or completed 6/6 Goal.
+The full interpretation and audit status are in
+[`V12_0_2_HISTORICAL_RESULTS.md`](research/V12_0_2_HISTORICAL_RESULTS.md).
 
-**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+The completed sequence preserves the H12 fingerprint, pure core, dates, seed,
+controls and ten gates registered in
+[`R3`](experiments/V12_0_2_historical_operational_rebinding.md):
 
-It preserves the exact H12 scientific fingerprint, core, dates, seed, controls
-and ten gates.
-It registers strict GitHub object-representation checks and durable sanitized
-startup receipts. It has no live lane. The next work is the six-path I3
-implementation using only source, fixed Git metadata, synthetic fixtures and
-closed-form oracles. New independent Standards/Spec reviews, successful
-exact-head CI, an ordinary protected-main implementation merge, a new
-auth-JSON-only source and ordinary authorization merge, and a fresh V12.0.2
-one-shot lease are all still required before historical execution.
+- I3 source `978475ee472af9f6c6ad46c3d9de1f8a90b39dae` normally merged in
+  [PR #48](https://github.com/Jasper-Shi/lottopred/pull/48) as
+  `0c54d443325a2dbf59bc5fa70a0288593f8df9b9` (`K_H3`).
+- Authorization source `caaeaca6d5ddfd3705171d86fddd3c53bdd75de6` normally
+  merged in [PR #49](https://github.com/Jasper-Shi/lottopred/pull/49) as
+  execution authority `b7fa81d6d5facc1730700cd527362df79f457cf8` (`M_A_H3`).
+- Permanent lease `refs/heads/v12-consumption-v12.0.2` points to
+  `a8b264a5d3db199e831b0c06cb0697794766d160`. Preserve it without update,
+  deletion, adoption, retry or reuse.
+- Worker artifact commit `c9b483f6e89bf73eade28829188fbebe745e28c0` has sole
+  parent `b7fa81d6d5facc1730700cd527362df79f457cf8`. It is pushed on
+  `codex/v12-0-2-historical-evidence`; protected-main publication remains
+  pending at this evidence-source checkpoint. Preserve this commit as an
+  ancestor through an ordinary merge; never squash, rebase or rewrite it.
+
+The six immutable worker files are the
+[startup journal](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.startup.jsonl),
+[claim](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.claim),
+[scientific ledger](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.ledger.jsonl),
+[JSON report](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.json),
+[Markdown report](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.md)
+and [commit manifest](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json).
+The independent negative-result audit by `/root/i3_independent_output_audit`
+passed within its stated scope, with 0 blocker, 0 major and 0 minor findings.
+It checked all 627 actual main/bonus results and complete visible prefixes,
+1,255 ledger events, 13 startup events, all 18 bootstrap intervals and 12 exact
+fair tests. It used frozen scores without regenerating forecasts or refitting.
+The [audit JSON](../evidence/research_audits/v12-0-2-historical-20260913/independent-audit.json)
+and [audit report and limitations](../evidence/research_audits/v12-0-2-historical-20260913/independent-audit.md)
+record its scope. This completed negative-result audit does not establish a
+6/6 leakage-audit milestone or Goal completion. The worker's internal
+`audit.complete=true` remains a separate creation-time check.
+Root's separate GET-only
+[remote observation](../evidence/research_audits/v12-0-2-historical-20260913/remote-observation.json)
+passed its lease, protection, Git and PR #48/#49 review/CI checks; that observation
+was performed by root and is separate from the independent audit.
+
+The report's `audit_publication=pending_git_integration` is its immutable
+creation-time status. Later Git integration and separate audit receipts resolve
+publication without changing a worker file. Keep the experiment closed against
+retuning or another run; a next experiment still requires separate registration.
+No manual email was sent during evidence preparation. The historical R3
+registration checkpoint was **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED /
+NOT SCORED**; those historical words do not describe the completed run.
 
 The V12.0.1 live seed and canary windows have expired. That lane is
 `superseded_unexecuted`, recorded in the separate
@@ -194,14 +235,14 @@ research decisions are recorded here and in `V2_V4_RESULTS.md`.
 | V4 ensemble | Rejected | Retained for reproducibility and historical research; absent from the live model list. |
 | V12.0.0 parity transition | Superseded unexecuted | Its fixed canary route expired without execution. This is not Archive, Reject, consumed evidence, or a model result. |
 | V12.0.1 parity transition | Startup failed; frozen against retry; not scored | Its sole invocation after PR #44 failed before any claim or forecast. The exact failure stage and remote POST activity remain unknown. Its separate live lane expired unexecuted. |
-| V12.0.2 parity transition | Registered; not implemented, authorized, or scored | R3 preserves H12 science under new historical-only execution identities. It adds no live lane or production factory/CLI/workflow wiring. |
+| V12.0.2 parity transition | Completed once; frozen Reject | All 627 consumed targets were scored. Candidate best Final-6: 3/6 on 11 dates; no 6/6. Independent audit/publication status is separate; no retuning, rerun or live lane. |
 | 2020–2025 legacy diagnostic | Consumed / strict-blind label withdrawn | The old run used 621 registered rows from a malformed and incomplete history rather than the corrected 627-draw calendar. Exact metrics are archival only; correction cannot make the known outcomes untouched. |
 | 2026+ snapshots | Immutable source-relative artifacts | Their pre-draw chronology remains auditable. The 2026-08-19/22 outcomes are independently source-verified, but predictions trained on the malformed legacy history are not corrected-history promotion evidence. |
 
 No version has established a reliable lottery-prediction edge. V3's historical
 ranking lift is interesting but not statistically convincing.
 
-### V12 registration checkpoint
+### V12 scientific authority and completed sequence
 
 The immutable V12.0.0 scientific authority is
 [`V12_post_rng_parity_composition_transition.md`](experiments/V12_post_rng_parity_composition_transition.md).
@@ -216,14 +257,13 @@ failure and its separate expired live lane retain the distinct dispositions
 recorded in the 2026-09-13 checkpoint above. Neither old authorization source
 grants another attempt.
 
-The current authority is the registration-only
-[`R3 specification`](experiments/V12_0_2_historical_operational_rebinding.md).
-Its historical sequence is `R3 < I3 < K_H3 < A_H_s3 < M_A_H3 < L_H3 < run_H3`.
-Only the new ordinary authorization merge `M_A_H3` at protected remote
-`main`/HEAD can authorize the new one-shot route; `A_H_s3` itself cannot.
-R3 has no live lane and does not depend on D0, future outcomes or live-canary
-success. No V12 forecast, score, report, result notification, shadow activation,
-or production behavior exists.
+The [`R3 specification`](experiments/V12_0_2_historical_operational_rebinding.md)
+and its registration-time file bindings remain frozen at R3. The sequence
+`R3 < I3 < K_H3 < A_H_s3 < M_A_H3 < L_H3 < run_H3` completed at the identities
+recorded above. The ordinary authorization merge supplied execution authority;
+the source branch and registration alone never did. That sole attempt is now
+consumed and closed. R3 has no live lane, shadow activation or production wiring,
+and its historical execution did not require D0 or live-canary success.
 
 ## How the implemented system runs
 
@@ -480,15 +520,16 @@ Do not broaden the fallback to swallow those integrity failures.
    live registration must define its own reviewed digest/OID identities,
    canary and reload evidence after D0; historical I3 does not authorize them.
    Scheduling requires a later separate release after that canary succeeds.
-8. Continue the registered historical-only R3 work from its linked
-   specification. Complete I3 with synthetic/source-only checks, new independent
-   reviews and exact-head CI; preserve the core and runtime closure at I3,
-   `K_H3`, `A_H_s3` and `M_A_H3`. Only the new ordinary protected-main
-   authorization merge and fresh `refs/heads/v12-consumption-v12.0.2` lease
-   permit its single run. Validate authorization before creating a startup
-   receipt, then preserve durable receipts before remote mutation. V12.0.1
-   remains frozen against retry. R3 grants no history access, artifact creation
-   or execution by itself, and has no live lane.
+8. Preserve V12.0.2's completed scoped independent audit and finish ordinary
+   protected-main publication using the existing frozen outputs and receipts;
+   consult `research/V12_0_2_HISTORICAL_RESULTS.md`. Preserve artifact commit
+   `c9b483f6e89bf73eade28829188fbebe745e28c0` as a reachable ancestor and leave
+   all six worker files unchanged. The permanent lease is consumed: never
+   rerun, retune, update/delete the lease or regenerate a forecast. Preserve
+   V12.0.1's distinct startup-failure closure. After documenting the negative
+   result, preregister the next narrow, falsifiable experiment before computing
+   its results; planning alone is not a registration or execution authority.
+   The broader Goal remains incomplete without an independently audited 6/6.
 9. Run `pytest -q` and `ruff check .`; run a network smoke only after source
    access is explicitly authorized, and record positive and negative results.
 

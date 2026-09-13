@@ -1,0 +1,1494 @@
+#!/usr/bin/env python3
+r"""Read-only, independent V12.0.2 frozen-output consistency audit.
+
+Prepared independently against I3 source 978475ee472af9f6c6ad46c3d9de1f8a90b39dae.
+PREPARATION ONLY: synthetic self-tests are not V12 execution/result acceptance
+evidence. No real artifacts or history were read during preparation. This tool
+neither grants authorization nor permits any retry.
+No repository imports, forecast calls, fitting, verifier/lease construction,
+network access, email, file generation, or report mutation. Only --self-test
+may run before the owner authorizes an explicit consumed-output directory.
+
+Usage AFTER the one-shot worker has closed and published all six artifacts:
+  python3 -I -B /private/tmp/v12-0-2-independent-output-audit-20260913.py \
+    --output-dir /absolute/authorized/repository/reports \
+    --expected-execution-commit M_A_H3 \
+    --expected-source-commit A_H_s3 \
+    --expected-authorization-sha256 AUTHORIZATION_SHA256 \
+    --expected-lease-commit L_H3 \
+    --expected-execution-tree M_A_H3_TREE \
+    --expected-execution-epoch M_A_H3_COMMITTER_UNIX_SECONDS
+
+Before authorization: python3 -I -B THIS_FILE --self-test
+Audit output goes only to stdout. Exit 0 means scoped consistency checks pass,
+1 means a failed check or unreadable artifact, 2 means invalid CLI arguments.
+Numerical comparisons use rel_tol=2e-12 and abs_tol=2e-12; dates, labels,
+probability ordering, canonical bytes and digests are checked exactly.
+
+LIMITS: a valid local hash chain is not proof of wall-clock durability,
+unseen-history blindness, authentic external draw outcomes, correct fitted beta,
+V1 fitting/optimizer implementation, Git publication, actual mail delivery, or
+exclusive remote lease acquisition. NumPy's PCG bootstrap is NOT replayed:
+CI metadata and feasible ranges, and gates conditional on those recorded CIs,
+are checked. This is NOT a complete independent chronology/leakage audit and
+cannot clear a Final-6 candidate's pending independent_leakage_audit status.
+"""
+
+import argparse
+import copy
+import hashlib
+import json
+import math
+import os
+import re
+import stat
+import sys
+from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
+from pathlib import Path
+
+STEM = "v12_post_rng_parity_composition_transition_v12.0.2_historical"
+SUFFIXES = {"startup": ".startup.jsonl", "claim": ".claim", "ledger": ".ledger.jsonl", "report": ".json",
+            "markdown": ".md", "manifest": ".commit.json"}
+MODELS = ("v12_post_rng_parity_composition_transition",
+          "v12_pseudo_parity_composition_transition_control",
+          "ensemble_v1.0.0", "random_v1.0.0")
+FEATURES = ("frozen_post_rng_lag_one_true_parity_composition",
+            "frozen_post_rng_lag_one_pseudo_parity_composition",
+            "frozen_v1_long_recent_ema_gap_logistic_ensemble",
+            "frozen_v1_target_date_seeded_fair_jitter")
+SCOPES = ("aggregate", "first_half", "second_half")
+PSEUDO = frozenset((1, 2, 5, 6, 7, 8, 9, 10, 12, 16, 17, 18, 20, 24, 28,
+                    29, 32, 33, 40, 41, 42, 43, 44, 48, 49))
+PARTITIONS = (frozenset(range(1, 50, 2)), PSEUDO)
+P = 6.0 / 49.0
+N = math.comb(49, 6)
+CLASSIFICATION = "consumed_historical_diagnostic_only"
+CLASSIFICATION_ZH = "历史诊断/审计候选、不可晋升"
+EXPERIMENT = "V12_0_2_historical_operational_rebinding"
+FINGERPRINT = "af2e16a55ff0e817cf71208471e19e4f481bed63990f7e41268997c4c4b35c76"
+CORE_SHA = "fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77"
+PSEUDO_SHA = "bfbb8cb711e0734aea8a29f6c02aee41a0f39a36643b3155245dc3550bbf14dd"
+R1 = "0af20fc41fc5aaa0879dada0a258797a8bc14e20"
+R3 = "d8dcd31ab9bc4a78eaac26decf80e3259b973d71"
+HISTORY_AUTHORITY = "4a617f2c1575a165b42878600753a01ddf2ced03"
+I3 = "978475ee472af9f6c6ad46c3d9de1f8a90b39dae"
+R3_SHA = "34088616fb9a2666bcc6acc7944cce44946e880594d1517cbe7fec554995fef0"
+REQUIREMENTS_SHA = "a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6"
+CONFIG_SHA = '6386454de54665c61f4eaf870ce47527e7f8e4d6d69b28436394d23ae92545ec'
+FROZEN_CLOSURE = [{'path': 'config.yaml', 'git_blob': '228297cb4253f4f05a85373a7672f36c2b1f739f', 'sha256': 'd53a9a9eed5ab434b021472135d6aed65c2c052339e0dfb88f8c00d46c0d8931'}, {'path': 'config/research-v12-0-2-post-rng-parity-composition-transition.yaml', 'git_blob': 'a41941ed7aeec9bf846c1771cba182ca9ceb0d7e', 'sha256': '6386454de54665c61f4eaf870ce47527e7f8e4d6d69b28436394d23ae92545ec'}, {'path': 'config/research-v12-post-rng-parity-composition-transition.yaml', 'git_blob': '62459cbd803c545c26293b00fbbe0951afaeb096', 'sha256': 'b73a010bb69a82de9c39088ca8024a7652ea7ddf317da3676b55d0c6bfbe16bb'}, {'path': 'evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json', 'git_blob': '43411a12a4ad9154dcce08a4951a3cef299ca804', 'sha256': '4406bd25ee82195bff7a97b258885cb3bb3c1a8fb829f383c5e3c1616e169170'}, {'path': 'evidence/research_registrations/v12-post-rng-parity-composition-transition-v2.json', 'git_blob': '26c7349ec5e0d4e47e1f7a6a879190277dd49aa1', 'sha256': 'c4fccc8d0078576d25561631d28ca9400b890341c45f71b57f13cbe800ba802f'}, {'path': 'evidence/research_registrations/v12-post-rng-parity-composition-transition-v3.json', 'git_blob': '005ff151ca84894ab2f5b6eea21722b609f8060f', 'sha256': '34088616fb9a2666bcc6acc7944cce44946e880594d1517cbe7fec554995fef0'}, {'path': 'requirements/v12-historical.txt', 'git_blob': 'bd577c57cbcabac1f4409665547ff36015f378c8', 'sha256': 'a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6'}, {'path': 'src/lotto649/__init__.py', 'git_blob': '3dc1f76bc69e3f559bee6253b24fc93acee9e1f9', 'sha256': '91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed'}, {'path': 'src/lotto649/config.py', 'git_blob': '51d0a61f152dde4afdd0eba2ebfaf66180f9b789', 'sha256': '81416fa4022685c3bf301a3de68287c5264f506bbeeb009bc3f487089107a984'}, {'path': 'src/lotto649/domain.py', 'git_blob': '7465f79ca3548ca9c61ba173220b04dadec5d6b9', 'sha256': 'fbcb22747ae361767df070c6e50af49fda1aa190b72fd39894afa1c879a50b7a'}, {'path': 'src/lotto649/features.py', 'git_blob': 'a735fd3092a6a3de226823f0491b437e1e69cada', 'sha256': 'b7bc67b9038b2e3d78230c3087c3ac4e3f17751aeab678574f3601af00671979'}, {'path': 'src/lotto649/history_registry.py', 'git_blob': '4f7e09b6821498114d2020756d787647c0517744', 'sha256': '5b0cde9f95da8181fb46f64ffeeaa148ddd625c9ae951e34470c8b3d6c8596d8'}, {'path': 'src/lotto649/models/__init__.py', 'git_blob': 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'src/lotto649/models/base.py', 'git_blob': '31a01009c50bdeb3b73b7a9d9f289a23a6e1deb6', 'sha256': 'e2f0c90c376ea6063b906bcca042e8903b351a1ed4b76e9d83e17be3bcf166ec'}, {'path': 'src/lotto649/models/baselines.py', 'git_blob': '4f4817a5f7895e325c1adebbcd18d933117b53fd', 'sha256': '76f9050a13bde44d51584397ecd6acb358f320e1617ef329b70bd6a22d23e28a'}, {'path': 'src/lotto649/models/ensemble.py', 'git_blob': '7d75cf1a78ad4df5e26f59d29df8fff572c61b00', 'sha256': '9b2a3fb3156efb3ff248fa6debecfd7a92b718e9517d8da0e3a5fc43da7c0047'}, {'path': 'src/lotto649/models/factory.py', 'git_blob': 'e86691165fb3a790e01d69e89fea3a208378e59d', 'sha256': '9dc00bb860ee5e786116d8d2ffa767de932f96419e18d81753bb438f975260b7'}, {'path': 'src/lotto649/models/logistic.py', 'git_blob': 'bce2c3e54bd3b7d782dad04f9178064bc9c8ee12', 'sha256': '886367c16ed0f0d1109aacb943a3393e63807a31e7710bd0e664e06f6f3c4da2'}, {'path': 'src/lotto649/models/v12_parity_transition.py', 'git_blob': 'e4408b4c31c0d07249ed8112832d931e1474a0bf', 'sha256': 'fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77'}, {'path': 'src/lotto649/models/v2_statistical.py', 'git_blob': '266f42cd4da7f3d8d4289083631c444c8c090c5c', 'sha256': 'ff12c79534e49143f07fd9d73eec15095a04f6203ca0e886ec7070ab90fce305'}, {'path': 'src/lotto649/models/v3_boosting.py', 'git_blob': 'ea7eeb435670f92b9d5a5473039ba26d332784dc', 'sha256': '6cbd38fa7ea25f69319615163e5577b61c6f952c97794b80ac97edf32782cd5f'}, {'path': 'src/lotto649/models/v4_ensemble.py', 'git_blob': '01557ca73ea631f21288cb58230e2c9f09f1f6c9', 'sha256': '378edda84313d6c6838d3468e9b9d9e13286a9168f73ff0af51c556ae3b68fa9'}, {'path': 'src/lotto649/notification.py', 'git_blob': '0cdd076cbf027df08422e0f4a7060f2f9b738b1e', 'sha256': '881c44b87e8e9044d4bbc0e6cb68713d2138671dd8c79363f65dc4a6d1cfccb8'}, {'path': 'src/lotto649/official_history.py', 'git_blob': '39f380f5ed5dd4b38c6bf9ae8e190e457a04548c', 'sha256': '8fbabd9bee7f9b0f37c9a974e46ad8bbacaf6152befabf178173bc3889768d5e'}, {'path': 'src/lotto649/operational_history.py', 'git_blob': 'a7de794458fa2fc18539e7d7b614993cab087aa0', 'sha256': '042be2b595db078d46d677ec4e1391ada04f84d5ad1749137a5fb5d877c6d0b2'}, {'path': 'src/lotto649/optimizer.py', 'git_blob': '5a7dfeacd16e7f34e19ceda361ae5fc57d3873ac', 'sha256': 'f5bda2a8ee8cd19c7b719a8f3344a7e4ca76def75971d5e8fe49489189abd1a4'}, {'path': 'src/lotto649/research_features.py', 'git_blob': '39c559d8ac95a74541db3c4e3c263ae260d5c2e6', 'sha256': '545ce0c342019fe5606fc2435b8815f0c189f4b98a2f9823e15aae171b87ad65'}, {'path': 'src/lotto649/v12_0_2_evidence.py', 'git_blob': '1d832c96cbd10a43286a03a39b6358975319b8b5', 'sha256': 'd5b76c4bc93007c68f708a5452d36a47e5755b63578de8267b0ccba6e3124d8c'}, {'path': 'src/lotto649/v12_0_2_registered_attempt.py', 'git_blob': 'b57eed8d4ede7857b550f86ddc9855577a292068', 'sha256': '2558df98e6188ad6bf259c33e792604e848d7e9022f622de23ad6a890083c73c'}, {'path': 'src/lotto649/verified_history.py', 'git_blob': 'b3764cd79206b9a2b8b196c6cd4b4c1b0a92d8ce', 'sha256': '214e59071f3f8d232aca5f7850060a88568c35fb89246dea64f99c20265ead80'}, {'path': 'tools/run_v12_0_2_historical.py', 'git_blob': '51c006fb6269cde76d9aad4c08c71033e5276059', 'sha256': '7a44b1e877f31dfb9e1a03d96a7821a4d16539f3d06590e57b575727970f5e85'}]
+FROZEN_RUNTIME = {'implementation': 'cpython', 'python_version': '3.12.11', 'platform': 'macOS-26.5.2-arm64-arm-64bit', 'machine': 'arm64', 'byteorder': 'little', 'dependency_manifest_sha256': 'a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6', 'installed_distributions': {'beautifulsoup4': '4.13.5', 'certifi': '2025.11.12', 'charset-normalizer': '3.4.4', 'idna': '3.11', 'iniconfig': '2.3.0', 'joblib': '1.5.2', 'numpy': '2.3.5', 'packaging': '26.3', 'pandas': '2.3.3', 'pip': '25.1.1', 'pluggy': '1.6.0', 'pygments': '2.21.0', 'pypdf': '6.16.1', 'pytest': '9.1.1', 'python-dateutil': '2.9.0.post0', 'pytz': '2025.2', 'pyyaml': '6.0.3', 'requests': '2.32.5', 'ruff': '0.16.6', 'scikit-learn': '1.7.2', 'scipy': '1.16.3', 'six': '1.17.0', 'soupsieve': '2.5', 'threadpoolctl': '3.5.0', 'typing-extensions': '4.15.0', 'tzdata': '2025.2', 'urllib3': '2.5.0'}}
+FROZEN_IMPLEMENTATION = [{'path': 'src/lotto649/v12_0_2_evidence.py', 'git_blob': '1d832c96cbd10a43286a03a39b6358975319b8b5', 'sha256': 'd5b76c4bc93007c68f708a5452d36a47e5755b63578de8267b0ccba6e3124d8c', 'bytes': 41847}, {'path': 'src/lotto649/v12_0_2_registered_attempt.py', 'git_blob': 'b57eed8d4ede7857b550f86ddc9855577a292068', 'sha256': '2558df98e6188ad6bf259c33e792604e848d7e9022f622de23ad6a890083c73c', 'bytes': 193161}, {'path': 'tests/fixtures/v12_0_2_git_commit_projection.json', 'git_blob': '7e1ae196a83a4434f1590f8d5c08bcc6582ffece', 'sha256': 'c0efc4904a6d968d4546e75d4fb26a984c2cf650294a9c3815a77684170dc734', 'bytes': 6597}, {'path': 'tests/test_v12_0_2_evidence_equivalence.py', 'git_blob': '61103d145fb08a4bc0ed3008e8b3208ff4edc035', 'sha256': '18ed9bb669f886b49157dc932878726b9ed1a6dcc1fa885950993c39f2a8dca1', 'bytes': 27656}, {'path': 'tests/test_v12_0_2_registered_attempt.py', 'git_blob': 'ec50f4a01f3f25f58b8cca333ab8168ba6c445a8', 'sha256': 'b8d3189cb6421a71325f73b2d9f9bf3b1bead6765c3c31f0983d24b060515b99', 'bytes': 140574}, {'path': 'tools/run_v12_0_2_historical.py', 'git_blob': '51c006fb6269cde76d9aad4c08c71033e5276059', 'sha256': '7a44b1e877f31dfb9e1a03d96a7821a4d16539f3d06590e57b575727970f5e85', 'bytes': 5610}]
+FROZEN_HISTORY_IDENTITY = {'branch': 'main', 'commit': '4a617f2c1575a165b42878600753a01ddf2ced03', 'immutable_objects': {'base': {'bytes': 136540, 'git_blob': '1957e6935a2a14f7a5326992067b75fe006178c1', 'rows_sha256': '58988bbb130be2142bc5a2b20df571cc458eabe66cd873773f55ca1dbfae8874', 'sha256': '1e1bb768877d3f1b3b901a8cb897b6f439ff80f675c57e786cb54ff1179ac8ad'}, 'registry': {'bytes': 1170, 'genesis_commit': 'a6857d6b4e6e532062f484bcce4466f76ba4327b', 'git_blob': 'e95aeaaa28d5c1b7e5fb636d0fc4a3c26ff31017', 'head_sha256': '22bcfe219c091dbcdb751ef7a2d9d5251f3040770de6e2e825ac5c64fc69c63d', 'sha256': '42a9df8ef861a5fad6e1d7e7639d3d9317e519c0e83e96d7b1148527215afb72'}, 'seal': {'bytes': 4586, 'commit': 'b3056cd1772f8e992e27a9eb87e5037eb15e2b79', 'git_blob': '23c05e7d2c1344f77085b228bfc919e88e3c4af3', 'sha256': '80397752105b567d6a8bdd3673b12ffa470a12efbd792719a4f6c89ef391f6fd'}, 'suffix': {'bytes': 3079, 'commit': '0b476b6de1f6bed1382c29187fd5cdaa4f70c153', 'event_count': 2, 'evidence_commit': '60dbd42a502850091508491f9011f9a08acf894f', 'git_blob': '3fa0319cc9d98fc17c49d4917e222d2da10aef07', 'head_sha256': '3022b98fefbe3dbbc80423574319c169edcc845bf2218152c6abe18d0be27475', 'sha256': 'b91be6a4057648abd86dc0e6fc5d762fc4cd9b222519c147d635703cc550a803'}}, 'published_history': {'base_draw_count': 4442, 'base_history_through': '2026-08-15', 'base_seal_path': 'evidence/data_integrity/DI-2026-08-20-registered-history/seal.json', 'draw_count': 4444, 'history_start': '1982-06-12', 'history_through': '2026-08-22', 'incident_id': 'DI-2026-08-20-registered-history', 'kind': 'PublishedHistory', 'pin_registry_path': 'evidence/operational_history/DI-2026-08-20-registered-history/pin-registry.jsonl', 'suffix_event_count': 2}, 'read_seam': 'lotto649.operational_history.load_published_history', 'repository': 'Jasper-Shi/lottopred'}
+FROZEN_CLOSURE_SHA = '95f60b79dffb11fcdfdbfa10b0e9e187998f68b61cfdb1fcd46fb3e6b801383a'
+
+GATE_NAMES = (
+    "aggregate_candidate_top12_lift_strictly_positive",
+    "aggregate_candidate_four_variant_holm_adjusted_exact_p_at_most_0.05",
+    "aggregate_candidate_top12_bootstrap_lower_strictly_positive",
+    "candidate_top12_lift_strictly_positive_in_both_halves",
+    "paired_candidate_minus_v1_top12_bootstrap_lower_strictly_positive_aggregate_and_halves",
+    "candidate_minus_pseudo_top12_bootstrap_lower_strictly_positive_and_pseudo_and_random_each_exact_fair_top12_p_strictly_above_0.05_and_fixed_seed_bootstrap_top12_lift_interval_includes_zero_in_every_scope",
+    "candidate_top6_lift_strictly_positive_aggregate_and_halves",
+    "candidate_brier_and_log_loss_deltas_vs_fair_and_v1_at_most_1e-9_aggregate_and_halves",
+    "joint_law_candidate_log_gain_at_least_log20_aggregate_positive_halves_candidate_minus_control_positive_all_scopes_control_below_log20",
+    "no_audit_warning",
+)
+LIMITATIONS = [
+    "Local hash-chain and frozen-payload consistency is not a complete independent leakage audit.",
+    "No external-history reads: prefix digests and actual outcomes are not independently authenticated.",
+    "No prediction is recomputed and no model is invoked: fitted beta, tilted normalizer, V1/random selection and optimizer behavior require separate source/leakage audit.",
+    "Bootstrap seed/resamples/method and bounds are checked, but NumPy bootstrap samples/quantiles are not independently replayed; CI-dependent gates are conditional consistency only.",
+    "No independent proof of historical wall-clock fsync, remote lease exclusivity, Git object publication/protection, or actual email delivery.",
+    "Claim identities and complete authorization preimage are cross-checked to explicit pins and frozen source metadata; external review authenticity, Git topology and installed runtime at execution require separate audit.",
+    "An exact Final-6 remains historical diagnostic only and pending a separate full independent leakage audit.",
+]
+
+
+class AuditError(Exception):
+    pass
+
+
+def require(condition, label):
+    if not condition:
+        raise AuditError(label)
+
+
+def same(actual, expected, label):
+    """Shape/type aware comparison, allowing only small numeric rounding error."""
+    if type(expected) is set:
+        require(type(actual) is set and actual == expected, label)
+    elif type(expected) is float:
+        require(type(actual) is float and math.isfinite(actual)
+                and math.isclose(actual, expected, rel_tol=2e-12, abs_tol=2e-12), label)
+    elif type(expected) is dict:
+        require(type(actual) is dict and set(actual) == set(expected), label + ": keys")
+        for key, value in expected.items():
+            same(actual[key], value, label + "." + key)
+    elif type(expected) is list:
+        require(type(actual) is list and len(actual) == len(expected), label + ": list")
+        for index, (left, right) in enumerate(zip(actual, expected)):
+            same(left, right, label + "[" + str(index) + "]")
+    else:
+        require(type(actual) is type(expected) and actual == expected, label)
+
+
+def plain(value):
+    if value is None or type(value) in (str, bool, int):
+        return
+    if type(value) is float:
+        require(math.isfinite(value), "non-finite number")
+        return
+    if type(value) is list:
+        for item in value:
+            plain(item)
+        return
+    require(type(value) is dict and all(type(key) is str for key in value), "non-JSON value")
+    for item in value.values():
+        plain(item)
+
+
+def canonical(value, newline=True):
+    plain(value)
+    return (json.dumps(value, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=False, allow_nan=False)
+            + ("\n" if newline else "")).encode("utf-8")
+
+
+def pairs(items):
+    result = {}
+    for key, value in items:
+        require(key not in result, "duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def reject_constant(value):
+    raise AuditError("non-finite JSON constant " + value)
+
+
+def decode(raw, label, newline=True):
+    try:
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=pairs,
+                           parse_constant=reject_constant)
+    except (UnicodeError, ValueError) as error:
+        raise AuditError(label + ": invalid JSON") from error
+    require(canonical(value, newline) == raw, label + ": noncanonical JSON bytes")
+    return value
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def digest(value, length=64):
+    return type(value) is str and re.fullmatch("[0-9a-f]{" + str(length) + "}", value) is not None
+
+
+def iso_date(value):
+    require(type(value) is str, "date is not text")
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError as error:
+        raise AuditError("invalid date") from error
+    require(parsed.isoformat() == value, "noncanonical date")
+    return parsed
+
+
+def timestamp(value):
+    require(type(value) is str and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z", value),
+            "noncanonical UTC timestamp")
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    require(parsed.tzinfo == timezone.utc, "timestamp timezone")
+    return parsed
+
+
+def numbers(value, count, sorted_set=False):
+    require(type(value) is list and len(value) == count
+            and all(type(n) is int and 1 <= n <= 49 for n in value)
+            and len(set(value)) == count, "invalid unique 1..49 number list")
+    require(not sorted_set or value == sorted(value), "number list must be sorted")
+    return value
+
+
+def calendar(first, last):
+    current, final = iso_date(first), iso_date(last)
+    result = []
+    while current <= final:
+        if current.weekday() in (2, 5):
+            result.append(current.isoformat())
+        current += timedelta(days=1)
+    return result
+
+
+DATES = calendar("2020-01-01", "2025-12-31")
+BURN_IN = calendar("2019-05-15", "2019-12-28")
+SCOPE_DIGESTS = (
+    "c339733dccc04c3ac25aca15ce991c31421ba35580488e7acadbea5672705782",
+    "c3bea21f775ce8077d25b255ae18a3701b08b22f2bf39c812ce40e78f6edc2e5",
+    "32f924f82aa85e2be7440c66cf7133ab1b16669ede77e7230efef8d7e473ee7b",
+)
+
+
+def check_recorded_state(state, probabilities, index):
+    """Check recorded algebra only. Never derive a new probability or fit beta."""
+    x = (float(state["previous_bucket"]) - 150.0 / 49.0) / math.sqrt(3225.0 / 2401.0)
+    same(state["x_prev"], x, "standardized previous bucket")
+    if state["beta"] == 0.0:
+        require(state["beta"].hex() == "0x0.0p+0" and state["eta"].hex() == "0x0.0p+0",
+                "fair bypass positive zero")
+        require(all(p.hex() == P.hex() for p in probabilities.values()), "fair bypass literal probabilities")
+        same(state["expected_bucket"], 150.0 / 49.0, "fair expected bucket")
+        same(state["log_z"], math.log(N), "fair log normalizer")
+    else:
+        same(state["eta"], state["beta"] * state["x_prev"], "eta=beta*x")
+    selected = PARTITIONS[index]
+    inside = {probabilities[str(n)] for n in selected}
+    outside = {probabilities[str(n)] for n in range(1, 50) if n not in selected}
+    require(len(inside) == len(outside) == 1, "equal recorded probabilities within partition")
+    same(state["expected_bucket"], math.fsum(probabilities[str(n)] for n in sorted(selected)),
+         "recorded expected bucket equals recorded marginal sum")
+
+
+def audit_forecast(forecast, index):
+    require(type(forecast) is dict and set(forecast) == {
+        "model_name", "model_version", "feature_set", "probabilities", "ranking",
+        "top6", "top12", "top18", "final6", "scientific_state"}, "forecast schema")
+    same(forecast["model_name"], MODELS[index], "model order")
+    same(forecast["model_version"], "v12.0.2" if index < 2 else "v1.0.0", "model version")
+    same(forecast["feature_set"], FEATURES[index], "feature identity")
+    probabilities = forecast["probabilities"]
+    require(type(probabilities) is dict and set(probabilities) == {str(n) for n in range(1, 50)},
+            "all 49 probabilities required")
+    require(all(type(p) is float and math.isfinite(p) and 0 < p < 1
+                for p in probabilities.values()), "probability contract")
+    require(abs(math.fsum(probabilities.values()) - 6.0) <= 1e-12, "probability mass")
+    ranking = numbers(forecast["ranking"], 49)
+    same(ranking, sorted(range(1, 50), key=lambda n: (-probabilities[str(n)], n)), "ranking")
+    for k in (6, 12, 18):
+        numbers(forecast["top" + str(k)], k)
+        same(forecast["top" + str(k)], ranking[:k], "Top-K ranking prefix")
+    final6 = numbers(forecast["final6"], 6, True)
+    require(set(final6) <= set(forecast["top12"]), "Final-6 outside Top-12 pool")
+    state = forecast["scientific_state"]
+    if index >= 2:
+        same(state, None, "comparator joint state")
+        return
+    same(final6, sorted(ranking[:6]), "parity Final-6")
+    require(type(state) is dict and set(state) == {
+        "transition_count", "previous_bucket", "x_prev", "beta", "eta", "expected_bucket", "log_z"},
+        "scientific state schema")
+    require(type(state["transition_count"]) is int and state["transition_count"] >= 0,
+            "transition count")
+    require(type(state["previous_bucket"]) is int and 0 <= state["previous_bucket"] <= 6,
+            "previous bucket")
+    require(all(type(state[k]) is float and math.isfinite(state[k])
+                for k in ("x_prev", "beta", "eta", "expected_bucket", "log_z")), "finite state")
+    require(state["transition_count"] != 0 or state["beta"] == 0.0, "empty transition fair bypass")
+    check_recorded_state(state, probabilities, index)
+
+
+def audit_payload(payload, bindings, previous_row, index):
+    require(type(payload) is dict and set(payload) == {
+        "schema_version", "classification", "model_version", "target_draw_date",
+        "history_through", "training_cutoff_date", "visible_prefix_sha256",
+        "visible_prefix_draw_count", "bindings", "forecasts"}, "frozen payload schema")
+    same(payload["schema_version"], "lotto649-v12.0.2-frozen-forecast-v1", "payload schema version")
+    same(payload["classification"], CLASSIFICATION, "payload classification")
+    same(payload["model_version"], "v12.0.2", "payload version")
+    require(canonical(payload["bindings"]) == canonical(bindings), "payload bindings")
+    target, through = iso_date(payload["target_draw_date"]), iso_date(payload["history_through"])
+    require(index < len(DATES) and payload["target_draw_date"] == DATES[index], "registered date prefix")
+    require(through < target, "history strictly before target")
+    same(payload["training_cutoff_date"], payload["history_through"], "training cutoff")
+    require(digest(payload["visible_prefix_sha256"]), "prefix digest shape")
+    require(type(payload["visible_prefix_draw_count"]) is int
+            and payload["visible_prefix_draw_count"] >= len(BURN_IN), "visible prefix count")
+    require(type(payload["forecasts"]) is list and len(payload["forecasts"]) == 4, "four forecasts")
+    for i, forecast in enumerate(payload["forecasts"]):
+        audit_forecast(forecast, i)
+        if i < 2:
+            same(forecast["scientific_state"]["transition_count"], len(BURN_IN) - 1 + index,
+                 "registered post-RNG transition count")
+    if previous_row is None:
+        same(payload["history_through"], "2019-12-28", "initial last visible date")
+    else:
+        same(payload["history_through"], previous_row["target_draw_date"], "next visible date")
+        same(payload["visible_prefix_draw_count"],
+             previous_row["forecast_payload"]["visible_prefix_draw_count"] + 1, "prefix grows by one")
+        require(payload["visible_prefix_sha256"] != previous_row["forecast_payload"]["visible_prefix_sha256"],
+                "different prefix digest per target")
+        for i, selected in enumerate(PARTITIONS):
+            same(payload["forecasts"][i]["scientific_state"]["previous_bucket"],
+                 len(set(previous_row["actual"]) & selected), "previous bucket from prior scored draw")
+
+
+def proper_scores(probabilities, actual):
+    errors, losses = [], []
+    for n in range(1, 50):
+        p, hit = probabilities[str(n)], n in actual
+        errors.append((p - int(hit)) ** 2)
+        losses.append(-math.log(p) if hit else -math.log1p(-p))
+    return {"brier_score": math.fsum(errors) / 49.0, "log_loss": math.fsum(losses) / 49.0}
+
+
+def opportunities(counts):
+    return {"cumulative_unique_opportunity_count": sum(counts),
+            "cumulative_fair_probability": -math.expm1(math.fsum(math.log1p(-n/N) for n in counts))
+            if counts else 0.0}
+
+
+def recompute_row(payload, actual_list, bonus):
+    actual_list = numbers(actual_list, 6, True)
+    actual = set(actual_list)
+    require(bonus is None or (type(bonus) is int and 1 <= bonus <= 49 and bonus not in actual),
+            "bonus must be separate from the six main numbers")
+    scores, unique = [], {}
+    for i, forecast in enumerate(payload["forecasts"]):
+        name, final6 = forecast["model_name"], forecast["final6"]
+        fsha = sha(canonical(forecast))
+        matches = sorted(actual & set(final6))
+        score = {"model_name": name, "model_version": forecast["model_version"],
+                 "forecast_sha256": fsha, "final6_hits": len(matches), "matched_final6": matches,
+                 "mean_actual_rank": math.fsum(forecast["ranking"].index(n)+1 for n in actual) / 6.0,
+                 **proper_scores(forecast["probabilities"], actual), "joint_log_gain": None}
+        for k in (6, 12, 18):
+            score["top" + str(k) + "_hits"] = len(actual & set(forecast["top" + str(k)]))
+        if i < 2:
+            state = forecast["scientific_state"]
+            score["joint_log_gain"] = 0.0 if state["beta"] == 0 else (
+                math.log(N) + state["beta"] * state["x_prev"] * len(actual & PARTITIONS[i]) - state["log_z"])
+        scores.append(score)
+        key = tuple(final6)
+        if key not in unique:
+            unique[key] = {"final6": final6, "primary_producer": name, "producer_model_names": [],
+                           "forecast_sha256_by_producer": {}, "hits": len(matches)}
+        unique[key]["producer_model_names"].append(name)
+        unique[key]["forecast_sha256_by_producer"][name] = fsha
+    items = list(unique.values())
+    return {"target_draw_date": payload["target_draw_date"], "actual": actual_list, "bonus": bonus,
+            "forecast_payload": payload, "forecast_payload_sha256": sha(canonical(payload)),
+            "scores": scores, "fair_scores": proper_scores({str(n): P for n in range(1, 50)}, actual),
+            "unique_final6": items, "unique_opportunity_count": len(items),
+            "top12_all_six_producers": [s["model_name"] for s in scores if s["top12_hits"] == 6],
+            "exact_final6_opportunities": [item for item in items if item["hits"] == 6]}
+
+
+def mean(values):
+    return math.fsum(values) / len(values)
+
+
+def model_summary(rows, index):
+    scores = [row["scores"][index] for row in rows]
+    result = {"model_name": MODELS[index], "draw_count": len(rows),
+              "mean_final6_hits": mean([s["final6_hits"] for s in scores]),
+              "mean_actual_rank": mean([s["mean_actual_rank"] for s in scores]),
+              "brier_score": mean([s["brier_score"] for s in scores]),
+              "log_loss": mean([s["log_loss"] for s in scores]),
+              "final6_histogram": {str(k): sum(s["final6_hits"] == k for s in scores) for k in range(7)},
+              "joint_log_gain_sum": math.fsum(s["joint_log_gain"] for s in scores) if index < 2 else None}
+    for k in (6, 12, 18):
+        result["mean_top" + str(k) + "_hits"] = mean([s["top" + str(k) + "_hits"] for s in scores])
+        result["top" + str(k) + "_lift"] = result["mean_top" + str(k) + "_hits"] - 6*k/49.0
+    bins = []
+    for b in range(10):
+        probs, hits = [], []
+        for row in rows:
+            for n in range(1, 50):
+                p = row["forecast_payload"]["forecasts"][index]["probabilities"][str(n)]
+                if b/10.0 <= p < (b+1)/10.0:
+                    probs.append(p)
+                    hits.append(int(n in row["actual"]))
+        bins.append({"lower": b/10.0, "upper": (b+1)/10.0, "count": len(probs),
+                     "mean_probability": mean(probs) if probs else None,
+                     "observed_frequency": mean(hits) if hits else None})
+    result["calibration_bins"] = bins
+    return result
+
+
+@lru_cache(maxsize=3)
+def fair_coefficients(n):
+    # Exact integer polynomial multiplication; no stochastic inference or NumPy.
+    weights = [math.comb(12, k) * math.comb(37, 6-k) for k in range(7)]
+    coefficients = [1]
+    for _ in range(n):
+        new = [0] * (len(coefficients) + 6)
+        for k, weight in enumerate(weights):
+            for j, coefficient in enumerate(coefficients):
+                new[j+k] += coefficient * weight
+        coefficients = new
+    require(sum(coefficients) == N**n, "exact convolution conserves mass")
+    return coefficients
+
+
+def exact_tail(n, hits):
+    denominator = N**n
+    numerator = denominator if hits == 0 else sum(fair_coefficients(n)[hits:])
+    return {"value": numerator/denominator, "numerator_hex": hex(numerator), "denominator_hex": hex(denominator)}
+
+
+def check_ci(ci, values, label):
+    require(type(ci) is dict and set(ci) == {"lower", "upper", "seed", "resamples", "method"}, label)
+    for key, value in (("seed", 649), ("resamples", 10000), ("method", "linear")):
+        same(ci[key], value, label + "." + key)
+    require(all(type(ci[k]) is float and math.isfinite(ci[k]) for k in ("lower", "upper")), label)
+    require(min(values)-2e-12 <= ci["lower"] <= ci["upper"] <= max(values)+2e-12, label + ": feasible bounds")
+
+
+def scope_check(scope, rows, scope_index):
+    dates = [row["target_draw_date"] for row in rows]
+    for key, value in {"n": len(rows), "first_target": dates[0], "last_target": dates[-1],
+                       "target_dates_sha256": sha(("\n".join(dates)+"\n").encode())}.items():
+        same(scope[key], value, "scope." + key)
+    same(scope["target_dates_sha256"], SCOPE_DIGESTS[scope_index], "fixed scope digest")
+    require(set(scope["models"]) == set(MODELS), "scope model set")
+    for i, name in enumerate(MODELS):
+        observed = scope["models"][name]
+        expected = model_summary(rows, i)
+        expected["top12_exact_p"] = exact_tail(len(rows), sum(row["scores"][i]["top12_hits"] for row in rows))
+        check_ci(observed["top12_lift_ci95"], [row["scores"][i]["top12_hits"] - 72/49.0 for row in rows],
+                 "Top12 bootstrap structure (not replayed)")
+        expected["top12_lift_ci95"] = observed["top12_lift_ci95"]
+        same(observed, expected, "scope model summary")
+    require(set(scope["contrasts"]) == {"candidate_minus_v1", "candidate_minus_pseudo", "candidate_minus_fair"},
+            "contrast keys")
+    for name, index in (("candidate_minus_v1", 2), ("candidate_minus_pseudo", 1), ("candidate_minus_fair", None)):
+        expected = {}
+        for metric, key in (("brier_score", "brier_delta"), ("log_loss", "log_loss_delta")):
+            expected[key] = mean([row["scores"][0][metric] -
+                                  (row["fair_scores"][metric] if index is None else row["scores"][index][metric])
+                                  for row in rows])
+        if index is not None:
+            ci = scope["contrasts"][name]["top12_paired_ci95"]
+            check_ci(ci, [row["scores"][0]["top12_hits"] - row["scores"][index]["top12_hits"] for row in rows],
+                     "paired bootstrap structure (not replayed)")
+            expected["top12_paired_ci95"] = ci
+        if index == 1:
+            expected["joint_log_gain_sum"] = math.fsum(row["scores"][0]["joint_log_gain"] -
+                                                     row["scores"][1]["joint_log_gain"] for row in rows)
+        same(scope["contrasts"][name], expected, "contrast summary")
+
+
+def holm(values):
+    adjusted, running = [0.0] * len(values), 0.0
+    for rank, index in enumerate(sorted(range(len(values)), key=lambda i: (values[i], i))):
+        running = max(running, min(1.0, (len(values)-rank)*values[index]))
+        adjusted[index] = float(running)
+    return adjusted
+
+
+def gates(scopes, audit):
+    ordered = [scopes[name] for name in SCOPES]
+    candidate = ordered[0]["models"][MODELS[0]]
+    candidate_models = [s["models"][MODELS[0]] for s in ordered]
+    checks = [
+        candidate["top12_lift"] > 0,
+        holm([1.0, 1.0, 0.9783404732169021, candidate["top12_exact_p"]["value"]])[3] <= 0.05,
+        candidate["top12_lift_ci95"]["lower"] > 0,
+        all(m["top12_lift"] > 0 for m in candidate_models[1:]),
+        all(s["contrasts"]["candidate_minus_v1"]["top12_paired_ci95"]["lower"] > 0 for s in ordered),
+        all(s["contrasts"]["candidate_minus_pseudo"]["top12_paired_ci95"]["lower"] > 0 and
+            all(s["models"][control]["top12_exact_p"]["value"] > 0.05 and
+                s["models"][control]["top12_lift_ci95"]["lower"] <= 0 <= s["models"][control]["top12_lift_ci95"]["upper"]
+                for control in (MODELS[1], MODELS[3])) for s in ordered),
+        all(m["top6_lift"] > 0 for m in candidate_models),
+        all(s["contrasts"][ref][metric] <= 1e-9 for s in ordered
+            for ref in ("candidate_minus_fair", "candidate_minus_v1") for metric in ("brier_delta", "log_loss_delta")),
+        candidate["joint_log_gain_sum"] >= math.log(20) and
+        all(m["joint_log_gain_sum"] > 0 for m in candidate_models[1:]) and
+        all(s["contrasts"]["candidate_minus_pseudo"]["joint_log_gain_sum"] > 0 for s in ordered) and
+        ordered[0]["models"][MODELS[1]]["joint_log_gain_sum"] < math.log(20),
+        audit["complete"] and not audit["warnings"],
+    ]
+    return [{"number": i+1, "name": name, "passed": bool(checks[i])} for i, name in enumerate(GATE_NAMES)]
+
+
+def audit_ledger(raw, bindings, claim_raw):
+    require(raw and raw.endswith(b"\n"), "ledger final newline")
+    events = [decode(line, "ledger line", False) for line in raw.splitlines()]
+    head, pending, rows, counts, expected_kinds = "0"*64, None, [], [], []
+    previous_time, stopped, archived, warnings = None, False, False, []
+    for sequence, event in enumerate(events):
+        require(type(event) is dict and set(event) == {
+            "schema_version", "sequence", "previous_event_sha256", "event_kind", "recorded_at",
+            "bindings", "payload", "event_sha256"}, "ledger event schema")
+        same(event["schema_version"], "lotto649-v12.0.2-attempt-ledger-v1", "ledger schema version")
+        same(event["sequence"], sequence, "contiguous event sequence")
+        same(event["previous_event_sha256"], head, "previous event hash")
+        body = {k: v for k, v in event.items() if k != "event_sha256"}
+        same(event["event_sha256"], sha(canonical(body, False)), "event hash")
+        head = event["event_sha256"]
+        require(canonical(event["bindings"]) == canonical(bindings), "unchanged event bindings")
+        at = timestamp(event["recorded_at"])
+        require(previous_time is None or at >= previous_time, "nondecreasing recorded timestamps")
+        previous_time = at
+        kind, payload = event["event_kind"], event["payload"]
+        require(type(payload) is dict, "event payload object")
+        require(not archived, "event after archive")
+        if sequence == 0:
+            same(kind, "attempt_claimed", "first event claim")
+            same(payload, {"claim_sha256": sha(claim_raw), "startup_checkpoint": bindings["startup_checkpoint"]}, "claim event digest/checkpoint")
+            require(at >= timestamp(decode(claim_raw, "claim")["claimed_at"]), "claim before first event")
+            continue
+        if expected_kinds:
+            require(kind == expected_kinds[0] or kind == "attempt_archived", "detection/notification event order")
+        if kind == "prediction_frozen":
+            require(not stopped and pending is None and not expected_kinds, "freeze/score state order")
+            require(set(payload) == {"forecast_payload", "forecast_payload_sha256"}, "frozen event keys")
+            audit_payload(payload["forecast_payload"], bindings, rows[-1] if rows else None, len(rows))
+            same(payload["forecast_payload_sha256"], sha(canonical(payload["forecast_payload"])), "frozen payload hash")
+            pending = event
+        elif kind == "target_revealed_scored":
+            require(pending is not None, "score without preceding freeze")
+            frozen = pending["payload"]["forecast_payload"]
+            require(canonical(payload["forecast_payload"]) == canonical(frozen), "score uses exact frozen payload")
+            expected = recompute_row(frozen, payload["actual"], payload["bonus"])
+            counts.append(expected["unique_opportunity_count"])
+            expected.update(prediction_generated_at=pending["recorded_at"],
+                            prediction_frozen_event_sequence=pending["sequence"],
+                            prediction_frozen_event_sha256=pending["event_sha256"],
+                            cumulative_opportunities=opportunities(counts))
+            same(payload, expected, "scored record independently recomputed")
+            row = copy.deepcopy(payload)
+            row.update(scored_event_sequence=sequence, scored_event_sha256=head)
+            rows.append(row)
+            pending = None
+            if row["exact_final6_opportunities"]:
+                expected_kinds = ["historical_6of6_candidate_detected", "notification_attempt_started", "notification_attempt_finished"]
+            elif row["top12_all_six_producers"]:
+                expected_kinds = ["historical_top12_all_six_detected", "notification_attempt_started", "notification_attempt_finished"]
+        elif kind in ("historical_6of6_candidate_detected", "historical_top12_all_six_detected"):
+            require(expected_kinds and kind == expected_kinds.pop(0) and pending is None, "unexpected detection")
+            row = rows[-1]
+            expected = {"target_draw_date": row["target_draw_date"],
+                        "forecast_payload_sha256": row["forecast_payload_sha256"], "eligible_evidence": False}
+            if kind == "historical_6of6_candidate_detected":
+                expected.update(opportunities=row["exact_final6_opportunities"],
+                                audit_status="independent_leakage_audit_pending", global_stop_search=False)
+                stopped = True
+            else:
+                expected["producers"] = row["top12_all_six_producers"]
+            same(payload, expected, "detection matches scored opportunity")
+        elif kind == "notification_attempt_started":
+            require(expected_kinds and kind == expected_kinds.pop(0), "unexpected notification start")
+            same(payload, {"target_draw_date": rows[-1]["target_draw_date"],
+                           "kind": "final6" if rows[-1]["exact_final6_opportunities"] else "top12",
+                           "classification_zh": CLASSIFICATION_ZH}, "notification classification")
+        elif kind == "notification_attempt_finished":
+            require(expected_kinds and kind == expected_kinds.pop(0), "unexpected notification finish")
+            require(type(payload.get("email_sent")) is bool, "email receipt Boolean")
+            same(payload, {"target_draw_date": rows[-1]["target_draw_date"], "email_sent": payload["email_sent"]},
+                 "notification finish")
+            if not payload["email_sent"]:
+                warnings.append("notification_not_sent:" + rows[-1]["target_draw_date"])
+        elif kind == "attempt_archived":
+            same(payload, {"reason": "Archive_after_claim_failure_no_retry", "retry_allowed": False}, "archive policy")
+            archived = True
+            warnings.append("one_shot_worker_failed_after_claim")
+        else:
+            raise AuditError("unregistered ledger event kind")
+    require(not expected_kinds or archived, "truncated detection/notification sequence")
+    require(not pending or archived, "pending freeze without archived failure")
+    summary = {"event_count": len(events), "scored_target_count": len(rows), "head_sha256": head,
+               "pending_forecast": pending is not None, "stopped_for_audit": stopped, "file_sha256": sha(raw)}
+    return rows, summary, warnings, archived
+
+
+def markdown_check(raw, report):
+    text = raw.decode("utf-8")
+    require(text.endswith("\n") and "\r" not in text, "Markdown newline encoding")
+    for fixed in ("# V12.0.2 历史严格回测诊断", CLASSIFICATION_ZH,
+                  "这些结果不具备晋升或未来购票建议的效力。",
+                  f"状态：{report['disposition']}；已评分 {report['processed_target_count']}/627 期。"):
+        require(fixed in text, "Markdown classification/status")
+    expected = []
+    for row in report["targets"]:
+        for forecast, score in zip(row["forecast_payload"]["forecasts"], row["scores"]):
+            cells = [row["target_draw_date"], row["forecast_payload"]["history_through"], forecast["model_name"],
+                     forecast["top6"], forecast["top12"], forecast["top18"], forecast["final6"], row["actual"],
+                     f"{score['top6_hits']}/{score['top12_hits']}/{score['top18_hits']}/{score['final6_hits']}"]
+            expected.append("| " + " | ".join(str(cell).replace("|", "\\|").replace("\n", " ") for cell in cells) + " |")
+    target_lines = [line for line in text.splitlines() if re.match(r"\| \d{4}-\d{2}-\d{2} \|", line)]
+    same(target_lines, expected, "Markdown complete ordered per-target rows")
+    require(canonical({"bindings": report["bindings"], "audit": report["audit"]}).decode().strip() in text,
+            "Markdown audit identity")
+    if report["gates"] is not None:
+        expected_scope_lines = []
+        for scope_name in SCOPES:
+            scope = report["scopes"][scope_name]
+            for name in MODELS:
+                m, ci = scope["models"][name], scope["models"][name]["top12_lift_ci95"]
+                expected_scope_lines.append(
+                    f"| {scope_name} | {name} | {scope['n']} | {m['mean_top6_hits']:.12g} | {m['mean_top12_hits']:.12g} | {m['mean_top18_hits']:.12g} | {m['brier_score']:.12g} | {m['log_loss']:.12g} | {m['top12_exact_p']['value']:.12g} | [{ci['lower']:.12g}, {ci['upper']:.12g}] |")
+        same([line for line in text.splitlines() if any(line.startswith("| " + s + " |") for s in SCOPES)],
+             expected_scope_lines, "Markdown scope table")
+        same([line for line in text.splitlines() if re.match(r"\| \d+ \|", line)],
+             [f"| {g['number']} | {g['name']} | {g['passed']} |" for g in report["gates"]], "Markdown gates")
+
+
+def report_check(report, rows, bindings, ledger_summary, warnings, archived, claim_raw):
+    fixed = {"schema_version": "lotto649.v12.0.2.historical-diagnostic-report.v1",
+             "experiment_id": EXPERIMENT, "model_version": "v12.0.2", "seed": 649,
+             "classification": CLASSIFICATION, "classification_zh": CLASSIFICATION_ZH,
+             "statistical_fingerprint_sha256": FINGERPRINT, "required_pure_core_sha256": CORE_SHA,
+             "primary_metric": "mean_top12_main_number_hits_minus_72_over_49",
+             "eligible_evidence": False, "promotion_authority": False, "expected_target_count": 627,
+             "processed_target_count": len(rows), "scope_order": list(SCOPES), "model_order": list(MODELS),
+             "audit_publication": "pending_git_integration"}
+    expected_keys = set(fixed) | {"targets", "bindings", "stop_reason", "complete_registered_scope",
+        "audit", "independent_leakage_audit", "opportunities", "exclusions", "fair_baselines",
+        "pseudo_control", "annual_descriptive_only", "best_final6_by_model", "scopes", "multiplicity",
+        "gates", "disposition"}
+    if any(row["exact_final6_opportunities"] for row in rows):
+        expected_keys.add("candidate_audit_handoff")
+    same(set(report), expected_keys, "report closed schema")
+    for key, value in fixed.items():
+        same(report[key], value, "report." + key)
+    require(canonical(report["targets"]) == canonical(rows), "report rows exactly match ledger")
+    same(report["bindings"], {**bindings, "claim_sha256": sha(claim_raw), "ledger": ledger_summary}, "report bindings")
+    exact = [r for r in rows if r["exact_final6_opportunities"]]
+    require(not exact or (len(exact) == 1 and exact[0] == rows[-1]), "processing continued after exact Final-6")
+    require(archived or exact or len(rows) == 627, "canonical attempt cannot end at an unexplained partial prefix")
+    stop = "Archive_after_claim_failure_no_retry" if archived else "exact_final6_pending_independent_audit" if exact else None
+    same(report["stop_reason"], stop, "stop reason")
+    complete = len(rows) == 627 and stop is None and not exact
+    same(report["complete_registered_scope"], complete, "complete scope flag")
+    # An exception inside _drive_sequence loses its local warning return value;
+    # an exception after that function returned preserves those earlier warnings.
+    # The ledger still exposes every recorded failed notification in either case.
+    report_warnings = warnings
+    if archived:
+        recorded_warnings = report["audit"]["warnings"]
+        require(recorded_warnings in (warnings, ["one_shot_worker_failed_after_claim"]),
+                "archive warning propagation differs from source failure paths")
+        report_warnings = recorded_warnings
+    audit = {"complete": stop is None and not report_warnings and not ledger_summary["pending_forecast"],
+             "warnings": report_warnings}
+    same(report["audit"], audit, "recorded internal audit status")
+    same(report["independent_leakage_audit"], "pending" if exact else "not_required_no_exact_final6", "pending audit flag")
+    same(report["opportunities"], opportunities([r["unique_opportunity_count"] for r in rows]), "overall opportunities")
+    same(report["exclusions"], {"burn_in_scored": 0, "known_2026_scored": 0,
+         "known_2026_classification": "consumed_excluded", "unprocessed_target_count": 627-len(rows)}, "exclusions")
+    same(report["fair_baselines"], {"probability": P, "top6_mean": 36/49.0, "top12_mean": 72/49.0,
+         "top18_mean": 108/49.0, "exact_final6_probability": 1/N}, "fair baselines")
+    same(report["pseudo_control"], {"model_name": MODELS[1], "role": "fixed_sanity_control_not_discovery",
+         "selected_labels": sorted(PSEUDO), "partition_sha256": PSEUDO_SHA,
+         "true_pseudo_label_contingency": [[10, 15], [15, 9]], "label_correlation_with_true_parity": "-9/40",
+         "independent_of_true_parity": False}, "pseudo metadata")
+    annual = {}
+    for year in sorted({row["target_draw_date"][:4] for row in rows}):
+        group = [row for row in rows if row["target_draw_date"].startswith(year+"-")]
+        annual[year] = {name: model_summary(group, i) for i, name in enumerate(MODELS)}
+    same(report["annual_descriptive_only"], annual, "annual summaries/calibration/histograms")
+    best = {}
+    for i, name in enumerate(MODELS) if rows else ():
+        hits = max(row["scores"][i]["final6_hits"] for row in rows)
+        best[name] = {"final6_hits": hits, "target_dates": [r["target_draw_date"] for r in rows if r["scores"][i]["final6_hits"] == hits]}
+    same(report["best_final6_by_model"], best, "all tied best dates")
+    if complete:
+        require(set(report["scopes"]) == set(SCOPES), "all registered scopes")
+        for i, group in enumerate((rows, rows[:314], rows[314:])):
+            scope_check(report["scopes"][SCOPES[i]], group, i)
+        vector = [1.0, 1.0, 0.9783404732169021, report["scopes"]["aggregate"]["models"][MODELS[0]]["top12_exact_p"]["value"]]
+        same(report["multiplicity"], {"family": "transition_markov", "variant_index": 4,
+             "input_vector": vector, "adjusted_vector": holm(vector)}, "Holm family")
+        same(report["gates"], gates(report["scopes"], audit), "ten gates conditional on stored CIs")
+    else:
+        same(report["scopes"], {}, "partial report has no full-scope inference")
+        same(report["multiplicity"], None, "partial multiplicity")
+        same(report["gates"], None, "partial gates")
+    disposition = ("pending_audit" if exact and stop == "exact_final6_pending_independent_audit" and not warnings
+                   else "Archive" if not complete or not audit["complete"] or warnings
+                   else "consumed_diagnostic_all_gates_pass" if all(g["passed"] for g in report["gates"]) else "Reject")
+    same(report["disposition"], disposition, "research disposition")
+    if exact:
+        candidate = exact[0]
+        producer = candidate["exact_final6_opportunities"][0]["primary_producer"]
+        target = candidate["target_draw_date"]
+        same(report["candidate_audit_handoff"], {"status": "independent_audit_pending", "target_draw_date": target,
+             "primary_producer": producer, "forecast_payload_sha256": candidate["forecast_payload_sha256"],
+             "report_path_after_audit": f"reports/historical-6of6-candidate__{target}__{producer}__v12.0.2.json",
+             "write_policy": "write_once_only_after_independent_audit", "eligible_evidence": False}, "candidate audit handoff")
+    else:
+        require("candidate_audit_handoff" not in report, "unexpected exact candidate handoff")
+
+
+STARTUP_PHASES = (
+    "authorized_startup_started", "capability_issued", "lease_absence_confirmed",
+    "lease_commit_POST_intent", "lease_commit_POST_receipt", "lease_commit_GET_verified",
+    "lease_ref_POST_intent", "lease_ref_POST_receipt", "lease_ref_reread_verified",
+    "startup_checkpoint", "claim_created", "scientific_ledger_started", "history_load_intent",
+)
+
+
+def audit_review_records(records, label):
+    require(type(records) is list and len(records) == 2, label + " two reviews")
+    fields = {"axis", "check_id", "comment_body_sha256", "comment_id", "pr_number",
+              "publisher_login", "review_session_id", "reviewer_agent_id"}
+    for record in records:
+        require(type(record) is dict and set(record) == fields, label + " closed schema")
+        for key in ("check_id", "comment_id", "pr_number"):
+            require(type(record[key]) is int and record[key] > 0, label + " positive ID")
+        require(digest(record["comment_body_sha256"]), label + " body hash")
+        for key in ("publisher_login", "review_session_id", "reviewer_agent_id"):
+            value = record[key]
+            require(type(value) is str and value and len(value.encode()) <= 256
+                    and not any(ord(c) < 32 or ord(c) == 127 for c in value)
+                    and value == value.strip(), label + " identifier")
+    same({r["axis"] for r in records}, {"standards", "spec"}, label + " axes")
+    for key in ("review_session_id", "reviewer_agent_id", "comment_id"):
+        require(len({r[key] for r in records}) == 2, label + " distinct " + key)
+    for key in ("check_id", "pr_number"):
+        require(len({r[key] for r in records}) == 1, label + " shared " + key)
+
+
+def audit_facts(claim, expected):
+    facts = claim["verified_authorization_facts"]
+    require(type(facts) is dict and set(facts) == {"repository", "execution_commit",
+            "source_commit", "payload", "authorization_sha256", "authorization_review_records"},
+            "complete verified facts closed schema")
+    require(type(facts["repository"]) is str and Path(facts["repository"]).is_absolute()
+            and ".." not in Path(facts["repository"]).parts, "facts repository absolute")
+    for key, value in (("execution_commit", expected["execution"]), ("source_commit", expected["source"]),
+                       ("authorization_sha256", expected["authorization"])):
+        same(facts[key], value, "facts." + key)
+    payload = facts["payload"]
+    keys = {"schema_version", "experiment_id", "model_version", "repository", "branch",
+            "registration_commit", "registration_sha256", "scientific_registration_commit",
+            "statistical_fingerprint_sha256", "pure_core_sha256", "implementation_commit",
+            "implementation_base", "implementation_merge", "authorization_base", "canonical_command",
+            "governed_history_authority", "governed_history_identity", "runtime", "implementation_files",
+            "implementation_files_sha256", "runtime_dependency_closure", "runtime_dependency_closure_sha256",
+            "review_records"}
+    require(type(payload) is dict and set(payload) == keys, "auth payload exact schema")
+    require(expected["authorization"] in {sha(canonical(payload)), sha(canonical(payload, False))},
+            "complete authorization payload bytes bind auth hash")
+    fixed = {"schema_version": "lotto649-v12.0.2-historical-authorization-v1", "experiment_id": EXPERIMENT,
+        "model_version": "v12.0.2", "repository": "Jasper-Shi/lottopred", "branch": "main",
+        "registration_commit": R3, "registration_sha256": R3_SHA, "scientific_registration_commit": R1,
+        "statistical_fingerprint_sha256": FINGERPRINT, "pure_core_sha256": CORE_SHA,
+        "implementation_commit": I3, "governed_history_authority": HISTORY_AUTHORITY,
+        "governed_history_identity": FROZEN_HISTORY_IDENTITY, "runtime": FROZEN_RUNTIME,
+        "implementation_files": FROZEN_IMPLEMENTATION,
+        "implementation_files_sha256": sha(canonical(FROZEN_IMPLEMENTATION, False)),
+        "runtime_dependency_closure": FROZEN_CLOSURE, "runtime_dependency_closure_sha256": FROZEN_CLOSURE_SHA,
+        "canonical_command": ["python3.12", "tools/run_v12_0_2_historical.py", "--consume-v12-0-2-once"]}
+    for key, value in fixed.items():
+        same(payload[key], value, "fixed authorization " + key)
+    for key in ("implementation_base", "implementation_merge", "authorization_base"):
+        require(digest(payload[key], 40), "Git metadata format")
+    audit_review_records(payload["review_records"], "I3 review facts")
+    audit_review_records(facts["authorization_review_records"], "authorization review facts")
+    bindings = claim["bindings"]
+    additions = {"startup_checkpoint", "verified_facts_sha256", "execution_authority_M_A_H3",
+                 "authorization_source_A_H_s3", "authorization_sha256", "lease_ref", "lease_commit_L_H3",
+                 "nonce_hex", "seed", "classification"}
+    same(set(bindings), set(payload) | additions, "complete claim bindings keys")
+    for key, value in payload.items():
+        same(bindings[key], value, "claim copies immutable auth payload " + key)
+    same(bindings["verified_facts_sha256"], sha(canonical(facts, False)), "verified facts preimage hash")
+    return facts
+
+
+def lease_byte_oracle(bindings, expected):
+    """Read-only content-address arithmetic from explicit Git metadata; no Git/API calls."""
+    instant, tree = expected["execution_epoch"], expected["execution_tree"]
+    require(type(instant) is int and instant >= 0 and digest(tree, 40), "explicit lease Git metadata")
+    body = {"schema_version": "lotto649-v12-consumption-lease-v1",
+            "authorization_seal_sha256": expected["authorization"],
+            "canonical_command": bindings["canonical_command"],
+            "execution_authority_M_A": expected["execution"], "nonce_hex": bindings["nonce_hex"]}
+    identity = "LOTTO649 V12 Consumption Lease <lotto649-v12-lease@users.noreply.github.com>"
+    raw = (f"tree {tree}\nparent {expected['execution']}\nauthor {identity} {instant} +0000\n"
+           f"committer {identity} {instant} +0000\n\n").encode() + canonical(body)
+    oid = hashlib.sha1(b"commit " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+    signature = {"name": "LOTTO649 V12 Consumption Lease",
+                 "email": "lotto649-v12-lease@users.noreply.github.com",
+                 "date": datetime.fromtimestamp(instant, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    commit_request = canonical({"tree": tree, "parents": [expected["execution"]],
+                               "author": signature, "committer": signature,
+                               "message": canonical(body).decode()}, False)
+    ref_request = canonical({"ref": "refs/heads/v12-consumption-v12.0.2", "sha": oid}, False)
+    return oid, sha(raw), commit_request, ref_request
+
+
+def audit_startup(raw, claim, ledger_raw, manifest, expected):
+    require(raw and raw.endswith(b"\n"), "startup final LF")
+    lines = raw.splitlines(keepends=True)
+    require(len(lines) == 13, "completed startup exact 13 phases")
+    facts, bindings = claim["verified_authorization_facts"], claim["bindings"]
+    auth = facts["payload"]
+    identity = {"execution_authority_M_A_H3": expected["execution"], "registration_R3": R3,
+        "source_A_H_s3": expected["source"], "implementation_commit": I3,
+        "authorization_base": auth["authorization_base"], "registration_sha256": R3_SHA,
+        "config_sha256": CONFIG_SHA, "authorization_sha256": expected["authorization"],
+        "historical_runtime_dependency_closure_sha256": FROZEN_CLOSURE_SHA,
+        "runtime_identity_sha256": sha(canonical(auth["runtime"], False)),
+        "requirements_sha256": REQUIREMENTS_SHA, "required_pure_core_sha256": CORE_SHA,
+        "statistical_fingerprint_sha256": FINGERPRINT,
+        "verified_facts_sha256": sha(canonical(facts, False))}
+    oid, raw_sha, commit_request, ref_request = lease_byte_oracle(bindings, expected)
+    same(oid, expected["lease"], "exact lease raw Git content address")
+    first_scientific = decode(ledger_raw.splitlines(keepends=True)[0], "first scientific event")
+    expected_payloads = [
+        {"repository": "Jasper-Shi/lottopred", "branch": "main", "startup_identity": identity},
+        {}, {"http_status": 404}, None,
+        {"phase_enum": "lease_commit", "result_enum": "success", "http_status": 201, "validated_oid": oid},
+        {"validated_oid": oid}, None,
+        {"phase_enum": "lease_ref", "result_enum": "success", "http_status": 201, "validated_oid": oid},
+        {"validated_oid": oid}, {}, {"claim_sha256": sha(canonical(claim))},
+        {"first_event_sha256": first_scientific["event_sha256"]}, {},
+    ]
+    for position, phase, request in ((3, "lease_commit", commit_request), (6, "lease_ref", ref_request)):
+        expected_payloads[position] = {"phase_enum": phase, "nonce_hex": bindings["nonce_hex"],
+            "expected_lease_oid": oid, "raw_commit_sha256": raw_sha,
+            "request_body_bytes": len(request), "request_body_sha256": sha(request)}
+    head, previous_time, events = None, None, []
+    for index, line in enumerate(lines):
+        event = decode(line, "startup canonical complete line")
+        require(type(event) is dict and set(event) == {"schema_version", "sequence", "generated_at",
+                "previous_event_sha256", "kind", "payload"}, "startup closed event schema")
+        same(event["schema_version"], "lotto649-v12.0.2-historical-startup-v1", "startup schema")
+        same(event["sequence"], index, "startup contiguous sequence")
+        same(event["previous_event_sha256"], head, "startup previous COMPLETE line digest including LF")
+        same(event["kind"], STARTUP_PHASES[index], "startup registered phase order")
+        same(event["payload"], expected_payloads[index], "startup phase payload identity")
+        at = timestamp(event["generated_at"])
+        require(previous_time is None or at >= previous_time, "startup nondecreasing clock")
+        previous_time, head = at, sha(line)
+        events.append(event)
+    prefix = b"".join(lines[:10])
+    checkpoint = {"path": "reports/" + STEM + SUFFIXES["startup"], "sequence": 9,
+                  "head_sha256": sha(lines[9]), "prefix_byte_count": len(prefix), "prefix_sha256": sha(prefix)}
+    same(bindings["startup_checkpoint"], checkpoint, "claim binds only durable earlier startup prefix")
+    same(first_scientific["payload"], {"claim_sha256": sha(canonical(claim)), "startup_checkpoint": checkpoint},
+         "first ledger binds claim and same checkpoint")
+    same(manifest["startup_checkpoint"], checkpoint, "manifest earlier checkpoint")
+    same(manifest["sealed_startup"], {"path": checkpoint["path"], "bytes": len(raw), "sha256": sha(raw)},
+         "manifest separately binds complete sealed startup")
+    require(timestamp(events[9]["generated_at"]) <= timestamp(claim["claimed_at"])
+            <= timestamp(first_scientific["recorded_at"])
+            <= timestamp(events[10]["generated_at"]), "checkpoint claim first-ledger startup ordering")
+    scientific = [decode(line, "ledger timestamp", False) for line in ledger_raw.splitlines()]
+    if len(scientific) > 1:
+        require(timestamp(events[-1]["generated_at"]) <= timestamp(scientific[1]["recorded_at"]),
+                "sealed startup precedes scientific processing")
+    return {"event_count": 13, "head_sha256": head, "file_sha256": sha(raw), "checkpoint": checkpoint,
+            "acyclic_claim_ledger_manifest_bindings": True}
+
+
+def audit_bundle(raws, expected):
+    require(set(raws) == set(SUFFIXES), "six frozen artifacts required")
+    claim = decode(raws["claim"], "claim")
+    report = decode(raws["report"], "report")
+    manifest = decode(raws["manifest"], "manifest")
+    same(set(claim), {"schema_version", "claimed_at", "bindings", "verified_authorization_facts"}, "claim keys")
+    same(claim["schema_version"], "lotto649-v12.0.2-permanent-claim-v1", "claim schema")
+    timestamp(claim["claimed_at"])
+    bindings = claim["bindings"]
+    audit_facts(claim, expected)
+    fixed_bindings = {"repository": "Jasper-Shi/lottopred", "branch": "main", "model_version": "v12.0.2",
+        "experiment_id": EXPERIMENT, "registration_commit": R3, "scientific_registration_commit": R1,
+        "governed_history_authority": HISTORY_AUTHORITY, "statistical_fingerprint_sha256": FINGERPRINT,
+        "pure_core_sha256": CORE_SHA, "seed": 649, "classification": CLASSIFICATION,
+        "lease_ref": "refs/heads/v12-consumption-v12.0.2",
+        "execution_authority_M_A_H3": expected["execution"], "authorization_source_A_H_s3": expected["source"],
+        "authorization_sha256": expected["authorization"], "lease_commit_L_H3": expected["lease"],
+        "canonical_command": ["python3.12", "tools/run_v12_0_2_historical.py", "--consume-v12-0-2-once"]}
+    for key, value in fixed_bindings.items():
+        same(bindings[key], value, "binding." + key)
+    require(digest(bindings["nonce_hex"]), "nonce shape")
+    if "runtime_dependency_closure" in bindings:
+        same(bindings["runtime_dependency_closure_sha256"], sha(canonical(bindings["runtime_dependency_closure"], False)),
+             "runtime closure digest consistency")
+    same(set(manifest), {"schema_version", "classification", "parent_commit", "authorization_sha256",
+                        "files", "startup_checkpoint", "sealed_startup", "self_reference"}, "manifest closed schema")
+    startup_summary = audit_startup(raws["startup"], claim, raws["ledger"], manifest, expected)
+    same(manifest["schema_version"], "lotto649-v12.0.2-report-commit-manifest-v1", "manifest schema")
+    same(manifest["classification"], CLASSIFICATION, "manifest classification")
+    same(manifest["parent_commit"], expected["execution"], "manifest execution parent")
+    same(manifest["authorization_sha256"], expected["authorization"], "manifest authorization")
+    same(manifest["self_reference"], "containing_commit_resolved_from_Git_object_not_embedded", "manifest self reference")
+    entries = []
+    for key in ("startup", "claim", "ledger", "report", "markdown"):
+        raw = raws[key]
+        entries.append({"path": "reports/"+STEM+SUFFIXES[key],
+                        "git_blob": hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest(),
+                        "sha256": sha(raw), "bytes": len(raw)})
+    same(manifest["files"], entries, "manifest file paths/lengths/SHA256/Git blob IDs")
+    rows, ledger_summary, warnings, archived = audit_ledger(raws["ledger"], bindings, raws["claim"])
+    report_check(report, rows, bindings, ledger_summary, warnings, archived, raws["claim"])
+    markdown_check(raws["markdown"], report)
+    return {"audit_status": "PASS_SCOPED_FROZEN_OUTPUT_CONSISTENCY", "full_independent_leakage_audit": False,
+            "read_only": True, "model_or_verifier_invoked": False, "files_sha256": {k: sha(v) for k, v in raws.items()},
+            "processed_target_count": len(rows), "complete_registered_scope": report["complete_registered_scope"],
+            "recorded_disposition": report["disposition"], "ledger": ledger_summary, "startup": startup_summary,
+            "opportunities": report["opportunities"], "notification_warnings": warnings,
+            "exact_final6_candidates": [{"target_draw_date": r["target_draw_date"],
+                 "opportunities": r["exact_final6_opportunities"]} for r in rows if r["exact_final6_opportunities"]],
+            "descriptive_models": {name: model_summary(rows, i) for i, name in enumerate(MODELS)} if rows else {},
+            "numeric_relative_and_absolute_tolerance": 2e-12, "limitations": LIMITATIONS}
+
+
+def read_frozen_files(directory):
+    root = Path(directory)
+    require(root.is_absolute(), "explicit absolute output directory required")
+    require(root.is_dir() and not any(p.is_symlink() for p in (root, *root.parents)), "non-symlink output directory")
+    result, snapshots = {}, {}
+    for key, suffix in SUFFIXES.items():
+        path = root / (STEM + suffix)
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(fd, "rb") as stream:
+            before = os.fstat(stream.fileno())
+            require(stat.S_ISREG(before.st_mode), "artifact is not a regular file")
+            result[key] = stream.read()
+            after = os.fstat(stream.fileno())
+        require((before.st_ino, before.st_size, before.st_mtime_ns) ==
+                (after.st_ino, after.st_size, after.st_mtime_ns), "artifact changed while reading")
+        snapshots[key] = (path, before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+    return result, snapshots
+
+
+def verify_unchanged(snapshots):
+    for path, device, inode, size, mtime in snapshots.values():
+        current = path.lstat()
+        require(not stat.S_ISLNK(current.st_mode) and
+                (current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns) == (device, inode, size, mtime),
+                "artifact changed during audit")
+
+
+def _legacy_shape_synthetic_fixture():
+    """In-memory fair oracle. No imports or reads of any project data/artifacts."""
+    expected = {"execution": "1"*40, "source": "2"*40, "authorization": "3"*64, "lease": "4"*40}
+    bindings = {"repository": "Jasper-Shi/lottopred", "branch": "main", "model_version": "v12.0.2",
+        "experiment_id": EXPERIMENT, "registration_commit": R3, "scientific_registration_commit": R1,
+        "governed_history_authority": HISTORY_AUTHORITY, "statistical_fingerprint_sha256": FINGERPRINT,
+        "pure_core_sha256": CORE_SHA, "seed": 649, "classification": CLASSIFICATION,
+        "lease_ref": "refs/heads/v12-consumption-v12.0.2", "nonce_hex": "5"*64,
+        "execution_authority_M_A_H3": expected["execution"], "authorization_source_A_H_s3": expected["source"],
+        "authorization_sha256": expected["authorization"], "lease_commit_L_H3": expected["lease"],
+        "canonical_command": ["python3.12", "tools/run_v12_0_2_historical.py", "--consume-v12-0-2-once"]}
+    forecasts = []
+    for i, name in enumerate(MODELS):
+        forecasts.append({"model_name": name, "model_version": "v12.0.2" if i < 2 else "v1.0.0",
+            "feature_set": FEATURES[i], "probabilities": {str(n): P for n in range(1, 50)},
+            "ranking": list(range(1, 50)), "top6": list(range(1, 7)), "top12": list(range(1, 13)),
+            "top18": list(range(1, 19)), "final6": list(range(1, 7)) if i < 2 else list(range(7, 13)),
+            "scientific_state": {"transition_count": len(BURN_IN)-1, "previous_bucket": 3,
+                "x_prev": (3.0-150/49.0)/math.sqrt(3225/2401.0), "beta": 0.0, "eta": 0.0,
+                "expected_bucket": 150/49.0, "log_z": math.log(N)} if i < 2 else None})
+    payload = {"schema_version": "lotto649-v12.0.2-frozen-forecast-v1", "classification": CLASSIFICATION,
+        "model_version": "v12.0.2", "target_draw_date": DATES[0], "history_through": "2019-12-28",
+        "training_cutoff_date": "2019-12-28", "visible_prefix_sha256": "6"*64,
+        "visible_prefix_draw_count": 4000, "bindings": bindings, "forecasts": forecasts}
+    claim = canonical({"schema_version": "lotto649-v12.0.2-permanent-claim-v1",
+                       "claimed_at": "2030-01-01T00:00:00.000000Z", "bindings": bindings})
+    events = []
+    def append(kind, value):
+        event = {"schema_version": "lotto649-v12.0.2-attempt-ledger-v1", "sequence": len(events),
+            "previous_event_sha256": events[-1]["event_sha256"] if events else "0"*64,
+            "event_kind": kind, "recorded_at": f"2030-01-01T00:00:{len(events):02d}.000000Z",
+            "bindings": bindings, "payload": copy.deepcopy(value)}
+        event["event_sha256"] = sha(canonical(event, False))
+        events.append(event)
+        return event
+    append("attempt_claimed", {"claim_sha256": sha(claim)})
+    freeze = append("prediction_frozen", {"forecast_payload": payload, "forecast_payload_sha256": sha(canonical(payload))})
+    row = recompute_row(payload, [1, 2, 7, 13, 20, 49], 6)
+    # Closed-form assertions make this more than an implementation mirror.
+    require([s["top6_hits"] for s in row["scores"]] == [2]*4, "fair oracle Top6")
+    require([s["top12_hits"] for s in row["scores"]] == [3]*4, "fair oracle Top12")
+    require([s["top18_hits"] for s in row["scores"]] == [4]*4, "fair oracle Top18")
+    require([s["final6_hits"] for s in row["scores"]] == [2, 2, 1, 1], "bonus excluded oracle")
+    same(row["scores"][0]["brier_score"], P*(1-P), "fair Brier closed form")
+    same(row["scores"][0]["log_loss"], -P*math.log(P)-(1-P)*math.log(1-P), "fair entropy closed form")
+    same(row["unique_opportunity_count"], 2, "deduplicated pool oracle")
+    row.update(prediction_generated_at=freeze["recorded_at"], prediction_frozen_event_sequence=freeze["sequence"],
+               prediction_frozen_event_sha256=freeze["event_sha256"], cumulative_opportunities=opportunities([2]))
+    scored = append("target_revealed_scored", row)
+    row.update(scored_event_sequence=scored["sequence"], scored_event_sha256=scored["event_sha256"])
+    append("attempt_archived", {"reason": "Archive_after_claim_failure_no_retry", "retry_allowed": False})
+    ledger = b"".join(canonical(e) for e in events)
+    summary = {"event_count": 4, "scored_target_count": 1, "head_sha256": events[-1]["event_sha256"],
+               "pending_forecast": False, "stopped_for_audit": False, "file_sha256": sha(ledger)}
+    report = {"schema_version": "lotto649.v12.0.2.historical-diagnostic-report.v1", "experiment_id": EXPERIMENT,
+        "model_version": "v12.0.2", "seed": 649, "classification": CLASSIFICATION, "classification_zh": CLASSIFICATION_ZH,
+        "statistical_fingerprint_sha256": FINGERPRINT, "required_pure_core_sha256": CORE_SHA,
+        "primary_metric": "mean_top12_main_number_hits_minus_72_over_49", "eligible_evidence": False,
+        "promotion_authority": False, "expected_target_count": 627, "processed_target_count": 1,
+        "scope_order": list(SCOPES), "model_order": list(MODELS), "audit_publication": "pending_git_integration",
+        "targets": [row], "bindings": {**bindings, "claim_sha256": sha(claim), "ledger": summary},
+        "stop_reason": "Archive_after_claim_failure_no_retry", "complete_registered_scope": False,
+        "audit": {"complete": False, "warnings": ["one_shot_worker_failed_after_claim"]},
+        "independent_leakage_audit": "not_required_no_exact_final6", "opportunities": opportunities([2]),
+        "exclusions": {"burn_in_scored": 0, "known_2026_scored": 0, "known_2026_classification": "consumed_excluded", "unprocessed_target_count": 626},
+        "fair_baselines": {"probability": P, "top6_mean": 36/49.0, "top12_mean": 72/49.0, "top18_mean": 108/49.0, "exact_final6_probability": 1/N},
+        "pseudo_control": {"model_name": MODELS[1], "role": "fixed_sanity_control_not_discovery", "selected_labels": sorted(PSEUDO),
+            "partition_sha256": PSEUDO_SHA, "true_pseudo_label_contingency": [[10, 15], [15, 9]],
+            "label_correlation_with_true_parity": "-9/40", "independent_of_true_parity": False},
+        "annual_descriptive_only": {"2020": {name: model_summary([row], i) for i, name in enumerate(MODELS)}},
+        "best_final6_by_model": {name: {"final6_hits": 2 if i < 2 else 1, "target_dates": [DATES[0]]} for i, name in enumerate(MODELS)},
+        "scopes": {}, "multiplicity": None, "gates": None, "disposition": "Archive"}
+    lines = ["# V12.0.2 历史严格回测诊断", CLASSIFICATION_ZH, "这些结果不具备晋升或未来购票建议的效力。",
+             "状态：Archive；已评分 1/627 期。", canonical({"bindings": report["bindings"], "audit": report["audit"]}).decode().strip()]
+    for f, s in zip(forecasts, row["scores"]):
+        cells = [DATES[0], "2019-12-28", f["model_name"], f["top6"], f["top12"], f["top18"], f["final6"], row["actual"],
+                 f"{s['top6_hits']}/{s['top12_hits']}/{s['top18_hits']}/{s['final6_hits']}"]
+        lines.append("| " + " | ".join(map(str, cells)) + " |")
+    raws = {"claim": claim, "ledger": ledger, "report": canonical(report), "markdown": ("\n".join(lines)+"\n").encode()}
+    manifest = {"schema_version": "lotto649-v12.0.2-report-commit-manifest-v1", "classification": CLASSIFICATION,
+        "parent_commit": expected["execution"], "authorization_sha256": expected["authorization"],
+        "self_reference": "containing_commit_resolved_from_Git_object_not_embedded", "files": []}
+    for key in ("claim", "ledger", "report", "markdown"):
+        raw = raws[key]
+        manifest["files"].append({"path": "reports/"+STEM+SUFFIXES[key], "bytes": len(raw), "sha256": sha(raw),
+                                  "git_blob": hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()})
+    raws["manifest"] = canonical(manifest)
+    return raws, expected, payload, row, bindings
+
+
+def synthetic_fixture():
+    """Construct only in-memory invented data; never open a repository or artifact."""
+    raws, expected, payload, _row, _bindings = _legacy_shape_synthetic_fixture()
+    expected.update(execution_tree="b"*40, execution_epoch=1893456000)
+    reviews = [{"axis": axis, "check_id": 10, "comment_body_sha256": str(i+1)*64,
+                "comment_id": i+20, "pr_number": 1, "publisher_login": "synthetic-publisher",
+                "review_session_id": "synthetic-session-"+axis, "reviewer_agent_id": "synthetic-agent-"+axis}
+               for i, axis in enumerate(("standards", "spec"))]
+    auth = {"schema_version": "lotto649-v12.0.2-historical-authorization-v1", "experiment_id": EXPERIMENT,
+        "model_version": "v12.0.2", "repository": "Jasper-Shi/lottopred", "branch": "main",
+        "registration_commit": R3, "registration_sha256": R3_SHA, "scientific_registration_commit": R1,
+        "statistical_fingerprint_sha256": FINGERPRINT, "pure_core_sha256": CORE_SHA,
+        "implementation_commit": I3, "implementation_base": "c"*40, "implementation_merge": "d"*40,
+        "authorization_base": "d"*40, "governed_history_authority": HISTORY_AUTHORITY,
+        "governed_history_identity": copy.deepcopy(FROZEN_HISTORY_IDENTITY), "runtime": copy.deepcopy(FROZEN_RUNTIME),
+        "implementation_files": copy.deepcopy(FROZEN_IMPLEMENTATION),
+        "implementation_files_sha256": sha(canonical(FROZEN_IMPLEMENTATION, False)),
+        "runtime_dependency_closure": copy.deepcopy(FROZEN_CLOSURE),
+        "runtime_dependency_closure_sha256": FROZEN_CLOSURE_SHA, "review_records": reviews,
+        "canonical_command": ["python3.12", "tools/run_v12_0_2_historical.py", "--consume-v12-0-2-once"]}
+    expected["authorization"] = sha(canonical(auth))
+    facts = {"repository": "/private/tmp/v12-0-2-auditor-synthetic", "execution_commit": expected["execution"],
+             "source_commit": expected["source"], "payload": auth, "authorization_sha256": expected["authorization"],
+             "authorization_review_records": [{**r, "pr_number": 2, "check_id": 11, "comment_id": r["comment_id"]+10,
+                                               "review_session_id": r["review_session_id"]+"-auth"} for r in reviews]}
+    bindings = {**auth, "verified_facts_sha256": sha(canonical(facts, False)),
+                "execution_authority_M_A_H3": expected["execution"], "authorization_source_A_H_s3": expected["source"],
+                "authorization_sha256": expected["authorization"], "lease_ref": "refs/heads/v12-consumption-v12.0.2",
+                "nonce_hex": "5"*64, "seed": 649, "classification": CLASSIFICATION}
+    oid, raw_sha, commit_request, ref_request = lease_byte_oracle(bindings, expected)
+    expected["lease"] = bindings["lease_commit_L_H3"] = oid
+    identity = {"execution_authority_M_A_H3": expected["execution"], "registration_R3": R3,
+        "source_A_H_s3": expected["source"], "implementation_commit": I3,
+        "authorization_base": auth["authorization_base"], "registration_sha256": R3_SHA,
+        "config_sha256": CONFIG_SHA, "authorization_sha256": expected["authorization"],
+        "historical_runtime_dependency_closure_sha256": FROZEN_CLOSURE_SHA,
+        "runtime_identity_sha256": sha(canonical(auth["runtime"], False)), "requirements_sha256": REQUIREMENTS_SHA,
+        "required_pure_core_sha256": CORE_SHA, "statistical_fingerprint_sha256": FINGERPRINT,
+        "verified_facts_sha256": bindings["verified_facts_sha256"]}
+    startup_lines = []
+    def startup_append(value):
+        index = len(startup_lines)
+        event = {"schema_version": "lotto649-v12.0.2-historical-startup-v1", "sequence": index,
+                 "generated_at": f"2030-01-01T00:00:{index:02d}.000000Z",
+                 "previous_event_sha256": sha(startup_lines[-1]) if startup_lines else None,
+                 "kind": STARTUP_PHASES[index], "payload": value}
+        startup_lines.append(canonical(event))
+    startup_append({"repository": "Jasper-Shi/lottopred", "branch": "main", "startup_identity": identity})
+    startup_append({})
+    startup_append({"http_status": 404})
+    for phase, request in (("lease_commit", commit_request), ("lease_ref", ref_request)):
+        startup_append({"phase_enum": phase, "nonce_hex": bindings["nonce_hex"], "expected_lease_oid": oid,
+                        "raw_commit_sha256": raw_sha, "request_body_bytes": len(request), "request_body_sha256": sha(request)})
+        startup_append({"phase_enum": phase, "result_enum": "success", "http_status": 201, "validated_oid": oid})
+        startup_append({"validated_oid": oid})
+    startup_append({})
+    prefix = b"".join(startup_lines)
+    checkpoint = {"path": "reports/"+STEM+SUFFIXES["startup"], "sequence": 9,
+                  "head_sha256": sha(startup_lines[-1]), "prefix_byte_count": len(prefix), "prefix_sha256": sha(prefix)}
+    bindings["startup_checkpoint"] = checkpoint
+    claim = canonical({"verified_authorization_facts": facts, "schema_version": "lotto649-v12.0.2-permanent-claim-v1",
+                       "claimed_at": "2030-01-01T00:00:10.000000Z", "bindings": bindings})
+    payload["bindings"] = bindings
+    events = []
+    def append(kind, data):
+        index = len(events)
+        event = {"schema_version": "lotto649-v12.0.2-attempt-ledger-v1", "sequence": index,
+                 "previous_event_sha256": events[-1]["event_sha256"] if events else "0"*64,
+                 "event_kind": kind, "recorded_at": f"2030-01-01T00:01:{index:02d}.000000Z" if index else "2030-01-01T00:00:10.000000Z",
+                 "bindings": bindings, "payload": copy.deepcopy(data)}
+        event["event_sha256"] = sha(canonical(event, False))
+        events.append(event)
+        return event
+    first = append("attempt_claimed", {"claim_sha256": sha(claim), "startup_checkpoint": checkpoint})
+    startup_append({"claim_sha256": sha(claim)})
+    startup_append({"first_event_sha256": first["event_sha256"]})
+    startup_append({})
+    freeze = append("prediction_frozen", {"forecast_payload": payload, "forecast_payload_sha256": sha(canonical(payload))})
+    row = recompute_row(payload, [1, 2, 7, 13, 20, 49], 6)
+    row.update(prediction_generated_at=freeze["recorded_at"], prediction_frozen_event_sequence=freeze["sequence"],
+               prediction_frozen_event_sha256=freeze["event_sha256"], cumulative_opportunities=opportunities([2]))
+    scored = append("target_revealed_scored", row)
+    row.update(scored_event_sequence=scored["sequence"], scored_event_sha256=scored["event_sha256"])
+    append("attempt_archived", {"reason": "Archive_after_claim_failure_no_retry", "retry_allowed": False})
+    ledger = b"".join(canonical(e) for e in events)
+    summary = {"event_count": 4, "scored_target_count": 1, "head_sha256": events[-1]["event_sha256"],
+               "pending_forecast": False, "stopped_for_audit": False, "file_sha256": sha(ledger)}
+    report = decode(raws["report"], "synthetic skeleton report")
+    report["targets"] = [row]
+    report["bindings"] = {**bindings, "claim_sha256": sha(claim), "ledger": summary}
+    markdown = raws["markdown"].decode().splitlines()
+    markdown[4] = canonical({"bindings": report["bindings"], "audit": report["audit"]}).decode().strip()
+    raws = {"startup": b"".join(startup_lines), "claim": claim, "ledger": ledger,
+            "report": canonical(report), "markdown": ("\n".join(markdown)+"\n").encode()}
+    manifest = {"schema_version": "lotto649-v12.0.2-report-commit-manifest-v1", "classification": CLASSIFICATION,
+                "parent_commit": expected["execution"], "authorization_sha256": expected["authorization"],
+                "startup_checkpoint": checkpoint, "sealed_startup": {"path": checkpoint["path"], "bytes": len(raws["startup"]), "sha256": sha(raws["startup"])},
+                "self_reference": "containing_commit_resolved_from_Git_object_not_embedded", "files": []}
+    for key in ("startup", "claim", "ledger", "report", "markdown"):
+        raw = raws[key]
+        manifest["files"].append({"path": "reports/"+STEM+SUFFIXES[key], "bytes": len(raw), "sha256": sha(raw),
+                                  "git_blob": hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()})
+    raws["manifest"] = canonical(manifest)
+    return raws, expected, payload, row, bindings
+
+
+def self_test():
+    count, rejected = 0, []
+    def rejects(name, action):
+        nonlocal count
+        try:
+            action()
+        except (AuditError, KeyError, ValueError, TypeError):
+            rejected.append(name)
+            count += 1
+        else:
+            raise AuditError("negative fixture accepted: " + name)
+    raws, expected, payload, row, bindings = synthetic_fixture()
+    result = audit_bundle(raws, expected)
+    require(result["audit_status"].startswith("PASS"), "positive bundle")
+    count += 1
+    # A second synthetic target checks the limited chain link that is visible
+    # without opening the underlying history: prior actual -> prior bucket.
+    next_payload = copy.deepcopy(payload)
+    next_payload.update(target_draw_date=DATES[1], history_through=DATES[0],
+                        training_cutoff_date=DATES[0], visible_prefix_sha256="7"*64,
+                        visible_prefix_draw_count=payload["visible_prefix_draw_count"]+1)
+    for i, partition in enumerate(PARTITIONS):
+        state = next_payload["forecasts"][i]["scientific_state"]
+        state["transition_count"] += 1
+        state["previous_bucket"] = len(set(row["actual"]) & partition)
+        state["x_prev"] = (state["previous_bucket"]-150/49.0)/math.sqrt(3225/2401.0)
+    audit_payload(next_payload, bindings, row, 1)
+    count += 1
+    wrong_bucket = copy.deepcopy(next_payload)
+    state = wrong_bucket["forecasts"][0]["scientific_state"]
+    state["previous_bucket"] = (state["previous_bucket"]+1) % 7
+    state["x_prev"] = (state["previous_bucket"]-150/49.0)/math.sqrt(3225/2401.0)
+    rejects("prior bucket differs from previously scored main numbers",
+            lambda: audit_payload(wrong_bucket, bindings, row, 1))
+    for bad in (b'{"a":1,"a":2}\n', b'{"a":NaN}\n', b'{ "a":1}\n', b'{"a":1e999}\n', b'{}', b'{}\n\n'):
+        rejects("noncanonical/nonfinite/duplicate JSON", lambda bad=bad: decode(bad, "synthetic"))
+    for name, edit in (
+        ("missing label", lambda f: f["probabilities"].pop("49")),
+        ("invalid mass", lambda f: f["probabilities"].update({"49": 0.5})),
+        ("ranking tie order", lambda f: f["ranking"].reverse()),
+        ("wrong Top12 prefix", lambda f: f["top12"].reverse()),
+        ("Final6 outside pool", lambda f: f.update(final6=[1, 2, 3, 4, 5, 49])),
+        ("incorrect scientific state", lambda f: f["scientific_state"].update(eta=0.2)),
+    ):
+        f = copy.deepcopy(payload["forecasts"][0])
+        edit(f)
+        rejects(name, lambda f=f: audit_forecast(f, 0))
+    for name, edit in (
+        ("target leakage metadata", lambda p: p.update(history_through=p["target_draw_date"])),
+        ("noncanonical date", lambda p: p.update(target_draw_date="20200101")),
+        ("wrong chronological target", lambda p: p.update(target_draw_date="2020-01-04")),
+        ("transition count", lambda p: p["forecasts"][0]["scientific_state"].update(transition_count=0)),
+    ):
+        p = copy.deepcopy(payload)
+        edit(p)
+        rejects(name, lambda p=p: audit_payload(p, bindings, None, 0))
+    rejects("bonus also main", lambda: recompute_row(payload, row["actual"], 1))
+    rejects("ledger hash tamper", lambda: audit_ledger(raws["ledger"].replace(b'"top6_hits":2', b'"top6_hits":3', 1), bindings, raws["claim"]))
+    events = [decode(line, "fixture", False) for line in raws["ledger"].splitlines()]
+    def rechain(items):
+        for index, e in enumerate(items):
+            e["sequence"] = index
+            e["previous_event_sha256"] = items[index-1]["event_sha256"] if index else "0"*64
+            e["event_sha256"] = sha(canonical({k:v for k,v in e.items() if k != "event_sha256"}, False))
+        return b"".join(canonical(e) for e in items)
+    swapped = copy.deepcopy(events)
+    swapped[1], swapped[2] = swapped[2], swapped[1]
+    swapped[1]["recorded_at"], swapped[2]["recorded_at"] = swapped[2]["recorded_at"], swapped[1]["recorded_at"]
+    rejects("rehash cannot legitimize score before freeze", lambda: audit_ledger(rechain(swapped), bindings, raws["claim"]))
+    changed = copy.deepcopy(events)
+    changed[2]["payload"]["scores"][0]["final6_hits"] += 1
+    rejects("rehashed incorrect bonus-inclusive score", lambda: audit_ledger(rechain(changed), bindings, raws["claim"]))
+    def detection_fixture(actual, exact):
+        branch = copy.deepcopy(events[:2])
+        recomputed = recompute_row(payload, actual, 49)
+        recomputed.update(prediction_generated_at=branch[1]["recorded_at"],
+                          prediction_frozen_event_sequence=1,
+                          prediction_frozen_event_sha256=branch[1]["event_sha256"],
+                          cumulative_opportunities=opportunities([recomputed["unique_opportunity_count"]]))
+        require(bool(recomputed["exact_final6_opportunities"]) is exact, "synthetic detection oracle")
+        require(len(recomputed["top12_all_six_producers"]) == 4, "synthetic Top12 oracle")
+        def add(kind, data):
+            branch.append({"schema_version": "lotto649-v12.0.2-attempt-ledger-v1", "sequence": len(branch),
+                "previous_event_sha256": "0"*64, "event_sha256": "0"*64,
+                "recorded_at": f"2030-01-01T00:01:{len(branch):02d}.000000Z",
+                "bindings": bindings, "event_kind": kind, "payload": data})
+        add("target_revealed_scored", recomputed)
+        detected = {"target_draw_date": DATES[0], "forecast_payload_sha256": sha(canonical(payload)),
+                    "eligible_evidence": False}
+        if exact:
+            detected.update(opportunities=recomputed["exact_final6_opportunities"],
+                            audit_status="independent_leakage_audit_pending", global_stop_search=False)
+            add("historical_6of6_candidate_detected", detected)
+        else:
+            detected["producers"] = recomputed["top12_all_six_producers"]
+            add("historical_top12_all_six_detected", detected)
+        add("notification_attempt_started", {"target_draw_date": DATES[0], "kind": "final6" if exact else "top12",
+                                             "classification_zh": CLASSIFICATION_ZH})
+        add("notification_attempt_finished", {"target_draw_date": DATES[0], "email_sent": True})
+        return branch
+    top12 = detection_fixture([1, 2, 7, 8, 9, 10], False)
+    _, summary, observed_warnings, archived = audit_ledger(rechain(top12), bindings, raws["claim"])
+    require(not summary["stopped_for_audit"] and not observed_warnings and not archived, "Top12 continuation oracle")
+    count += 1
+    exact = detection_fixture([1, 2, 3, 4, 5, 6], True)
+    exact_rows, summary, observed_warnings, archived = audit_ledger(rechain(exact), bindings, raws["claim"])
+    require(summary["stopped_for_audit"] and not observed_warnings and not archived, "Final6 stop oracle")
+    count += 1
+    early_report = decode(raws["report"], "early exact report template")
+    first_exact = exact_rows[0]
+    early_report.update(targets=exact_rows, bindings={**bindings, "claim_sha256": sha(raws["claim"]), "ledger": summary},
+                        stop_reason="exact_final6_pending_independent_audit", audit={"complete": False, "warnings": []},
+                        independent_leakage_audit="pending", disposition="pending_audit",
+                        opportunities=opportunities([first_exact["unique_opportunity_count"]]),
+                        annual_descriptive_only={"2020": {name: model_summary(exact_rows, i) for i, name in enumerate(MODELS)}},
+                        best_final6_by_model={name: {"final6_hits": first_exact["scores"][i]["final6_hits"], "target_dates": [DATES[0]]}
+                                             for i, name in enumerate(MODELS)},
+                        candidate_audit_handoff={"status": "independent_audit_pending", "target_draw_date": DATES[0],
+                            "primary_producer": MODELS[0], "forecast_payload_sha256": first_exact["forecast_payload_sha256"],
+                            "report_path_after_audit": f"reports/historical-6of6-candidate__{DATES[0]}__{MODELS[0]}__v12.0.2.json",
+                            "write_policy": "write_once_only_after_independent_audit", "eligible_evidence": False})
+    report_check(early_report, exact_rows, bindings, summary, [], False, raws["claim"])
+    require(early_report["complete_registered_scope"] is False and early_report["gates"] is None,
+            "early exact capture cannot fabricate complete scope inference")
+    count += 1
+    after_exact = copy.deepcopy(exact)
+    after_exact.append(copy.deepcopy(events[1]))
+    after_exact[-1]["recorded_at"] = "2030-01-01T00:00:06.000000Z"
+    rejects("no forecast after exact detection", lambda: audit_ledger(rechain(after_exact), bindings, raws["claim"]))
+    bad_detection = copy.deepcopy(top12)
+    bad_detection[3]["payload"]["producers"].pop()
+    rejects("detection producer mismatch", lambda: audit_ledger(rechain(bad_detection), bindings, raws["claim"]))
+    bad_notification = copy.deepcopy(top12)
+    bad_notification[4]["payload"]["kind"] = "final6"
+    rejects("incorrect notification category", lambda: audit_ledger(rechain(bad_notification), bindings, raws["claim"]))
+    report = decode(raws["report"], "synthetic report")
+    scored_rows, ledger_summary, warnings, archived = audit_ledger(raws["ledger"], bindings, raws["claim"])
+    for name, edit in (
+        ("annual score mismatch", lambda r: r["annual_descriptive_only"]["2020"][MODELS[0]].update(mean_final6_hits=3.0)),
+        ("missing tied best date", lambda r: r["best_final6_by_model"][MODELS[0]].update(target_dates=[])),
+        ("opportunity overcount", lambda r: r["opportunities"].update(cumulative_unique_opportunity_count=4)),
+        ("false promotion authority", lambda r: r.update(promotion_authority=True)),
+    ):
+        bad_report = copy.deepcopy(report)
+        edit(bad_report)
+        rejects(name, lambda bad_report=bad_report: report_check(bad_report, scored_rows, bindings,
+                ledger_summary, warnings, archived, raws["claim"]))
+    rejects("manifest tamper", lambda: audit_bundle({**raws, "markdown": raws["markdown"]+b"changed\n"}, expected))
+    wrong = {**expected, "execution": "a"*40}
+    rejects("wrong expected authority", lambda: audit_bundle(raws, wrong))
+    same(exact_tail(1, 6), {"value": math.comb(12, 6)/N, "numerator_hex": hex(math.comb(12, 6)), "denominator_hex": hex(N)}, "exact-tail closed-form oracle")
+    count += 1
+    rejects("bootstrap interval outside observed support", lambda: check_ci(
+        {"lower": -2.0, "upper": 2.0, "seed": 649, "resamples": 10000, "method": "linear"}, [0.0, 1.0], "CI fixture"))
+    same(opportunities([2, 3])["cumulative_fair_probability"], 5/N - 6/(N*N), "opportunity product oracle")
+    count += 1
+    claim = decode(raws["claim"], "synthetic claim")
+    manifest = decode(raws["manifest"], "synthetic manifest")
+    startup_events = [decode(line, "synthetic startup") for line in raws["startup"].splitlines(keepends=True)]
+    def startup_rechain(items, omit_lf=False):
+        output, previous = [], None
+        for index, event in enumerate(items):
+            event["sequence"] = index
+            event["previous_event_sha256"] = previous
+            line = canonical(event)
+            output.append(line)
+            previous = sha(line[:-1] if omit_lf else line)
+        return b"".join(output)
+    def check_startup(raw, c=claim, m=manifest):
+        return audit_startup(raw, c, raws["ledger"], m, expected)
+    for name, index, edit in (
+        ("startup zero digest is not initial null", 0, lambda e: e.update(previous_event_sha256="0"*64)),
+        ("capability phase cannot precede durable first event", 1, lambda e: e.update(kind="authorized_startup_started")),
+        ("lease absence requires literal 404", 2, lambda e: e["payload"].update(http_status=200)),
+        ("lease commit POST intent wrong request digest", 3, lambda e: e["payload"].update(request_body_sha256="0"*64)),
+        ("lease commit POST intent wrong byte count", 3, lambda e: e["payload"].update(request_body_bytes=e["payload"]["request_body_bytes"]+1)),
+        ("lease commit POST intent changed nonce", 3, lambda e: e["payload"].update(nonce_hex="0"*64)),
+        ("lease commit POST intent changed raw hash", 3, lambda e: e["payload"].update(raw_commit_sha256="0"*64)),
+        ("uncertain commit receipt cannot be completed run", 4, lambda e: e["payload"].update(result_enum="transport_failed", http_status=None, validated_oid=None)),
+        ("createRef intent changed digest", 6, lambda e: e["payload"].update(request_body_sha256="0"*64)),
+        ("createRef must return exact 201", 7, lambda e: e["payload"].update(http_status=200)),
+        ("lease reread requires exact expected OID", 8, lambda e: e["payload"].update(validated_oid="0"*40)),
+        ("checkpoint cannot embed future claim", 9, lambda e: e["payload"].update(claim_sha256=sha(raws["claim"]))),
+        ("startup claim hash wrong", 10, lambda e: e["payload"].update(claim_sha256="0"*64)),
+        ("startup first scientific event hash wrong", 11, lambda e: e["payload"].update(first_event_sha256="0"*64)),
+        ("history intent cannot contain uncontrolled text", 12, lambda e: e["payload"].update(message="unexpected")),
+    ):
+        bad = copy.deepcopy(startup_events)
+        edit(bad[index])
+        edited = b"".join(canonical(e) for e in bad) if index == 0 else startup_rechain(bad)
+        rejects(name, lambda edited=edited: check_startup(edited))
+    rejects("startup hashes must include LF", lambda: check_startup(startup_rechain(copy.deepcopy(startup_events), True)))
+    rejects("startup truncated receipt sequence", lambda: check_startup(b"".join(canonical(e) for e in startup_events[:-1])))
+    rejects("startup cannot append after sealing", lambda: check_startup(raws["startup"]+canonical(startup_events[-1])))
+    bad_claim = copy.deepcopy(claim)
+    bad_claim["bindings"]["startup_checkpoint"]["prefix_sha256"] = sha(raws["startup"])
+    rejects("claim full future startup creates cyclic binding", lambda: check_startup(raws["startup"], bad_claim))
+    bad_manifest = copy.deepcopy(manifest)
+    bad_manifest["sealed_startup"]["sha256"] = bindings["startup_checkpoint"]["prefix_sha256"]
+    rejects("manifest must bind full sealed journal separately", lambda: check_startup(raws["startup"], m=bad_manifest))
+    bad_facts_claim = copy.deepcopy(claim)
+    bad_facts_claim["verified_authorization_facts"]["authorization_review_records"][0]["comment_id"] += 99
+    rejects("changing review facts breaks initial identity hash", lambda: audit_facts(bad_facts_claim, expected))
+    bad_facts_claim = copy.deepcopy(claim)
+    bad_facts_claim["verified_authorization_facts"]["payload"]["runtime"]["python_version"] = "3.13.0"
+    rejects("complete auth preimage detects changed runtime", lambda: audit_facts(bad_facts_claim, expected))
+    rejects("missing execution tree cannot validate lease request", lambda: lease_byte_oracle(bindings, {**expected, "execution_tree": None}))
+    count += synthetic_full_calendar_check(raws, bindings, expected)
+    return {"self_test": "PASS", "checks": count, "negative_fixtures_rejected": rejected,
+            "fixtures": "synthetic_in_memory_only", "real_history_or_outputs_read": False,
+            "repository_imported": False, "limitations": LIMITATIONS}
+
+
+def synthetic_full_calendar_check(raws, bindings, expected):
+    """Full 627 chronological invented rows; no fitted model and no output writes."""
+    first = decode(raws["ledger"].splitlines(keepends=True)[0], "synthetic first event")
+    events = [first]
+    base = decode(raws["report"], "synthetic template")["targets"][0]["forecast_payload"]
+    actual = [20, 22, 24, 26, 28, 30]
+    counts = []
+    origin = datetime(2030, 1, 1, 0, 1, tzinfo=timezone.utc)
+    def append(kind, value):
+        index = len(events)
+        event = {"schema_version": "lotto649-v12.0.2-attempt-ledger-v1", "sequence": index,
+                 "previous_event_sha256": events[-1]["event_sha256"], "event_kind": kind,
+                 "recorded_at": (origin+timedelta(seconds=index)).strftime("%Y-%m-%dT%H:%M:%S.000000Z"),
+                 "bindings": bindings, "payload": value}
+        event["event_sha256"] = sha(canonical(event, False))
+        events.append(event)
+        return event
+    for index, target in enumerate(DATES):
+        payload = copy.deepcopy(base)
+        through = DATES[index-1] if index else "2019-12-28"
+        payload.update(target_draw_date=target, history_through=through, training_cutoff_date=through,
+                       visible_prefix_draw_count=4000+index, visible_prefix_sha256=sha(str(index).encode()))
+        for producer in (0, 1):
+            state = payload["forecasts"][producer]["scientific_state"]
+            bucket = len(set(actual) & PARTITIONS[producer]) if index else 3
+            state.update(transition_count=len(BURN_IN)-1+index, previous_bucket=bucket,
+                         x_prev=(bucket-150/49.0)/math.sqrt(3225/2401.0))
+        frozen = append("prediction_frozen", {"forecast_payload": payload,
+                                             "forecast_payload_sha256": sha(canonical(payload))})
+        row = recompute_row(payload, actual, 49)
+        counts.append(row["unique_opportunity_count"])
+        require(all(s["top18_hits"] == s["top12_hits"] == s["top6_hits"] == s["final6_hits"] == 0
+                    for s in row["scores"]), "all-miss synthetic arithmetic oracle")
+        row.update(prediction_generated_at=frozen["recorded_at"], prediction_frozen_event_sequence=frozen["sequence"],
+                   prediction_frozen_event_sha256=frozen["event_sha256"], cumulative_opportunities=opportunities(counts))
+        append("target_revealed_scored", row)
+    raw = b"".join(canonical(event) for event in events)
+    rows, summary, warnings, archived = audit_ledger(raw, bindings, raws["claim"])
+    require(len(rows) == 627 and summary["event_count"] == 1255 and not warnings and not archived,
+            "full registered synthetic 627-target ledger")
+    def ci(value):
+        return {"lower": float(value), "upper": float(value), "seed": 649, "resamples": 10000, "method": "linear"}
+    scopes = {}
+    for index, group in enumerate((rows, rows[:314], rows[314:])):
+        dates = [row["target_draw_date"] for row in group]
+        scope = {"n": len(group), "first_target": dates[0], "last_target": dates[-1],
+                 "target_dates_sha256": sha(("\n".join(dates)+"\n").encode()), "models": {},
+                 "contrasts": {"candidate_minus_v1": {"brier_delta": 0.0, "log_loss_delta": 0.0, "top12_paired_ci95": ci(0)},
+                               "candidate_minus_pseudo": {"brier_delta": 0.0, "log_loss_delta": 0.0,
+                                   "top12_paired_ci95": ci(0), "joint_log_gain_sum": 0.0},
+                               "candidate_minus_fair": {"brier_delta": 0.0, "log_loss_delta": 0.0}}}
+        for producer, name in enumerate(MODELS):
+            scope["models"][name] = {**model_summary(group, producer), "top12_lift_ci95": ci(-72/49.0),
+                                      "top12_exact_p": {"value": 1.0, "numerator_hex": hex(N**len(group)), "denominator_hex": hex(N**len(group))}}
+        scope_check(scope, group, index)
+        scopes[SCOPES[index]] = scope
+    gate_result = gates(scopes, {"complete": True, "warnings": []})
+    same([gate["passed"] for gate in gate_result], [False]*7+[True, False, True], "closed-form ten gates all-miss oracle")
+    report = decode(raws["report"], "synthetic report template")
+    vector = [1.0, 1.0, 0.9783404732169021, 1.0]
+    annual = {}
+    for year in range(2020, 2026):
+        group = [r for r in rows if r["target_draw_date"].startswith(str(year)+"-")]
+        annual[str(year)] = {name: model_summary(group, producer) for producer, name in enumerate(MODELS)}
+    report.update(targets=rows, processed_target_count=627, complete_registered_scope=True,
+                  bindings={**bindings, "claim_sha256": sha(raws["claim"]), "ledger": summary},
+                  stop_reason=None, audit={"complete": True, "warnings": []},
+                  opportunities=opportunities(counts),
+                  exclusions={"burn_in_scored": 0, "known_2026_scored": 0,
+                              "known_2026_classification": "consumed_excluded", "unprocessed_target_count": 0},
+                  scopes=scopes, gates=gate_result, disposition="Reject", annual_descriptive_only=annual,
+                  best_final6_by_model={name: {"final6_hits": 0, "target_dates": DATES} for name in MODELS},
+                  multiplicity={"family": "transition_markov", "variant_index": 4,
+                                "input_vector": vector, "adjusted_vector": [1.0]*4})
+    report_check(report, rows, bindings, summary, [], False, raws["claim"])
+    too_late = copy.deepcopy(base)
+    too_late["target_draw_date"] = "2026-01-03"
+    try:
+        audit_payload(too_late, bindings, rows[-1], 627)
+    except AuditError:
+        pass
+    else:
+        raise AuditError("a 628th target was accepted")
+    return 7  # full ledger, three split summaries, all ten gates, full report, 628th refusal
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--output-dir")
+    parser.add_argument("--expected-execution-commit")
+    parser.add_argument("--expected-source-commit")
+    parser.add_argument("--expected-authorization-sha256")
+    parser.add_argument("--expected-lease-commit")
+    parser.add_argument("--expected-execution-tree")
+    parser.add_argument("--expected-execution-epoch", type=int)
+    args = parser.parse_args()
+    try:
+        if args.self_test:
+            require(all(value is None for key, value in vars(args).items() if key != "self_test"),
+                    "self-test cannot open an output directory")
+            result = self_test()
+        else:
+            if not args.output_dir or not all((args.expected_execution_commit, args.expected_source_commit,
+                                               args.expected_authorization_sha256, args.expected_lease_commit,
+                                               args.expected_execution_tree)) or args.expected_execution_epoch is None:
+                parser.error("explicit output directory, four identity pins and execution tree/committer epoch are required")
+            expected = {"execution": args.expected_execution_commit, "source": args.expected_source_commit,
+                        "authorization": args.expected_authorization_sha256, "lease": args.expected_lease_commit,
+                        "execution_tree": args.expected_execution_tree, "execution_epoch": args.expected_execution_epoch}
+            require(all(digest(value, 64 if key == "authorization" else 40) for key, value in expected.items()
+                        if key != "execution_epoch") and expected["execution_epoch"] >= 0,
+                    "expected digest format")
+            raws, snapshots = read_frozen_files(args.output_dir)
+            result = audit_bundle(raws, expected)
+            verify_unchanged(snapshots)
+        print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
+        return 0
+    except (AuditError, OSError, ValueError, KeyError, TypeError, IndexError, OverflowError) as error:
+        print(json.dumps({"audit_status": "FAIL", "error_type": type(error).__name__, "failed_check": str(error),
+                          "read_only": True, "full_independent_leakage_audit": False}, ensure_ascii=False), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

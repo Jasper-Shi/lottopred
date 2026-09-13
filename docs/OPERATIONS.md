@@ -1,6 +1,6 @@
 # Operations Guide
 
-## V12 historical startup checkpoint
+## V12 historical completion and recovery
 
 V12.0.1's sole canonical invocation after authorization PR #44 merge
 `baa08ecb77555e17f383ef2998bea3c433e16f74` failed before any claim, ledger or
@@ -14,36 +14,64 @@ and separate expired-live closure at
 authorization and lease namespace without retry or repair. Obsolete PR #41 is
 closed and unmerged, with its branch and history preserved.
 
-The current registered operation is
-[`V12.0.2 / R3`](experiments/V12_0_2_historical_operational_rebinding.md).
+V12.0.2's sole authorized historical worker has completed all 627 consumed
+2020–2025 targets. Its frozen report records **Reject**; candidate best Final-6
+is 3/6 on 11 dates, with no 6/6. The broader Goal is incomplete. Consult
+[`V12_0_2_HISTORICAL_RESULTS.md`](research/V12_0_2_HISTORICAL_RESULTS.md) for
+the full interpretation and independent audit status.
 
-**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+I3 normally merged in [PR #48](https://github.com/Jasper-Shi/lottopred/pull/48)
+as `0c54d443325a2dbf59bc5fa70a0288593f8df9b9`. Authorization source
+`caaeaca6d5ddfd3705171d86fddd3c53bdd75de6` normally merged in
+[PR #49](https://github.com/Jasper-Shi/lottopred/pull/49) as execution authority
+`b7fa81d6d5facc1730700cd527362df79f457cf8`. The permanent consumption ref
+`refs/heads/v12-consumption-v12.0.2` points to
+`a8b264a5d3db199e831b0c06cb0697794766d160`. Preserve that exact lease and all
+outputs; never update, delete, adopt or reuse the lease, retry the worker,
+retune V12.0.2 or regenerate any historical prediction.
 
-Its historical route preserves H12 science and needs new I3 implementation,
-independent Standards/Spec reviews, exact-head CI, an ordinary protected-main implementation
-merge, new auth-JSON-only source and ordinary authorization merge, and a fresh
-`refs/heads/v12-consumption-v12.0.2` lease. Bind the same core and runtime closure
-at I3, `K_H3`, `A_H_s3` and `M_A_H3`. Registration and a source branch grant no
-execution authority.
+Worker artifact commit `c9b483f6e89bf73eade28829188fbebe745e28c0` has sole
+parent execution authority `b7fa81d6d5facc1730700cd527362df79f457cf8`.
+Its six frozen files are identified by the
+[commit manifest](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json).
+At this evidence-source checkpoint it has been pushed to
+`codex/v12-0-2-historical-evidence`, with ordinary protected-main integration
+pending. Preserve the artifact as a reachable ancestor; no squash, rebase,
+force push or report rewrite is part of publication.
 
-Follow R3's complete read-only authorization checks before creating any startup
-artifact. Only then create and retain the exclusive durable journal, issue the
-capability, and record each remote mutation's intent and safe receipt before
-claim and scientific-ledger creation. Seal the startup journal before history
-access. Use the exact R3 specification for canonical object verification, journal
-ownership and no-retry failure handling. Implementation tests use source, fixed
-Git metadata, synthetic fixtures and closed-form oracles; they do not load
-governed history.
-R3 has no live lane and does not depend on D0, future draws or a live canary.
+Preserve the completed
+[independent negative-result audit](../evidence/research_audits/v12-0-2-historical-20260913/independent-audit.md),
+which passed within its stated scope with 0 blocker, 0 major and 0 minor findings.
+It verified all 627 actual main/bonus results and complete prefixes, 1,255 ledger
+events and 13 startup events, and replayed 18 bootstrap intervals and 12 exact
+fair tests from frozen scores. It regenerated no forecast and refit no model.
+The audit's limits and the separate root-performed remote checks remain explicit;
+this is not a 6/6 leakage-audit milestone. Recovery uses these existing bytes and
+receipts while ordinary protected-main publication remains pending at this
+source checkpoint. Preserve the worker's separate `audit.complete=true` check
+and `audit_publication=pending_git_integration` creation-time fields; resolve
+publication using the later Git relationship without editing the report.
+No manual email was sent during evidence preparation; the repository's hourly
+committed-state email remains a separate operation.
+
+The [R3 specification](experiments/V12_0_2_historical_operational_rebinding.md)
+and registration-time tree/hash bindings remain frozen. **At R3 only**, its
+status was **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**.
+Registration itself never supplied execution authority. The completed sequence
+retains its authorization-before-startup, durable intent-before-POST and
+forecast-before-reveal evidence; it grants no further run. A next experiment
+requires separate preregistration before results are computed. V12.0.0 remains
+`superseded_unexecuted`, and V12.0.1 remains failed/unscored with no retry.
+V12.0.2 has no live lane and never depended on D0 or a live canary.
 
 ## Cloud execution
 
 GitHub-hosted CI and the existing hourly progress-email job do not require a
 local computer to stay running. The live production route remains paused.
 
-R3 registers a standalone manual historical command that must run on its
-authorized execution host through completion. It has no GitHub Actions workflow
-or scheduler wiring; hosted CI and progress email cannot execute it.
+The standalone V12.0.2 historical command completed on its authorized host.
+Its one-shot authority is consumed. It has no GitHub Actions workflow or
+scheduler wiring; hosted CI and progress email cannot execute or restart it.
 
 ## Data-integrity incident kill switch
 

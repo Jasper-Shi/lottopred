@@ -98,8 +98,8 @@ post-worker failure has no automatic retry. The first successful P or A
 authority advance would have moved `main`, so the old independently approved
 `expected_sha` would have failed a second dispatch and blocked replay.
 V12.0.1's separate live lane also expired `superseded_unexecuted`; its historical
-startup failed and is frozen against retry. The new R3 historical-only route
-has no live lane and remains independent of D0 and any future live canary.
+startup failed and is frozen against retry. V12.0.2's completed R3 historical
+attempt has no live lane and remains independent of D0 and any future live canary.
 
 The expired emergency seal was deliberately scoped to the three execution
 commands on main: `bootstrap`, `backtest`, and `live`. It now grants no
@@ -287,29 +287,50 @@ verified history[0:t] -> features -> model -> probability vector -> result[t] ->
 
 Then advance to `t+1`. Random train/test shuffling is forbidden.
 
-### V12 historical-only registration boundary
+### V12 historical-only evidence boundary
 
-The current registered operation is
-[`V12.0.2 / R3`](experiments/V12_0_2_historical_operational_rebinding.md).
+[`V12.0.2 / R3`](experiments/V12_0_2_historical_operational_rebinding.md)
+completed its sole historical run over 627 consumed targets. The frozen worker
+report records **Reject**, candidate best Final-6 3/6 on 11 dates, and no 6/6.
+The [results and audit record](research/V12_0_2_HISTORICAL_RESULTS.md) separates
+worker completion, independent audit and Git publication. The experiment is
+closed against retuning or rerun and supplies no live or promotion authority.
 
-**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+The six-path I3 implementation normally merged through PR #48 at
+`0c54d443325a2dbf59bc5fa70a0288593f8df9b9`. Its evidence module preserves the
+registered calculations; the attempt module and standalone launcher enforce
+the historical boundary. They remain disconnected from the production factory,
+CLI, workflows and live configuration. Authorization PR #49 normally merged as
+`b7fa81d6d5facc1730700cd527362df79f457cf8`, binding the same pure core and complete
+runtime closure at I3, `K_H3`, `A_H_s3` and `M_A_H3`.
 
-It preserves the sealed H12 science and common pure core. Its six-path I3
-implementation must remain disconnected from the production factory, CLI,
-workflows and live configuration.
-R3 requires new independent reviews, exact-head CI, ordinary protected-main
-implementation and authorization merges, and its own one-shot lease. The core
-and complete runtime closure must match at I3, `K_H3`, `A_H_s3` and `M_A_H3`.
+The implemented order is complete read-only authorization validation, exclusive
+durable startup receipt, execution capability, recorded remote mutation intents
+and receipts, then claim and scientific ledger. Startup seals before governed
+history access; each target's prediction freezes before reveal and scoring.
+The completed run retained 13 startup events and 1,255 scientific ledger events.
+The permanent lease is `refs/heads/v12-consumption-v12.0.2` at
+`a8b264a5d3db199e831b0c06cb0697794766d160`; it cannot authorize another attempt.
 
-The registered startup order is complete read-only authorization validation,
-exclusive durable startup receipt, execution capability, recorded remote
-mutation intents and receipts, then claim and scientific ledger. Seal the startup
-journal before governed history access. Per-target predictions freeze before
-reveal and score.
-Receipt creation grants no authority; a failed or uncertain attempt cannot
-resume or reuse a lease. The R3 specification defines exact object projection,
-journal ownership and hash bindings. V12.0.1's failed startup, frozen runtime and
-unknown original POST activity remain a separate immutable incident.
+Worker artifact commit `c9b483f6e89bf73eade28829188fbebe745e28c0` contains six
+immutable outputs and has sole parent execution authority
+`b7fa81d6d5facc1730700cd527362df79f457cf8`. Its
+[manifest](../reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json)
+binds the sealed startup separately from the earlier checkpoint, preserving
+acyclic claim/ledger bindings. An ordinary evidence merge must preserve that
+artifact commit. The report's `audit_publication=pending_git_integration` stays
+as written; later Git provenance resolves publication separately. The completed
+[independent negative-result audit](../evidence/research_audits/v12-0-2-historical-20260913/independent-audit.md)
+passed with zero findings after checking actual history, prefixes, frozen scores
+and the registered bootstrap. Its stated limits remain applicable; the worker's
+internal audit flag is a separate check, and no 6/6 audit milestone is claimed.
+Protected-main integration remains pending at this evidence-source checkpoint.
+
+At the historical R3 registration checkpoint, the state was **REGISTERED /
+NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**. Its original tree/hash bindings
+remain unchanged. V12.0.0 remains `superseded_unexecuted`; V12.0.1's failed,
+unscored startup and unknown original POST activity remain a separate immutable
+incident. No old or completed lease may be retried, updated, deleted or reused.
 
 ## Feature engine
 

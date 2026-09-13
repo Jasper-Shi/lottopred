@@ -26,10 +26,10 @@ Preserve two properties above headline hit counts:
   publication, read `docs/OPERATIONAL_HISTORY_REGISTRY_PROTOCOL.md`.
 - For system boundaries and operational recovery, read `docs/ARCHITECTURE.md`
   and `docs/OPERATIONS.md`.
-- Before V12 implementation, historical authorization, or startup recovery,
-  read `docs/experiments/V12_0_2_historical_operational_rebinding.md` and the
-  V12.0.1 startup incident linked there. R3 is historical-only and registered,
-  not implemented, authorized, or scored; preserve V12.0.1's no-retry boundary.
+- Before reviewing V12 evidence, interpreting its results, or preparing another
+  experiment, read `docs/research/V12_0_2_HISTORICAL_RESULTS.md` and
+  `docs/experiments/V12_0_2_historical_operational_rebinding.md`. Preserve the
+  completed V12.0.2 attempt and the separate V12.0.1 startup incident.
 
 When code and prose disagree, verify behavior from code and tests, then update the
 affected documentation in the same change.
@@ -127,7 +127,13 @@ affected documentation in the same change.
   theoretical expectations at all three Top-K levels. The conservative rejection
   remains, but the exact result is not corrected-history evidence.
 
-The authoritative numbers and decisions are in `docs/V2_V4_RESULTS.md`.
+- **V12.0.2 — Reject, consumed historical diagnostic.** Its sole authorized
+  worker completed 627/627 targets. The candidate's best Final-6 was 3/6 on
+  11 dates, with no 6/6. Its scoped independent negative-result audit passed;
+  publication remains pending at the evidence-source checkpoint. Preserve the
+  model, lease, frozen evidence and audit scope recorded in the results document.
+
+The V2–V4 numbers and decisions are in `docs/V2_V4_RESULTS.md`.
 
 ## Leakage and research guardrails
 
@@ -195,9 +201,13 @@ Those residual true values are pending a separate reviewed D0 release that
 restores all-false workflow outputs; they are not permission to dispatch the
 old plan, install its credential, approve a late SHA, or reuse its date.
 
-V12.0.1's historical startup failed and is frozen against retry; its separate
-live lane expired `superseded_unexecuted`. V12.0.2 has no live lane. Historical
-authorization follows R3 independently of D0 or a future live canary.
+V12.0.0 remains `superseded_unexecuted`. V12.0.1's historical startup remains
+`startup_failed_frozen_no_retry` and not scored; its separate live lane expired
+`superseded_unexecuted`. V12.0.2 completed its sole R3 historical attempt and
+has no live lane or remaining run authority. Preserve the completed independent
+negative-result audit and finish evidence publication, then preregister any next
+experiment before computing its results. Never retune or rerun V12.0.2. No
+historical 6/6 has been found; the broader Goal is incomplete.
 
 Live forward cycle:
 
