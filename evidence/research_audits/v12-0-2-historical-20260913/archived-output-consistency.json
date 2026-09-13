@@ -1,0 +1,440 @@
+{
+  "audit_status": "PASS_SCOPED_FROZEN_OUTPUT_CONSISTENCY",
+  "full_independent_leakage_audit": false,
+  "read_only": true,
+  "model_or_verifier_invoked": false,
+  "files_sha256": {
+    "startup": "af73971992097b0341230800b80d4423999e49b7fed9265a60a6664daf60ea3c",
+    "claim": "5d4b9e416e7ca6b41d9f6d0c0d052cbd7b017ef6502aa44bc97722aebe08351a",
+    "ledger": "c1f923a8c23fce29c8837ab3f137c5a7d5a5422966b227f1eceec97547f27c03",
+    "report": "5582ce55fd1fbfece3f5402501bf0470d4e60b1f35c5f66aae02d928cfaa496a",
+    "markdown": "6ce136d50456f8938de47047b3154f5981c51404b387c25940586dca30a4894c",
+    "manifest": "360a61c1a49100bab32798e3c81b0ee06df1f49f9c0e0689d894fbe70ce60326"
+  },
+  "processed_target_count": 627,
+  "complete_registered_scope": true,
+  "recorded_disposition": "Reject",
+  "ledger": {
+    "event_count": 1255,
+    "scored_target_count": 627,
+    "head_sha256": "b1c050efe86646c9fc70e8a2399a956a96373e68030c367003b5c317bc86dd24",
+    "pending_forecast": false,
+    "stopped_for_audit": false,
+    "file_sha256": "c1f923a8c23fce29c8837ab3f137c5a7d5a5422966b227f1eceec97547f27c03"
+  },
+  "startup": {
+    "event_count": 13,
+    "head_sha256": "b70498b554524f8259ab5167c2dd6e7161bd8e519bc94377a7d6798931a54100",
+    "file_sha256": "af73971992097b0341230800b80d4423999e49b7fed9265a60a6664daf60ea3c",
+    "checkpoint": {
+      "path": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.startup.jsonl",
+      "sequence": 9,
+      "head_sha256": "307b00a7258ab9f0f63370f17378d7daa718248d8d9f68346cacf44aa9d23532",
+      "prefix_byte_count": 4847,
+      "prefix_sha256": "39f334c7d3994be5bba9d25c4635f3e04f973e74b8af4c0d4b0a36fa4be052be"
+    },
+    "acyclic_claim_ledger_manifest_bindings": true
+  },
+  "opportunities": {
+    "cumulative_fair_probability": 0.00017933412932120326,
+    "cumulative_unique_opportunity_count": 2508
+  },
+  "notification_warnings": [],
+  "exact_final6_candidates": [],
+  "descriptive_models": {
+    "v12_post_rng_parity_composition_transition": {
+      "model_name": "v12_post_rng_parity_composition_transition",
+      "draw_count": 627,
+      "mean_final6_hits": 0.7384370015948963,
+      "mean_actual_rank": 25.01143009037746,
+      "brier_score": 0.10746646807475893,
+      "log_loss": 0.3718287244963239,
+      "final6_histogram": {
+        "0": 273,
+        "1": 256,
+        "2": 87,
+        "3": 11,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      },
+      "joint_log_gain_sum": -1.581431142321751,
+      "mean_top6_hits": 0.7384370015948963,
+      "top6_lift": 0.0037431240438758895,
+      "mean_top12_hits": 1.4609250398724083,
+      "top12_lift": -0.0084627152296326,
+      "mean_top18_hits": 2.1658692185007973,
+      "top18_lift": -0.03821241415226373,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 25,
+          "mean_probability": 0.09840666284675768,
+          "observed_frequency": 0.2
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 30698,
+          "mean_probability": 0.12246855930121933,
+          "observed_frequency": 0.12238582318066324
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        }
+      ]
+    },
+    "v12_pseudo_parity_composition_transition_control": {
+      "model_name": "v12_pseudo_parity_composition_transition_control",
+      "draw_count": 627,
+      "mean_final6_hits": 0.7655502392344498,
+      "mean_actual_rank": 24.981924508240297,
+      "brier_score": 0.10745858223223241,
+      "log_loss": 0.3717918630405748,
+      "final6_histogram": {
+        "0": 264,
+        "1": 262,
+        "2": 86,
+        "3": 14,
+        "4": 1,
+        "5": 0,
+        "6": 0
+      },
+      "joint_log_gain_sum": -0.472031321018374,
+      "mean_top6_hits": 0.7655502392344498,
+      "top6_lift": 0.030856361683429312,
+      "mean_top12_hits": 1.4768740031897927,
+      "top12_lift": 0.007486248087751779,
+      "mean_top18_hits": 2.20414673046252,
+      "top18_lift": 6.509780945895827e-05,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 30723,
+          "mean_probability": 0.12244897959183673,
+          "observed_frequency": 0.12244897959183673
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        }
+      ]
+    },
+    "ensemble_v1.0.0": {
+      "model_name": "ensemble_v1.0.0",
+      "draw_count": 627,
+      "mean_final6_hits": 0.7208931419457735,
+      "mean_actual_rank": 25.507708665603403,
+      "brier_score": 0.10768829534622223,
+      "log_loss": 0.3728473066234579,
+      "final6_histogram": {
+        "0": 275,
+        "1": 264,
+        "2": 77,
+        "3": 10,
+        "4": 1,
+        "5": 0,
+        "6": 0
+      },
+      "joint_log_gain_sum": null,
+      "mean_top6_hits": 0.7208931419457735,
+      "top6_lift": -0.013800735605246972,
+      "mean_top12_hits": 1.3955342902711323,
+      "top12_lift": -0.0738534648309086,
+      "mean_top18_hits": 2.0781499202551834,
+      "top18_lift": -0.1259317123978776,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 337,
+          "mean_probability": 0.09626729173591177,
+          "observed_frequency": 0.12462908011869436
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 30384,
+          "mean_probability": 0.12273374490915527,
+          "observed_frequency": 0.12243285939968404
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 2,
+          "mean_probability": 0.20790868261197484,
+          "observed_frequency": 0.0
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        }
+      ]
+    },
+    "random_v1.0.0": {
+      "model_name": "random_v1.0.0",
+      "draw_count": 627,
+      "mean_final6_hits": 0.7799043062200957,
+      "mean_actual_rank": 24.604731525784157,
+      "brier_score": 0.10745522698517522,
+      "log_loss": 0.37177617992679723,
+      "final6_histogram": {
+        "0": 257,
+        "1": 263,
+        "2": 95,
+        "3": 12,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      },
+      "joint_log_gain_sum": null,
+      "mean_top6_hits": 0.7799043062200957,
+      "top6_lift": 0.04521042866907521,
+      "mean_top12_hits": 1.4736842105263157,
+      "top12_lift": 0.004296455424274814,
+      "mean_top18_hits": 2.229665071770335,
+      "top18_lift": 0.025583439117273787,
+      "calibration_bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "count": 30723,
+          "mean_probability": 0.12244897959183673,
+          "observed_frequency": 0.12244897959183673
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "count": 0,
+          "mean_probability": null,
+          "observed_frequency": null
+        }
+      ]
+    }
+  },
+  "numeric_relative_and_absolute_tolerance": 2e-12,
+  "limitations": [
+    "Local hash-chain and frozen-payload consistency is not a complete independent leakage audit.",
+    "No external-history reads: prefix digests and actual outcomes are not independently authenticated.",
+    "No prediction is recomputed and no model is invoked: fitted beta, tilted normalizer, V1/random selection and optimizer behavior require separate source/leakage audit.",
+    "Bootstrap seed/resamples/method and bounds are checked, but NumPy bootstrap samples/quantiles are not independently replayed; CI-dependent gates are conditional consistency only.",
+    "No independent proof of historical wall-clock fsync, remote lease exclusivity, Git object publication/protection, or actual email delivery.",
+    "Claim identities and complete authorization preimage are cross-checked to explicit pins and frozen source metadata; external review authenticity, Git topology and installed runtime at execution require separate audit.",
+    "An exact Final-6 remains historical diagnostic only and pending a separate full independent leakage audit."
+  ]
+}

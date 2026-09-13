@@ -134,23 +134,37 @@ The V12.0.1 command must not be retried or repaired in place. PR #45 preserves
 the incident and live closure at ordinary merge
 `3015078e251bdcbb92719e1b291b1807525fef16`.
 
-The current registered operation is
-[`V12.0.2 historical operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md).
+The historical-only
+[`V12.0.2 operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md)
+preserved the exact H12 formula, statistical fingerprint, core, seed, controls,
+627 targets, 314/313 split and ten gates. Its **R3 registration-time** status was
+REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED; that historical
+checkpoint is not its current execution status.
 
-**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+I3 normally merged in PR #48 at
+`0c54d443325a2dbf59bc5fa70a0288593f8df9b9`. The separate authorization source
+normally merged in PR #49 at
+`b7fa81d6d5facc1730700cd527362df79f457cf8`, after fresh independent reviews
+and exact-head CI for both sources. The sole authorized historical invocation
+completed all 627 targets and froze its six-file evidence commit
+`c9b483f6e89bf73eade28829188fbebe745e28c0`.
 
-It preserves the exact H12 statistical fingerprint, pure-core SHA-256, formula,
-seed, controls, 627 targets, 314/313 split, inference and ten gates. R3 changes only
-the historical execution identities, strict GitHub representation verification
-and durable sanitized startup receipts; it introduces no live lane. New I3
-implementation and independent reviews, exact-head CI, an ordinary
-protected-main implementation merge, new auth-JSON-only source and ordinary
-authorization merge, and a fresh V12.0.2 one-shot lease are required before
-execution. Authorization must be fully verified before any startup artifact.
-Fixed history and runtime closure remain independent of future draws, D0 and
-live-canary success. Neither V1's observed results nor the startup failure may
-change H12's scientific behavior. No V12 forecast, score, report, canary success
-or live authorization exists. V1 and V3 roles are unchanged.
+**V12.0.2: completed, scored, Reject; no Final-6 6/6.** Candidate mean
+Top-6/12/18 hits were 0.738437 / 1.460925 / 2.165869. The primary Top-12 lift
+was -0.008463 (95% registered bootstrap interval -0.085018 to 0.068092),
+exact upper-tail p=0.590969 and four-variant Holm-adjusted p=1.0. Eight of ten
+gates failed. Its best Final-6 was 3/6 on 11 dates. Small descriptive changes
+from V1 do not establish stable predictive advantage; the fair constant also
+has better Brier and binary log loss than this candidate. See the
+[complete result and audit interpretation](research/V12_0_2_HISTORICAL_RESULTS.md).
+
+The permanent `refs/heads/v12-consumption-v12.0.2` lease is
+`a8b264a5d3db199e831b0c06cb0697794766d160`. Never rerun this command, renew or
+remove its lease, overwrite outputs, or change H12 in response to these results.
+All results remain consumed historical diagnostics, not new blind confirmation
+or promotion authority. A different scientific candidate needs a new complete
+registration before its results. V12.0.2 has no live lane; V1/V3 live roles and
+expired-lane recovery rules are unchanged. The broader 6/6 Goal is incomplete.
 
 ## Planned anti-overfitting checks
 
