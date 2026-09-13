@@ -29,10 +29,11 @@ diagnostic, with no model change or promotion. See the
 Do not search V1 variants in response to this result. The already preregistered
 V12 candidate remains a separate narrow, falsifiable hypothesis; its formula,
 seed, controls and gates were frozen before these V1 results and remain unchanged.
-It still needs its own current-base authorization source and ordinary merge,
-with all original gates, before any unique historical run. No new V12 result,
-lease or authorization is implied by V1's completion. The broader 6/6 Goal is
-not complete.
+V12.0.1 subsequently received its own authorization in PR #44, but its sole
+invocation failed before any claim or forecast and is frozen against retry.
+Further execution requires a new operational registration and separate
+authorization, with the unchanged scientific gates. V1's completion grants no
+V12 authority or result. The broader 6/6 Goal is not complete.
 
 Keep these lanes separate in code, reports, and claims:
 
@@ -55,9 +56,11 @@ Git-registry genesis and delegates immutable seal/suffix validation to
 `history_registry.py` and `verified_history.py`. Direct use of the legacy
 processed CSV is prohibited for new evidence. The read consumer is integrated,
 but the generic historical/backtest gate remains closed. The new V1 diagnostic
-is authorized only by its own reviewed registration/implementation merge;
-V12.0.1 still requires its distinct historical `M_A_H2`. That fixed-history
-authorization is independent of any future live canary. The old Stage-1
+was authorized only by its own reviewed registration/implementation merge.
+V12.0.1's distinct historical `M_A_H2` was merged in PR #44, followed by a
+failed startup that must not be retried. A future operational version requires
+new registration and authorization, independently of any future live canary.
+The old Stage-1
 data/live runtime bytes remain present only pending the D0 all-false reseal and
 are not dispatch authority. The bounded
 dual-source collector, offline preparer, and local bare-repository exact-CAS

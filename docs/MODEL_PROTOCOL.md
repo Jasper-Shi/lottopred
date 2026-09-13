@@ -123,14 +123,14 @@ There is no scientific Reject result. Its live lane missed its fixed windows
 and has a separate
 [`superseded_unexecuted` closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
 
-V12.0.1 has separate historical and live authorization lanes. After complete
-independently reviewed I2, only the ordinary historical-auth merge `M_A_H2` at
-protected remote `main`/HEAD may authorize the new one-shot historical lease
-`refs/heads/v12-consumption-v12.0.1` and historical run. That lane uses the fixed
-governed-history authority and does not depend on a future draw or live-canary
-success. The independent live lane remains manual-only and fail closed through
-D0/W2/S2/C2/M_C2/K_L2 and `M_A_L2`; it permits neither a schedule nor automatic
-retry. The V12.0.1 command must not be retried or repaired in place. Further
+R2 defined separate historical and live authorization lanes. Complete reviewed
+I2 and the ordinary historical-auth merge `M_A_H2` at protected remote
+`main`/HEAD were required before the one-shot historical lease
+`refs/heads/v12-consumption-v12.0.1`. Its fixed-history authority was independent
+of future draws and live-canary success. Those former prerequisites do not
+restore the failed attempt. The independent live lane's fixed dates expired
+without its D0/W2/S2/C2/M_C2/K_L2 and `M_A_L2` prerequisites.
+The V12.0.1 command must not be retried or repaired in place. Further
 work requires a separately registered operational version with unchanged H12
 science, new execution identities and durable startup receipts. No V12
 forecast, score, report, canary success or live authorization exists. V1 and
