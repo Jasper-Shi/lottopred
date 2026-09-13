@@ -1,5 +1,46 @@
 # V5+ Research Roadmap
 
+## Next registered candidate: V14 fixed five groups
+
+[V14](experiments/V14_long_frequency_fixed_five_disjoint_groups.md) registers one
+narrow test of the user's two-module idea: the unchanged long-frequency
+probability calculation followed by a fixed five-group partition of Top-30.
+At this checkpoint: **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**.
+The [complete basis](research/V14_long_frequency_fixed_five_disjoint_groups_basis.md)
+fixes all five group identities, one primary maximum-hit statistic, full
+627-target cohort, both halves, scoring, conditional diagnostics, exactly twelve
+descriptive intervals and every stopping/failure branch before outcomes.
+
+The main fair comparator analytically integrates uniform label permutations of
+the same five disjoint six-number groups. The same-pool permutation is a
+secondary arrangement diagnostic and fair constant probabilities supply proper
+score references. This is the explicit [V14-only protocol amendment](MODEL_PROTOCOL.md):
+no empirical random producer, independent V1 ensemble or perturbed-history run
+is claimed. Five groups' extra coverage alone is not evidence of a predictive
+advantage. The local primary test is not a whole-Goal multiplicity correction.
+
+Proceed in ordinary, audited stages: separate default-route notification
+registration/deployment and no-SMTP runtime/API qualification; the nine-path
+historical implementation and frozen closure; then historical authorization
+and the sole registered command. A required API permission failure blocks that
+authorization before any history read or attempt. The standard workflow token
+lacks the required Administration read capability, so N must qualify a separate
+least-privileged protection reader. Do not leave notification availability
+unresolved until a capture happens. No current live/CLI/scheduled workflow is
+activated by R14.
+
+Only G1-G5 are capture-eligible; Top-6 is descriptive and legacy Final-6 remains
+G1. A first lawful capture stops future forecasts, with all five current groups
+retained. The multiple-group result must be identified honestly and pass the
+full audit/freeze/final-report/confirmed-default-notification requirements.
+Otherwise preserve the complete negative/invalid outcome and preregister another
+narrow hypothesis before its results; never optimize V14 on revealed scores.
+
+V13 has already closed with Reject and no 6/6. Its source and original evidence
+remain immutable. The older successor-specification and R13/E13 paragraphs below
+are historical checkpoints superseded by this registration, not new execution
+permission. The broader Goal remains incomplete.
+
 ## V13 closed; successor specification only
 
 The sole V13 historical diagnostic is complete: **627/627, Reject, no 6/6**.

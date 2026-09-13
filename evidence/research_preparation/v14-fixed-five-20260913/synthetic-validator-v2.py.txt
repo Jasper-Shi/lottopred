@@ -1,0 +1,482 @@
+#!/usr/bin/env python3.12
+"""External synthetic engineering validation; unregistered, no historical run.
+
+AUTHOR: /root/v13_exception_spec_review
+SESSION: successor-probability-synthetic-authoring-20260913
+DO NOT EXECUTE until the root agent has read and approved this exact file.
+V2 changes only the observed Darwin environment name and exclusive output paths.
+The failed original script and its absent output artifacts remain preserved.
+Only existing LongFrequencyModel.predict is exercised with fabricated 2040+
+Draw objects. This is neither a successor implementation nor an independent
+review, runtime closure proof, minimum-history coordinator, or authorization.
+"""
+
+import hashlib
+import importlib.abc
+import json
+import math
+import os
+from pathlib import Path
+import platform
+import struct
+import subprocess
+import sys
+from datetime import date, datetime, timedelta, timezone
+from fractions import Fraction
+
+
+ROOT = Path("/Users/jaspershi/CodexResearch/lottopred-v13-results-closure-20260913")
+HEAD = "924a19b59c220e339d899750eb81ca4d79e6bdec"
+PYTHON = Path("/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/bin/python3.12")
+PYTHON_REAL = Path("/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/bin/python3.12")
+PYTHON_SHA = "1b08a0098350b17a5564315e086652b108188658834ac42e5d13c6b5425d9175"
+SITE = Path("/Users/jaspershi/CodexResearch/venvs/lottopred-v12-frozen/lib/python3.12/site-packages")
+DRAFT = Path("/private/tmp/v13-successor-complete-science-draft-20260913.md")
+DRAFT_SHA = "dc3e0c8d2510d982e06544d57d5a975acc37d441657365bdc2ff30b06ce53153"
+CONFIG_SHA = "2d097d80728ee930d29167fc094be280ec69cd62959e231aeb6400f73b14af66"
+PROOF = Path("/private/tmp/v13-successor-probability-synthetic-validation-v2-20260913.result.json")
+LOG = Path("/private/tmp/v13-successor-probability-synthetic-validation-v2-20260913.log")
+PINS = {
+    "src/lotto649/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+    "src/lotto649/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/lotto649/models/baselines.py": "76f9050a13bde44d51584397ecd6acb358f320e1617ef329b70bd6a22d23e28a",
+    "src/lotto649/models/base.py": "e2f0c90c376ea6063b906bcca042e8903b351a1ed4b76e9d83e17be3bcf166ec",
+    "src/lotto649/features.py": "b7bc67b9038b2e3d78230c3087c3ac4e3f17751aeab678574f3601af00671979",
+    "src/lotto649/domain.py": "fbcb22747ae361767df070c6e50af49fda1aa190b72fd39894afa1c879a50b7a",
+    "src/lotto649/optimizer.py": "f5bda2a8ee8cd19c7b719a8f3344a7e4ca76def75971d5e8fe49489189abd1a4",
+    "requirements/v12-historical.txt": "a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6",
+}
+MODULES = {
+    "lotto649": "src/lotto649/__init__.py",
+    "lotto649.models": "src/lotto649/models/__init__.py",
+    "lotto649.models.baselines": "src/lotto649/models/baselines.py",
+    "lotto649.models.base": "src/lotto649/models/base.py",
+    "lotto649.features": "src/lotto649/features.py",
+    "lotto649.domain": "src/lotto649/domain.py",
+    "lotto649.optimizer": "src/lotto649/optimizer.py",
+}
+TOLERANCE = 1e-12  # Fixed before outputs; never widened from observations.
+RANK_POSITIONS = (
+    (1, 10, 11, 20, 21, 30),
+    (2, 9, 12, 19, 22, 29),
+    (3, 8, 13, 18, 23, 28),
+    (4, 7, 14, 17, 24, 27),
+    (5, 6, 15, 16, 25, 26),
+)
+IDS = ("G1", "G2", "G3", "G4", "G5")
+EDGES = (0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
+GIT_ENV = {
+    "PATH": "/usr/bin:/bin",
+    "HOME": "/private/tmp",
+    "TMPDIR": "/private/tmp",
+    "LANG": "C",
+    "LC_ALL": "C",
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_CONFIG_GLOBAL": "/dev/null",
+    "GIT_OPTIONAL_LOCKS": "0",
+    "GIT_NO_REPLACE_OBJECTS": "1",
+    "GIT_TERMINAL_PROMPT": "0",
+    "GIT_PAGER": "cat",
+    "GIT_ATTR_NOSYSTEM": "1",
+}
+
+
+class ValidationFailure(Exception):
+    """Only fixed identifiers, never external payloads, in failure messages."""
+
+
+def require(condition, code):
+    if not condition:
+        raise ValidationFailure(code)
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def canonical(value):
+    return (json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
+
+
+def git(*args):
+    # Only local metadata and the explicitly pinned source blobs are requested.
+    command = ["/usr/bin/git", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false",
+               "-c", "core.hooksPath=/dev/null", "-c", "core.attributesFile=/dev/null",
+               "-c", "protocol.allow=never", "-C", str(ROOT), *args]
+    completed = subprocess.run(command, env=GIT_ENV, stdin=subprocess.DEVNULL,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    require(completed.returncode == 0, "local_git_failure")
+    return completed.stdout
+
+
+def snapshot_source():
+    require(ROOT.is_dir() and not ROOT.is_symlink(), "root_identity")
+    gd = ROOT / ".git"
+    require(gd.is_dir() and not gd.is_symlink(), "git_directory_identity")
+    cfg = gd / "config"
+    require(not cfg.is_symlink() and digest(cfg.read_bytes()) == CONFIG_SHA, "git_config_drift")
+    for rel in ("config.worktree", "info/grafts", "info/attributes", "shallow"):
+        require(not (gd / rel).exists() and not (gd / rel).is_symlink(), "git_extra_configuration")
+    require(git("rev-parse", "HEAD").decode().strip() == HEAD, "head_drift")
+    require(git("rev-parse", "--show-toplevel").decode().strip() == str(ROOT), "git_root_drift")
+    require(git("status", "--porcelain=v1", "--untracked-files=all", "--ignored=matching") == b"", "worktree_not_fully_clean")
+    flags = git("ls-files", "-v", "-z").split(b"\0")
+    require(all(not entry or entry.startswith(b"H ") for entry in flags), "index_flags")
+    result = {"head": HEAD, "tree": git("rev-parse", "HEAD^{tree}").decode().strip(), "source_sha256": {}}
+    for rel, expected in PINS.items():
+        path = ROOT / rel
+        require(path.resolve() == path and path.is_file(), "source_path_identity")
+        data = path.read_bytes()
+        require(digest(data) == expected, "source_bytes_drift")
+        require(git("show", HEAD + ":" + rel) == data, "source_blob_drift")
+        entry = git("ls-tree", HEAD, "--", rel).decode().strip()
+        require(entry.startswith("100644 blob ") and entry.endswith("\t" + rel), "source_mode_identity")
+        result["source_sha256"][rel] = expected
+    require(DRAFT.resolve() == DRAFT and digest(DRAFT.read_bytes()) == DRAFT_SHA, "science_draft_drift")
+    result["git_config_sha256"] = CONFIG_SHA
+    result["draft_sha256"] = DRAFT_SHA
+    return result
+
+
+class ProjectImportBoundary(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "lotto649" or fullname.startswith("lotto649."):
+            require(fullname in MODULES, "unapproved_project_module")
+        return None
+
+
+def install_engineering_boundary():
+    """Restrict project modules and common I/O; not a future security closure."""
+    require(not any(n == "lotto649" or n.startswith("lotto649.") for n in sys.modules), "prior_project_import")
+    sys.meta_path.insert(0, ProjectImportBoundary())
+    allowed_files = {str(ROOT / rel) for rel in PINS} | {str(ROOT / ".git/config")}
+
+    def audit(event, args):
+        if event.startswith("socket.") or event in ("os.system", "os.exec", "os.posix_spawn", "ctypes.dlopen"):
+            # NumPy/pandas may need ctypes for their preexisting numeric libraries;
+            # dynamic-loader events therefore receive their separate path check below.
+            if event != "ctypes.dlopen":
+                raise ValidationFailure("forbidden_process_or_network")
+            library = args[0]
+            require(library is None or (isinstance(library, str) and (
+                library.startswith(str(SITE) + "/") or library.startswith("/usr/lib/")
+                or library.startswith("/System/Library/"))), "unapproved_ctypes_library")
+        if event == "subprocess.Popen":
+            require(args[0] == "/usr/bin/git" and args[3] == GIT_ENV, "forbidden_subprocess")
+        if event == "open" and isinstance(args[0], (str, bytes, os.PathLike)):
+            p = Path(os.fsdecode(args[0])).absolute()
+            if p.is_relative_to(ROOT):
+                # Python may attempt a nonexistent .pyc before falling back to
+                # verified .py source. Existing cache content remains forbidden.
+                absent_cache = (p.is_relative_to(ROOT / "src") and p.suffix == ".pyc"
+                                and not p.exists() and not p.is_symlink())
+                require(str(p) in allowed_files or absent_cache, "project_non_source_read")
+
+    sys.addaudithook(audit)
+
+
+def validate_probabilities(probabilities):
+    require(type(probabilities) is dict, "probability_not_dict")
+    require(len(probabilities) == 49 and all(type(k) is int for k in probabilities), "probability_key_types")
+    require(set(probabilities) == set(range(1, 50)), "probability_key_domain")
+    require(all(type(v) is float and math.isfinite(v) and 0.0 < v < 1.0
+                for v in probabilities.values()), "probability_value_contract")
+    require(abs(math.fsum(probabilities[n] for n in range(1, 50)) - 6.0) <= TOLERANCE, "probability_mass")
+
+
+def fixed_five(probabilities):
+    """Small synthetic oracle only; does not implement a registered selector."""
+    validate_probabilities(probabilities)
+    rank = sorted(probabilities, key=lambda n: (-probabilities[n], n))
+    columns = [[] for _ in range(5)]
+    for row in range(6):
+        for col in range(5):
+            position = row * 5 + (col if row % 2 == 0 else 4 - col)
+            columns[col].append(rank[position])
+    groups = {name: sorted(columns[j]) for j, name in enumerate(IDS)}
+    return {"ranking": rank, "top_6": rank[:6], "top_12": rank[:12],
+            "top_18": rank[:18], "top_30": rank[:30], "groups": groups,
+            "capture_ids": list(IDS), "final_combination": groups["G1"][:]}
+
+
+def verify_selection(probabilities, native_rank):
+    selected = fixed_five(probabilities)
+    rank = selected["ranking"]
+    require(rank == native_rank(probabilities), "existing_rank_mismatch")
+    require(selected["capture_ids"] == list(IDS) and list(selected["groups"]) == list(IDS), "five_capture_ids")
+    require(selected["final_combination"] == selected["groups"]["G1"], "g1_alias")
+    flattened = []
+    for j, name in enumerate(IDS):
+        group = selected["groups"][name]
+        require(group == sorted(rank[i - 1] for i in RANK_POSITIONS[j]), "snake_position_mismatch")
+        require(len(group) == 6 and len(set(group)) == 6, "six_unique_group")
+        flattened.extend(group)
+    require(len(flattened) == 30 and len(set(flattened)) == 30 and set(flattened) == set(rank[:30]), "top30_exact_partition")
+    require("Top-6" not in selected["capture_ids"] and len(selected["capture_ids"]) == 5, "no_sixth_capture")
+    return selected
+
+
+def scores(probabilities, actual):
+    validate_probabilities(probabilities)
+    require(len(actual) == 6 and len(set(actual)) == 6
+            and all(type(n) is int and 1 <= n <= 49 for n in actual), "synthetic_actual_contract")
+    brier = math.fsum((probabilities[n] - float(n in actual)) ** 2 for n in range(1, 50)) / 49.0
+    # Exact science-draft arithmetic: no clipping and no log1p substitution.
+    loss = math.fsum(-(float(n in actual) * math.log(probabilities[n])
+                      + (1.0 - float(n in actual)) * math.log(1.0 - probabilities[n]))
+                     for n in range(1, 50)) / 49.0
+    require(math.isfinite(brier) and math.isfinite(loss), "score_finite")
+    return brier, loss
+
+
+def bin_index(value):
+    require(type(value) is float and math.isfinite(value) and 0.0 < value < 1.0, "bin_probability_contract")
+    for j in range(10):
+        if EDGES[j] <= value and (value < EDGES[j + 1] or (j == 9 and value <= EDGES[j + 1])):
+            return j
+    raise ValidationFailure("bin_missing")
+
+
+def calibration(probabilities, actual):
+    validate_probabilities(probabilities)
+    buckets = [[] for _ in range(10)]
+    for n in range(1, 50):
+        buckets[bin_index(probabilities[n])].append((probabilities[n], int(n in actual)))
+    rows = []
+    for j, bucket in enumerate(buckets):
+        count = len(bucket)
+        mass = math.fsum(p for p, _ in bucket)
+        observed = sum(y for _, y in bucket)
+        mean_p = mass / count if count else None
+        frequency = observed / count if count else None
+        rows.append({"bin": j, "count": count, "probability_sum": mass,
+                     "observed_sum": observed, "mean_probability": mean_p,
+                     "frequency": frequency, "gap": frequency - mean_p if count else None})
+    return rows
+
+
+def expected_rejection(call, code):
+    try:
+        call()
+    except ValidationFailure:
+        return code
+    raise ValidationFailure("malformed_input_accepted_" + code)
+
+
+def contract_cases(np, native_rank):
+    fair = {n: 6.0 / 49.0 for n in range(1, 50)}
+    selected = verify_selection(fair, native_rank)
+    require(selected["ranking"] == list(range(1, 50)), "exact_tie_order")
+    # A one-ULP difference must remain a difference; no epsilon ties.
+    changed = fair.copy()
+    changed[49] = math.nextafter(changed[49], 1.0)
+    require(verify_selection(changed, native_rank)["ranking"][0] == 49, "ulp_tie_not_preserved")
+    bad = []
+    mutations = {
+        "missing_key": lambda p: p.pop(49),
+        "extra_key": lambda p: p.update({50: 0.1}),
+        "bool_key": lambda p: (p.pop(1), p.update({True: 6.0 / 49.0})),
+        "numpy_key": lambda p: (p.pop(1), p.update({np.int64(1): 6.0 / 49.0})),
+        "string_key": lambda p: (p.pop(1), p.update({"1": 6.0 / 49.0})),
+        "zero": lambda p: p.update({1: 0.0}),
+        "one": lambda p: p.update({1: 1.0}),
+        "negative": lambda p: p.update({1: -0.1}),
+        "nan": lambda p: p.update({1: float("nan")}),
+        "infinity": lambda p: p.update({1: float("inf")}),
+        "native_integer_value": lambda p: p.update({1: 1}),
+        "bool_value": lambda p: p.update({1: True}),
+        "numpy_float_value": lambda p: p.update({1: np.float64(6.0 / 49.0)}),
+        "mass": lambda p: p.update({1: p[1] + 1e-6}),
+    }
+    for name, mutate in mutations.items():
+        malformed = fair.copy()
+        mutate(malformed)
+        bad.append(expected_rejection(lambda: fixed_five(malformed), name))
+    bad.append(expected_rejection(lambda: fixed_five(list(fair.items())), "not_dict"))
+    a = set(range(1, 7))
+    b = set(range(44, 50))
+    fair_scores = scores(fair, a)
+    require(fair_scores == scores(fair, b), "fair_label_symmetry")
+    require(abs(fair_scores[0] - float(Fraction(258, 2401))) <= TOLERANCE, "fair_brier_oracle")
+    fair_loss = -(6.0 * math.log(6.0 / 49.0) + 43.0 * math.log(43.0 / 49.0)) / 49.0
+    require(abs(fair_scores[1] - fair_loss) <= TOLERANCE, "fair_logloss_oracle")
+    endpoint_scores = []
+    for edge in (math.nextafter(0.0, 1.0), math.nextafter(1.0, 0.0)):
+        p = {n: (6.0 - edge) / 48.0 for n in range(1, 50)}
+        p[1] = edge
+        endpoint_scores.append({"endpoint_hex": edge.hex(), "actual_contains_endpoint": scores(p, a),
+                                "actual_excludes_endpoint": scores(p, b)})
+    boundary_count = 0
+    for j in range(1, 10):
+        edge = EDGES[j]
+        require(bin_index(math.nextafter(edge, 0.0)) == j - 1, "bin_left_neighbor")
+        require(bin_index(edge) == j, "bin_exact_boundary")
+        require(bin_index(math.nextafter(edge, 1.0)) == j, "bin_right_neighbor")
+        boundary_count += 3
+    require(bin_index(math.nextafter(0.0, 1.0)) == 0 and bin_index(math.nextafter(1.0, 0.0)) == 9, "bin_open_endpoints")
+    for j, value in enumerate((0.0, 1.0, -0.1, float("nan"), float("inf"), 1, True, np.float64(0.1))):
+        expected_rejection(lambda: bin_index(value), "invalid_bin_" + str(j))
+    rows = calibration(fair, a)
+    require(sum(row["count"] for row in rows) == 49 and sum(row["observed_sum"] for row in rows) == 6, "calibration_totals")
+    require(rows[1]["count"] == 49 and abs(rows[1]["gap"]) <= TOLERANCE, "fair_calibration")
+    require(all(row["count"] or (row["probability_sum"] == 0.0 and row["observed_sum"] == 0
+                and row["mean_probability"] is None and row["frequency"] is None and row["gap"] is None)
+                for row in rows), "empty_bin_nulls")
+    return {"malformed_selector_rejections": bad, "exact_tie_and_ulp_checks": "pass",
+            "fair_scores": fair_scores, "finite_endpoint_scores": endpoint_scores,
+            "calibration_boundary_checks": boundary_count + 2, "invalid_bin_rejections": 8,
+            "fair_calibration": rows, "capture_ids": list(IDS), "g1_alias": True,
+            "top6_is_diagnostic_only": True}
+
+
+def fake_history(Draw, count, pattern):
+    start = date(2040, 1, 1)
+    history = []
+    counts = {n: 0 for n in range(1, 50)}
+    for row in range(count):
+        values = tuple(range(1, 7)) if pattern == "concentrated" else tuple(1 + (row + j) % 49 for j in range(6))
+        if pattern == "balanced_mirrored":
+            values = tuple(50 - n for n in values)
+        require(len(set(values)) == 6 and all(type(n) is int and 1 <= n <= 49 for n in values), "fake_draw_contract")
+        history.append(Draw(start + timedelta(days=row), values))
+        for n in values:
+            counts[n] += 1
+    target = start + timedelta(days=count)
+    require(all(d.draw_date < target and d.draw_date.year >= 2040 for d in history), "synthetic_date_boundary")
+    require(sum(counts.values()) == count * 6, "synthetic_count_mass")
+    return history, target, counts
+
+
+def fixture_cases(Draw, LongFrequencyModel, native_rank):
+    cases = (("N1_bottom_layer_only", 1, "balanced"), ("N300", 300, "balanced"),
+             ("N343_balanced49x7", 343, "balanced"), ("N344_balanced_plus_one", 344, "balanced"),
+             ("N4444_concentrated", 4444, "concentrated"), ("N4444_balanced", 4444, "balanced"),
+             ("N344_label_mirrored", 344, "balanced_mirrored"))
+    results = []
+    vectors = {}
+    for name, count, pattern in cases:
+        history, target, counts = fake_history(Draw, count, pattern)
+        p = LongFrequencyModel().predict(history, target)
+        validate_probabilities(p)
+        selected = verify_selection(p, native_rank)
+        rational = {n: Fraction(49 * counts[n] + 1500, 49 * (count + 250)) for n in range(1, 50)}
+        require(sum(rational.values(), Fraction(0)) == 6, "rational_mass")
+        error = max(abs(p[n] - float(rational[n])) for n in range(1, 50))
+        require(error <= TOLERANCE, "existing_pipeline_rational_mismatch")
+        # Count ties remain exact, and the ideal count order agrees with the actual ranking.
+        require(selected["ranking"] == sorted(counts, key=lambda n: (-counts[n], n)), "count_rank_mismatch")
+        classes = {}
+        for n in range(1, 50):
+            classes.setdefault(counts[n], set()).add(p[n].hex())
+        require(all(len(values) == 1 for values in classes.values()), "equal_count_float_ties")
+        if count == 343:
+            require(set(counts.values()) == {42} and selected["ranking"] == list(range(1, 50)), "balanced_exact_tie_fixture")
+        if count == 344:
+            require(sorted(counts.values()) == [42] * 43 + [43] * 6, "balanced_plus_one_fixture")
+        raw = b"".join(struct.pack(">d", p[n]) for n in range(1, 50))
+        results.append({"id": name, "n": count, "pattern": pattern,
+                        "training_start": history[0].draw_date.isoformat(),
+                        "training_cutoff": history[-1].draw_date.isoformat(), "synthetic_target": target.isoformat(),
+                        "max_absolute_rational_error": error,
+                        "mass_error": abs(math.fsum(p[n] for n in range(1, 50)) - 6.0),
+                        "min_probability": min(p.values()), "max_probability": max(p.values()),
+                        "ordered_binary64_big_endian_vector_sha256": digest(raw),
+                        "ordered_float_hex_vector_sha256": digest(canonical([[n, p[n].hex()] for n in range(1, 50)])),
+                        "synthetic_selection_sha256": digest(canonical(selected)),
+                        "count_histogram": [[c, len(v)] for c, v in sorted((c, [n for n in counts if counts[n] == c]) for c in set(counts.values()))],
+                        "minimum_300_formal_gate_exercised": False})
+        vectors[name] = p
+    direct = vectors["N344_balanced_plus_one"]
+    mirror = vectors["N344_label_mirrored"]
+    permutation_error = max(abs(direct[n] - mirror[50 - n]) for n in range(1, 50))
+    require(permutation_error <= TOLERANCE, "synthetic_label_permutation")
+    return {"fixtures": results, "max_observed_rational_error": max(r["max_absolute_rational_error"] for r in results),
+            "max_observed_mass_error": max(r["mass_error"] for r in results),
+            "label_permutation_error": permutation_error}
+
+
+def main():
+    require(len(sys.argv) == 1, "arguments_forbidden")
+    # A cleared-env stdlib-only Darwin probe observed precisely this added name.
+    # Its value is never inspected or forwarded to the explicitly cleared Git env.
+    darwin_names = {"__CF_USER_TEXT_ENCODING"} if sys.platform == "darwin" else set()
+    require(set(os.environ) <= ({"PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "TZ", "OMP_NUM_THREADS",
+                                 "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"}
+                                | darwin_names), "unscrubbed_environment")
+    require(sys.flags.isolated == 1 and sys.flags.no_site == 1 and sys.flags.dont_write_bytecode == 1,
+            "required_I_S_B_flags")
+    require(sys.executable == str(PYTHON) and PYTHON.resolve() == PYTHON_REAL
+            and digest(PYTHON_REAL.read_bytes()) == PYTHON_SHA, "frozen_interpreter_identity")
+    require(sys.implementation.name == "cpython" and platform.python_version() == "3.12.11"
+            and sys.byteorder == "little" and platform.machine() == "arm64", "numeric_runtime_identity")
+    require((sys.float_info.radix, sys.float_info.mant_dig, sys.float_info.max_exp) == (2, 53, 1024), "binary64_identity")
+    require(SITE.resolve() == SITE and SITE.is_dir(), "frozen_site_identity")
+    require(not PROOF.exists() and not PROOF.is_symlink() and not LOG.exists() and not LOG.is_symlink(), "external_output_exists")
+    logfd = os.open(LOG, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+    result = {"schema": "lotto649-unregistered-synthetic-engineering-check-v1",
+              "author_agent": "/root/v13_exception_spec_review",
+              "author_session": "successor-probability-synthetic-authoring-20260913",
+              "independent_review": False, "status": "running", "exit_code": None,
+              "script_sha256": digest(Path(__file__).read_bytes()),
+              "started_at": datetime.now(timezone.utc).isoformat(),
+              "predeclared_absolute_tolerance": TOLERANCE,
+              "scope": "fabricated 2040+ fixtures and closed mathematical equality checks only",
+              "historical_predictions": 0, "new_registered_model": False,
+              "minimum_300_coordinator_implemented_or_verified": False,
+              "future_runtime_closure_proven": False, "worker_or_authority_executed": False}
+    before = None
+    try:
+        os.write(logfd, canonical({"event": "synthetic_validation_started", "script_sha256": result["script_sha256"]}))
+        os.fsync(logfd)
+        before = snapshot_source()
+        result["source_before"] = before
+        install_engineering_boundary()
+        sys.path.insert(0, str(ROOT / "src"))
+        sys.path.append(str(SITE))  # -S remains in force: no site processing or .pth execution.
+        import numpy as np
+        import pandas as pd
+        require(np.__version__ == "2.3.5" and pd.__version__ == "2.3.3", "numeric_dependency_versions")
+        require(Path(np.__file__).resolve().is_relative_to(SITE) and Path(pd.__file__).resolve().is_relative_to(SITE), "numeric_dependency_origins")
+        from lotto649.domain import Draw
+        from lotto649.models.baselines import LongFrequencyModel
+        from lotto649.optimizer import rank_numbers
+        result["fixture_validation"] = fixture_cases(Draw, LongFrequencyModel, rank_numbers)
+        result["contract_validation"] = contract_cases(np, rank_numbers)
+        imported = {name: str(Path(module.__file__).resolve()) for name, module in sys.modules.copy().items()
+                    if name == "lotto649" or name.startswith("lotto649.")}
+        require(imported == {name: str(ROOT / rel) for name, rel in MODULES.items()}, "project_import_origin_or_closure")
+        result["project_imports"] = imported
+        result["dependencies_checked"] = {"numpy": np.__version__, "pandas": pd.__version__}
+        result["status"] = "pass"
+        result["exit_code"] = 0
+    except BaseException as exc:
+        result["status"] = "fail"
+        result["exit_code"] = 1
+        result["failure_type"] = type(exc).__name__
+        result["failure_code"] = str(exc) if isinstance(exc, ValidationFailure) else "unexpected_exception_details_suppressed"
+    finally:
+        if before is not None:
+            try:
+                after = snapshot_source()
+                result["source_after"] = after
+                require(after == before, "source_snapshot_drift")
+            except BaseException as exc:
+                result["status"] = "fail"
+                result["exit_code"] = 1
+                result["final_source_check_failure"] = str(exc) if isinstance(exc, ValidationFailure) else type(exc).__name__
+        result["finished_at"] = datetime.now(timezone.utc).isoformat()
+        os.write(logfd, canonical({"event": "synthetic_validation_finished", "status": result["status"], "exit_code": result["exit_code"]}))
+        os.fsync(logfd)
+        os.close(logfd)
+        result["log_sha256"] = digest(LOG.read_bytes())
+        prooffd = os.open(PROOF, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(prooffd, "wb") as stream:
+            stream.write(canonical(result))
+            stream.flush()
+            os.fsync(stream.fileno())
+    print(json.dumps({"status": result["status"], "proof": str(PROOF), "log": str(LOG)}, sort_keys=True))
+    return result["exit_code"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

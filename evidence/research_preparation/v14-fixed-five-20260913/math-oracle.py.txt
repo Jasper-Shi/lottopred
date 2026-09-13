@@ -1,0 +1,64 @@
+"""Closed combinatorial arithmetic only: no data, model, forecast, or simulation."""
+from itertools import product
+from math import comb
+from fractions import Fraction
+from pathlib import Path
+import hashlib,json
+N=comb(49,6)
+def coef_mul(a,b,cap=6):
+ c=[0]*(min(cap,len(a)+len(b)-2)+1)
+ for i,x in enumerate(a):
+  for j,y in enumerate(b):
+   if i+j<=cap:c[i+j]+=x*y
+ return c
+def bounded_pool(m):
+ p=[1]
+ for _ in range(5):p=coef_mul(p,[comb(6,h) for h in range(m+1)])
+ return p+[0]*(7-len(p))
+counts=[[0]*7 for _ in range(7)]
+prior=[0]*7
+for m in range(7):
+ now=bounded_pool(m)
+ for q in range(7):counts[q][m]=now[q]-prior[q]
+ prior=now
+assert all(sum(counts[q])==comb(30,q) for q in range(7))
+weights=[sum(counts[q][m]*comb(19,6-q) for q in range(7)) for m in range(7)]
+assert weights==[27132,5093064,7564500,1230100,67725,1290,5] and sum(weights)==N
+# Independent joint-category enumeration; no random draws or label choices.
+enum=[0]*7;pool=[[0]*7 for _ in range(7)]
+for hs in product(range(7),repeat=5):
+ q=sum(hs)
+ if q>6:continue
+ mass=1
+ for h in hs:mass*=comb(6,h)
+ pool[q][max(hs)]+=mass;enum[max(hs)]+=mass*comb(19,6-q)
+assert enum==weights and pool==counts
+A=sum(m*w for m,w in enumerate(weights));B=sum(m*m*w for m,w in enumerate(weights));mu=Fraction(A,N);var=Fraction(B,N)-mu*mu
+conditional=[]
+for q,w in enumerate(counts):
+ den=comb(30,q);u=Fraction(sum(m*x for m,x in enumerate(w)),den);v=Fraction(sum(m*m*x for m,x in enumerate(w)),den)-u*u
+ conditional.append({'q':q,'denominator':den,'weights_m0_through_m6':w,'mean_fraction':str(u),'mean':float(u),'variance_fraction':str(v)})
+# Unconditional mixture is also independently cross-checked from category q.
+assert sum(comb(30,q)*comb(19,6-q) for q in range(7))==N
+horizons={};co=[1]
+for n in range(1,628):
+ fresh=[0]*(len(co)+6)
+ for k,x in enumerate(co):
+  for m,w in enumerate(weights):fresh[k+m]+=x*w
+ co=fresh
+ if n not in (104,313,314,627):continue
+ den=N**n;assert sum(co)==den
+ tail=0;critical=None;at_num=None;below_num=None
+ for k in range(6*n,-1,-1):
+  tail+=co[k]
+  if 20*tail<=den:critical=k;at_num=tail
+  elif critical is not None:below_num=tail;break
+ assert critical is not None and 20*at_num<=den and 20*below_num>den
+ canonical_coeff=('\n'.join(hex(x) for x in co)+'\n').encode()
+ capture_num=den-(N-5)**n
+ horizons[str(n)]={'n':n,'coefficient_count':len(co),'coefficient_hex_lines_sha256':hashlib.sha256(canonical_coeff).hexdigest(),'denominator_hex':hex(den),'primary_sum_critical_alpha_0_05':critical,'upper_tail_at_critical_numerator_hex':hex(at_num),'upper_tail_at_critical':at_num/den,'upper_tail_below_critical_numerator_hex':hex(below_num),'upper_tail_below_critical':below_num/den,'mean_sum_fraction':str(n*mu),'expected_exact6_count_fraction':str(Fraction(5*n,N)),'at_least_one_exact6_fixed_complete_horizon':capture_num/den,'at_least_one_exact6_numerator_hex':hex(capture_num)}
+raw=Path('/private/tmp/v13-successor-modular-design-before-v13-outcomes-20260913.md').read_bytes();assert hashlib.sha256(raw).hexdigest()=='687889c948d9351c012a4e291c905ee4d469d87a5d8e25f2ea34cc7d5edb4e89'
+out={'classification':'unregistered_closed_math_draft_oracle_no_empirical_data','author_agent_id':'/root/v13_exception_spec_review','author_session_id':'v13-successor-five-group-math-authoring-20260913','prior_design_sha256':hashlib.sha256(raw).hexdigest(),'null_draw_space':N,'outside_labels':19,'group_count':5,'labels_per_group':6,'weights_m0_through_m6':weights,'mean_numerator_unreduced':A,'second_moment_numerator_unreduced':B,'mean_fraction':str(mu),'mean':float(mu),'variance_fraction':str(var),'variance':float(var),'conditional_same_pool':conditional,'per_draw_tail_ge3':sum(weights[3:])/N,'per_draw_tail_ge4':sum(weights[4:])/N,'per_draw_tail_ge5':sum(weights[5:])/N,'per_draw_exact6_fraction':str(Fraction(5,N)),'horizons':horizons,'models_or_parameters_selected':False,'history_or_results_read':False,'simulation_or_prediction_performed':False,'registered_version_assigned':False,'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+p=Path('/private/tmp/v13-successor-five-group-math-oracle-v2-20260913.result.json')
+with p.open('xb') as f:f.write(json.dumps(out,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False).encode()+b'\n')
+print(json.dumps({'weights':weights,'mean':float(mu),'variance':float(var),'critical_sums':{n:x['primary_sum_critical_alpha_0_05'] for n,x in horizons.items()},'result_path':str(p),'result_sha256':hashlib.sha256(p.read_bytes()).hexdigest()},sort_keys=True))

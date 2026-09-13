@@ -1,5 +1,57 @@
 # Model Research Protocol
 
+## V14 limited five-group research contract
+
+At its registration checkpoint, [V14](experiments/V14_long_frequency_fixed_five_disjoint_groups.md)
+is **REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED**.
+Its [scientific basis](research/V14_long_frequency_fixed_five_disjoint_groups_basis.md)
+freezes the existing LongFrequencyModel probability calculation and one exact
+five-group Top-30 selection rule. It does not establish a new probability
+signal, joint six-number probability or future winning advantage. All 627
+2020-2025 targets remain consumed historical diagnostics.
+
+For this one registered experiment, the random/control benchmark requirement
+has this explicit limited form:
+
+- The global uniform-label permutation is integrated analytically, preserving
+  five groups, six numbers per group, coverage 30 and every zero-overlap pair.
+  Its exact integer distribution is the sole primary maximum-hit comparison.
+- The same-pool uniform permutation has an exact conditional distribution given
+  the frozen Top-30 hit count. It diagnoses group arrangement without generating
+  replacement groups and provides no extra significance or selection gate.
+- Fair constant probability 6/49 supplies Brier, Log Loss and calibration
+  references; fair Top-K expectations remain descriptive ranking benchmarks.
+- No empirical RandomBaseline, independent V1 ensemble or end-to-end perturbed-
+  history experiment is executed. The analytic controls must not be labeled as
+  those empirical runs, proof of their pipeline behavior or superiority to an
+  unrun V1 ensemble. The inherited V1 probability source is not an independent
+  comparator. Equal opportunity counts, not five groups versus one group, define
+  the relevant fair comparison.
+
+This exception applies only to V14's explicit benchmark form. General benchmark
+requirements and all previous registrations remain unchanged. Synthetic failure
+checks and independent post-run audits are still required; exact mathematics
+cannot substitute for them. The local fixed-algorithm p-value does not correct
+for the adaptive, repeated-history, whole-Goal model search, and the 12 intervals
+are descriptive. No best year, group or secondary endpoint can replace the
+single primary aggregate test.
+
+All five G1-G5 groups must be frozen before the target is revealed; Top-6 is
+not a sixth capture ticket. A first valid group 6/6 stops before the next
+forecast after the complete current cohort is scored. Report its fixed group
+ID; legacy final_combination/final_6_hits stay aliases of G1/H1. The user-authorized
+multiple-group Goal extension requires this precise historical claim, complete
+independent chronology/leakage/immutability/Git/runtime/lease audit, frozen final
+evidence and one confirmed default-route Chinese notification. At most one SMTP
+attempt is allowed; failure or uncertainty is terminal, and no Goal completion
+may be inferred from a claim or an unconfirmed delivery.
+
+The worker's internally audited fixed-horizon numbers are provisional until the
+separate independent audit passes. A failed external audit records an immutable
+Archive/null-inference closure while preserving original intermediate numbers;
+it cannot rewrite the worker report or authorize recomputation. A complete
+negative result is a valid research outcome, not completion of the capture Goal.
+
 ## V13 closed after its sole completed diagnostic
 
 V13 `v13.0.0` completed all 627 consumed historical targets with **Reject**,
