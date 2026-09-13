@@ -31,9 +31,10 @@ V12 candidate remains a separate narrow, falsifiable hypothesis; its formula,
 seed, controls and gates were frozen before these V1 results and remain unchanged.
 V12.0.1 subsequently received its own authorization in PR #44, but its sole
 invocation failed before any claim or forecast and is frozen against retry.
-Further execution requires a new operational registration and separate
-authorization, with the unchanged scientific gates. V1's completion grants no
-V12 authority or result. The broader 6/6 Goal is not complete.
+The new historical-only R3 registration is V12.0.2; implementation and
+separate authorization remain outstanding, with unchanged scientific gates.
+V1's completion grants no V12 authority or result. The broader 6/6 Goal is not
+complete.
 
 Keep these lanes separate in code, reports, and claims:
 
@@ -58,8 +59,9 @@ processed CSV is prohibited for new evidence. The read consumer is integrated,
 but the generic historical/backtest gate remains closed. The new V1 diagnostic
 was authorized only by its own reviewed registration/implementation merge.
 V12.0.1's distinct historical `M_A_H2` was merged in PR #44, followed by a
-failed startup that must not be retried. A future operational version requires
-new registration and authorization, independently of any future live canary.
+failed startup that must not be retried. R3 registers V12.0.2 without
+implementation or execution authority; its new historical authorization remains
+independent of any future live canary.
 The old Stage-1
 data/live runtime bytes remain present only pending the D0 all-false reseal and
 are not dispatch authority. The bounded
@@ -195,12 +197,28 @@ GitHub message-representation defect. No scientific rejection is inferred.
 The fixed live windows also expired and have a separate
 [`superseded_unexecuted` closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
 
-The next historical work is a new, historical-only operational registration
-that preserves H12's formula, core digest, controls, dates, seed, inference and
-ten gates. It must define strict API representation checks and durable
-sanitized pre-POST receipts before implementation or execution. Neither the
-obsolete PR #41 source nor the failed V12.0.1 route grants another attempt.
-This preparation is independent of future draws and live-canary success.
+The current registered operation is
+[`V12.0.2 historical operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md).
+
+**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+
+It preserves H12's formula, statistical fingerprint, core digest, controls,
+dates, seed, inference and ten gates. R3 defines strict API representation checks and durable
+sanitized startup receipts, with complete read-only authorization validation
+before creating any receipt. It has no live lane.
+
+Next, implement only the six registered I3 paths using source, fixed Git
+metadata, synthetic fixtures and closed-form oracles. Obtain new independent
+Standards/Spec reviews and successful exact-head CI, ordinarily merge I3 into
+protected main, freeze its closure, then prepare a new auth-JSON-only source and
+ordinary protected-main authorization merge. Only that merge and the fresh
+V12.0.2 lease can authorize one historical run. The closure and core must match
+at I3, `K_H3`, `A_H_s3` and `M_A_H3`. Obsolete PR #41 is closed and unmerged;
+neither its source nor the failed V12.0.1 route grants another attempt. PR #45
+preserves the incident and live closure at normal merge
+`3015078e251bdcbb92719e1b291b1807525fef16`.
+
+This historical work is independent of D0, future draws and live-canary success.
 No V12 forecast, score, report, live role or prospective cohort exists at this
 checkpoint. The broader 6/6 Goal remains incomplete.
 

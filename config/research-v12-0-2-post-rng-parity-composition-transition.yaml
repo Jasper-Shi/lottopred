@@ -1,0 +1,824 @@
+{
+  "artifact_paths": {
+    "historical_attempt_ledger": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.ledger.jsonl",
+    "historical_claim": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.claim",
+    "historical_report_commit": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json",
+    "historical_report_commit_staging": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json.staging",
+    "historical_report_json": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.json",
+    "historical_report_json_staging": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.json.staging",
+    "historical_report_markdown": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.md",
+    "historical_report_markdown_staging": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.md.staging",
+    "historical_startup_journal": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.startup.jsonl"
+  },
+  "authorization_topology": {
+    "A_H_s3": {
+      "authority": false,
+      "diff": "exact_authorization_JSON_addition_only",
+      "sole_parent": "K_H3"
+    },
+    "I3": "complete_independently_reviewed_six_A_path_source_and_normal_protected_main_implementation_merge",
+    "K_H3": "exact_protected_remote_main_containing_R3_and_reviewed_I3",
+    "M_A_H3": {
+      "authority": "only_if_exact_protected_remote_main_HEAD_and_clean_execution_clone_HEAD",
+      "first_parent": "K_H3",
+      "mode": "ordinary_reviewed_PR_merge",
+      "second_parent": "A_H_s3",
+      "tree": "identical_to_A_H_s3"
+    },
+    "excluded_prerequisites": [
+      "D0",
+      "W2",
+      "S2",
+      "C2",
+      "M_C2",
+      "K_L2",
+      "A_L2",
+      "future_draw_outcome",
+      "live_canary_success"
+    ],
+    "future_self_referential_SHA_fields": "prohibited",
+    "source_or_rebased_squashed_cherry_picked_authority": "prohibited"
+  },
+  "canonical_command": [
+    "python3.12",
+    "tools/run_v12_0_2_historical.py",
+    "--consume-v12-0-2-once"
+  ],
+  "complete_R1_normative_sources": {
+    "config/research-v12-post-rng-parity-composition-transition.yaml": {
+      "authority_commit": "0af20fc41fc5aaa0879dada0a258797a8bc14e20",
+      "bytes": 16074,
+      "sha256": "b73a010bb69a82de9c39088ca8024a7652ea7ddf317da3676b55d0c6bfbe16bb"
+    },
+    "docs/experiments/V12_post_rng_parity_composition_transition.md": {
+      "authority_commit": "0af20fc41fc5aaa0879dada0a258797a8bc14e20",
+      "bytes": 29873,
+      "sha256": "277a7768c6001f921d7ae0308e66b0cd1fed3a954c675632c3ba34b02051814e"
+    },
+    "docs/research/V12_post_rng_parity_composition_transition_basis.md": {
+      "authority_commit": "0af20fc41fc5aaa0879dada0a258797a8bc14e20",
+      "bytes": 42896,
+      "sha256": "1990ced0d082763cac9a494c25ceabfc725b08863cb30fc5460d54bcac8a8d8a"
+    },
+    "evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json": {
+      "authority_commit": "0af20fc41fc5aaa0879dada0a258797a8bc14e20",
+      "bytes": 21416,
+      "sha256": "4406bd25ee82195bff7a97b258885cb3bb3c1a8fb829f383c5e3c1616e169170"
+    }
+  },
+  "execution": {
+    "automatic": false,
+    "canonical_arguments": "no_caller_overrides",
+    "future_historical_authority": "only_normal_M_A_H3_at_protected_remote_main_HEAD",
+    "live_lane": "none",
+    "pre_authorization": "prohibited"
+  },
+  "execution_authorizations": {
+    "historical": {
+      "path": "evidence/research_authorizations/v12-post-rng-parity-composition-transition-v3-historical.json",
+      "state_at_R3": "absent"
+    }
+  },
+  "expected_implementation_paths": [
+    "src/lotto649/v12_0_2_evidence.py",
+    "src/lotto649/v12_0_2_registered_attempt.py",
+    "tools/run_v12_0_2_historical.py",
+    "tests/test_v12_0_2_registered_attempt.py",
+    "tests/test_v12_0_2_evidence_equivalence.py",
+    "tests/fixtures/v12_0_2_git_commit_projection.json"
+  ],
+  "experiment": {
+    "id": "V12_0_2_historical_operational_rebinding",
+    "model_version": "v12.0.2",
+    "registration_seal": "evidence/research_registrations/v12-post-rng-parity-composition-transition-v3.json",
+    "scientific_family": "V12_post_rng_parity_composition_transition",
+    "seed": 649,
+    "status": "registered_not_implemented_not_authorized_not_scored"
+  },
+  "git_commit_representation_contract": {
+    "GET_binding": "exact_tree_single_parent_author_committer_dates_message_and_unsigned_verification",
+    "GET_message": "exact_canonical_body_no_trailing_LF",
+    "GET_metadata": "exact_registered_shape_and_bound_URLs_no_opaque_metadata_as_authority_fixture_must_not_change_R3_rules",
+    "GET_shape": {
+      "author": "JSON_object_exact_name_email_date_equal_registered_identity_and_expected_date",
+      "committer": "JSON_object_identical_to_expected_author",
+      "html_url": "https://github.com/Jasper-Shi/lottopred/commit/{expected_oid}",
+      "identity_exact_keys": [
+        "name",
+        "email",
+        "date"
+      ],
+      "message": "JSON_string_exact_C_without_LF",
+      "node_id": "nonempty_string_non_authoritative",
+      "parent_exact_keys": [
+        "sha",
+        "url",
+        "html_url"
+      ],
+      "parent_html_url": "https://github.com/Jasper-Shi/lottopred/commit/{M_A_H3}",
+      "parent_sha": "JSON_string_exact_M_A_H3_oid",
+      "parent_url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/{M_A_H3}",
+      "parents": "JSON_array_exactly_one_parent_object",
+      "sha": "JSON_string_exact_expected_local_raw_commit_oid",
+      "top_level_exact_keys": [
+        "sha",
+        "node_id",
+        "url",
+        "html_url",
+        "author",
+        "committer",
+        "tree",
+        "message",
+        "parents",
+        "verification"
+      ],
+      "top_level_optional_keys": [],
+      "tree": "JSON_object_exact_sha_url_sha_equals_expected_M_A_H3_tree_oid",
+      "tree_exact_keys": [
+        "sha",
+        "url"
+      ],
+      "tree_url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/trees/{expected_tree_oid}",
+      "unknown_nested_keys": "reject_at_every_depth",
+      "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/{expected_oid}",
+      "verification": "JSON_object_exact_GET_unsigned_verification_no_optional_keys",
+      "verification_exact_keys": [
+        "verified",
+        "reason",
+        "signature",
+        "payload",
+        "verified_at"
+      ]
+    },
+    "GET_unsigned_verification": {
+      "payload": null,
+      "reason": "unsigned",
+      "signature": null,
+      "verified": false,
+      "verified_at": null
+    },
+    "JSON_validation": "reject_duplicate_keys_nonfinite_values_wrong_types_malformed_or_unregistered_structures",
+    "POST_commit_request_shape": {
+      "author": "exact_identity_object_with_name_email_date_only",
+      "committer": "exact_identity_object_identical_to_author",
+      "message": "JSON_string_exact_C_plus_one_LF",
+      "optional_keys": [],
+      "parents": "JSON_array_exactly_one_JSON_string_equal_M_A_H3",
+      "required_keys": [
+        "tree",
+        "parents",
+        "author",
+        "committer",
+        "message"
+      ],
+      "signature": "prohibited_key",
+      "tree": "JSON_string_exact_expected_tree_oid"
+    },
+    "POST_commit_response_shape": {
+      "extra_or_malformed_keys": "reject",
+      "message_identity_proof": "none_GET_is_the_sole_fixed_message_projection_check",
+      "message_if_present": "JSON_string_only_non_authoritative_not_compared_to_C_or_raw_message_not_logged",
+      "optional_keys": [
+        "node_id",
+        "url",
+        "html_url",
+        "author",
+        "committer",
+        "tree",
+        "message",
+        "parents",
+        "verification"
+      ],
+      "present_optional_metadata": "same_exact_nested_GET_shape_types_and_bound_values_except_message",
+      "required_keys": [
+        "sha"
+      ],
+      "sha": "JSON_string_exact_expected_local_raw_commit_oid"
+    },
+    "POST_message": "canonical_body_plus_exactly_one_LF",
+    "POST_ref_request_shape": {
+      "optional_keys": [],
+      "ref": "refs/heads/v12-consumption-v12.0.2",
+      "required_keys": [
+        "ref",
+        "sha"
+      ],
+      "sha": "JSON_string_exact_expected_local_raw_commit_oid"
+    },
+    "POST_ref_response_and_GET_ref_shape": {
+      "node_id": "nonempty_JSON_string_non_authoritative_never_logged_or_used_as_identity",
+      "object": {
+        "sha": "JSON_string_exact_expected_local_raw_commit_oid",
+        "type": "commit",
+        "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/commits/{expected_oid}"
+      },
+      "object_optional_keys": [],
+      "object_required_keys": [
+        "sha",
+        "type",
+        "url"
+      ],
+      "optional_keys": [],
+      "ref": "refs/heads/v12-consumption-v12.0.2",
+      "required_keys": [
+        "ref",
+        "node_id",
+        "url",
+        "object"
+      ],
+      "url": "https://api.github.com/repos/Jasper-Shi/lottopred/git/refs/heads/v12-consumption-v12.0.2"
+    },
+    "POST_returned_oid_and_GET_oid": "each_exactly_equal_locally_computed_raw_commit_SHA1",
+    "canonical_body": "finite_sorted_compact_ensure_ascii_false_UTF-8_JSON_no_LF",
+    "canonical_body_exact_keys": [
+      "authorization_seal_sha256",
+      "canonical_command",
+      "execution_authority_M_A",
+      "nonce_hex",
+      "schema_version"
+    ],
+    "canonical_body_schema": "lotto649-v12-consumption-lease-v1",
+    "canonical_body_shape": {
+      "optional_keys": [],
+      "properties": {
+        "authorization_seal_sha256": "exact_validated_authorization_JSON_SHA256_lowercase_64_hex",
+        "canonical_command": [
+          "python3.12",
+          "tools/run_v12_0_2_historical.py",
+          "--consume-v12-0-2-once"
+        ],
+        "execution_authority_M_A": "exact_validated_M_A_H3_lowercase_40_hex",
+        "nonce_hex": "fresh_OS_random_32_bytes_lowercase_64_hex",
+        "schema_version": "lotto649-v12-consumption-lease-v1"
+      },
+      "required_keys": [
+        "authorization_seal_sha256",
+        "canonical_command",
+        "execution_authority_M_A",
+        "nonce_hex",
+        "schema_version"
+      ]
+    },
+    "classification": "content_addressed_OID_proof_with_exact_registered_API_projection",
+    "identities": {
+      "author_and_committer_email": "lotto649-v12-lease@users.noreply.github.com",
+      "author_and_committer_name": "LOTTO649 V12 Consumption Lease"
+    },
+    "mismatch": "terminal_before_createRef_claim_history_forecast_or_outcome",
+    "official_source_limits": [
+      "https://docs.github.com/en/rest/git/commits",
+      "https://docs.github.com/en/rest/commits/commits#get-a-commit",
+      "https://docs.github.com/en/rest/git/blobs#get-a-blob"
+    ],
+    "parents": "sole_M_A_H3",
+    "projection_evidence_scope": "fixed_existing_source_commit_incident_observation_not_a_universal_or_permanent_GitHub_API_guarantee",
+    "raw_commit_sha1": "SHA1(commit_SP_decimal_byte_length_NUL_raw_commit_bytes)",
+    "raw_commit_sha256": "SHA256(raw_commit_bytes)",
+    "raw_headers": {
+      "exact_order": [
+        "tree",
+        "parent",
+        "author",
+        "committer"
+      ],
+      "extra_headers": "prohibited",
+      "signature": "prohibited"
+    },
+    "raw_message": "canonical_body_plus_exactly_one_LF",
+    "remote_raw_bytes_download_claim": "prohibited",
+    "representation_rules": [
+      "no_strip",
+      "no_rstrip",
+      "no_whitespace_normalization",
+      "no_alternate_message_form",
+      "no_raw_bytes_change",
+      "no_runtime_fallback_or_relaxation"
+    ],
+    "structural_policy_evidence": {
+      "I2_source": "freezes_commit_request_and_ref_request_fields_but_uses_minimal_synthetic_responses",
+      "I3_may_invent_or_expand_allowed_keys": "prohibited",
+      "existing_receipt": "records_message_author_committer_unsigned_verification_but_not_complete_response_shape",
+      "new_schema_status": "explicit_R3_closed_policy_not_an_observed_or_permanent_API_guarantee"
+    },
+    "synthetic_fixture_path": "tests/fixtures/v12_0_2_git_commit_projection.json",
+    "timestamp": {
+      "API_format": "YYYY-MM-DDTHH:MM:SSZ",
+      "author_equals_committer": true,
+      "precision": "whole_seconds",
+      "raw_timezone": "+0000",
+      "source": "exact_M_A_H3_committer_instant"
+    },
+    "tree": "identical_to_M_A_H3",
+    "value_definitions": {
+      "array": "JSON_array_exact_registered_length_and_order",
+      "date": "JSON_string_exact_expected_M_A_H3_committer_YYYY-MM-DDTHH:MM:SSZ_no_date_normalization",
+      "node_id": "nonempty_JSON_string_non_authoritative_never_logged_or_used_as_identity",
+      "object": "JSON_object_exact_declared_required_plus_present_optional_keys_no_others",
+      "oid": "JSON_string_fullmatch_[0-9a-f]{40}_and_exact_expected_identity",
+      "sha256": "JSON_string_fullmatch_[0-9a-f]{64}_and_exact_expected_digest",
+      "string": "JSON_string_no_type_coercion"
+    }
+  },
+  "governed_history": {
+    "append_after_registration": "excluded_from_this_historical_attempt",
+    "authority_commit": "4a617f2c1575a165b42878600753a01ddf2ced03",
+    "read_seam": "lotto649.operational_history.load_published_history",
+    "source_contract": "exact_v12.0.0_registration_authority"
+  },
+  "historical_6of6_bundle_template": "reports/historical-6of6-candidate__{target_date}__{model_name}__v12.0.2.json",
+  "historical_runtime_dependency_closure": {
+    "binding": "exact_full_manifest_in_new_I3_reviews_and_new_historical_authorization_JSON",
+    "dynamic_or_unresolved_local_imports": "prohibited",
+    "equality_checkpoints": [
+      "I3",
+      "K_H3",
+      "A_H_s3",
+      "M_A_H3"
+    ],
+    "freezes_at": "I3",
+    "manifest": "sorted_repository_relative_path_Git_blob_pairs_plus_canonical_manifest_SHA256",
+    "preserve_nonclosure_entries": "all_existing_runtime_dependencies_and_old_I2_paths_unchanged",
+    "seed_paths": [
+      "config.yaml",
+      "config/research-v12-0-2-post-rng-parity-composition-transition.yaml",
+      "config/research-v12-post-rng-parity-composition-transition.yaml",
+      "evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json",
+      "evidence/research_registrations/v12-post-rng-parity-composition-transition-v2.json",
+      "evidence/research_registrations/v12-post-rng-parity-composition-transition-v3.json",
+      "requirements/v12-historical.txt",
+      "src/lotto649/config.py",
+      "src/lotto649/domain.py",
+      "src/lotto649/features.py",
+      "src/lotto649/models/factory.py",
+      "src/lotto649/models/v12_parity_transition.py",
+      "src/lotto649/notification.py",
+      "src/lotto649/operational_history.py",
+      "src/lotto649/research_features.py",
+      "src/lotto649/v12_0_2_evidence.py",
+      "src/lotto649/v12_0_2_registered_attempt.py",
+      "tools/run_v12_0_2_historical.py"
+    ],
+    "state_at_R3": "absent_until_complete_I3",
+    "transitive_local_imports": "all_included"
+  },
+  "implementation_change_contract": {
+    "diff_from_I3_base": "exact_six_new_paths_all_status_A_no_other_add_modify_delete_rename",
+    "registration_test_is_I3_runtime_implementation": false,
+    "registration_test_path": "tests/test_v12_r3_registration.py",
+    "shared_core": "already_present_sealed_reused_without_change_not_a_new_I3_path"
+  },
+  "independent_review_and_CI": {
+    "CI": {
+      "app": "github-actions",
+      "check_selection": "one_unambiguous_test_check_with_exact_bound_check_id",
+      "conclusion": "success",
+      "head": "exact_respective_reviewed_source_HEAD",
+      "name": "test",
+      "status": "completed"
+    },
+    "auth_source_external_discovery": {
+      "allowed_GET_routes": [
+        "/repos/Jasper-Shi/lottopred/commits/{A_H_s3}/pulls?per_page=100",
+        "/repos/Jasper-Shi/lottopred/pulls/{pr_number}",
+        "/repos/Jasper-Shi/lottopred/issues/{pr_number}/comments?per_page=100",
+        "/repos/Jasper-Shi/lottopred/issues/comments/{comment_id}",
+        "/repos/Jasper-Shi/lottopred/commits/{A_H_s3}/check-runs?per_page=100",
+        "/repos/Jasper-Shi/lottopred/check-runs/{check_id}"
+      ],
+      "associated_PR": "exactly_one_merged_matching_source_HEAD_base_K_H3_main_and_merge_M_A_H3_fixed_repository",
+      "base_ref": "main",
+      "list_completeness": "single_registered_first_page_complete_at_most_100_items_no_next_page_or_incomplete_or_ambiguous_collection",
+      "origin": "https://api.github.com",
+      "pagination_or_additional_endpoint_expansion": "prohibited",
+      "redirects": "prohibited",
+      "repository": "Jasper-Shi/lottopred",
+      "review_and_CI_ambiguity": "fail_closed_no_latest_first_or_convenient_match_selection",
+      "review_comment_selection": "exactly_one_matching_registered_schema_and_base_head_closure_record_per_axis_refetch_each_immutable_comment_by_ID",
+      "route_parameters": "only_verified_full_lowercase_40_hex_source_SHA_and_positive_integer_PR_comment_check_ids_discovered_in_this_flow",
+      "self_reference": "all_new_auth_review_and_CI_facts_discovered_after_merge_never_embedded_in_own_source_JSON",
+      "source_resolution": "exact_M_A_H3_second_parent_from_verified_ordinary_merge_topology_no_caller_source_override"
+    },
+    "auth_source_review_discovery": "after_normal_auth_merge_from_external_PR_comment_check_facts_not_embedded_in_own_source_JSON",
+    "axes": [
+      "standards",
+      "spec"
+    ],
+    "caller_supplied_attestation_bypass": "prohibited",
+    "comment_body_exact_keys": [
+      "schema_version",
+      "axis",
+      "base_sha",
+      "head_sha",
+      "closure_sha256",
+      "verdict",
+      "blocker_count",
+      "major_count",
+      "reviewer_kind",
+      "reviewer_agent_id",
+      "review_session_id",
+      "publisher_login"
+    ],
+    "comment_body_values": {
+      "axis": "exact_corresponding_record_axis_standards_or_spec",
+      "base_sha": "exact_corresponding_reviewed_source_base",
+      "blocker_count": 0,
+      "closure_sha256": "exact_frozen_I3_transitive_runtime_closure_SHA256",
+      "head_sha": "exact_corresponding_reviewed_source_HEAD",
+      "major_count": 0,
+      "publisher_login": "exact_corresponding_record_actual_comment_publisher_login",
+      "review_session_id": "exact_corresponding_record_nonempty_session_id",
+      "reviewer_agent_id": "exact_corresponding_record_nonempty_agent_id",
+      "reviewer_kind": "independent_agent",
+      "verdict": "pass"
+    },
+    "comment_provenance": {
+      "body_sha256": "SHA256_exact_UTF-8_comment_body_equals_record_comment_body_sha256",
+      "identity": "exact_positive_integer_comment_id_same_fixed_repository_PR_issue",
+      "immutable": "created_at_is_valid_whole_second_UTC_Z_and_updated_at_exactly_equals_created_at",
+      "publisher": "fresh_comment_user_login_equals_record_publisher_login",
+      "same_phase_records": "same_exact_PR_number_and_check_id",
+      "types": "exact_JSON_types_nonempty_identity_strings_positive_integer_PR_comment_check_ids_integer_zero_counts"
+    },
+    "comment_schema_by_phase": {
+      "A_H_s3": "lotto649-v12-ah3-independent-review-v1",
+      "I3": "lotto649-v12-i3-independent-review-v1"
+    },
+    "display_axes": [
+      "Standards",
+      "Spec"
+    ],
+    "fresh_external_attestation_check": "required_at_authorization_acceptance",
+    "fresh_for": [
+      "I3",
+      "A_H_s3"
+    ],
+    "freshness": "new_review_turns_session_ids_immutable_comments_and_exact_head_CI_for_each_new_source",
+    "independence": {
+      "author_separation": "both_reviewer_agent_ids_absent_from_all_contributor_agent_ids_and_both_review_session_ids_absent_from_all_contributor_session_ids",
+      "different_GitHub_account_requirement": false,
+      "each_phase": "two_distinct_reviewer_agent_ids_and_two_distinct_review_session_ids",
+      "publisher": "publisher_login_is_actual_GitHub_comment_publisher_not_a_claimed_reviewer_identity",
+      "source_author_binding": "exact_source_Git_message_Research-Author-Provenance_trailer_under_source_author_provenance_contract"
+    },
+    "old_I2_or_A_H2_review_reuse": "prohibited",
+    "record_exact_keys": [
+      "axis",
+      "check_id",
+      "comment_body_sha256",
+      "comment_id",
+      "pr_number",
+      "publisher_login",
+      "review_session_id",
+      "reviewer_agent_id"
+    ],
+    "reviewer_kind": "independent_agent",
+    "verdict": "pass"
+  },
+  "outcome_blindness": {
+    "I3_synthetic_validator_mock_adapter_and_worker_path_tests": "permitted_only_in_isolated_synthetic_mode_without_production_capability_or_canonical_attempt",
+    "R3_canonical_or_verifier_or_worker_invoked": false,
+    "V12_forecast_or_score_available": false,
+    "actual_startup_claim_lease_report_created": false,
+    "allowed_review_inputs": "registration_artifacts_source_text_immutable_Git_metadata_synthetic_fixtures_closed_form_oracles",
+    "outcome_blind_scope": "operational_fix_uses_fixed_incident_and_Git_metadata_without_new_target_record_or_V12_result_access_or_scientific_rule_change",
+    "prior_published_V1_aggregates_already_known": true,
+    "prior_result_amnesia_or_restored_blindness_claim": "prohibited",
+    "raw_governed_history_or_target_records_opened_for_R3": false,
+    "secrets_read": false,
+    "statistical_change_after_outcome_access": "prohibited"
+  },
+  "phase_contract": {
+    "at_R3": "all_execution_fail_closed",
+    "live_lane": "none",
+    "required_order": "R3 < I3 < K_H3 < A_H_s3 < M_A_H3 < L_H3 < run_H3"
+  },
+  "repository_global_attempt_lease": {
+    "absence_precondition": "fresh_exact_GitHub_404_for_literal_new_ref_after_valid_authority_before_claim_history_forecast_or_outcome",
+    "attempt_limit": 1,
+    "automatic_retry": false,
+    "createRef_POST_attempts": 1,
+    "create_commit_POST_attempts": 1,
+    "grant": "single_successful_createRef_then_fresh_exact_ref_OID_reread_and_unchanged_protected_main_HEAD",
+    "manual_retry_or_resume_same_version": "prohibited",
+    "ref": "refs/heads/v12-consumption-v12.0.2",
+    "repository": "Jasper-Shi/lottopred",
+    "scope": "repository_global_not_local_O_EXCL",
+    "update_or_delete": "prohibited"
+  },
+  "runtime": {
+    "GitHub_connection_read_timeout": "unchanged_fixed_10_seconds_connect_30_seconds_read",
+    "arithmetic": "CPython_3.12_IEEE_754_binary64",
+    "dependency_manifest_path": "requirements/v12-historical.txt",
+    "dependency_manifest_sha256": "a0dfeac17ad7e1c41dffe4b41b4810156fb028f879d312430bfc517672a570c6",
+    "exact_patch_platform_installed_distribution_manifest": "bind_freshly_in_A_H3_and_claim",
+    "pure_core_sha256": "fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77"
+  },
+  "scientific_inheritance": {
+    "V1_result_informed_rebinding_or_tuning": "prohibited",
+    "all_ten_section_objects": "exact_unchanged_canonical_values_at_R1",
+    "full_scientific_contract": "all_R1_scientific_clauses_including_bootstrap_serialization_notifications_and_rescue_rules",
+    "operational_overrides": "only_explicit_R3_identity_topology_API_projection_and_startup_receipt_rules",
+    "prospective_208_rule": "inherited_boundary_only_no_R3_live_lane_or_activation_authority",
+    "registered_V1_comparator_gates": "unchanged_no_new_target_record_or_V12_result_access_during_R3_or_I3_review"
+  },
+  "scope": {
+    "I3_review_execution": "isolated_synthetic_fixtures_and_closed_form_pure_validators_mock_adapters_and_mock_worker_paths_only",
+    "I3_review_prohibitions": [
+      "canonical_production_capability_or_attempt",
+      "real_history_or_target_answers",
+      "network_mutations",
+      "registered_real_artifact_paths"
+    ],
+    "R3_registration_execution": "static_only_no_runtime_verifier_canonical_or_worker_invocation",
+    "candidate_hypothesis": "H12",
+    "lane": "historical_only",
+    "live_authorization": "prohibited_under_R3",
+    "live_lane": "none",
+    "production_wiring": "prohibited_under_R3",
+    "statistical_behavior_changed": false
+  },
+  "source_author_provenance_contract": {
+    "changed_trailer_or_message": "new_source_OID_requires_new_exact_head_review_and_CI",
+    "complete_contributor_rule": {
+      "A_H_s3_scope": "all_authorization_payload_and_source_metadata_preparation_or_integration_contributors",
+      "I3_scope": "all_new_implementation_source_test_fixture_and_integration_contributors",
+      "committer_or_publisher_only_list": "insufficient",
+      "completeness_attestation": "independent_source_reviews_cross_check_against_actual_collaboration_and_handoff_provenance",
+      "copy_I3_list_to_auth_without_actual_contribution": "prohibited",
+      "include": "every_real_agent_session_that_supplied_or_changed_this_source_content_including_all_workers_and_root_integrator",
+      "invent_missing_identity_or_omit_contributor": "prohibited_stop_for_uncertain_provenance",
+      "machine_proof_limit": "source_OID_binds_declared_list_syntax_and_identity_exclusion_not_real_world_completeness",
+      "read_only_reviewer_without_source_contribution": "not_an_author_only_by_reviewing"
+    },
+    "future_auth_reviews": "external_post_merge_discovery_unchanged_no_self_reference",
+    "location": "raw_Git_message_of_exact_reviewed_I3_or_A_H_s3_source_commit",
+    "payload": {
+      "canonical_encoding": "finite_sorted_keys_compact_separators_ensure_ascii_false_allow_nan_false_UTF8_JSON_no_trailing_LF",
+      "contributor_optional_keys": [],
+      "contributor_required_keys": [
+        "agent_id",
+        "session_id"
+      ],
+      "duplicate_keys_invalid_UTF8_nonfinite_wrong_types_missing_unknown_fields": "reject",
+      "identifier_ASCII_controls_U0000_through_U001F_and_U007F": "prohibited",
+      "identifier_leading_trailing_ASCII_whitespace": "prohibited",
+      "identifier_maximum_UTF8_bytes": 256,
+      "identifier_normalization_or_coercion": "prohibited",
+      "identifier_type": "nonempty_JSON_string_actual_agent_or_session_identity",
+      "maximum_contributors": 64,
+      "minimum_contributors": 1,
+      "optional_keys": [],
+      "own_or_future_commit_SHA_fields_and_review_ID_fields": "prohibited_by_exact_key_sets",
+      "phase_by_source": {
+        "A_H_s3": "A_H_s3",
+        "I3": "I3"
+      },
+      "required_keys": [
+        "contributors",
+        "phase",
+        "schema_version"
+      ],
+      "same_agent_with_distinct_authoring_sessions": "allowed_and_all_contributing_pairs_required",
+      "schema_version": "lotto649-v12-source-author-provenance-v1",
+      "sort": "ascending_tuple_of_agent_id_UTF8_bytes_then_session_id_UTF8_bytes",
+      "uniqueness": "complete_agent_id_session_id_pair"
+    },
+    "review_independence": {
+      "binding": "existing_exact_review_head_sha_binds_source_message_and_trailer",
+      "changing_session_of_an_author_agent": "does_not_restore_independence",
+      "closed_review_body_and_record_key_sets": "unchanged_no_author_fields_added",
+      "different_GitHub_account_requirement": false,
+      "each_review_session_id": "absent_from_all_contributor_session_ids",
+      "each_reviewer_agent_id": "absent_from_all_contributor_agent_ids",
+      "per_phase_review_session_ids": "two_distinct",
+      "per_phase_reviewer_agent_ids": "two_distinct",
+      "publisher_login": "actual_GitHub_comment_publisher_separate_from_agent_session_identity"
+    },
+    "schema_version": "lotto649-v12-source-author-provenance-contract-v1",
+    "scope": {
+      "I3_six_A_paths": "unchanged",
+      "auth_source_tree_diff": "existing_auth_JSON_addition_only",
+      "implementation_location": "already_registered_I3_attempt_module_and_isolated_synthetic_tests_only",
+      "metadata_only": true,
+      "old_source_commits_registrations_auth_core_requirements": "unchanged",
+      "seventh_I3_path": "prohibited",
+      "statistical_change": false
+    },
+    "source_freeze_order": "truthful_final_trailer_before_exact_head_CI_and_independent_source_reviews",
+    "source_resolution": {
+      "A_H_s3": "exact_verified_M_A_H3_second_parent_equal_discovered_auth_PR_head_and_review_head_sha",
+      "I3": "exact_reviewed_implementation_source_OID_bound_by_implementation_merge_and_review_head_sha",
+      "reader": "existing_fixed_local_Git_commit_object_reader_at_verified_full_OID",
+      "worktree_API_message_caller_injected_source_or_path": "prohibited",
+      "wrong_source_phase_missing_or_invalid_trailer": "fail_before_production_capability_artifact_or_mutation"
+    },
+    "trailer": {
+      "JSON_line_breaks": "prohibited",
+      "count": 1,
+      "extraction": "raw_commit_headers_message_split_at_first_empty_line_then_exact_message_line_scan",
+      "indented_folded_repeated_or_malformed_marker": "reject",
+      "marker": "Research-Author-Provenance:",
+      "message_trailing_LF_count": 1,
+      "normalization_or_generic_trailer_coalescing": "prohibited",
+      "position": "final_nonempty_message_line_no_following_bytes_except_single_LF",
+      "prefix": "Research-Author-Provenance: "
+    }
+  },
+  "startup_receipt_contract": {
+    "claim_and_scientific_ledger_binding": {
+      "checkpoint": "already_fsynced_prefix_before_claim_creation",
+      "checkpoint_fields": [
+        "path",
+        "sequence",
+        "head_sha256",
+        "prefix_byte_count",
+        "prefix_sha256"
+      ],
+      "claim_binds": "immutable_startup_checkpoint_only_not_future_complete_startup_digest",
+      "cyclic_dependency": "prohibited",
+      "final_manifest_binds": "complete_closed_startup_file_bytes_SHA256_and_checkpoint_separately",
+      "history_load_gate": "all_three_post_checkpoint_events_fsynced_journal_sealed_against_append_before_history_load",
+      "post_checkpoint_append_order": [
+        "claim_created_with_claim_sha256",
+        "scientific_ledger_started_with_first_event_sha256",
+        "history_load_intent"
+      ],
+      "retroactive_claim_or_scientific_binding_update": "prohibited",
+      "scientific_ledger_binds": "same_immutable_startup_checkpoint_and_claim_sha256",
+      "sealed_journal_identity": "retain_original_FD_only_for_exact_ownership_checks_close_after_last_clean_check_or_process_exit"
+    },
+    "continued_clean_clone_checks": {
+      "adopt_existing_file": "prohibited",
+      "allowance": "only_exact_current_attempt_startup_file_proven_by_retained_FD",
+      "filename_only_exception": "prohibited",
+      "reopen_as_new_attempt": "prohibited",
+      "require": [
+        "fixed_path",
+        "fixed_repository_and_HEAD",
+        "regular_file",
+        "same_device_and_inode",
+        "single_link",
+        "same_safe_permissions",
+        "same_open_FD",
+        "writer_maintained_byte_count_and_hash",
+        "no_other_untracked_or_ignored_output_beyond_exact_capability_bound_current_attempt_artifacts"
+      ]
+    },
+    "creation": {
+      "durability_before_capability_or_any_POST": "canonical_first_event_append_flush_file_fsync_and_parent_directory_fsync",
+      "exclusive": true,
+      "first_event_binds": "complete_verified_authorization_facts_including_exact_M_A_and_registration_config_auth_runtime_closure_identities",
+      "mode": "0600",
+      "original_clean_clone_check": "required_before_creation_no_existing_untracked_or_ignored_artifact_exception",
+      "pre_authorization_failure": "fixed_safe_stage_and_error_enum_stderr_only_no_artifact",
+      "preexisting_path": "terminal_refusal_preserve_no_open_append_truncate_delete_recovery_or_retry",
+      "read_only_authorization_gate": "complete_local_and_remote_exact_M_A_facts_verified_before_creation_no_capability_or_artifact_before_pass",
+      "symlinks": "prohibited_for_path_and_ancestors",
+      "writer": "one_current_process_exclusively_created_open_FD"
+    },
+    "event_envelope": {
+      "arbitrary_event_names_keys_values_error_text": "prohibited",
+      "canonical_encoding": "finite_sorted_compact_UTF-8_JSON_plus_exactly_one_LF",
+      "chain": "SHA256_of_previous_complete_canonical_event_line_including_LF",
+      "every_event_before_next_external_effect": "append_flush_fsync",
+      "initial_previous_sha256": null,
+      "sequence": "contiguous_zero_based",
+      "wall_clock": "trusted_RFC3339_UTC_Z"
+    },
+    "failure_policy": {
+      "failed_unknown_or_partial_attempt": "terminal_no_automatic_or_manual_retry_or_resume_under_this_version",
+      "fallback_logging_to_unregistered_file": "prohibited",
+      "missing_receipt": "unknown_not_proof_of_no_POST",
+      "post_failure_404": "never_restores_attempt_authority",
+      "startup_claim_ledger_and_partial_bytes": "preserve_forever"
+    },
+    "path": "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.startup.jsonl",
+    "post_claim_artifact_ownership": {
+      "after_claim": "recognize_only_fixed_outputs_exclusively_created_and_recorded_by_this_current_issued_capability",
+      "any_unregistered_untracked_or_ignored_entry": "fail_closed",
+      "before_capability": "only_the_authenticated_current_attempt_startup_FD_after_complete_read_only_auth_verification",
+      "before_claim": "all_other_eight_registered_scientific_output_paths_absent",
+      "filename_or_path_allowlist_without_live_creation_provenance": "prohibited",
+      "legitimate_claim_and_ledger": "must_not_be_misclassified_as_foreign_by_later_clean_checks",
+      "ownership_binding": [
+        "fixed_repository_HEAD",
+        "same_current_issued_capability",
+        "registered_exact_path_and_role",
+        "creation_or_atomic_publication_provenance",
+        "device_and_inode_or_equivalent_retained_descriptor_identity",
+        "current_complete_bytes_or_registered_staging_state_digest"
+      ],
+      "preexisting_or_foreign_artifact_adoption": "prohibited",
+      "registered_paths": [
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.ledger.jsonl",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.claim",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.commit.json.staging",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.json",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.json.staging",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.md",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.md.staging",
+        "reports/v12_post_rng_parity_composition_transition_v12.0.2_historical.startup.jsonl"
+      ]
+    },
+    "pre_POST_intent": {
+      "exact_request_bytes": "serialize_once_finite_canonical_JSON_UTF-8_no_trailing_LF_send_these_same_bytes",
+      "must_precede_each_POST": true,
+      "nonce": "safe_noncredential_OS_random_32_bytes_lowercase_hex_64_never_reused",
+      "required_fields": [
+        "phase_enum",
+        "nonce_hex",
+        "expected_lease_oid",
+        "raw_commit_sha256",
+        "request_body_bytes",
+        "request_body_sha256"
+      ],
+      "write_flush_or_fsync_failure": "terminal_before_POST_no_retry"
+    },
+    "receipt": {
+      "allowed_result_values": [
+        "success",
+        "http_rejected",
+        "transport_failed",
+        "malformed_response",
+        "identity_mismatch",
+        "io_failed",
+        "authority_failed"
+      ],
+      "forbidden": [
+        "token",
+        "authorization_header",
+        "environment",
+        "request_headers",
+        "response_headers",
+        "request_body",
+        "response_body",
+        "arbitrary_exception_or_server_error_text",
+        "redirect_target"
+      ],
+      "http_status": "validated_integer_100_through_599_or_null_if_unobserved",
+      "safe_fields_only": [
+        "phase_enum",
+        "result_enum",
+        "validated_oid",
+        "http_status"
+      ],
+      "unknown_outcome": "retain_durable_intent_no_success_receipt_no_retry",
+      "validated_oid": "canonical_lowercase_40_hex_only_after_equality_to_expected_oid"
+    },
+    "required_phase_events": [
+      "authorized_startup_started",
+      "capability_issued",
+      "lease_absence_confirmed",
+      "lease_commit_POST_intent",
+      "lease_commit_POST_receipt",
+      "lease_commit_GET_verified",
+      "lease_ref_POST_intent",
+      "lease_ref_POST_receipt",
+      "lease_ref_reread_verified",
+      "startup_checkpoint",
+      "claim_created",
+      "scientific_ledger_started",
+      "history_load_intent"
+    ],
+    "schema_version": "lotto649-v12.0.2-historical-startup-v1"
+  },
+  "statistical_equivalence": {
+    "classification": "operational_rebinding_only",
+    "fingerprint_payload": {
+      "contract_sections": {
+        "control_null_contract": "f050c82f101a17f5126a8a8db61c7f484d83e605f27213b6803306d74fab2d8c",
+        "controls": "cf590452b19f1dfbae0f0fbd2b1db3ce47b290c0011b2889413bdca529f271e0",
+        "gates": "d64633c7179128d0fce76f37ead0f5740ef13e725a941794102ddc0fa00f2396",
+        "historical_governance": "d33abcabd1bfa7548f8eab680d4efab864f52b271e111cab7212a1f0245366fc",
+        "historical_scope": "7106f906239761694647b3f60f2ce8c5855d5b61ef8e74539b262aacf0a03a65",
+        "mathematical_contract": "6c2391fa3d58ea1161af90282028e28d787ce52de38cb03e43366d89cf7ed832",
+        "model": "2a97e0a6e18860c31027828302fb9230ab44bfa1b3a846663fc84c1483d66b7f",
+        "multiplicity": "d0ce22e9e36441d9d497af56c1675f98ee618d83ea1a146a7851a7c8c5e57997",
+        "notifications": "bb1bd1de4219d90b931b3789c33d1df4fdab36d22fb7d0ac4a2becc4eab33af2",
+        "target_date_identities": "1264cd4fc34cd33bdfdcabba79be6efe3a6902068a17b9ed61d9ee667baccf77"
+      },
+      "core": {
+        "path": "src/lotto649/models/v12_parity_transition.py",
+        "sha256": "fae93e0a6f76c6604eabe24f6b93676e22e87d7e567365b382484433fba2eb77"
+      },
+      "gate_count": 10,
+      "half_target_counts": [
+        314,
+        313
+      ],
+      "historical_target_count": 627,
+      "hypothesis_id": "H12",
+      "primary_metric": "mean_top12_main_number_hits_minus_72_over_49",
+      "seed": 649
+    },
+    "fingerprint_sha256": "af2e16a55ff0e817cf71208471e19e4f481bed63990f7e41268997c4c4b35c76",
+    "source": {
+      "model_version": "v12.0.0",
+      "registration_commit": "0af20fc41fc5aaa0879dada0a258797a8bc14e20",
+      "registration_path": "evidence/research_registrations/v12-post-rng-parity-composition-transition-v1.json",
+      "registration_sha256": "4406bd25ee82195bff7a97b258885cb3bb3c1a8fb829f383c5e3c1616e169170"
+    },
+    "statistical_behavior_changed": false
+  }
+}

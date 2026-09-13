@@ -1,11 +1,49 @@
 # Operations Guide
 
+## V12 historical startup checkpoint
+
+V12.0.1's sole canonical invocation after authorization PR #44 merge
+`baa08ecb77555e17f383ef2998bea3c433e16f74` failed before any claim, ledger or
+forecast. It is `startup_failed_frozen_no_retry`, not scored, with no scientific
+disposition. The original failure stage and whether a remote POST occurred are
+unknown; a later lease 404 does not permit another attempt. PR #45 normally
+merged the immutable
+[incident](../evidence/research_execution_incidents/v12-0-1-20260913/startup-incident.json)
+and separate expired-live closure at
+`3015078e251bdcbb92719e1b291b1807525fef16`. Preserve the old command, runtime,
+authorization and lease namespace without retry or repair. Obsolete PR #41 is
+closed and unmerged, with its branch and history preserved.
+
+The current registered operation is
+[`V12.0.2 / R3`](experiments/V12_0_2_historical_operational_rebinding.md).
+
+**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+
+Its historical route preserves H12 science and needs new I3 implementation,
+independent Standards/Spec reviews, exact-head CI, an ordinary protected-main implementation
+merge, new auth-JSON-only source and ordinary authorization merge, and a fresh
+`refs/heads/v12-consumption-v12.0.2` lease. Bind the same core and runtime closure
+at I3, `K_H3`, `A_H_s3` and `M_A_H3`. Registration and a source branch grant no
+execution authority.
+
+Follow R3's complete read-only authorization checks before creating any startup
+artifact. Only then create and retain the exclusive durable journal, issue the
+capability, and record each remote mutation's intent and safe receipt before
+claim and scientific-ledger creation. Seal the startup journal before history
+access. Use the exact R3 specification for canonical object verification, journal
+ownership and no-retry failure handling. Implementation tests use source, fixed
+Git metadata, synthetic fixtures and closed-form oracles; they do not load
+governed history.
+R3 has no live lane and does not depend on D0, future draws or a live canary.
+
 ## Cloud execution
 
-No local computer needs to stay running.
+GitHub-hosted CI and the existing hourly progress-email job do not require a
+local computer to stay running. The live production route remains paused.
 
-- **Codex Cloud**: development, code changes, debugging and research.
-- **GitHub Actions**: recurring production-like execution.
+R3 registers a standalone manual historical command that must run on its
+authorized execution host through completion. It has no GitHub Actions workflow
+or scheduler wiring; hosted CI and progress email cannot execute it.
 
 ## Data-integrity incident kill switch
 
@@ -145,9 +183,10 @@ pinned by manifest SHA-256
 The expired plan's registered failure rule was no automatic retry after worker
 start. Any acknowledged remote state would have required audit and a reviewed
 forward reseal, never reset, force, or rewrite. That rule remains historical;
-the plan cannot now be attempted once. V12.0.1's separate future `A_L2` route is
-also manual-only and no-retry. Any Thursday/Sunday schedule requires a later
-release after the replacement canary evidence receives independent review.
+the plan cannot now be attempted once. V12.0.1's later live lane also expired
+unexecuted. Future live recovery requires a new registration and reviewed
+canary after D0; any Thursday/Sunday schedule requires a separate later release.
+R3 authorizes no live work.
 
 Re-enable a boundary only in a separate reviewed release after all applicable
 items below are true:
@@ -320,9 +359,10 @@ legacy-like or ambiguous source fails closed.
 
 Stage 1 is merged but expired unexecuted. It has no dispatch authority, and no
 late SHA, credential, or source receipt can revive it. D0 must reseal all-false
-outputs before any replacement live wiring. Historical V12.0.1 `A_H2` remains
-independent of D0, W2, future outcomes, and live-canary success; the separate
-future `A_L2` route is manual-only, no-retry, and unscheduled.
+outputs before any replacement live wiring. V12.0.1's historical startup is
+frozen against retry and its separate live lane expired unexecuted. The R3
+historical-only route remains independent of D0, future outcomes and live-canary
+success; it creates no replacement live authority.
 
 ## GitHub Actions workflows
 
@@ -346,8 +386,9 @@ Integration and backtest remain sealed. `live.yml` has read-only repository
 permissions, does not persist checkout credentials, and begins with false guard
 outputs. Its expired Stage-1 identity/time checks are retained only as deployed
 history and cannot authorize a late run. D0 must replace the residual live
-state with all-false outputs before W2. Any future `A_L2` implementation remains
-manual-only, no-retry, and unscheduled.
+state with all-false outputs before any newly registered live recovery wiring.
+The V12.0.1 live dates cannot be shifted or reused; R3 adds no live implementation
+or workflow.
 
 The backtest, integration, and live workflows use full Git history so the
 verified-history loader can resolve its pinned artifact/evidence ancestry if a
@@ -467,8 +508,8 @@ operator audit rather than an unattended replay.
 ## Scheduled time
 
 The expired Stage-1 plan had no unattended live schedule and was never
-dispatched. Its 2026-08-27 window must not be reused. V12.0.1 registers a new
-manual-only live lane with no automatic retry; any unattended Thursday/Sunday
-schedule remains a separate release after the new canary evidence passes
-review. The read-only hourly progress-email schedule is not a live schedule and
-does not authorize or execute live work.
+dispatched. Its 2026-08-27 window must not be reused. V12.0.1's later live lane
+also expired unexecuted. R3 is historical-only. Future live recovery needs a new
+registration and reviewed canary after D0; any unattended Thursday/Sunday
+schedule remains a separate later release. The read-only hourly progress-email
+schedule is not a live schedule and does not authorize or execute live work.

@@ -130,11 +130,27 @@ I2 and the ordinary historical-auth merge `M_A_H2` at protected remote
 of future draws and live-canary success. Those former prerequisites do not
 restore the failed attempt. The independent live lane's fixed dates expired
 without its D0/W2/S2/C2/M_C2/K_L2 and `M_A_L2` prerequisites.
-The V12.0.1 command must not be retried or repaired in place. Further
-work requires a separately registered operational version with unchanged H12
-science, new execution identities and durable startup receipts. No V12
-forecast, score, report, canary success or live authorization exists. V1 and
-V3 roles are unchanged.
+The V12.0.1 command must not be retried or repaired in place. PR #45 preserves
+the incident and live closure at ordinary merge
+`3015078e251bdcbb92719e1b291b1807525fef16`.
+
+The current registered operation is
+[`V12.0.2 historical operational rebinding`](experiments/V12_0_2_historical_operational_rebinding.md).
+
+**R3 checkpoint: REGISTERED / NOT IMPLEMENTED / NOT AUTHORIZED / NOT SCORED.**
+
+It preserves the exact H12 statistical fingerprint, pure-core SHA-256, formula,
+seed, controls, 627 targets, 314/313 split, inference and ten gates. R3 changes only
+the historical execution identities, strict GitHub representation verification
+and durable sanitized startup receipts; it introduces no live lane. New I3
+implementation and independent reviews, exact-head CI, an ordinary
+protected-main implementation merge, new auth-JSON-only source and ordinary
+authorization merge, and a fresh V12.0.2 one-shot lease are required before
+execution. Authorization must be fully verified before any startup artifact.
+Fixed history and runtime closure remain independent of future draws, D0 and
+live-canary success. Neither V1's observed results nor the startup failure may
+change H12's scientific behavior. No V12 forecast, score, report, canary success
+or live authorization exists. V1 and V3 roles are unchanged.
 
 ## Planned anti-overfitting checks
 
