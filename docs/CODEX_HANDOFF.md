@@ -30,18 +30,32 @@ sensitivity diagnostics, not restored blind or prospective predictions.
 `config.yaml`, models, production switches and all pre-existing artifacts
 remain unchanged.
 
-V12 I2 has merged in PR #40 at
-`40f6e4098d4ed59f9421196efb8573c66c48928a`; V12 is implemented but remains
-historically unauthorized and unscored. PR #41 is an unmerged authorization
-source bound to that older main. Main has advanced; future V12 authorization
-requires a new auth-only source on the current protected main and a fresh
-reviewed ordinary merge; do not reuse the stale source as execution authority.
-The new V1 files and ordinary documentation updates do not alter V12's frozen
-29-path historical runtime closure.
+V12 I2 merged in PR #40 at
+`40f6e4098d4ed59f9421196efb8573c66c48928a`. New historical authorization
+PR #44 normally merged source `f194d5cccf30868f1088680e338fcad9cb697949`
+at `baa08ecb77555e17f383ef2998bea3c433e16f74`, after 1,213 passing CI tests
+and independent Standards/Spec review with zero findings. The single canonical
+invocation then exited 1 before creating any claim, ledger or prediction.
+The remote V12.0.1 lease was exactly 404 both before and after invocation.
+V12.0.1 is **startup-failed, frozen against retry, and not scored**; no scientific
+Reject result exists. See the append-only
+[startup incident](../evidence/research_execution_incidents/v12-0-1-20260913/startup-incident.json).
+
+GET-only diagnosis confirmed a GitHub commit-message representation mismatch:
+an existing raw commit has one trailing LF but its JSON response has none,
+which the frozen lease verifier rejects. The original invocation retained no
+phase/nonce/OID/POST receipt, so its exact failure stage and whether a dangling
+commit was uploaded remain unknown. Do not infer either from the later 404,
+retry the command, reuse either old authorization source, or alter the frozen
+I2 closure. The next work is a separately preregistered historical-only
+operational version preserving the H12 science and adding strict representation
+checks plus durable sanitized startup receipts. PR #41 remains obsolete and
+unmerged. No V12 result or 6/6 exists.
 
 The V12.0.1 live seed and canary windows have expired. That lane is
-`superseded_unexecuted`, with its separate closure artifact still outstanding;
-this does not reject or consume the unexecuted V12 historical experiment.
+`superseded_unexecuted`, recorded in the separate
+[live-lane closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
+That live-only closure does not reject or consume the historical experiment.
 Production remains paused, and PR #37's ticket-email direction remains outside
 this research. The older operational checkpoints below describe their dated
 state and do not supersede this section.

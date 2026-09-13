@@ -110,11 +110,18 @@ window expired. This is not `Archive`, `Reject`, or `consumed`, and it conveys n
 scientific result. The outcome-blind
 [`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
 retains the identical H12 statistical fingerprint while assigning new execution
-identities. V12.0.1 is **registered and implemented, but not historically
-authorized or scored**. I2 merged by PR #40 at
-`40f6e4098d4ed59f9421196efb8573c66c48928a`. Its live lane missed its fixed
-seed/canary windows and is `superseded_unexecuted`; a separate live closure
-artifact remains to be committed.
+identities. I2 merged by PR #40 at
+`40f6e4098d4ed59f9421196efb8573c66c48928a`. Historical authorization PR #44
+normally merged at `baa08ecb77555e17f383ef2998bea3c433e16f74`; its sole
+canonical invocation failed before any claim or forecast. V12.0.1 is
+**startup-failed, frozen against retry, and not scored**. Its exact pre-claim
+failure stage is unknown; the subsequently observed lease 404 does not prove
+that no commit upload was attempted. The
+[startup incident](../evidence/research_execution_incidents/v12-0-1-20260913/startup-incident.json)
+records the confirmed API representation defect and the remaining uncertainty.
+There is no scientific Reject result. Its live lane missed its fixed windows
+and has a separate
+[`superseded_unexecuted` closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
 
 V12.0.1 has separate historical and live authorization lanes. After complete
 independently reviewed I2, only the ordinary historical-auth merge `M_A_H2` at
@@ -123,8 +130,11 @@ protected remote `main`/HEAD may authorize the new one-shot historical lease
 governed-history authority and does not depend on a future draw or live-canary
 success. The independent live lane remains manual-only and fail closed through
 D0/W2/S2/C2/M_C2/K_L2 and `M_A_L2`; it permits neither a schedule nor automatic
-retry. No V12 forecast, score, report, canary success, historical authorization,
-or live authorization exists. V1 and V3 roles are unchanged.
+retry. The V12.0.1 command must not be retried or repaired in place. Further
+work requires a separately registered operational version with unchanged H12
+science, new execution identities and durable startup receipts. No V12
+forecast, score, report, canary success or live authorization exists. V1 and
+V3 roles are unchanged.
 
 ## Planned anti-overfitting checks
 

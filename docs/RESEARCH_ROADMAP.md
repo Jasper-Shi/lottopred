@@ -180,21 +180,24 @@ without execution, which is neither a scientific rejection nor consumed model
 evidence. The outcome-blind
 [`V12.0.1 operational rebinding`](experiments/V12_0_1_operational_rebinding.md)
 retains the same H12 statistical fingerprint and creates new operational
-identities. I2 is implemented and merged by PR #40; the historical lane is not
-authorized or scored. The fixed live seed/canary windows expired without their
-prerequisites, so only the live lane is `superseded_unexecuted`.
+identities. I2 merged by PR #40 and historical authorization PR #44 normally
+merged at `baa08ecb77555e17f383ef2998bea3c433e16f74`. The sole canonical
+invocation failed before any claim or forecast. V12.0.1 is startup-failed,
+frozen against retry, and unscored; its
+[incident record](../evidence/research_execution_incidents/v12-0-1-20260913/startup-incident.json)
+preserves the unknown original failure stage and the separately confirmed
+GitHub message-representation defect. No scientific rejection is inferred.
+The fixed live windows also expired and have a separate
+[`superseded_unexecuted` closure](../evidence/research_closures/v12-post-rng-parity-composition-transition-v2-live-superseded-unexecuted.json).
 
-Future V12 historical work needs an auth-JSON-only source on the then-current
-protected main and an ordinary merge `M_A_H2`. The old unmerged PR #41 source
-must be rebound after intervening V1 work advances main. Only the valid new
-merge may authorize a
-fresh exact `refs/heads/v12-consumption-v12.0.1` lease and the single historical
-run. This historical route is deliberately independent of future draw outcomes
-and live-canary success. The expired V12.0.1 live window cannot roll forward;
-future production recovery needs a separately registered operational route.
-No schedule or automatic retry is authorized. No V12 forecast, score, report,
-live role, or prospective cohort
-exists at this checkpoint.
+The next historical work is a new, historical-only operational registration
+that preserves H12's formula, core digest, controls, dates, seed, inference and
+ten gates. It must define strict API representation checks and durable
+sanitized pre-POST receipts before implementation or execution. Neither the
+obsolete PR #41 source nor the failed V12.0.1 route grants another attempt.
+This preparation is independent of future draws and live-canary success.
+No V12 forecast, score, report, live role or prospective cohort exists at this
+checkpoint. The broader 6/6 Goal remains incomplete.
 
 ## Candidate feature families
 
