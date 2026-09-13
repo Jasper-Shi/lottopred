@@ -552,7 +552,7 @@ def scope_summary(rows: Sequence[dict], *, inference: bool) -> dict:
 def build_report(
     rows: Sequence[dict], *, expected_count: int, stopped: bool, bindings: dict
 ) -> dict:
-    complete = len(rows) == expected_count and not stopped
+    complete = len(rows) == expected_count
     split = 314 if expected_count == 627 else math.ceil(expected_count / 2)
     return {
         "experiment_id": EXPERIMENT,

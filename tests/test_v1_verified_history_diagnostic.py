@@ -200,6 +200,33 @@ def test_existing_output_directory_refuses_even_if_empty(tmp_path, draws):
     assert list(directory.iterdir()) == []
 
 
+def test_final_target_exact_match_preserves_completed_cohort_inference(tmp_path, draws):
+    calls = []
+
+    def forecast(prefix, target):
+        calls.append(target)
+        result = uniform_forecast(prefix, target)
+        if target == draws[-1].draw_date:
+            result[module.PRODUCERS[0]] = biased(range(19, 25))
+        return result
+
+    directory = tmp_path / "synthetic-final-target-exact"
+    report = module.run_synthetic(directory, draws, forecast)
+    assert calls == [draw.draw_date for draw in draws[1:]]
+    assert report["scored_target_count"] == report["expected_target_count"] == 3
+    assert report["complete_fixed_cohort"] and not report["partial"]
+    assert report["stopped_on_first_final6"]
+    assert report["independent_leakage_audit"] == "pending"
+    assert report["notification"] == "pending_default_route_by_operator"
+    assert report["inference"]["fixed_cohort_inference_available"]
+    for scope in report["scopes"].values():
+        for summary in scope["producers"].values():
+            assert summary["fair_null_p"] is not None
+            assert summary["holm_3_topk_p"] is not None
+            assert summary["mean_hit_ci95"] is not None
+    assert module.verify(directory)["stopped_on_first_final6"]
+
+
 def test_synthetic_cannot_write_canonical_report_path(tmp_path, draws):
     with pytest.raises(module.DiagnosticError):
         module.run_synthetic(tmp_path / "reports" / "anything", draws, uniform_forecast)
